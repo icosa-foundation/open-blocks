@@ -37,3 +37,7 @@
 
 # m_DebugWebRequest creates this
 /Requests
+client/unity/Library
+client/unity/obj
+client/unity/Temp
+client/unity/.vscode

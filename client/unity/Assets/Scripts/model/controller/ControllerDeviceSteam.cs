@@ -14,6 +14,7 @@
 
 #define STEAMVRBUILD
 using UnityEngine;
+using Valve.VR;
 
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.model.main;
