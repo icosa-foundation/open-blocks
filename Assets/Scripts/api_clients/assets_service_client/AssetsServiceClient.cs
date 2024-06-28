@@ -171,17 +171,17 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
     public class AssetsServiceClient : MonoBehaviour
     {
         // The base for API requests to the assets service.
-        public static string AUTOPUSH_BASE_URL = "[Removed]";
-        public static string PROD_BASE_URL = "[Removed]";
+        public static string AUTOPUSH_BASE_URL = "https://icosa-api-django.ixxy.co.uk";
+        public static string PROD_BASE_URL = "https://icosa-api-django.ixxy.co.uk";
         public static string BaseUrl() { return Features.useZandriaProd ? PROD_BASE_URL : AUTOPUSH_BASE_URL; }
         // The base for the URL to be opened in a user's browser if they wish to publish.
-        public static string AUTOPUSH_PUBLISH_URL_BASE = "[Removed]";
-        public static string PROD_DEFAULT_PUBLISH_URL_BASE = "[Removed]";
+        public static string AUTOPUSH_PUBLISH_URL_BASE = "https://icosa-api-django.ixxy.co.uk/objects/uploads/publish/";
+        public static string PROD_DEFAULT_PUBLISH_URL_BASE = "https://icosa-api-django.ixxy.co.uk/objects/uploads/publish/";
         public static string PublishUrl() { return Features.useZandriaProd ? PROD_DEFAULT_PUBLISH_URL_BASE : AUTOPUSH_PUBLISH_URL_BASE; }
         // The base for the URL to be opened in a user's browser if they have saved.
         // Also used as the target for the "Your models" desktop menu
-        public static string AUTOPUSH_SAVE_URL = "[Removed]";
-        public static string PROD_DEFAULT_SAVE_URL = "[Removed]";
+        public static string AUTOPUSH_SAVE_URL = "https://icosa-api-django.ixxy.co.uk/objects/uploads";
+        public static string PROD_DEFAULT_SAVE_URL = "https://icosa-api-django.ixxy.co.uk/objects/uploads";
         public static string SaveUrl() { return Features.useZandriaProd ? PROD_DEFAULT_SAVE_URL : AUTOPUSH_SAVE_URL; }
 
         // Poly's application key for the assets service/
@@ -191,7 +191,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private static string FeaturedModelsSearchUrl()
         {
             int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-            return String.Format("{0}/v1/assets?key={1}&filter=format_type:BLOCKS,admin_tag:blocksgallery,license:CREATIVE_COMMONS_BY" +
+            return String.Format("{0}/assets?key={1}&filter=format_type:BLOCKS,admin_tag:blocksgallery,license:CREATIVE_COMMONS_BY" +
               "&order_by=create_time%20desc&page_size={2}", BaseUrl(), POLY_KEY, pageSize);
         }
 
@@ -199,14 +199,14 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
 
-            return String.Format("{0}/v1/assets?key={1}&filter=format_type:BLOCKS,liked:true,license:CREATIVE_COMMONS_BY" +
+            return String.Format("{0}/assets?key={1}&filter=format_type:BLOCKS,liked:true,license:CREATIVE_COMMONS_BY" +
               "&order_by=liked_time%20desc&page_size={2}", BaseUrl(), POLY_KEY, pageSize);
         }
         private static string YourModelsSearchUrl()
         {
             int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
 
-            return String.Format("{0}/v1/accounts/me/assets?key={1}&filter=format_type:BLOCKS&access_level=PRIVATE" +
+            return String.Format("{0}/accounts/me/assets?key={1}&filter=format_type:BLOCKS&access_level=PRIVATE" +
               "&order_by=create_time%20desc&page_size={2}", BaseUrl(), POLY_KEY, pageSize);
         }
 
@@ -318,7 +318,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
 
         /// <summary>
-        ///   Parses a single asset as defined in vr/assets/v1/asset.proto
+        ///   Parses a single asset as defined in vr/assets/asset.proto
         /// </summary>
         /// <returns></returns>
         public static bool ParseAsset(JToken asset, out ObjectStoreEntry objectStoreEntry, bool hackUrls)
@@ -528,7 +528,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <param name="callback">A callback to which to pass the results.</param>
         public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback)
         {
-            string url = String.Format("{0}/v1/assets/{1}?key={2}", BaseUrl(), assetId, POLY_KEY);
+            string url = String.Format("{0}/assets/{1}?key={2}", BaseUrl(), assetId, POLY_KEY);
             UnityWebRequest request = GetRequest(url, "text/text");
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
@@ -755,7 +755,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             string json = CreateJsonForAssetResources(saveData, remixIds, objPolyCount, triangulatedObjPolyCount,
               /* displayName */ "(Untitled)", saveSelected);
-            string url = String.Format("{0}/v1/assets?key={1}", BaseUrl(), POLY_KEY);
+            string url = String.Format("{0}/assets?key={1}", BaseUrl(), POLY_KEY);
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -807,7 +807,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             string json = CreateJsonForAssetResources(saveData, remixIds, objPolyCount, triangulatedObjPolyCount,
               /* displayName */ null, saveSelected: false);
-            string url = String.Format("{0}/v1/assets/{1}:updateData?key={2}", BaseUrl(), assetId, POLY_KEY);
+            string url = String.Format("{0}/assets/{1}:updateData?key={2}", BaseUrl(), assetId, POLY_KEY);
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -1029,7 +1029,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// </summary>
         public IEnumerator DeleteAsset(string assetId)
         {
-            string url = String.Format("{0}/v1/assets/{1}?key={2}", BaseUrl(), assetId, POLY_KEY);
+            string url = String.Format("{0}/assets/{1}?key={2}", BaseUrl(), assetId, POLY_KEY);
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
