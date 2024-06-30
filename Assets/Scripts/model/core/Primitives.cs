@@ -28,7 +28,7 @@ namespace com.google.apps.peltzer.client.model.core
     {
         // Note: the Shape enum is used to index things, so it should always start at 0 and count up
         // without skipping numbers. Do not define items to have arbitrary values. You will have a bad time.
-        public enum Shape { CONE, SPHERE, CUBE, CYLINDER, TORUS };
+        public enum Shape { CONE, SPHERE, CUBE, CYLINDER, TORUS, ICOSAHEDRON };
         private const int LINES_OF_LATITUDE = 8;
         private const int LINES_OF_LONGITUDE = 12;
         public static readonly int NUM_SHAPES = Enum.GetValues(typeof(Shape)).Length;
@@ -102,6 +102,8 @@ namespace com.google.apps.peltzer.client.model.core
                     return AxisAlignedUVSphere(LINES_OF_LONGITUDE, LINES_OF_LATITUDE, id, offset, scale, material);
                 case Shape.TORUS:
                     return Torus(id, offset, scale, material);
+                case Shape.ICOSAHEDRON:
+                    return AxisAlignedIcosphere(id, offset, scale, material, 0);
                 default:
                     return AxisAlignedBox(id, offset, scale, material);
             }
