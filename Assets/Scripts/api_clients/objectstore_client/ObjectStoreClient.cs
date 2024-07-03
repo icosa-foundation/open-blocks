@@ -48,7 +48,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
         public void BackgroundWork()
         {
-            successfullyReadMesh = ObjImporter.ImportMeshes(objString, materials, out meshes);
+            // TODO AB: We need to create mmeshes not MeshVerticesAndTriangles
+            // successfullyReadMesh = ObjImporter.ImportMeshes(objString, materials, out meshes);
         }
 
         public void PostWork()

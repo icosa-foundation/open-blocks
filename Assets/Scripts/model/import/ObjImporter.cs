@@ -40,14 +40,27 @@ namespace com.google.apps.peltzer.client.model.import
         public static bool MMeshFromObjFile(string objFileContents, string mtlFileContents, int id, out MMesh result)
         {
             Dictionary<string, Material> materials = ImportMaterials(mtlFileContents);
-            Dictionary<Material, List<MeshVerticesAndTriangles>> materialsAndMeshes;
-            if (ImportMeshes(objFileContents, materials, out materialsAndMeshes))
+            var success = ImportMeshes(id, objFileContents, materials, out MMesh mmesh);
+            if (success)
             {
-                result = MeshHelper.MMeshFromMeshes(id, materialsAndMeshes);
+                result = mmesh;
                 return true;
             }
             result = null;
             return false;
+        }
+
+        private static int TryGetMaterialId(Material material)
+        {
+            if (material.name.StartsWith("mat"))
+            {
+                int val = 1;
+                if (int.TryParse(material.name.Substring(3), out val))
+                {
+                    return val;
+                }
+            }
+            return 1;
         }
 
         public static Dictionary<string, Material> ImportMaterials(string materialsString)
@@ -63,7 +76,7 @@ namespace com.google.apps.peltzer.client.model.import
                 {
                     if (currentText.StartsWith("newmtl"))
                     {
-                        string materialName = currentText.Split(' ')[1];
+                        string materialName = currentText.Split(new [] {' '}, StringSplitOptions.RemoveEmptyEntries)[1];
                         Color materialColor = Color.white;
 
                         currentText = reader.ReadLine();
@@ -72,13 +85,13 @@ namespace com.google.apps.peltzer.client.model.import
                             currentText = currentText.Trim();
                             if (currentText.StartsWith("Ka"))
                             {
-                                string[] colorString = currentText.Split(' ');
+                                string[] colorString = currentText.Split(new [] {' '}, StringSplitOptions.RemoveEmptyEntries);
                                 materialColor = new Color(float.Parse(colorString[1]), float.Parse(colorString[2]),
                                   float.Parse(colorString[3]));
                             }
                             else if (currentText.StartsWith("Kd"))
                             {
-                                string[] colorString = currentText.Split(' ');
+                                string[] colorString = currentText.Split(new [] {'/'}, StringSplitOptions.RemoveEmptyEntries);
                                 materialColor = new Color(float.Parse(colorString[1]), float.Parse(colorString[2]),
                                   float.Parse(colorString[3]));
                             }
@@ -113,17 +126,17 @@ namespace com.google.apps.peltzer.client.model.import
             return materials;
         }
 
-        private class Face
+        public class FFace
         {
             public List<int> vertexIds = new List<int>();
         }
 
-        public static bool ImportMeshes(string objFileContents,
-          Dictionary<string, Material> materials, out Dictionary<Material, List<MeshVerticesAndTriangles>> meshes)
+        public static bool ImportMeshes(int id, string objFileContents, Dictionary<string, Material> materials, out MMesh mmesh)
         {
-            meshes = new Dictionary<Material, List<MeshVerticesAndTriangles>>();
-            if (objFileContents == null || objFileContents.Length == 0)
+
+            if (string.IsNullOrEmpty(objFileContents))
             {
+                mmesh = null;
                 return false;
             }
 
@@ -135,9 +148,9 @@ namespace com.google.apps.peltzer.client.model.import
                 materials.Add(currentMaterial, MaterialRegistry.GetMaterialAndColorById(0).material);
             }
 
-            List<Vector3> allVertices = new List<Vector3>();
-            List<Vector2> allTexVertices = new List<Vector2>();
-            Dictionary<string, List<Face>> faces = new Dictionary<string, List<Face>>();
+            var allVertices = new Dictionary<string, List<Vertex>>();
+            var allTexVertices = new Dictionary<string, List<Vector2>>();
+            var allFaces = new Dictionary<string, List<FFace>>();
 
             string[] parts;
             char[] sep = { ' ' };
@@ -146,55 +159,69 @@ namespace com.google.apps.peltzer.client.model.import
             string[] sep4 = { "//" };
             using (StringReader reader = new StringReader(objFileContents))
             {
+
+                Dictionary<int, Vertex> verticesById = new Dictionary<int, Vertex>();
+                Dictionary<int, Face> facesById = new Dictionary<int, Face>();
+
                 string line = reader.ReadLine();
                 while (line != null)
                 {
                     if (line.StartsWith("v "))
                     {
-                        parts = line.Trim().Split(sep);
-                        if (parts.Count() < 4)
+                        parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length < 4)
                         {
                             Debug.Log("Not enough vertex values");
                             Debug.Log(line);
+                            mmesh = null;
                             return false;
                         }
                         try
                         {
-                            allVertices.Add(new Vector3(Convert.ToSingle(parts[1]), Convert.ToSingle(parts[2]), Convert.ToSingle(parts[3])));
+                            var v = new Vector3(Convert.ToSingle(parts[1]), Convert.ToSingle(parts[2]), Convert.ToSingle(parts[3]));
+                            if (!allVertices.ContainsKey(currentMaterial)) allVertices.Add(currentMaterial, new List<Vertex>());
+                            int vIndex = verticesById.Count;
+                            var vert = new Vertex(vIndex, v);
+                            verticesById.Add(vIndex, vert);
+                            allVertices[currentMaterial].Add(vert);
                         }
                         catch (FormatException)
                         {
                             Debug.Log("Unexpected vertex value");
                             Debug.Log(line);
+                            mmesh = null;
                             return false;
                         }
                     }
                     else if (line.StartsWith("vt "))
                     {
-                        parts = line.Trim().Split(sep);
+                        parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Count() < 3)
                         {
                             Debug.Log("Not enough tex vertex values");
                             Debug.Log(line);
+                            mmesh = null;
                             return false;
                         }
                         try
                         {
-                            allTexVertices.Add(new Vector2(Convert.ToSingle(parts[1]), Convert.ToSingle(parts[2])));
+                            if (!allTexVertices.ContainsKey(currentMaterial)) allTexVertices.Add(currentMaterial, new List<Vector2>());
+                            allTexVertices[currentMaterial].Add(new Vector2(Convert.ToSingle(parts[1]), Convert.ToSingle(parts[2])));
                         }
                         catch (FormatException)
                         {
                             Debug.Log("Unexpected tex vertex value");
                             Debug.Log(line);
+                            mmesh = null;
                             return false;
                         }
                     }
                     else if (line.StartsWith("usemtl ") && mtlFileWasSupplied)
                     {
-                        parts = line.Trim().Split(sep);
+                        parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
                         if (parts[1].Contains(sep2[0]))
                         {
-                            currentMaterial = parts[1].Split(sep2)[1];
+                            currentMaterial = parts[1].Split(sep2, StringSplitOptions.RemoveEmptyEntries)[1];
                         }
                         else
                         {
@@ -203,72 +230,73 @@ namespace com.google.apps.peltzer.client.model.import
                     }
                     else if (line.StartsWith("f "))
                     {
-                        parts = line.Trim().Split(sep);
+                        parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Length < 4)
                         {
                             Debug.Log("Not vertex values in a face");
                             Debug.Log(line);
+                            mmesh = null;
                             return false;
                         }
-                        Face face = new Face();
+                        FFace face = new FFace();
                         for (int i = 1; i < parts.Length; i++)
                         {
                             if (parts[i].Contains(sep4[0]))
                             {
                                 // -1 as vertices are 0-indexed when read but 1-indexed when referenced.
-                                face.vertexIds.Add(int.Parse(parts[i].Split(sep4, StringSplitOptions.None)[0]) - 1);
+                                face.vertexIds.Add(int.Parse(parts[i].Split(sep4, StringSplitOptions.RemoveEmptyEntries)[0]) - 1);
                             }
                             else if (parts[i].Contains(sep3[0]))
                             {
                                 // -1 as vertices are 0-indexed when read but 1-indexed when referenced.
-                                face.vertexIds.Add(int.Parse(parts[i].Split(sep3)[0]) - 1);
+                                face.vertexIds.Add(int.Parse(parts[i].Split(sep3, StringSplitOptions.RemoveEmptyEntries)[0]) - 1);
                                 //face.uvIds.Add(int.Parse(vIds[1]));
                             }
                             else
                             {
                                 // -1 as vertices are 0-indexed when read but 1-indexed when referenced.
-                                face.vertexIds.Add(int.Parse(parts[i]) - 1);
+                                string vIndex = parts[i].Split(new [] {'/'}, StringSplitOptions.RemoveEmptyEntries)[0]; // Ignore texture and normal indices.
+                                face.vertexIds.Add(int.Parse(vIndex) - 1);
                             }
                         }
-                        if (!faces.ContainsKey(currentMaterial))
+                        if (!allFaces.ContainsKey(currentMaterial))
                         {
-                            faces.Add(currentMaterial, new List<Face>());
+                            allFaces.Add(currentMaterial, new List<FFace>());
                         }
-                        faces[currentMaterial].Add(face);
+                        allFaces[currentMaterial].Add(face);
                     }
                     line = reader.ReadLine();
                 }
-            }
 
-            // Create one mesh per entry in faceList, as all faces will have the same material.
-            foreach (KeyValuePair<string, List<Face>> faceList in faces)
-            {
-                // A list of vertics in this mesh.
-                List<Vector3> meshVertices = new List<Vector3>();
-                // Used to translate a vertex id from the obj file to an index into meshVertices.
-                Dictionary<int, int> localVertexIds = new Dictionary<int, int>();
-                // A list of triangles in this mesh.
-                List<int> triangles = new List<int>();
-
-                foreach (Face face in faceList.Value)
+                // Create one mesh per entry in faceList, as all faces will have the same material.
+                foreach (KeyValuePair<string, List<FFace>> faceList in allFaces)
                 {
-                    foreach (int idx in face.vertexIds)
+                    int newFaceIndex = 0;
+                    // A list of triangles in this mesh.
+                    var faceIndices = new List<List<int>>();
+
+
+                    foreach (FFace face in faceList.Value)
                     {
-                        if (!localVertexIds.ContainsKey(idx))
+                        currentMaterial = faceList.Key;
+                        var singleFaceIndices = new List<int>();
+                        foreach (int idx in face.vertexIds)
                         {
-                            localVertexIds.Add(idx, meshVertices.Count);
-                            meshVertices.Add(allVertices[idx]);
+                            singleFaceIndices.Add(idx);
                         }
-                    }
-                    for (int i = 2; i < face.vertexIds.Count; i++)
-                    {
-                        triangles.Add(localVertexIds[face.vertexIds[i - 2]]);
-                        triangles.Add(localVertexIds[face.vertexIds[i - 1]]);
-                        triangles.Add(localVertexIds[face.vertexIds[i]]);
-                    }
-                } // foreach face
-                meshes.Add(materials[faceList.Key], BreakIntoMultipleMeshes(meshVertices, triangles));
-            } // foreach facelist
+                        //singleFaceIndices.Reverse();
+                        var newFace = new Face(
+                            newFaceIndex,
+                            singleFaceIndices.AsReadOnly(),
+                            verticesById,
+                            new FaceProperties(TryGetMaterialId(materials[currentMaterial]))
+                        );
+                        facesById.Add(newFaceIndex++, newFace);
+                        faceIndices.Add(singleFaceIndices);
+                    } // foreach face
+                } // foreach facelist
+                mmesh = new MMesh(id, Vector3.zero, Quaternion.identity, verticesById, facesById);
+            }
             return true;
         }
 

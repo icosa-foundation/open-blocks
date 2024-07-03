@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
@@ -43,6 +44,7 @@ namespace com.google.apps.peltzer.client.desktop_app
           "flag\n  lists/sets feature flags\n" +
           "fuse\n  fuses all selected meshes into a single mesh.\n" +
           "help\n  shows this help text\n" +
+          "import\n  insert 3d model (obj, block\n" +
           "insert\n  insert primitives\n" +
           "insertduration <duration>\n  sets the mesh insert effect duration (e.g. 0.6).\n" +
           "loadfile <path>\n  loads a model from the given file (use full path).\n" +
@@ -63,6 +65,7 @@ namespace com.google.apps.peltzer.client.desktop_app
         public GameObject consoleObject;
         public Text consoleOutput;
         public InputField consoleInput;
+        public ObjImportController objImportController;
 
         private string lastCommand = "";
 
@@ -73,6 +76,7 @@ namespace com.google.apps.peltzer.client.desktop_app
 
         public void Start()
         {
+            objImportController = gameObject.GetComponent<ObjImportController>();
             consoleOutput.text = "DEBUG CONSOLE\n" +
               "Blocks version: " + Config.Instance.version + "\n" +
               "For a list of available commands, type 'help'." +
@@ -190,11 +194,20 @@ namespace com.google.apps.peltzer.client.desktop_app
                 case "tut":
                     CommandTut(parts);
                     break;
+                case "import":
+                    CommandImport(parts);
+                    break;
                 default:
                     PrintLn("Unrecognized command: " + command);
                     PrintLn("Type 'help' for a list of commands.");
                     break;
             }
+        }
+
+        private void CommandImport(string[] parts)
+        {
+            string userPath = PeltzerMain.Instance.userPath;
+            objImportController.Import(parts.Skip(1).Select(p => Path.Combine(userPath, p)).ToArray());
         }
 
         private void PrintLn(string message)

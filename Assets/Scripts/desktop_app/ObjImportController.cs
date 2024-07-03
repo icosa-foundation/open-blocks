@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.IO;
+using System.Linq;
 using System.Text;
 // using System.Windows.Forms;
 
@@ -25,7 +26,7 @@ using com.google.apps.peltzer.client.model.export;
 namespace com.google.apps.peltzer.client.desktop_app
 {
     /// <summary>
-    ///   Responsible for handling the button-click to import obj files from the desktop app, and 
+    ///   Responsible for handling the button-click to import obj files from the desktop app, and
     ///   loading them into the model.
     /// </summary>
     public class ObjImportController : MonoBehaviour
@@ -37,14 +38,15 @@ namespace com.google.apps.peltzer.client.desktop_app
         private const float MIN_IMPORTED_OBJ_DISTANCE_FROM_USER = 2.0f;
 
         /// <summary>
-        ///   Handles the button-click to import an obj. Opens up a dialog and in the background, waits for the
+        ///   Either handles the button-click to import an obj. Opens up a dialog and in the background, waits for the
         ///   user to hit 'ok' with two files selected.
+        ///   or imports the obj files passed in as arguments.
         /// </summary>
-        public void SelectObjToImport()
+        public void Import(string[] filenames = null)
         {
             Model model = PeltzerMain.Instance.GetModel();
-            BackgroundWork openDialog = new OpenFileDialogAndLoadObj(model);
-            PeltzerMain.Instance.DoPolyMenuBackgroundWork(openDialog);
+            BackgroundWork work = new LoadObj(model, filenames);
+            PeltzerMain.Instance.DoPolyMenuBackgroundWork(work);
         }
 
         /// <summary>
@@ -69,51 +71,91 @@ namespace com.google.apps.peltzer.client.desktop_app
             }
         }
 
-        class OpenFileDialogAndLoadObj : BackgroundWork
+        public class LoadObj : BackgroundWork
         {
             // A reference to the model.
             private readonly Model model;
             // File contents to be passed from a background thread to a foreground thread.
             string mtlFileContents;
             string objFileContents;
+            private string[] filenames;
             PeltzerFile peltzerFile;
 
-            public OpenFileDialogAndLoadObj(Model model)
+            public LoadObj(Model model, string[] filenames = null)
             {
                 this.model = model;
+                this.filenames = filenames;
             }
 
             // In the background we perform all the File I/O to get file contents. There are no graceful failures here,
             // and there is no feedback to the user in case of failure.
             public void BackgroundWork()
             {
-                // OpenFileDialog dialog = new OpenFileDialog();
-                // dialog.Multiselect = true;
-                // Expect that the user selected two files, one .obj and one .mtl
-                // if (dialog.ShowDialog() == DialogResult.OK) {
-                //   if (dialog.FileNames.Length == 1) {
-                //     if (dialog.FileNames[0].EndsWith(".peltzer") || dialog.FileNames[0].EndsWith(".poly")
-                //        || dialog.FileNames[0].EndsWith(".blocks")) {
-                //       byte[] peltzerFileBytes = File.ReadAllBytes(dialog.FileNames[0]);
-                //       PeltzerFileHandler.PeltzerFileFromBytes(peltzerFileBytes, out peltzerFile);
-                //     } else if (dialog.FileNames[0].EndsWith(".obj")) {
-                //       objFileContents = FileToString(dialog.FileNames[0]);
-                //     } else {
-                //       Debug.Log("When selecting only one file for OBJ import, it must have a .obj extension");
-                //     }
-                //   } else if (dialog.FileNames.Length == 2) {
-                //     string objFile = dialog.FileNames[0].EndsWith(".obj") ? dialog.FileNames[0] : dialog.FileNames[1];
-                //     string mtlFile = dialog.FileNames[0].EndsWith(".mtl") ? dialog.FileNames[0] : dialog.FileNames[1];
-                //     if (!objFile.EndsWith(".obj") || !mtlFile.EndsWith(".mtl")) {
-                //       Debug.Log("When selecting two files for OBJ import, one must be .obj and the other .mtl");
-                //     }
+                if (filenames != null)
+                {
+                    DoImport(filenames);
+                }
+                else
+                {
+                    // OpenFileDialog dialog = new OpenFileDialog();
+                    // dialog.Multiselect = true;
+                    // // Expect that the user selected two files, one .obj and one .mtl
+                    // if (dialog.ShowDialog() == DialogResult.OK)
+                    // {
+                    //     DoImport(dialog.FileNames);
+                    // }
 
-                //     objFileContents = FileToString(objFile);
-                //     mtlFileContents = FileToString(mtlFile);
-                //   } else {
-                //     Debug.Log("Exactly one .obj file or a pair of .obj and .mtl files must be selected for OBJ import");
-                //   }
-                // }
+                }
+            }
+
+            public void DoImport(string[] filenames)
+            {
+                string objFile = null;
+                string mtlFile = null;
+
+                // Should we retire some of these file extensions?
+                // Does anything other than blocks exist in the wild?
+                if (filenames.Length == 1 &&
+                    (filenames[0].EndsWith(".peltzer")
+                    || filenames[0].EndsWith(".poly")
+                    || filenames[0].EndsWith(".blocks")))
+                {
+                    byte[] peltzerFileBytes = File.ReadAllBytes(filenames[0]);
+                    PeltzerFileHandler.PeltzerFileFromBytes(peltzerFileBytes, out peltzerFile);
+                    return;
+                }
+
+                if (filenames.Length == 1 && filenames[0].EndsWith(".obj"))
+                {
+                    objFile = filenames[0];
+                    mtlFile = filenames[0].Replace(".obj", ".mtl");
+                    if (!File.Exists(mtlFile))
+                    {
+                        mtlFile = null;
+                    }
+                }
+                else if (filenames.Length == 2)
+                {
+                    objFile = filenames.FirstOrDefault(f => f.EndsWith(".obj"));
+                    mtlFile = filenames.FirstOrDefault(f => f.EndsWith(".mtl"));
+                }
+
+                if (filenames.Length == 2 && mtlFile == null)
+                {
+                    Debug.Log("When selecting two files for OBJ import, one must be .obj and the other .mtl");
+                }
+                else if (objFile == null)
+                {
+                    Debug.Log("Exactly one .obj file or a pair of .obj and .mtl files must be selected for OBJ import");
+                }
+                else
+                {
+                    objFileContents = FileToString(objFile);
+                    if (mtlFile != null)
+                    {
+                        mtlFileContents = FileToString(mtlFile);
+                    }
+                }
             }
 
             // In the foreground we add the mesh to the model.
