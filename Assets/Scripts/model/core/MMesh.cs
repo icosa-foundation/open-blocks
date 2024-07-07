@@ -117,18 +117,20 @@ namespace com.google.apps.peltzer.client.model.core
         private Vector3 _offsetJitter;
 
         public MMesh(int id, Vector3 offset, Quaternion rotation,
-                     List<Vector3> verts, List<List<int>> faces,
-                     int groupId = GROUP_NONE, HashSet<string> remixIds = null)
+                     List<Vector3> verts, List<List<int>> faces, List<FaceProperties> faceProperties)
         {
-            Dictionary<int, Vertex> vDict = verts.Select((vec, idx) => new { vec, idx }).ToDictionary(v => v.idx, v => new Vertex(v.idx, v.vec));
-            var props = new FaceProperties(0); // TODO
-            Dictionary<int, Face> fDict = faces.Select((idxs, idx) => new { idxs, idx }).ToDictionary(v => v.idx, v => new Face(
-                v.idx,
-                v.idxs.AsReadOnly(),
-                vDict,
-                props
-            ));
-           Initialize(id, offset, rotation, vDict, fDict, groupId, remixIds);
+            Dictionary<int, Vertex> vDict = verts.Select((vec, idx) =>
+                new { vec, idx }).ToDictionary(v => v.idx, v => new Vertex(v.idx, v.vec)
+            );
+            Dictionary<int, Face> fDict = faces.Select((idxs, idx) =>
+                new { idxs, idx }).ToDictionary(f => f.idx, f =>
+                    new Face(
+                        f.idx,
+                        f.idxs.AsReadOnly(),
+                        vDict,
+                        faceProperties[f.idx]
+                    ));
+           Initialize(id, offset, rotation, vDict, fDict);
            RecalcBounds();
            RecalcReverseTable();
         }

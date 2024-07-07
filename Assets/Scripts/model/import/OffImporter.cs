@@ -28,6 +28,7 @@ using com.google.apps.peltzer.client.model.core;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using com.google.apps.peltzer.client.model.render;
 
 namespace com.google.apps.peltzer.client.model.import
 {
@@ -44,6 +45,7 @@ namespace com.google.apps.peltzer.client.model.import
         const string PrefixNDimension = "n";
         const string PrefixHomogeneousCoordinate = "4";
 
+        private static float defaultScale = 0.1f;
 
         /// <summary>
         ///   Creates an MMesh from the contents of a .off file with the given id.
@@ -151,6 +153,8 @@ namespace com.google.apps.peltzer.client.model.import
             var vertices = new List<Vector3>(vertexCount);
             var normals = hasNormal ? new List<Vector3>(vertexCount) : null;
             var colors = hasColor ? new List<Color>(vertexCount) : null;
+            var colorsPerFace = new List<Color>(faceCount);
+            var faceProperties = new List<FaceProperties>();
             var uvs = hasUv ? new List<Vector2>(vertexCount) : null;
             var faces = new List<List<int>>(faceCount);
 
@@ -186,10 +190,13 @@ namespace com.google.apps.peltzer.client.model.import
                 }
 
                 if (hasHomo) pos /= w;
-                vertices.Add(pos);
+                vertices.Add(pos * defaultScale);
                 if (hasNormal) normals.Add(normal);
-                if (hasColor) colors.Add(color);
                 if (hasUv) uvs.Add(uv);
+                if (hasColor)
+                {
+                    colors.Add(color);
+                }
             };
             for (int i = 0; i < vertexCount; i++)
             {
@@ -199,16 +206,38 @@ namespace com.google.apps.peltzer.client.model.import
             // Indexes
             Action<string[]> parseFace = tokens =>
             {
-                var faceVertexIndices = tokens.Select(int.Parse).ToList();
-                faceVertexIndices.RemoveAt(0); // Remove the first number which indicates the count
+                int numSides = int.Parse(tokens[0]);
+                var faceVertexIndices = tokens.Skip(1).Take(numSides).Select(int.Parse).ToList();
                 faces.Add(faceVertexIndices);
+                if (tokens.Length >= numSides + 4)
+                {
+                    var colValues = tokens.Skip(numSides + 1).Take(3).Select(float.Parse).ToList();
+                    colorsPerFace.Add(new Color(colValues[0], colValues[1], colValues[2]));
+                }
+                else if (hasColor)
+                {
+                    var faceColors = colors.Skip(colors.Count - faceVertexIndices.Count);
+                    var mostPopularColor = faceColors
+                        .GroupBy(color => color)
+                        .OrderByDescending(group => group.Count())
+                        .First()
+                        .Key;
+                    colorsPerFace.Add(mostPopularColor);
+                }
+                else
+                {
+                    colorsPerFace.Add(Color.white);
+                }
             };
+
             for (int i = 0; i < faceCount; i++)
             {
                 yield return parseFace;
             }
 
-            mmesh = new MMesh(id, Vector3.zero, Quaternion.identity, vertices, faces);
+            faceProperties = colorsPerFace.Select(color => new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(color))).ToList();
+
+            mmesh = new MMesh(id, Vector3.zero, Quaternion.identity, vertices, faces, faceProperties);
         }
     }
 }
