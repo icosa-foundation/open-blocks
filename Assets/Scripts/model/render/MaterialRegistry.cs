@@ -175,6 +175,35 @@ namespace com.google.apps.peltzer.client.model.render
         }
 
         /// <summary>
+        ///   Get the Material id closest to a given color.
+        /// </summary>
+        /// <param name="color">The color.</param>
+        /// <returns>A materialId.</returns>
+        public static int GetMaterialIdClosestToColor(Color color)
+        {
+            // Find the similarity to each color in rawColors
+            float minDistance = float.MaxValue;
+            int closestMaterialId = 0;
+            for (int i = 0; i < rawColors.Length; i++)
+            {
+                Color materialColor = new Color(r(rawColors[i]), g(rawColors[i]), b(rawColors[i]));
+                Color colorDiff = (color - materialColor);
+                float distance = new Vector3(colorDiff.r, colorDiff.g, colorDiff.b).sqrMagnitude;
+                if (distance < 0.0001f)
+                {
+                    closestMaterialId = i;
+                    break;
+                }
+                else if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestMaterialId = i;
+                }
+            }
+            return closestMaterialId;
+        }
+
+        /// <summary>
         ///   Get a Material's color given a materialId.
         /// </summary>
         /// <param name="materialId">The material id.</param>
