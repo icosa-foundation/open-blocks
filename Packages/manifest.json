@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.newtonsoft.json": "1.0.1",
-    "com.unity.ide.rider": "1.2.1",
+    "com.unity.ide.rider": "3.0.31",
     "com.unity.ide.vscode": "1.2.5",
     "com.unity.test-framework": "1.1.33",
     "com.unity.textmeshpro": "2.1.6",
