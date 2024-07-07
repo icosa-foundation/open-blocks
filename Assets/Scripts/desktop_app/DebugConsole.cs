@@ -30,6 +30,7 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.app;
+using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.desktop_app
 {
@@ -44,7 +45,7 @@ namespace com.google.apps.peltzer.client.desktop_app
           "flag\n  lists/sets feature flags\n" +
           "fuse\n  fuses all selected meshes into a single mesh.\n" +
           "help\n  shows this help text\n" +
-          "import\n  insert 3d model (obj, block\n" +
+          "import\n  import 3d model\n" +
           "insert\n  insert primitives\n" +
           "insertduration <duration>\n  sets the mesh insert effect duration (e.g. 0.6).\n" +
           "loadfile <path>\n  loads a model from the given file (use full path).\n" +
@@ -65,7 +66,7 @@ namespace com.google.apps.peltzer.client.desktop_app
         public GameObject consoleObject;
         public Text consoleOutput;
         public InputField consoleInput;
-        public ObjImportController objImportController;
+        [FormerlySerializedAs("objImportController")] public ModelImportController modelImportController;
 
         private string lastCommand = "";
 
@@ -76,7 +77,7 @@ namespace com.google.apps.peltzer.client.desktop_app
 
         public void Start()
         {
-            objImportController = gameObject.GetComponent<ObjImportController>();
+            modelImportController = gameObject.GetComponent<ModelImportController>();
             consoleOutput.text = "DEBUG CONSOLE\n" +
               "Blocks version: " + Config.Instance.version + "\n" +
               "For a list of available commands, type 'help'." +
@@ -204,10 +205,24 @@ namespace com.google.apps.peltzer.client.desktop_app
             }
         }
 
+        private void PrintImportCommandHelp()
+        {
+            PrintLn("Syntax: import {relative path}");
+            PrintLn("Path is relative to your Documents/Blocks folder.");
+            PrintLn("For example:");
+            PrintLn("   import mymodels/Andy.obj");
+            PrintLn("Supported filetypes: .obj, .off, .gltf, .glb");
+        }
+
         private void CommandImport(string[] parts)
         {
+            if (parts.Length < 2)
+            {
+                PrintImportCommandHelp();
+                return;
+            }
             string userPath = PeltzerMain.Instance.userPath;
-            objImportController.Import(parts.Skip(1).Select(p => Path.Combine(userPath, p)).ToArray());
+            modelImportController.Import(parts.Skip(1).Select(p => Path.Combine(userPath, p)).ToArray());
         }
 
         private void PrintLn(string message)

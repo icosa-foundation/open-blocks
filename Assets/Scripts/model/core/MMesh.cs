@@ -44,7 +44,7 @@ namespace com.google.apps.peltzer.client.model.core
     ///   An MMesh can be attached to (and detached from) a GameObject to make it render on the screen. In particular,
     ///   it is rendered by the MeshWithMaterialRenderer behavior, which takes the mesh, transforms into World Space
     ///   and renders it.
-    /// 
+    ///
     ///   Partial class is to allow GeometryOperation to be an inner class but have its own file.
     /// </summary>
     public partial class MMesh
@@ -117,22 +117,27 @@ namespace com.google.apps.peltzer.client.model.core
         private Vector3 _offsetJitter;
 
         public MMesh(int id, Vector3 offset, Quaternion rotation,
-          Dictionary<int, Vertex> verticesById, Dictionary<int, Face> facesById,
-          int groupId = GROUP_NONE, HashSet<string> remixIds = null)
+                     List<Vector3> verts, List<List<int>> faces,
+                     int groupId = GROUP_NONE, HashSet<string> remixIds = null)
         {
-            _id = id;
-            this._offset = offset;
-            System.Random rand = new System.Random();
+            Dictionary<int, Vertex> vDict = verts.Select((vec, idx) => new { vec, idx }).ToDictionary(v => v.idx, v => new Vertex(v.idx, v.vec));
+            var props = new FaceProperties(0); // TODO
+            Dictionary<int, Face> fDict = faces.Select((idxs, idx) => new { idxs, idx }).ToDictionary(v => v.idx, v => new Face(
+                v.idx,
+                v.idxs.AsReadOnly(),
+                vDict,
+                props
+            ));
+           Initialize(id, offset, rotation, vDict, fDict, groupId, remixIds);
+           RecalcBounds();
+           RecalcReverseTable();
+        }
 
-            this._offsetJitter = new Vector3((float)(rand.NextDouble() - 0.5) / 5000f,
-              (float)(rand.NextDouble() - 0.5) / 5000f,
-              (float)(rand.NextDouble() - 0.5) / 5000f);
-            this._rotation = rotation;
-            this.verticesById = verticesById;
-            this.facesById = facesById;
-            this.groupId = groupId;
-            this.remixIds = remixIds;
-            this.reverseTable = new Dictionary<int, HashSet<int>>();
+        public MMesh(int id, Vector3 offset, Quaternion rotation,
+                     Dictionary<int, Vertex> verticesById, Dictionary<int, Face> facesById,
+                     int groupId = GROUP_NONE, HashSet<string> remixIds = null)
+        {
+            Initialize(id, offset, rotation, verticesById, facesById, groupId, remixIds);
             RecalcBounds();
             RecalcReverseTable();
         }
@@ -142,18 +147,29 @@ namespace com.google.apps.peltzer.client.model.core
           Bounds bounds, Dictionary<int, HashSet<int>> reverseTable, int groupId = GROUP_NONE,
           HashSet<string> remixIds = null)
         {
+            Initialize(
+                id, offset, rotation, verticesById, facesById,
+                groupId, remixIds
+            );
+            this.bounds = bounds;
+            this.reverseTable = reverseTable;
+        }
+
+        private void Initialize(int id, Vector3 offset, Quaternion rotation,
+                                Dictionary<int, Vertex> verticesById, Dictionary<int, Face> facesById,
+                                int groupId = GROUP_NONE,
+                                HashSet<string> remixIds = null)
+        {
             _id = id;
             System.Random rand = new System.Random();
 
             this._offsetJitter = new Vector3((float)(rand.NextDouble() - 0.5) / 5000f,
-              (float)(rand.NextDouble() - 0.5) / 5000f,
-              (float)(rand.NextDouble() - 0.5) / 5000f);
+                (float)(rand.NextDouble() - 0.5) / 5000f,
+                (float)(rand.NextDouble() - 0.5) / 5000f);
             this._offset = offset;
             this._rotation = rotation;
             this.verticesById = verticesById;
             this.facesById = facesById;
-            this.bounds = bounds;
-            this.reverseTable = reverseTable;
             this.groupId = groupId;
             this.remixIds = remixIds;
         }
@@ -513,7 +529,8 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         public void RecalcReverseTable()
         {
-            reverseTable.Clear();
+            if (reverseTable == null) reverseTable = new Dictionary<int, HashSet<int>>();
+            else reverseTable.Clear();
             foreach (Face face in facesById.Values)
             {
                 for (int i = 0; i < face.vertexIds.Count; i++)

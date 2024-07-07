@@ -26,10 +26,10 @@ using com.google.apps.peltzer.client.model.export;
 namespace com.google.apps.peltzer.client.desktop_app
 {
     /// <summary>
-    ///   Responsible for handling the button-click to import obj files from the desktop app, and
+    ///   Responsible for handling the button-click to import 3d files from the desktop app, and
     ///   loading them into the model.
     /// </summary>
-    public class ObjImportController : MonoBehaviour
+    public class ModelImportController : MonoBehaviour
     {
         /// <summary>
         /// When an OBJ file is imported, this indicates the minimum distance at which it will appear in front of
@@ -42,10 +42,10 @@ namespace com.google.apps.peltzer.client.desktop_app
         ///   user to hit 'ok' with two files selected.
         ///   or imports the obj files passed in as arguments.
         /// </summary>
-        public void Import(string[] filenames = null)
+        public void Import(string[] filenames)
         {
             Model model = PeltzerMain.Instance.GetModel();
-            BackgroundWork work = new LoadObj(model, filenames);
+            BackgroundWork work = new LoadObjects(model, filenames);
             PeltzerMain.Instance.DoPolyMenuBackgroundWork(work);
         }
 
@@ -71,17 +71,26 @@ namespace com.google.apps.peltzer.client.desktop_app
             }
         }
 
-        public class LoadObj : BackgroundWork
+        enum FileType
+        {
+            OBJ,
+            OFF,
+            GLTF,
+            BLOCKS
+        }
+
+        public class LoadObjects : BackgroundWork
         {
             // A reference to the model.
             private readonly Model model;
             // File contents to be passed from a background thread to a foreground thread.
-            string mtlFileContents;
-            string objFileContents;
+            string materialFileContents;
+            string objectFileContents;
+            FileType fileType;
             private string[] filenames;
             PeltzerFile peltzerFile;
 
-            public LoadObj(Model model, string[] filenames = null)
+            public LoadObjects(Model model, string[] filenames = null)
             {
                 this.model = model;
                 this.filenames = filenames;
@@ -93,7 +102,27 @@ namespace com.google.apps.peltzer.client.desktop_app
             {
                 if (filenames != null)
                 {
-                    DoImport(filenames);
+
+                    if (filenames.Length == 1 && filenames[0].EndsWith(".blocks"))
+                    {
+                        DoBlocksImport(filenames[0]);
+                    }
+                    else if (filenames.Length == 1 && filenames[0].EndsWith(".off"))
+                    {
+                        DoOffImport(filenames[0]);
+                    }
+                    else if (filenames.Length == 1 && filenames[0].EndsWith(".glb"))
+                    {
+                        DoGltfImport(filenames);
+                    }
+                    else if (filenames.Length == 2 && (filenames[0].EndsWith(".gltf") || filenames[1].EndsWith(".gltf")))
+                    {
+                        DoGltfImport(filenames);
+                    }
+                    else if (filenames.Length == 2 && (filenames[0].EndsWith(".obj") || filenames[1].EndsWith(".obj")))
+                    {
+                        DoObjImport(filenames);
+                    }
                 }
                 else
                 {
@@ -108,11 +137,14 @@ namespace com.google.apps.peltzer.client.desktop_app
                 }
             }
 
-            public void DoImport(string[] filenames)
+            public void DoGltfImport(string[] filenames)
             {
-                string objFile = null;
-                string mtlFile = null;
+                fileType = FileType.GLTF;
+            }
 
+            public void DoBlocksImport(string filename)
+            {
+                fileType = FileType.BLOCKS;
                 // Should we retire some of these file extensions?
                 // Does anything other than blocks exist in the wild?
                 if (filenames.Length == 1 &&
@@ -122,8 +154,20 @@ namespace com.google.apps.peltzer.client.desktop_app
                 {
                     byte[] peltzerFileBytes = File.ReadAllBytes(filenames[0]);
                     PeltzerFileHandler.PeltzerFileFromBytes(peltzerFileBytes, out peltzerFile);
-                    return;
                 }
+            }
+
+            public void DoOffImport(string filename)
+            {
+                objectFileContents = FileToString(filename);
+                fileType = FileType.OFF;
+            }
+
+            public void DoObjImport(string[] filenames)
+            {
+                fileType = FileType.OBJ;
+                string objFile = null;
+                string mtlFile = null;
 
                 if (filenames.Length == 1 && filenames[0].EndsWith(".obj"))
                 {
@@ -150,10 +194,10 @@ namespace com.google.apps.peltzer.client.desktop_app
                 }
                 else
                 {
-                    objFileContents = FileToString(objFile);
+                    objectFileContents = FileToString(objFile);
                     if (mtlFile != null)
                     {
-                        mtlFileContents = FileToString(mtlFile);
+                        materialFileContents = FileToString(mtlFile);
                     }
                 }
             }
@@ -174,9 +218,29 @@ namespace com.google.apps.peltzer.client.desktop_app
                     Vector3 headInModelSpace = PeltzerMain.Instance.worldSpace.WorldToModel(
                         PeltzerMain.Instance.hmd.transform.position);
                     Vector3 headForward = PeltzerMain.Instance.hmd.transform.forward;
-                    // Request that the OBJ file's geometry be positioned reasonably, so that it appears in front
+
+
+                    MMesh mesh = null;
+                    switch (fileType)
+                    {
+                        case FileType.OBJ:
+                            model.MMeshFromObj(objectFileContents, materialFileContents, out mesh);
+                            break;
+                        case FileType.OFF:
+                            model.MMeshFromOff(objectFileContents, out mesh);
+                            break;
+                        case FileType.GLTF:
+                            break;
+                        case FileType.BLOCKS:
+                            // Everything done in DoBlocksImport
+                            return;
+                    }
+
+                    // Request that the geometry be positioned reasonably, so that it appears in front
                     // of the user at the given minimum distance.
-                    model.AddMeshFromObjAndMtl(objFileContents, mtlFileContents, headInModelSpace, headForward,
+                    model.AddMMesh(mesh,
+                        headInModelSpace,
+                        headForward,
                         MIN_IMPORTED_OBJ_DISTANCE_FROM_USER);
                 }
             }

@@ -346,6 +346,7 @@ namespace com.google.apps.peltzer.client.model.core
         /// <returns>True if the mesh can be added.</returns>
         public bool CanAddMesh(MMesh mesh)
         {
+
             return Math3d.ContainsBounds(bounds, mesh.bounds);
         }
 
@@ -413,22 +414,13 @@ namespace com.google.apps.peltzer.client.model.core
         /// <param name="minDistanceFromViewer">The minimum distance from the viewer at which the imported geometry
         /// should be placed.</returns>
         /// <returns>True if the mesh was added to the model.</returns>
-        public bool AddMeshFromObjAndMtl(string objFileContents, string mtlFileContents, Vector3 viewerPosInModelSpace,
+        public bool AddMMesh(MMesh mesh, Vector3 viewerPosInModelSpace,
             Vector3 viewerDirInModelSpace, float minDistanceFromViewer)
         {
             AssertOrThrow.True(writeable, "Model is not writable.");
 
-            MMesh mesh;
-            if (!ObjImporter.MMeshFromObjFile(objFileContents, mtlFileContents, GenerateMeshId(), out mesh) ||
-                !CanAddMesh(mesh))
-            {
-                return false;
-            }
 
             // We will now transform the mesh such that it's in front of the user but at the specified minimum distance.
-
-            // Get the original bounding box.
-            Bounds bounds = mesh.bounds;
 
             // Rotate the mesh to match the direction of the viewer.
             MMesh.MoveMMesh(mesh, Vector3.zero, Quaternion.FromToRotation(Vector3.forward, viewerDirInModelSpace));
@@ -1166,6 +1158,25 @@ namespace com.google.apps.peltzer.client.model.core
             }
             builder.Append("]\n");
             return builder.ToString();
+        }
+
+        public bool MMeshFromObj(string modelFileContents, string materialFileContents, out MMesh mesh)
+        {
+            if (!ObjImporter.MMeshFromObjFile(modelFileContents, materialFileContents, GenerateMeshId(), out mesh)
+                || !CanAddMesh(mesh))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool MMeshFromOff(string modelFileContents, out MMesh mesh)
+        {
+            if (!OffImporter.MMeshFromOffFile(modelFileContents, GenerateMeshId(), out mesh) || !CanAddMesh(mesh))
+            {
+                return false;
+            }
+            return true;
         }
     }
 }
