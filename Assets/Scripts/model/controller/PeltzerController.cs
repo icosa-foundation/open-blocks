@@ -664,8 +664,10 @@ namespace com.google.apps.peltzer.client.model.controller
         private void HandleMenuItemPoint()
         {
             // Cast a ray from the controller and see if it hits the menu.
-            Vector3 controllerRayVector;
-            Vector3 controllerRayOrigin;
+
+            Vector3 controllerRayVector = Vector3.forward;
+            Vector3 controllerRayOrigin = transform.position;
+
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
                 if (Config.Instance.sdkMode == SdkMode.SteamVR)
@@ -673,17 +675,24 @@ namespace com.google.apps.peltzer.client.model.controller
                     controllerRayVector = Quaternion.Euler(45, 0, 0) * Vector3.forward;
                     controllerRayOrigin = transform.position + new Vector3(0, -0.045f, 0);
                 }
-                else
+            }
+            else if (Config.Instance.sdkMode == SdkMode.Desktop)
+            {
+                // Use mouse as pointer
+                controllerRayOrigin = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Camera.main.nearClipPlane));
+                controllerRayVector = Camera.main.transform.forward;
+            }
+            else if (Config.Instance.sdkMode == SdkMode.Mobile)
+            {
+                if (Input.touchCount > 0)
                 {
-                    controllerRayVector = Vector3.forward;
-                    controllerRayOrigin = transform.position;// + new Vector3(0, -0.045f, 0);
+                    Touch touch = Input.GetTouch(0); // Get the first touch
+                    // Convert touch position to world space
+                    controllerRayOrigin = Camera.main.ScreenToWorldPoint(new Vector3(touch.position.x, touch.position.y, Camera.main.nearClipPlane));
+                    controllerRayVector = Camera.main.transform.forward; // Use the camera's forward direction
                 }
             }
-            else
-            {
-                controllerRayVector = Vector3.forward;
-                controllerRayOrigin = transform.position;
-            }
+
             if (!Physics.Raycast(controllerRayOrigin, transform.TransformDirection(controllerRayVector),
               out menuHit, PALETTE_DISTANCE_THRESHOLD))
             {
