@@ -55,7 +55,7 @@ namespace com.google.apps.peltzer.client.desktop_app
         /// </summary>
         /// <param name="filename">The file to read.</param>
         /// <returns>The file as a string, with newlines preserved.</returns>
-        private static string FileToString(string filename)
+        public static string FileToString(string filename)
         {
             StringBuilder stringBuilder = new StringBuilder();
             using (FileStream fileStream = File.Open(filename, FileMode.Open))
@@ -83,12 +83,10 @@ namespace com.google.apps.peltzer.client.desktop_app
         {
             // A reference to the model.
             private readonly Model model;
-            // File contents to be passed from a background thread to a foreground thread.
-            string materialFileContents;
-            string objectFileContents;
             FileType fileType;
-            private string[] filenames;
+            private string[] filenames; // Prior to validation
             PeltzerFile peltzerFile;
+            private string[] modelFilenames; // Validated filenames
 
             public LoadObjects(Model model, string[] filenames = null)
             {
@@ -140,6 +138,7 @@ namespace com.google.apps.peltzer.client.desktop_app
             public void DoGltfImport(string[] filenames)
             {
                 fileType = FileType.GLTF;
+                modelFilenames = filenames;
             }
 
             public void DoBlocksImport(string filename)
@@ -159,7 +158,7 @@ namespace com.google.apps.peltzer.client.desktop_app
 
             public void DoOffImport(string filename)
             {
-                objectFileContents = FileToString(filename);
+                modelFilenames = new[] { filename };
                 fileType = FileType.OFF;
             }
 
@@ -194,11 +193,7 @@ namespace com.google.apps.peltzer.client.desktop_app
                 }
                 else
                 {
-                    objectFileContents = FileToString(objFile);
-                    if (mtlFile != null)
-                    {
-                        materialFileContents = FileToString(mtlFile);
-                    }
+                    modelFilenames = new string[] { objFile, mtlFile };
                 }
             }
 
@@ -224,12 +219,13 @@ namespace com.google.apps.peltzer.client.desktop_app
                     switch (fileType)
                     {
                         case FileType.OBJ:
-                            model.MMeshFromObj(objectFileContents, materialFileContents, out mesh);
+                            model.MMeshFromObj(modelFilenames, out mesh);
                             break;
                         case FileType.OFF:
-                            model.MMeshFromOff(objectFileContents, out mesh);
+                            model.MMeshFromOff(modelFilenames, out mesh);
                             break;
                         case FileType.GLTF:
+                            mesh = model.MMeshFromGltf(modelFilenames);
                             break;
                         case FileType.BLOCKS:
                             // Everything done in DoBlocksImport

@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.util;
@@ -22,7 +23,8 @@ using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.import;
 using System.Linq;
 using System.Text;
-using com.google.apps.peltzer.client.model.export;
+using com.google.apps.peltzer.client.desktop_app;
+using TiltBrushToolkit;
 
 namespace com.google.apps.peltzer.client.model.core
 {
@@ -347,6 +349,7 @@ namespace com.google.apps.peltzer.client.model.core
         public bool CanAddMesh(MMesh mesh)
         {
 
+            return true; // TODO
             return Math3d.ContainsBounds(bounds, mesh.bounds);
         }
 
@@ -1160,8 +1163,10 @@ namespace com.google.apps.peltzer.client.model.core
             return builder.ToString();
         }
 
-        public bool MMeshFromObj(string modelFileContents, string materialFileContents, out MMesh mesh)
+        public bool MMeshFromObj(string[] filenames, out MMesh mesh)
         {
+            string modelFileContents = ModelImportController.FileToString(filenames[0]);
+            string materialFileContents = ModelImportController.FileToString(filenames[1]);
             if (!ObjImporter.MMeshFromObjFile(modelFileContents, materialFileContents, GenerateMeshId(), out mesh)
                 || !CanAddMesh(mesh))
             {
@@ -1170,13 +1175,25 @@ namespace com.google.apps.peltzer.client.model.core
             return true;
         }
 
-        public bool MMeshFromOff(string modelFileContents, out MMesh mesh)
+        public bool MMeshFromOff(string[] filenames, out MMesh mesh)
         {
-            if (!OffImporter.MMeshFromOffFile(modelFileContents, GenerateMeshId(), out mesh) || !CanAddMesh(mesh))
+            string fileContents = ModelImportController.FileToString(filenames[0]);
+            if (!OffImporter.MMeshFromOffFile(fileContents, GenerateMeshId(), out mesh) || !CanAddMesh(mesh))
             {
                 return false;
             }
             return true;
+        }
+
+        public MMesh MMeshFromGltf(string[] filenames)
+        {
+            IUriLoader loader = new BufferedStreamLoader(
+                filenames[0], Path.GetDirectoryName(filenames[0]));
+            GltfImportOptions options = GltfImportOptions.Default();
+            options.rescalingMode = GltfImportOptions.RescalingMode.FIT;
+            options.desiredSize = 1f;
+            var gltfMesh = ImportGltf.Import(filenames[0], loader, null, options);
+            return MeshHelper.MMeshFromMeshes(gltfMesh.meshes);
         }
     }
 }
