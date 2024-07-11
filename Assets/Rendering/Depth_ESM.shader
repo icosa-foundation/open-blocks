@@ -68,12 +68,12 @@ Shader "Mogwai/Shadow/Depth_ESM"
 
 
             // Stores both linear and exponential depth in the shadow texture
-            float2 fragLinear (VertexOutput fragment) : SV_Target
+            float4 fragLinear (VertexOutput fragment) : SV_Target
             {
                 float depth = (length(fragment.worldPosition.xyz - _WorldSpaceCameraPos.xyz))*_ShadowInfo.x;
                 /// ESM, higher values increase quality, at the price of stability
                 float depth2 = INV_E_40 * exp(40*min(depth - 0.002, 1.0));
-                return float2(depth, depth2);
+                return float4(depth, depth2, 0, 0);
             }
             ENDCG
         }
@@ -123,13 +123,13 @@ Shader "Mogwai/Shadow/Depth_ESM"
                     }
          
                    // Stores both linear and exponential depth in the shadow texture
-                   float2 fragLinear (VertexOutput fragment) : SV_Target
+                   float4 fragLinear (VertexOutput fragment) : SV_Target
                    {
              
                      float depth = (length(fragment.worldPosition.xyz - _WorldSpaceCameraPos.xyz))*_ShadowInfo.x;
                      /// ESM, higher values increase quality, at the price of stability
                      float depth2 = INV_E_40 * exp(40*min(depth - 0.002, 1.0));
-                     return float2(depth, depth2);
+                     return float4(depth, depth2, 0, 0);
                    }
                     ENDCG
                 }
