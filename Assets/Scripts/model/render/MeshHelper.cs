@@ -525,27 +525,6 @@ namespace com.google.apps.peltzer.client.model.render
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         private static int TryGetMaterialId(Material material)
         {
             if (material.name.StartsWith("mat"))
