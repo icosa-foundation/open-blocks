@@ -407,6 +407,7 @@ namespace com.google.apps.peltzer.client.model.controller
             tooltips.Add(ControllerMode.reshape, controllerGeometry.modifyTooltips);
             tooltips.Add(ControllerMode.subdivideMesh, controllerGeometry.modifyTooltips);
             tooltips.Add(ControllerMode.subdivideFace, controllerGeometry.modifyTooltips);
+            tooltips.Add(ControllerMode.subdividePlane, controllerGeometry.modifyTooltips);
             tooltips.Add(ControllerMode.paintFace, controllerGeometry.paintTooltips);
             tooltips.Add(ControllerMode.paintMesh, controllerGeometry.paintTooltips);
             tooltips.Add(ControllerMode.move, controllerGeometry.grabTooltips);
@@ -1192,6 +1193,10 @@ namespace com.google.apps.peltzer.client.model.controller
                     {
                         ChangeMode(ControllerMode.subdivideFace);
                     }
+                    else if (location == TouchpadLocation.BOTTOM && mode != ControllerMode.subdividePlane)
+                    {
+                        ChangeMode(ControllerMode.subdividePlane);
+                    }
                     else if (location == TouchpadLocation.RIGHT && mode != ControllerMode.extrude)
                     {
                         ChangeMode(ControllerMode.extrude);
@@ -1243,7 +1248,8 @@ namespace com.google.apps.peltzer.client.model.controller
             return mode == ControllerMode.reshape
               || mode == ControllerMode.extrude
               || mode == ControllerMode.subdivideFace
-              || mode == ControllerMode.subdivideMesh;
+              || mode == ControllerMode.subdivideMesh
+              || mode == ControllerMode.subdividePlane;
         }
 
         private bool IsDeleteMode(ControllerMode mode)
@@ -1335,6 +1341,7 @@ namespace com.google.apps.peltzer.client.model.controller
                             case ControllerMode.reshape:
                             case ControllerMode.subdivideFace:
                             case ControllerMode.subdivideMesh:
+                            case ControllerMode.subdividePlane:
                                 attachedToolHead.GetComponent<ModifyToolheadAnimation>().Deactivate();
                                 switch (newMode)
                                 {
@@ -1343,6 +1350,7 @@ namespace com.google.apps.peltzer.client.model.controller
                                         break;
                                     case ControllerMode.subdivideFace:
                                     case ControllerMode.subdivideMesh:
+                                    case ControllerMode.subdividePlane:
                                         PeltzerMain.Instance.GetSelector().UpdateInactive(Selector.EDGES_ONLY);
                                         break;
                                     default:
@@ -1610,6 +1618,14 @@ namespace com.google.apps.peltzer.client.model.controller
                     // Extrude.
                     controllerGeometry.modifyOverlay.GetComponent<Overlay>().rightIcon.color = halfWhite;
                     break;
+                case ControllerMode.subdividePlane:
+                    // Subdivide.
+                    controllerGeometry.modifyOverlay.GetComponent<Overlay>().leftIcon.color = fullWhite;
+                    // Reshape.
+                    controllerGeometry.modifyOverlay.GetComponent<Overlay>().upIcon.color = halfWhite;
+                    // Extrude.
+                    controllerGeometry.modifyOverlay.GetComponent<Overlay>().rightIcon.color = halfWhite;
+                    break;
                 case ControllerMode.reshape:
                     // Subdivide.
                     controllerGeometry.modifyOverlay.GetComponent<Overlay>().leftIcon.color = halfWhite;
@@ -1689,6 +1705,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ControllerMode.extrude:
                 case ControllerMode.subdivideFace:
                 case ControllerMode.subdivideMesh:
+                case ControllerMode.subdividePlane:
                     currentOverlayGO = controllerGeometry.modifyOverlay;
                     break;
                 case ControllerMode.delete:
@@ -1736,6 +1753,9 @@ namespace com.google.apps.peltzer.client.model.controller
                     ChangeTouchpadOverlay(TouchpadOverlay.MODIFY);
                     break;
                 case ControllerMode.subdivideMesh:
+                    ChangeTouchpadOverlay(TouchpadOverlay.MODIFY);
+                    break;
+                case ControllerMode.subdividePlane:
                     ChangeTouchpadOverlay(TouchpadOverlay.MODIFY);
                     break;
                 case ControllerMode.deletePart:
