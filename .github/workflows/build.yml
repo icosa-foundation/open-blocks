@@ -562,7 +562,7 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [build]
+    needs: [configuration, build]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-blocks' &&
