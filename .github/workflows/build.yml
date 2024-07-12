@@ -484,6 +484,82 @@ jobs:
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
 
+  publish_gitbook:
+    name: Publish changelog from last major build to open-blocks-docs
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-blocks' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    steps:
+      - name: "Build Changelog"
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          fromTag: "${{ needs.configuration.outputs.previousfullrelease }}"
+          toTag: "${{ needs.configuration.outputs.currentrelease }}"
+          configurationJson: |
+            {
+              "categories": [
+                {
+                    "title": "## 🚀 Features",
+                    "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🎨 UI / UX",
+                    "labels": ["ux"]
+                },
+                {
+                    "title": "## 🐛 Fixes",
+                    "labels": ["fix", "bugfix"]
+                },
+                {
+                    "title": "## 🛠️ Infrastructure",
+                    "labels": ["infrastructure"]
+                },
+                {
+                    "title": "## 📦 Dependencies / Maintenance",
+                    "labels": ["dependencies", "maintenance"]
+                },
+                {
+                    "title": "## 💬 Uncategorized",
+                    "labels": []
+                }
+              ],
+              "template": "# Changelog since #{{FROM_TAG}}\n\n[Full release details](#{{RELEASE_DIFF}})\n\n#{{CHANGELOG}}\n\n",
+              "pr_template": "- #{{TITLE}} ([PR ##{{NUMBER}}](#{{URL}}) by @#{{AUTHOR}})\n"
+            }
+
+      - name: Get the current contents of the docs repository
+        uses: actions/checkout@v4
+        with:
+          repository: icosa-foundation/open-blocks-docs
+          path: open-blocks-docs
+          ref: main
+          fetch-depth: 0
+          sparse-checkout: |
+            release-history/
+
+      - name: Create Changelog file
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        run: |
+          echo "$CHANGELOG" | tee open-blocks-docs/release-history/automatic-changelog.md
+
+      - name: Publish release notes
+        uses: cpina/github-action-push-to-another-repository@composite-1.5.1
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.OPENBLOCKS_DOCS_SSH_DEPLOY_KEY }}
+        with:
+          source-directory: 'open-blocks-docs/release-history/'
+          target-directory: 'release-history/'
+          destination-github-username: 'icosa-foundation'
+          destination-repository-name: 'open-blocks-docs'
+          user-name: 'release-note-bot'
+          user-email: automatic-release@icosa
+          target-branch: main
+
   publish_steam:
     name: Publish Steam Release
     needs: [build]
