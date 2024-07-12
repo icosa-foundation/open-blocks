@@ -21,7 +21,7 @@ MonoBehaviour:
     value: 1
   intensity:
     overrideState: 1
-    value: 2.21
+    value: 0.75
   color:
     overrideState: 0
     value: {r: 0, g: 0, b: 0, a: 1}
@@ -44,8 +44,8 @@ MonoBehaviour:
     overrideState: 0
     value: 0
   radius:
-    overrideState: 0
-    value: 0.25
+    overrideState: 1
+    value: 0.05
   quality:
     overrideState: 0
     value: 2
