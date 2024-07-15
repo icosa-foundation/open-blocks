@@ -371,7 +371,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v4
-        if: github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -379,7 +379,7 @@ jobs:
           key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
 
       - name: Clean Library before caching
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: steps.cache_library.outputs.cache-hit != 'true'
         run: |
           # Remove the large files from the Library directory that we know we'll rebuild. As our il2cpp caches are huge and barely fit in the Github quota, it's better not to save an unneeded 1GB of space (or so). If a new Unity version is taken, this may need to be updated
           # Debugging
@@ -398,7 +398,7 @@ jobs:
 
       - name: Save Library/ cache
         uses: actions/cache/save@v4
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: steps.cache_library.outputs.cache-hit != 'true'
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -483,3 +483,135 @@ jobs:
           target_commitish: ${{ needs.configuration.outputs.currentrelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
+
+  publish_gitbook:
+    name: Publish changelog from last major build to open-blocks-docs
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-blocks' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    steps:
+      - name: "Build Changelog"
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          fromTag: "${{ needs.configuration.outputs.previousfullrelease }}"
+          toTag: "${{ needs.configuration.outputs.currentrelease }}"
+          configurationJson: |
+            {
+              "categories": [
+                {
+                    "title": "## 🚀 Features",
+                    "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🎨 UI / UX",
+                    "labels": ["ux"]
+                },
+                {
+                    "title": "## 🐛 Fixes",
+                    "labels": ["fix", "bugfix"]
+                },
+                {
+                    "title": "## 🛠️ Infrastructure",
+                    "labels": ["infrastructure"]
+                },
+                {
+                    "title": "## 📦 Dependencies / Maintenance",
+                    "labels": ["dependencies", "maintenance"]
+                },
+                {
+                    "title": "## 💬 Uncategorized",
+                    "labels": []
+                }
+              ],
+              "template": "# Changelog since #{{FROM_TAG}}\n\n[Full release details](#{{RELEASE_DIFF}})\n\n#{{CHANGELOG}}\n\n",
+              "pr_template": "- #{{TITLE}} ([PR ##{{NUMBER}}](#{{URL}}) by @#{{AUTHOR}})\n"
+            }
+
+      - name: Get the current contents of the docs repository
+        uses: actions/checkout@v4
+        with:
+          repository: icosa-foundation/open-blocks-docs
+          path: open-blocks-docs
+          ref: main
+          fetch-depth: 0
+          sparse-checkout: |
+            release-history/
+
+      - name: Create Changelog file
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        run: |
+          echo "$CHANGELOG" | tee open-blocks-docs/release-history/automatic-changelog.md
+
+      - name: Publish release notes
+        uses: cpina/github-action-push-to-another-repository@composite-1.5.1
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.OPENBLOCKS_DOCS_SSH_DEPLOY_KEY }}
+        with:
+          source-directory: 'open-blocks-docs/release-history/'
+          target-directory: 'release-history/'
+          destination-github-username: 'icosa-foundation'
+          destination-repository-name: 'open-blocks-docs'
+          user-name: 'release-note-bot'
+          user-email: automatic-release@icosa
+          target-branch: main
+
+  publish_steam:
+    name: Publish Steam Release
+    needs: [configuration, build]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-blocks' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            Support/steam
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+      - name: Setup steamcmd
+        uses: CyberAndrii/setup-steamcmd@v1.2.0
+      - name: Restore steam login config
+        run: |
+          mkdir -p /home/runner/Steam/config
+          echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
+          md5sum /home/runner/Steam/config/config.vdf
+      - name: Download Build Artifacts (Windows)
+        uses: actions/download-artifact@v4
+        with:
+          name: Windows
+          path: build_windows
+      - name: Upload Build
+        run: |
+          pip install -U jinjanator
+          jinjanate Support/steam/app.vdf.j2 > app.vdf
+          jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows/main_depot.vdf
+          #jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
+          steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
+        env:
+          STEAM_USERNAME: ${{ vars.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+          VERSION: ${{ needs.configuration.outputs.version }}
+          OPEN_BLOCKS_APP_ID: ${{ vars.STEAM_APP_ID }}
+          OPEN_BLOCKS_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
+          OPEN_BLOCKS_WINDOWS_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
+          CHANNEL: beta
+      - name: Update steam login secret
+        run: |
+          base64 -i /home/runner/Steam/config/config.vdf | gh secret set --visibility all --org icosa-foundation STEAM_CONFIG_VDF
+          md5sum /home/runner/Steam/config/config.vdf
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
+      - name: Save logs
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: steamcmd logs
+          path: build_output/
