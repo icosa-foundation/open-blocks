@@ -1,0 +1,14 @@
+"appbuild"
+{
+    "appid"        "{{ OPEN_BLOCKS_APP_ID }}"
+    "Desc"         "{{ VERSION }}"
+    "buildoutput"  "build_output/{{ CHANNEL }}" // Path for steamcmd logs
+    "contentroot"  "." // This file will be copied into the root of the release
+    "setlive"      "{{ CHANNEL }}"
+    "preview"      "0" // For local testing, set this to 1
+    "local"        "" // Not relevant; this is for a custom CDN
+    "depots"
+    {
+        "{{ OPEN_BLOCKS_WINDOWS_DEPOT_ID }}" build_windows/main_depot.vdf
+    }
+}
