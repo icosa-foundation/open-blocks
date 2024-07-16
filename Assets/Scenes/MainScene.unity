@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.40853927, g: 0.53450584, b: 0.6391914, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0.99999905, b: 0.99999905, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -2153,8 +2153,18 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 56afb5b52b5dcff4c8183d6f97f4fbed,
+      objectReference: {fileID: 21300000, guid: b031bd5fd729c5c4d994656b24569412,
         type: 3}
+    - target: {fileID: 114051507060132378, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
+        type: 3}
+      propertyPath: m_Maskable
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114051507060132378, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
+        type: 3}
+      propertyPath: m_PreserveAspect
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 114077332192982250, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
         type: 3}
       propertyPath: m_FontData.m_Font
@@ -2210,6 +2220,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 68.79
+      objectReference: {fileID: 0}
+    - target: {fileID: 224396917128763040, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -2.5
       objectReference: {fileID: 0}
     - target: {fileID: 224942881730647754, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
         type: 3}
