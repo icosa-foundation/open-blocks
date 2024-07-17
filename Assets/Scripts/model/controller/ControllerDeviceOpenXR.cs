@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using TiltBrush;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -52,14 +51,15 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void Update()
         {
-            throw new System.NotImplementedException();
+            // What do we need to do here?
         }
 
         public bool IsTrackedObjectValid { get; set; }
 
         public Vector3 GetVelocity()
         {
-            throw new System.NotImplementedException();
+            // TODO
+            return Vector3.zero;
         }
 
         private readonly UnityXRInputAction actionSet = new UnityXRInputAction();
@@ -75,32 +75,62 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Trigger:
                     return FindAction("TriggerAxis").IsPressed();
                 case ButtonId.Grip:
-                    return false;
+                    return FindAction("GripAxis").IsPressed();
                 case ButtonId.Touchpad:
-                    return false;
+                    return FindAction("ThumbButton").IsPressed();
                 case ButtonId.SecondaryButton:
-                    return false;
+                    return FindAction("SecondaryButton").IsPressed();
                 case ButtonId.ApplicationMenu:
+                    // TODO
                     return false;
                 default:
                     return false;
             }
-            throw new System.NotImplementedException();
         }
 
         public bool WasJustPressed(ButtonId buttonId)
         {
-            throw new System.NotImplementedException();
+            switch (buttonId)
+            {
+                case ButtonId.Trigger:
+                    return FindAction("TriggerAxis").WasPressedThisFrame();
+                case ButtonId.Grip:
+                    return FindAction("GripAxis").WasPressedThisFrame();
+                case ButtonId.Touchpad:
+                    return FindAction("ThumbButton").WasPressedThisFrame();
+                case ButtonId.SecondaryButton:
+                    return FindAction("SecondaryButton").WasPressedThisFrame();
+                case ButtonId.ApplicationMenu:
+                    // TODO
+                    return false;
+                default:
+                    return false;
+            }
         }
 
         public bool WasJustReleased(ButtonId buttonId)
         {
-            throw new System.NotImplementedException();
+            switch (buttonId)
+            {
+                case ButtonId.Trigger:
+                    return FindAction("TriggerAxis").WasReleasedThisFrame();
+                case ButtonId.Grip:
+                    return FindAction("GripAxis").WasReleasedThisFrame();
+                case ButtonId.Touchpad:
+                    return FindAction("ThumbButton").WasReleasedThisFrame();
+                case ButtonId.SecondaryButton:
+                    return FindAction("SecondaryButton").WasReleasedThisFrame();
+                case ButtonId.ApplicationMenu:
+                    // TODO
+                    return false;
+                default:
+                    return false;
+            }
         }
 
         public bool IsTriggerHalfPressed()
         {
-            throw new System.NotImplementedException();
+            return FindAction("TriggerAxis").ReadValue<float>() > 0.5f;
         }
 
         public bool WasTriggerJustReleasedFromHalfPress()
@@ -110,26 +140,45 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public bool IsTouched(ButtonId buttonId)
         {
-            throw new System.NotImplementedException();
+            // TODO
+            // Just guessing on how "touched" should be implemented
+            switch (buttonId)
+            {
+                case ButtonId.Trigger:
+                    return FindAction("TriggerAxis").ReadValue<float>() > 0.01f;
+                case ButtonId.Grip:
+                    return FindAction("GripAxis").ReadValue<float>() > 0.01f;
+                case ButtonId.Touchpad:
+                    return FindAction("ThumbButton").ReadValue<float>() > 0.01f;
+                case ButtonId.SecondaryButton:
+                    return FindAction("SecondaryButton").ReadValue<float>() > 0.01f;
+                case ButtonId.ApplicationMenu:
+                    // TODO
+                    return false;
+                default:
+                    return false;
+            }
         }
 
         public Vector2 GetDirectionalAxis()
         {
-            throw new System.NotImplementedException();
+            return FindAction("TriggerAxis").ReadValue<Vector2>();
         }
 
         public TouchpadLocation GetTouchpadLocation()
         {
-            throw new System.NotImplementedException();
+            return TouchpadLocationHelper.GetTouchpadLocation(GetDirectionalAxis());
         }
 
         public Vector2 GetTriggerScale()
         {
+            // TODO
             throw new System.NotImplementedException();
         }
 
         public void TriggerHapticPulse(ushort durationMicroSec = 500)
         {
+            // TODO
             throw new System.NotImplementedException();
         }
     }
