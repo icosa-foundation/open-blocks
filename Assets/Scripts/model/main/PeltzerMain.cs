@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define STEAMVRBUILD
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -262,7 +261,7 @@ namespace com.google.apps.peltzer.client.model.main
         private const string SAVE_MESSAGE = "Saving...";
 
         // The default workspace, a room of 10x10x10 metres.
-        public static readonly Bounds DEFAULT_BOUNDS = new Bounds(Vector3.zero, new Vector3(10f, 10f, 10f));
+        public static readonly Bounds DEFAULT_BOUNDS = new Bounds(Vector3.zero, new Vector3(30f, 30f, 30f));
 
         // Menu actions that are selectable while a tutorial is occurring.
         public static readonly List<MenuAction> TUTORIAL_MENU_ACTIONS =
@@ -566,7 +565,7 @@ namespace com.google.apps.peltzer.client.model.main
                 }
                 else
                 {
-                    controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.steamRiftHolder.transform, false);
+                    controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.openXRHolder.transform, false);
                 }
                 paletteController.controllerGeometry = controllerGeometryLeft.GetComponent<ControllerGeometry>();
 
@@ -578,7 +577,7 @@ namespace com.google.apps.peltzer.client.model.main
                 }
                 else
                 {
-                    controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.steamRiftHolder.transform, false);
+                    controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.openXRHolder.transform, false);
                 }
                 peltzerController.controllerGeometry = controllerGeometryRight.GetComponent<ControllerGeometry>();
 

@@ -473,7 +473,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 }
                 else
                 {
-                    if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                    if (Config.Instance.sdkMode == SdkMode.OpenXR)
                     {
                         shapesMenu[i].transform.localPosition = wandTip.transform.localPosition + new Vector3(xOff, -.075f, 0);
                     }

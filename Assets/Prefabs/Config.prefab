@@ -45,7 +45,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   oculusHandTrackingManager: {fileID: 0}
   appName: Blocks
-  sdkMode: 1
+  sdkMode: 2
   version: debug
   cameraRigGameObject: {fileID: 0}
   controllerLeftGameObject: {fileID: 0}

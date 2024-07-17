@@ -22,6 +22,7 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.tutorial;
+using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -53,7 +54,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject modifyToolhead;
         public GameObject eraseToolhead;
 
-        public GameObject steamRiftHolder;
+        public GameObject openXRHolder;
         public GameObject oculusRiftHolder;
 
         /// <summary>
@@ -240,11 +241,12 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void Setup()
         {
-            if (Config.Instance.sdkMode == SdkMode.SteamVR)
+            if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
-#if STEAMVRBUILD
-                controller = new ControllerDeviceSteam(transform);
-#endif
+                var openXRController = new ControllerDeviceOpenXR(transform);
+                // TODO
+                // openXRController.controllerType = OVRInput.Controller.LTouch;
+                controller = openXRController;
             }
             else
             {

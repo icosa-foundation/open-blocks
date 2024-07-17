@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define STEAMVRBUILD
 using com.google.apps.peltzer.client.model.controller;
-using System;
 using UnityEngine;
+using UnityEngine.InputSystem.XR;
 
 /// <summary>
 ///   Holds app-level configuration information.
@@ -34,7 +33,8 @@ namespace com.google.apps.peltzer.client.app
     {
         Unset = -1,
         Oculus = 0,
-        SteamVR,
+        // SteamVR = 1,
+        OpenXR = 2
     }
 
     public class Config : MonoBehaviour
@@ -71,7 +71,7 @@ namespace com.google.apps.peltzer.client.app
         // Find or fetch the hardware being used.
         public VrHardware VrHardware
         {
-            // This is set lazily the first time VrHardware is accesssed. 
+            // This is set lazily the first time VrHardware is accesssed.
             get
             {
                 if (vrHardware == VrHardware.Unset)
@@ -128,65 +128,22 @@ namespace com.google.apps.peltzer.client.app
                 oculusHandTrackingManager.leftTransform = controllerLeftGameObject.transform;
                 oculusHandTrackingManager.rightTransform = controllerRightGameObject.transform;
             }
-            else if (sdkMode == SdkMode.SteamVR)
+            else if (sdkMode == SdkMode.OpenXR)
             {
-#if STEAMVRBUILD
-                var controllerLeftTracking = controllerLeftGameObject.AddComponent<SteamVR_TrackedObject>();
-                controllerLeftTracking.SetDeviceIndex(1);
-                var controllerRightTracking = controllerRightGameObject.AddComponent<SteamVR_TrackedObject>();
-                controllerRightTracking.SetDeviceIndex(2);
-                var manager = cameraRigGameObject.AddComponent<SteamVR_ControllerManager>();
-                manager.left = controllerLeftGameObject;
-                manager.right = controllerRightGameObject;
-                manager.UpdateTargets();
-#endif
+                var controllerLeftTracking = controllerLeftGameObject.AddComponent<TrackedPoseDriver>();
+                // controllerLeftTracking.SetDeviceIndex(1);
+                var controllerRightTracking = controllerRightGameObject.AddComponent<TrackedPoseDriver>();
+                // controllerRightTracking.SetDeviceIndex(2);
+                // var manager = cameraRigGameObject.AddComponent<SteamVR_ControllerManager>();
+                // manager.left = controllerLeftGameObject;
+                // manager.right = controllerRightGameObject;
+                // manager.UpdateTargets();
             }
         }
-
-#if STEAMVRBUILD
-        // Check  if the Rift hardware is being used in SteamVR.
-        private bool RiftUsedInSteamVr()
-        {
-            Valve.VR.CVRSystem system = Valve.VR.OpenVR.System;
-            // If system == null, then somehow, the SteamVR SDK was not properly loaded in.
-            Debug.Assert(system != null, "OpenVR System not found, check \"Virtual Reality Supported\"");
-
-            // Index 0 is always the HMD.
-            return CheckRiftTrackedInSteamVr(0);
-        }
-
-        // Check if the tracked object is Rift hardware.
-        private bool CheckRiftTrackedInSteamVr(uint index)
-        {
-            var system = Valve.VR.OpenVR.System;
-            var error = Valve.VR.ETrackedPropertyError.TrackedProp_Success;
-
-            var capacity = system.GetStringTrackedDeviceProperty(
-                index,
-                Valve.VR.ETrackedDeviceProperty.Prop_ManufacturerName_String,
-                null,
-                0,
-                ref error);
-            System.Text.StringBuilder buffer = new System.Text.StringBuilder((int)capacity);
-            system.GetStringTrackedDeviceProperty(
-                index,
-                Valve.VR.ETrackedDeviceProperty.Prop_ManufacturerName_String,
-                buffer,
-                capacity,
-                ref error);
-            string s = buffer.ToString();
-
-            if (s.Contains("Oculus"))
-            {
-                return true;
-            }
-            return false;
-        }
-#endif
 
 #if UNITY_EDITOR
     public void OnValidate() {
-      bool useVrSdk = sdkMode == SdkMode.Oculus || sdkMode == SdkMode.SteamVR;
+      bool useVrSdk = sdkMode == SdkMode.Oculus || sdkMode == SdkMode.OpenXR;
 
       // Writing to this sets the scene-dirty flag, so don't do it unless necessary
       if (UnityEditor.PlayerSettings.virtualRealitySupported != useVrSdk) {
@@ -200,7 +157,7 @@ namespace com.google.apps.peltzer.client.app
           newDevices = new string[] { "Oculus" };
           UnityEditorInternal.VR.VREditor.SetVREnabledDevicesOnTargetGroup(UnityEditor.BuildTargetGroup.Standalone, newDevices);
           break;
-        case SdkMode.SteamVR:
+        case SdkMode.OpenXR:
           newDevices = new string[] { "OpenVR" };
           UnityEditorInternal.VR.VREditor.SetVREnabledDevicesOnTargetGroup(UnityEditor.BuildTargetGroup.Standalone, newDevices);
           break;

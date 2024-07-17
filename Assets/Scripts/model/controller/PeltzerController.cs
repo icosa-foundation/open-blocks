@@ -25,6 +25,7 @@ using com.google.apps.peltzer.client.tools.utils;
 using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.app;
+using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -73,7 +74,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public ControllerDevice controller;
         public ControllerGeometry controllerGeometry;
 
-        public GameObject steamRiftHolder;
+        public GameObject openXRHolder;
         public GameObject oculusRiftHolder;
 
         // Some tools intelligently choose between a 'click and hold' operation and a 'click to begin, click to end'
@@ -319,11 +320,12 @@ namespace com.google.apps.peltzer.client.model.controller
         /// </summary>
         public void Setup(VolumeInserter volumeInserter, Freeform freeform)
         {
-            if (Config.Instance.sdkMode == SdkMode.SteamVR)
+            if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
-#if STEAMVRBUILD
-                controller = new ControllerDeviceSteam(transform);
-#endif
+                var openXRController = new ControllerDeviceOpenXR(transform);
+                // TODO
+                // openXRController.controllerType = OVRInput.Controller.RTouch;
+                controller = openXRController;
             }
             else
             {
@@ -343,7 +345,7 @@ namespace com.google.apps.peltzer.client.model.controller
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
                 // Adjust the placement of the selector position for Rift.
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
                     wandTip.transform.parent.transform.localPosition = WAND_TIP_POSITION_RIFT;
                 }
@@ -448,7 +450,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 }
                 else
                 {
-                    if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                    if (Config.Instance.sdkMode == SdkMode.OpenXR)
                     {
                         wandTip.transform.localRotation = Quaternion.Euler(WAND_TIP_ROTATION_OFFSET_RIFT);
                     }
@@ -668,7 +670,7 @@ namespace com.google.apps.peltzer.client.model.controller
             Vector3 controllerRayOrigin;
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
                     controllerRayVector = Quaternion.Euler(45, 0, 0) * Vector3.forward;
                     controllerRayOrigin = transform.position + new Vector3(0, -0.045f, 0);
@@ -741,7 +743,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 return;
             }
 
-            // At this point, we know something on the menu has been hit, so we update variables accordingly and 
+            // At this point, we know something on the menu has been hit, so we update variables accordingly and
             // hide the shapes menu.
             menuIsInDefaultState = false;
             isPointingAtMenu = true;
@@ -1443,7 +1445,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
                     defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_RIFT - new Vector3(0f, 0f, -0.045f);
                 }
@@ -1849,7 +1851,7 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <summary>
         ///   Determines which tooltip and where to show it when called. These are the grip tooltips to
         ///   advise a user how to move/zoom the world.
-        ///   We only show these tooltips until the user has successfully moved or zoomed the world. 
+        ///   We only show these tooltips until the user has successfully moved or zoomed the world.
         ///   We do not show these tooltips until at least one object is in the scene.
         ///   We do not show these tooltips during tutorials.
         /// </summary>

@@ -21547,6 +21547,7 @@ GameObject:
   - component: {fileID: 114687602158668588}
   - component: {fileID: 114047447275928684}
   - component: {fileID: 114456343242558920}
+  - component: {fileID: 197705497}
   m_Layer: 10
   m_Name: Controller (Palette)
   m_TagString: Untagged
@@ -21594,7 +21595,7 @@ MonoBehaviour:
   grabToolhead: {fileID: 1230209849244790}
   modifyToolhead: {fileID: 1212563479513948}
   eraseToolhead: {fileID: 1570052489269976}
-  steamRiftHolder: {fileID: 1984200723317074}
+  openXRHolder: {fileID: 0}
   oculusRiftHolder: {fileID: 1265057044192556}
   tutorialButton: {fileID: 0}
   UIPanels: {fileID: 0}
@@ -21633,6 +21634,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b413bf48c479f8409d0a43a8ad7385e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &197705497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1285608037250968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a2a9c34df4095f47b9ca8f975175f5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Device: 1
+  m_PoseSource: 4
+  m_PoseProviderComponent: {fileID: 0}
+  m_TrackingType: 0
+  m_UpdateType: 0
+  m_UseRelativeTransform: 0
 --- !u!1 &1285780960030796
 GameObject:
   m_ObjectHideFlags: 0
@@ -29338,6 +29357,7 @@ GameObject:
   - component: {fileID: 4372130950751408}
   - component: {fileID: 20010936846075698}
   - component: {fileID: 124158705867986396}
+  - component: {fileID: 2055044497}
   m_Layer: 10
   m_Name: ID_Camera (eye)
   m_TagString: MainCamera
@@ -29412,6 +29432,24 @@ Behaviour:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1389873695960628}
   m_Enabled: 1
+--- !u!114 &2055044497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1389873695960628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a2a9c34df4095f47b9ca8f975175f5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Device: 0
+  m_PoseSource: 2
+  m_PoseProviderComponent: {fileID: 0}
+  m_TrackingType: 0
+  m_UpdateType: 0
+  m_UseRelativeTransform: 0
 --- !u!1 &1390375767157118
 GameObject:
   m_ObjectHideFlags: 0
@@ -51943,6 +51981,7 @@ GameObject:
   - component: {fileID: 114717694159959046}
   - component: {fileID: 114624707270474750}
   - component: {fileID: 114357963496692186}
+  - component: {fileID: 197705496}
   m_Layer: 10
   m_Name: Controller (Peltzer)
   m_TagString: Untagged
@@ -51980,7 +52019,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   controllerGeometry: {fileID: 0}
-  steamRiftHolder: {fileID: 1386834709207246}
+  openXRHolder: {fileID: 0}
   oculusRiftHolder: {fileID: 1417187831548636}
   wandTip: {fileID: 1513310049355346}
   wandTipLabel: {fileID: 102031247094875194}
@@ -52046,6 +52085,24 @@ MonoBehaviour:
   hintWidth: 0.001
   startColor: {r: 0.9137255, g: 0.9764706, b: 1, a: 0.19607843}
   endColor: {r: 1, g: 1, b: 1, a: 0.60784316}
+--- !u!114 &197705496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1717336604556190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a2a9c34df4095f47b9ca8f975175f5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Device: 1
+  m_PoseSource: 5
+  m_PoseProviderComponent: {fileID: 0}
+  m_TrackingType: 0
+  m_UpdateType: 0
+  m_UseRelativeTransform: 0
 --- !u!1 &1727353551870242
 GameObject:
   m_ObjectHideFlags: 0

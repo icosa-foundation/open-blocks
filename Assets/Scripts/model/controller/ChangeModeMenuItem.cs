@@ -141,7 +141,7 @@ namespace com.google.apps.peltzer.client.model.controller
             }
             else if (Config.Instance.VrHardware == VrHardware.Rift)
             {
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
                     if (PeltzerMain.Instance.peltzerControllerInRightHand)
                     {

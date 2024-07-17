@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using com.google.apps.peltzer.client.alignment;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
-using UnityEngine;
-using Valve.VR;
 using com.google.apps.peltzer.client.tools.utils;
 
 namespace com.google.apps.peltzer.client.model.render
