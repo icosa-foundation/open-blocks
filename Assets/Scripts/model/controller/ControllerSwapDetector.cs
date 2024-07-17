@@ -257,27 +257,27 @@ namespace com.google.apps.peltzer.client.model.controller
             if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
                 // TODO
-                var peltzerTrackedObj = peltzerController.GetComponent<TrackedPoseDriver>();
-                var paletteTrackedObj = paletteController.GetComponent<TrackedPoseDriver>();
+                // var peltzerTrackedObj = peltzerController.GetComponent<TrackedPoseDriver>();
+                // var paletteTrackedObj = paletteController.GetComponent<TrackedPoseDriver>();
             }
             else if (Config.Instance.sdkMode == SdkMode.Oculus)
             {
-                ControllerDeviceOculus peltzerControllerDeviceOculus = (ControllerDeviceOculus)peltzerController.controller;
-                ControllerDeviceOculus paletteControllerDeviceOculus = (ControllerDeviceOculus)paletteController.controller;
-                if (peltzerControllerDeviceOculus.controllerType == OVRInput.Controller.LTouch)
-                {
-                    peltzerControllerDeviceOculus.controllerType = OVRInput.Controller.RTouch;
-                    paletteControllerDeviceOculus.controllerType = OVRInput.Controller.LTouch;
-                }
-                else
-                {
-                    peltzerControllerDeviceOculus.controllerType = OVRInput.Controller.LTouch;
-                    paletteControllerDeviceOculus.controllerType = OVRInput.Controller.RTouch;
-                }
-
-                Transform temp = Config.Instance.oculusHandTrackingManager.leftTransform;
-                Config.Instance.oculusHandTrackingManager.leftTransform = Config.Instance.oculusHandTrackingManager.rightTransform;
-                Config.Instance.oculusHandTrackingManager.rightTransform = temp;
+                // ControllerDeviceOculus peltzerControllerDeviceOculus = (ControllerDeviceOculus)peltzerController.controller;
+                // ControllerDeviceOculus paletteControllerDeviceOculus = (ControllerDeviceOculus)paletteController.controller;
+                // if (peltzerControllerDeviceOculus.controllerType == OVRInput.Controller.LTouch)
+                // {
+                //     peltzerControllerDeviceOculus.controllerType = OVRInput.Controller.RTouch;
+                //     paletteControllerDeviceOculus.controllerType = OVRInput.Controller.LTouch;
+                // }
+                // else
+                // {
+                //     peltzerControllerDeviceOculus.controllerType = OVRInput.Controller.LTouch;
+                //     paletteControllerDeviceOculus.controllerType = OVRInput.Controller.RTouch;
+                // }
+                //
+                // Transform temp = Config.Instance.oculusHandTrackingManager.leftTransform;
+                // Config.Instance.oculusHandTrackingManager.leftTransform = Config.Instance.oculusHandTrackingManager.rightTransform;
+                // Config.Instance.oculusHandTrackingManager.rightTransform = temp;
             }
 
             // For the Rift, we need to swap-back the controller geometry, such that the physical appearance of the

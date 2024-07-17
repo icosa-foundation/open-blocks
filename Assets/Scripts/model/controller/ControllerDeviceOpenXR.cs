@@ -12,24 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using TiltBrush;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.XR;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
     /// <summary>
     ///   Controller SDK logic for OpenXR
     /// </summary>
-
-
-
     public class ControllerDeviceOpenXR : ControllerDevice
     {
-
-        private Transform transform;
+        private UnityEngine.XR.InputDevice device;
+        private readonly UnityXRInputAction actionSet = new ();
 
         // Haptics.
-        private OVRHapticsClip rumbleHapticsClip;
+        // private OVRHapticsClip rumbleHapticsClip;
         private AudioClip rumbleClip;
 
         private bool isBrush = false;
@@ -42,10 +41,11 @@ namespace com.google.apps.peltzer.client.model.controller
         // Constructor, taking in a transform such that it can be regularly updated.
         public ControllerDeviceOpenXR(Transform transform)
         {
-            this.transform = transform;
+            // TODO do we need this?
+            // this.transform = transform;
             if (rumbleClip != null)
             {
-                rumbleHapticsClip = new OVRHapticsClip(rumbleClip);
+                // rumbleHapticsClip = new OVRHapticsClip(rumbleClip);
             }
         }
 
@@ -62,7 +62,7 @@ namespace com.google.apps.peltzer.client.model.controller
             return Vector3.zero;
         }
 
-        private readonly UnityXRInputAction actionSet = new UnityXRInputAction();
+
         private InputAction FindAction(string actionName)
         {
             return actionSet.asset.FindActionMap($"{actionMap}").FindAction($"{actionName}");
@@ -73,15 +73,15 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (buttonId)
             {
                 case ButtonId.Trigger:
-                    return FindAction("TriggerAxis").IsPressed();
+                    return FindAction("TriggerButton").IsPressed();
                 case ButtonId.Grip:
-                    return FindAction("GripAxis").IsPressed();
+                    return FindAction("GripButton").IsPressed();
                 case ButtonId.Touchpad:
-                    return FindAction("ThumbButton").IsPressed();
+                    return FindAction("PrimaryButton").IsPressed();
                 case ButtonId.SecondaryButton:
                     return FindAction("SecondaryButton").IsPressed();
                 case ButtonId.ApplicationMenu:
-                    // TODO
+                    return FindAction("ThumbButton").IsPressed();
                     return false;
                 default:
                     return false;
@@ -93,16 +93,15 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (buttonId)
             {
                 case ButtonId.Trigger:
-                    return FindAction("TriggerAxis").WasPressedThisFrame();
+                    return FindAction("TriggerButton").WasPressedThisFrame();
                 case ButtonId.Grip:
-                    return FindAction("GripAxis").WasPressedThisFrame();
+                    return FindAction("GripButton").WasPressedThisFrame();
                 case ButtonId.Touchpad:
-                    return FindAction("ThumbButton").WasPressedThisFrame();
+                    return FindAction("PrimaryButton").WasPressedThisFrame();
                 case ButtonId.SecondaryButton:
                     return FindAction("SecondaryButton").WasPressedThisFrame();
                 case ButtonId.ApplicationMenu:
-                    // TODO
-                    return false;
+                    return FindAction("ThumbButton").WasPressedThisFrame();
                 default:
                     return false;
             }
@@ -113,16 +112,15 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (buttonId)
             {
                 case ButtonId.Trigger:
-                    return FindAction("TriggerAxis").WasReleasedThisFrame();
+                    return FindAction("TriggerButton").WasReleasedThisFrame();
                 case ButtonId.Grip:
-                    return FindAction("GripAxis").WasReleasedThisFrame();
+                    return FindAction("GripButton").WasReleasedThisFrame();
                 case ButtonId.Touchpad:
-                    return FindAction("ThumbButton").WasReleasedThisFrame();
+                    return FindAction("PrimaryButton").WasReleasedThisFrame();
                 case ButtonId.SecondaryButton:
                     return FindAction("SecondaryButton").WasReleasedThisFrame();
                 case ButtonId.ApplicationMenu:
-                    // TODO
-                    return false;
+                    return FindAction("ThumbButton").WasReleasedThisFrame();
                 default:
                     return false;
             }
@@ -140,21 +138,18 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public bool IsTouched(ButtonId buttonId)
         {
-            // TODO
-            // Just guessing on how "touched" should be implemented
             switch (buttonId)
             {
                 case ButtonId.Trigger:
-                    return FindAction("TriggerAxis").ReadValue<float>() > 0.01f;
+                    return FindAction("TriggerTouch").WasPressedThisFrame();
                 case ButtonId.Grip:
-                    return FindAction("GripAxis").ReadValue<float>() > 0.01f;
+                    return FindAction("GripTouch").WasPressedThisFrame();
                 case ButtonId.Touchpad:
-                    return FindAction("ThumbButton").ReadValue<float>() > 0.01f;
+                    return FindAction("PrimaryTouch").WasPressedThisFrame();
                 case ButtonId.SecondaryButton:
-                    return FindAction("SecondaryButton").ReadValue<float>() > 0.01f;
+                    return FindAction("SecondaryTouch").WasPressedThisFrame();
                 case ButtonId.ApplicationMenu:
-                    // TODO
-                    return false;
+                    return FindAction("ThumbTouch").WasPressedThisFrame();
                 default:
                     return false;
             }
@@ -162,7 +157,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public Vector2 GetDirectionalAxis()
         {
-            return FindAction("TriggerAxis").ReadValue<Vector2>();
+            return FindAction("ThumbAxis").ReadValue<Vector2>();
         }
 
         public TouchpadLocation GetTouchpadLocation()
@@ -173,13 +168,32 @@ namespace com.google.apps.peltzer.client.model.controller
         public Vector2 GetTriggerScale()
         {
             // TODO
-            throw new System.NotImplementedException();
+            // throw new System.NotImplementedException();
+            return Vector2.one;
         }
 
         public void TriggerHapticPulse(ushort durationMicroSec = 500)
         {
             // TODO
-            throw new System.NotImplementedException();
+            // throw new System.NotImplementedException();
+        }
+
+        public void InitAsBrush()
+        {
+            device = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+            var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
+            actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
+            actionSet.Brush.Enable();
+            actionSet.Wand.Disable();
+        }
+
+        public void InitAsWand()
+        {
+            device = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+            var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
+            actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
+            actionSet.Brush.Disable();
+            actionSet.Wand.Enable();
         }
     }
 }

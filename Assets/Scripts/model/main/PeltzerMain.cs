@@ -549,9 +549,9 @@ namespace com.google.apps.peltzer.client.model.main
             // Add Oculus SDK stuff.
             if (Config.Instance.sdkMode == SdkMode.Oculus)
             {
-                OVRManager manager = gameObject.AddComponent<OVRManager>();
-                manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
-                OculusAuth oculusAuth = gameObject.AddComponent<OculusAuth>();
+                // OVRManager manager = gameObject.AddComponent<OVRManager>();
+                // manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
+                // OculusAuth oculusAuth = gameObject.AddComponent<OculusAuth>();
             }
 
             // Add Vive hardware stuff.

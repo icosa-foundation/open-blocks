@@ -7,12 +7,14 @@ EditorBuildSettings:
   m_Scenes:
   - enabled: 1
     path: Assets/Scenes/MainScene.unity
-    guid: 00000000000000000000000000000000
+    guid: af42c7528df36664691f77b59bf21a58
   - enabled: 0
     path: Assets/DropOnUnity/Demo/DropOnUnityDemo.unity
     guid: 00000000000000000000000000000000
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: a8a66c13dc24c6645b7244ef59899e73,
       type: 2}
-    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 1cdea0372a88fbd43bcc19c3419fa02b,
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: efecf433bb710f34daf9ffb399c79b34,
+      type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 11bc8aceb21433747b7fe302bf865c4f,
       type: 2}

@@ -16,7 +16,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
 using UnityEngine;
 
-namespace com.google.apps.peltzer.client.model.controller
+namespace TiltBrush
 {
     public partial class @UnityXRInputAction: IInputActionCollection2, IDisposable
     {

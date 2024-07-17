@@ -244,15 +244,14 @@ namespace com.google.apps.peltzer.client.model.controller
             if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
                 var openXRController = new ControllerDeviceOpenXR(transform);
-                // TODO
-                // openXRController.controllerType = OVRInput.Controller.LTouch;
+                openXRController.InitAsWand();
                 controller = openXRController;
             }
             else
             {
-                ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
-                oculusController.controllerType = OVRInput.Controller.LTouch;
-                controller = oculusController;
+                // ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
+                // oculusController.controllerType = OVRInput.Controller.LTouch;
+                // controller = oculusController;
             }
             controllerGeometry.baseControllerAnimation.SetControllerDevice(controller);
 

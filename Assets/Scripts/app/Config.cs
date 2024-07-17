@@ -53,7 +53,7 @@ namespace com.google.apps.peltzer.client.app
             }
         }
 
-        public OculusHandTrackingManager oculusHandTrackingManager;
+        // public OculusHandTrackingManager oculusHandTrackingManager;
 
         public string appName = "[Removed]";
         // The SDK being used -- Oculus or Steam. Set from the Editor.
@@ -124,15 +124,15 @@ namespace com.google.apps.peltzer.client.app
             instance = this;
             if (sdkMode == SdkMode.Oculus)
             {
-                oculusHandTrackingManager = cameraRigGameObject.AddComponent<OculusHandTrackingManager>();
-                oculusHandTrackingManager.leftTransform = controllerLeftGameObject.transform;
-                oculusHandTrackingManager.rightTransform = controllerRightGameObject.transform;
+                // oculusHandTrackingManager = cameraRigGameObject.AddComponent<OculusHandTrackingManager>();
+                // oculusHandTrackingManager.leftTransform = controllerLeftGameObject.transform;
+                // oculusHandTrackingManager.rightTransform = controllerRightGameObject.transform;
             }
             else if (sdkMode == SdkMode.OpenXR)
             {
-                var controllerLeftTracking = controllerLeftGameObject.AddComponent<TrackedPoseDriver>();
+                // var controllerLeftTracking = controllerLeftGameObject.AddComponent<TrackedPoseDriver>();
                 // controllerLeftTracking.SetDeviceIndex(1);
-                var controllerRightTracking = controllerRightGameObject.AddComponent<TrackedPoseDriver>();
+                // var controllerRightTracking = controllerRightGameObject.AddComponent<TrackedPoseDriver>();
                 // controllerRightTracking.SetDeviceIndex(2);
                 // var manager = cameraRigGameObject.AddComponent<SteamVR_ControllerManager>();
                 // manager.left = controllerLeftGameObject;
@@ -155,15 +155,15 @@ namespace com.google.apps.peltzer.client.app
       switch (sdkMode) {
         case SdkMode.Oculus:
           newDevices = new string[] { "Oculus" };
-          UnityEditorInternal.VR.VREditor.SetVREnabledDevicesOnTargetGroup(UnityEditor.BuildTargetGroup.Standalone, newDevices);
+          //UnityEditorInternal.VR.VREditor.SetVREnabledDevicesOnTargetGroup(UnityEditor.BuildTargetGroup.Standalone, newDevices);
           break;
         case SdkMode.OpenXR:
           newDevices = new string[] { "OpenVR" };
-          UnityEditorInternal.VR.VREditor.SetVREnabledDevicesOnTargetGroup(UnityEditor.BuildTargetGroup.Standalone, newDevices);
+          //UnityEditorInternal.VR.VREditor.SetVREnabledDevicesOnTargetGroup(UnityEditor.BuildTargetGroup.Standalone, newDevices);
           break;
         default:
           newDevices = new string[] { "" };
-          UnityEditorInternal.VR.VREditor.SetVREnabledDevicesOnTargetGroup(UnityEditor.BuildTargetGroup.Standalone, newDevices);
+          //UnityEditorInternal.VR.VREditor.SetVREnabledDevicesOnTargetGroup(UnityEditor.BuildTargetGroup.Standalone, newDevices);
           break;
       }
     }
