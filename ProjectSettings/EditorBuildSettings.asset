@@ -11,4 +11,8 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/DropOnUnity/Demo/DropOnUnityDemo.unity
     guid: 00000000000000000000000000000000
-  m_configObjects: {}
+  m_configObjects:
+    Unity.XR.Oculus.Settings: {fileID: 11400000, guid: a8a66c13dc24c6645b7244ef59899e73,
+      type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 1cdea0372a88fbd43bcc19c3419fa02b,
+      type: 2}
