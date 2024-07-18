@@ -31,7 +31,7 @@ namespace com.google.apps.peltzer.client.model.controller
         // private OVRHapticsClip rumbleHapticsClip;
         private AudioClip rumbleClip;
 
-        private bool isBrush = false;
+        private bool isBrush;
 
         private string actionMap
         {
@@ -82,7 +82,6 @@ namespace com.google.apps.peltzer.client.model.controller
                     return FindAction("SecondaryButton").IsPressed();
                 case ButtonId.ApplicationMenu:
                     return FindAction("ThumbButton").IsPressed();
-                    return false;
                 default:
                     return false;
             }
@@ -180,6 +179,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void InitAsBrush()
         {
+            isBrush = true;
             device = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
             var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
             actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
@@ -189,6 +189,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void InitAsWand()
         {
+            isBrush = false;
             device = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
             var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
             actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
