@@ -156,6 +156,43 @@ namespace com.google.apps.peltzer.client.model.csg
         }
 
         /// <summary>
+        ///   Perform union on CsgObjects
+        /// </summary>
+        private static List<CsgPolygon> CsgUnion(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
+        {
+            SplitObject(ctx, leftObj, rightObj);
+            SplitObject(ctx, rightObj, leftObj);
+            SplitObject(ctx, leftObj, rightObj);
+            ClassifyPolygons(leftObj, rightObj);
+            ClassifyPolygons(rightObj, leftObj);
+
+            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
+            List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.OUTSIDE, PolygonStatus.SAME);
+            polys.AddRange(SelectPolygons(rightObj, true, facePropertiesForNewFaces, PolygonStatus.OUTSIDE));
+
+            return polys;
+        }
+
+        /// <summary>
+        ///   Perform intersection on CsgObjects
+        /// </summary>
+        private static List<CsgPolygon> CsgIntersect(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
+        {
+            SplitObject(ctx, leftObj, rightObj);
+            SplitObject(ctx, rightObj, leftObj);
+            SplitObject(ctx, leftObj, rightObj);
+            ClassifyPolygons(leftObj, rightObj);
+            ClassifyPolygons(rightObj, leftObj);
+
+            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
+            List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.INSIDE, PolygonStatus.SAME);
+            polys.AddRange(SelectPolygons(rightObj, true, facePropertiesForNewFaces, PolygonStatus.INSIDE));
+
+            return polys;
+
+        }
+
+        /// <summary>
         ///   Select all of the polygons in the object with any of the given statuses.
         /// </summary>
         private static List<CsgPolygon> SelectPolygons(CsgObject obj, bool invert, FaceProperties? overwriteFaceProperties, params PolygonStatus[] status)
