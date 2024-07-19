@@ -22990,7 +22990,7 @@ MonoBehaviour:
   grabToolhead: {fileID: 1230209849244790}
   modifyToolhead: {fileID: 1212563479513948}
   eraseToolhead: {fileID: 1570052489269976}
-  openXRHolder: {fileID: 0}
+  openXRHolder: {fileID: 1265057044192556}
   oculusRiftHolder: {fileID: 1265057044192556}
   tutorialButton: {fileID: 0}
   UIPanels: {fileID: 0}
@@ -55327,7 +55327,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   controllerGeometry: {fileID: 0}
-  openXRHolder: {fileID: 0}
+  openXRHolder: {fileID: 1417187831548636}
   oculusRiftHolder: {fileID: 1417187831548636}
   wandTip: {fileID: 1513310049355346}
   wandTipLabel: {fileID: 102031247094875194}
