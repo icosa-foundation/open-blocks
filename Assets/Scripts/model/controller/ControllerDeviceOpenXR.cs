@@ -32,6 +32,7 @@ namespace com.google.apps.peltzer.client.model.controller
         private AudioClip rumbleClip;
 
         private bool isBrush;
+        private bool wasTriggerHalfPressed;
 
         private string actionMap
         {
@@ -135,12 +136,18 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public bool IsTriggerHalfPressed()
         {
+            wasTriggerHalfPressed = true;
             return FindAction("TriggerAxis").ReadValue<float>() > 0.5f;
         }
 
         public bool WasTriggerJustReleasedFromHalfPress()
         {
-            throw new System.NotImplementedException();
+            if (wasTriggerHalfPressed && FindAction("TriggerAxis").ReadValue<float>() < 0.5f)
+            {
+                wasTriggerHalfPressed = false;
+                return true;
+            }
+            return false;
         }
 
         public bool IsTouched(ButtonId buttonId)
@@ -174,9 +181,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public Vector2 GetTriggerScale()
         {
-            // TODO
-            // throw new System.NotImplementedException();
-            return Vector2.one;
+            return new Vector2(FindAction("TriggerAxis").ReadValue<float>(), 0);
         }
 
         public void TriggerHapticPulse(ushort durationMicroSec = 500)
