@@ -553,6 +553,10 @@ namespace com.google.apps.peltzer.client.model.main
                 // manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
                 // OculusAuth oculusAuth = gameObject.AddComponent<OculusAuth>();
             }
+            else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+            {
+                // TODO
+            }
 
             // Add Vive hardware stuff.
             if (Config.Instance.VrHardware == VrHardware.Rift)
@@ -561,6 +565,11 @@ namespace com.google.apps.peltzer.client.model.main
                 GameObject controllerGeometryLeft;
                 if (Config.Instance.sdkMode == SdkMode.Oculus)
                 {
+                    controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.oculusRiftHolder.transform, false);
+                }
+                else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+                {
+                    // TODO
                     controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.oculusRiftHolder.transform, false);
                 }
                 else
@@ -573,6 +582,11 @@ namespace com.google.apps.peltzer.client.model.main
                 GameObject controllerGeometryRight;
                 if (Config.Instance.sdkMode == SdkMode.Oculus)
                 {
+                    controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.oculusRiftHolder.transform, false);
+                }
+                else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+                {
+                    // TODO
                     controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.oculusRiftHolder.transform, false);
                 }
                 else

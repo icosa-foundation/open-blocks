@@ -80,35 +80,11 @@ namespace com.google.apps.peltzer.client.app
                     {
                         vrHardware = VrHardware.Rift;
                     }
-#if STEAMVRBUILD
-                    else if (sdkMode == SdkMode.SteamVR)
+                    else if (sdkMode == SdkMode.OpenXR)
                     {
-                        // If SteamVR fails for some reason we will discover it here.
-                        try
-                        {
-                            if (Valve.VR.OpenVR.System == null)
-                            {
-                                vrHardware = VrHardware.None;
-                                return vrHardware;
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            vrHardware = VrHardware.None;
-                            return vrHardware;
-                        }
-
-                        // RiftUsedInSteamVr relies on headset detection, so controllers don't have to be on.
-                        if (RiftUsedInSteamVr())
-                        {
-                            vrHardware = VrHardware.Rift;
-                        }
-                        else
-                        {
-                            vrHardware = VrHardware.Vive;
-                        }
+                        // TODO
+                        vrHardware = VrHardware.Rift;
                     }
-#endif
                     else
                     {
                         vrHardware = VrHardware.None;
