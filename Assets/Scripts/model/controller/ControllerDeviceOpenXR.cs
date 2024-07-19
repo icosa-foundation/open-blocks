@@ -54,7 +54,15 @@ namespace com.google.apps.peltzer.client.model.controller
             // What do we need to do here?
         }
 
-        public bool IsTrackedObjectValid { get; set; }
+        public bool IsTrackedObjectValid
+        {
+            // TODO
+            get => true;
+            set
+            {
+                // TODO
+            }
+        }
 
         public Vector3 GetVelocity()
         {
