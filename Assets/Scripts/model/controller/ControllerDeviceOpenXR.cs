@@ -33,6 +33,8 @@ namespace com.google.apps.peltzer.client.model.controller
 
         private bool isBrush;
         private bool wasTriggerHalfPressed;
+        private bool touchpadCurrentlyPressed;
+        private bool touchpadWasPressedLastFrame;
 
         private string actionMap
         {
@@ -52,7 +54,20 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void Update()
         {
-            // What do we need to do here?
+            touchpadWasPressedLastFrame = touchpadCurrentlyPressed;
+            touchpadCurrentlyPressed = TouchpadActivated();
+        }
+
+        public bool TouchpadActivated()
+        {
+            // The Touch thumbstick is considered 'pressed' is it is in one of the far quadrants, or if it is in the center
+            // and has actually been depressed. This allows users to simply flick the thumbstick to choose an option, rather
+            // than having to move and press-in the thumbstick, which is tiresome.
+            var location = GetTouchpadLocation();
+            if (location != TouchpadLocation.CENTER && location != TouchpadLocation.NONE) return true;
+            bool clickedIn = FindAction("ThumbButton").IsPressed();
+            if (location == TouchpadLocation.CENTER && clickedIn) return true;
+            return false;
         }
 
         public bool IsTrackedObjectValid
@@ -86,11 +101,11 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Grip:
                     return FindAction("GripButton").IsPressed();
                 case ButtonId.Touchpad:
-                    return FindAction("PrimaryButton").IsPressed();
+                    return touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("SecondaryButton").IsPressed();
+                    return FindAction("PrimaryButton").IsPressed();
                 case ButtonId.ApplicationMenu:
-                    return FindAction("ThumbButton").IsPressed();
+                    return FindAction("SecondaryButton").IsPressed();
                 default:
                     return false;
             }
@@ -105,11 +120,11 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Grip:
                     return FindAction("GripButton").WasPressedThisFrame();
                 case ButtonId.Touchpad:
-                    return FindAction("PrimaryButton").WasPressedThisFrame();
+                    return !touchpadWasPressedLastFrame && touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("SecondaryButton").WasPressedThisFrame();
+                    return FindAction("PrimaryButton").WasPressedThisFrame();
                 case ButtonId.ApplicationMenu:
-                    return FindAction("ThumbButton").WasPressedThisFrame();
+                    return FindAction("SecondaryButton").WasPressedThisFrame();
                 default:
                     return false;
             }
@@ -124,11 +139,11 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Grip:
                     return FindAction("GripButton").WasReleasedThisFrame();
                 case ButtonId.Touchpad:
-                    return FindAction("PrimaryButton").WasReleasedThisFrame();
+                    return touchpadWasPressedLastFrame && !touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("SecondaryButton").WasReleasedThisFrame();
+                    return FindAction("PrimaryButton").WasReleasedThisFrame();
                 case ButtonId.ApplicationMenu:
-                    return FindAction("ThumbButton").WasReleasedThisFrame();
+                    return FindAction("SecondaryButton").WasReleasedThisFrame();
                 default:
                     return false;
             }
@@ -159,11 +174,11 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Grip:
                     return FindAction("GripTouch").WasPressedThisFrame();
                 case ButtonId.Touchpad:
-                    return FindAction("PrimaryTouch").WasPressedThisFrame();
+                    return touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("SecondaryTouch").WasPressedThisFrame();
+                    return FindAction("PrimaryTouch").WasPressedThisFrame();
                 case ButtonId.ApplicationMenu:
-                    return FindAction("ThumbTouch").WasPressedThisFrame();
+                    return FindAction("SecondaryTouch").WasPressedThisFrame();
                 default:
                     return false;
             }
@@ -176,7 +191,8 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public TouchpadLocation GetTouchpadLocation()
         {
-            return TouchpadLocationHelper.GetTouchpadLocation(GetDirectionalAxis());
+            Vector2 position = GetDirectionalAxis();
+            return TouchpadLocationHelper.GetTouchpadLocation(position);
         }
 
         public Vector2 GetTriggerScale()
