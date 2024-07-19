@@ -29,7 +29,7 @@ using com.google.apps.peltzer.client.api_clients.objectstore_client;
 using com.google.apps.peltzer.client.entitlement;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.menu;
-using Unity.SharpZipLib.Zip.Compression;
+using ICSharpCode.SharpZipLib.Zip.Compression;
 
 namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 {

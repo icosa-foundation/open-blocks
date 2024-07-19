@@ -23,9 +23,8 @@ using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.export;
 using System.Text;
-using System;
 using com.google.apps.peltzer.client.entitlement;
-using Unity.SharpZipLib.Zip;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 {
