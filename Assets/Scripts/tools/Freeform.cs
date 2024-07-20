@@ -933,14 +933,17 @@ namespace com.google.apps.peltzer.client.tools
                 // Create the new 'side faces' with clockwise ordering. Each side face has 4 verts.
                 // The first face 'loops around'.
                 List<int> newFaceVertexIds = new List<int>() {
-            currentFrontFace.vertexIds[i-1],
-            currentFrontFace.vertexIds[i % vertexCount],
-            newVertices[i % vertexCount].id,
-            newVertices[i-1].id
-          };
+					currentFrontFace.vertexIds[i-1],
+					currentFrontFace.vertexIds[i % vertexCount],
+					newVertices[i % vertexCount].id,
+					newVertices[i-1].id
+				};	
 
                 checkpointOperation.AddFace(newFaceVertexIds, new FaceProperties(peltzerController.currentMaterial));
             }
+
+			// Remove the old front face
+			checkpointOperation.DeleteFace( currentFrontFace.id );
 
             // Create a new front face.
             currentFrontFace = checkpointOperation.AddFace(newVertexIds, currentFrontFace.properties);
