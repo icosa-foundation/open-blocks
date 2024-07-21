@@ -25,7 +25,11 @@ namespace com.google.apps.peltzer.client.model.controller
         // An Oculus controller's validity is determined in OculusHandTrackingManager.
         private bool isValid;
         private bool wasValidOnLastUpdate;
-        public bool IsTrackedObjectValid { get { return isValid } set { isValid = value; } }
+        public bool IsTrackedObjectValid
+        {
+            get { return isValid; }
+            set { isValid = value; }
+        }
 
         // We must manually track velocity in the Oculus SDK.
         private Transform transform;
@@ -141,7 +145,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     return true;
             }
 
-            mouseButton = MouseButton.Any;
+            mouseButton = MouseButton.Left;
             return false;
         }
 
@@ -152,14 +156,13 @@ namespace com.google.apps.peltzer.client.model.controller
             MouseButton mouseButton;
             if (!MouseButtonFromButtonId(buttonId, out mouseButton)) return false;
 
-            // The Touch thumbstick is considered 'pressed' is it is in one of the far quadrants, or if it is in the center
-            // and has actually been depressed. This allows users to simply flick the thumbstick to choose an option, rather
-            // than having to move and press-in the thumbstick, which is tiresome.
             if (buttonId == ButtonId.Touchpad)
             {
-                TouchpadLocation touchpadLocation = GetTouchpadLocation();
-                return (touchpadLocation == TouchpadLocation.CENTER && OVRInput.Get(mouseButton, controllerType)) ||
-                  (touchpadLocation != TouchpadLocation.CENTER && touchpadLocation != TouchpadLocation.NONE);
+                return
+                    Input.GetKey(KeyCode.LeftArrow) ||
+                    Input.GetKey(KeyCode.RightArrow) ||
+                    Input.GetKey(KeyCode.UpArrow) ||
+                    Input.GetKey(KeyCode.DownArrow);
             }
             else
             {
@@ -273,10 +276,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public bool IsTouched(ButtonId buttonId)
         {
-            if (!isValid) return false;
-            OVRInput.Touch ovrTouch;
-            if (!OvrTouchFromButtonId(buttonId, out ovrTouch)) return false;
-            return OVRInput.Get(ovrTouch, controllerType);
+            return false;
         }
 
         public Vector2 GetDirectionalAxis()
@@ -291,22 +291,12 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public Vector2 GetTriggerScale()
         {
-            return new Vector2(OVRInput.Get(OVRInput.Axis1D.PrimaryIndexTrigger, controllerType), 0);
+            return new Vector2(0, 0);
         }
 
         public void TriggerHapticPulse(ushort durationMicroSec = 500)
         {
-            float length = durationMicroSec / 1000000f;
-            var channel = controllerType == OVRInput.Controller.LTouch ? OVRHaptics.LeftChannel : OVRHaptics.RightChannel;
-            if (rumbleHapticsClip != null)
-            {
-                int count = (int)(length / rumbleClip.length);
-                channel.Preempt(rumbleHapticsClip);
-                for (int i = 1; i < count; i++)
-                {
-                    channel.Queue(rumbleHapticsClip);
-                }
-            }
+
         }
     }
 }

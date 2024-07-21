@@ -252,11 +252,16 @@ namespace com.google.apps.peltzer.client.model.controller
                 oculusController.controllerType = OVRInput.Controller.LTouch;
                 controller = oculusController;
             }
-            else if (Config.Instance.sdkMode != SdkMode.Desktop)
+            else if (Config.Instance.sdkMode == SdkMode.Desktop)
+            {
+                transform.position = new Vector3(0.17f, 0, 0.2f);
+                transform.rotation = Quaternion.Euler(-90, 0, 0);
+                ControllerDeviceDesktop desktopController = new ControllerDeviceDesktop(transform);
+                controller = desktopController;
+            }
+            else
             {
                 controller = null;
-                transform.position = new Vector3(-0.4f, 0, 0.2f);
-                transform.rotation = Quaternion.Euler(-90, 0, 0);
             }
             controllerGeometry.baseControllerAnimation.SetControllerDevice(controller);
 
