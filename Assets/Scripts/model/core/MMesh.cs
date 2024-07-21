@@ -192,7 +192,7 @@ namespace com.google.apps.peltzer.client.model.core
               verticesCloned,
               facesCloned,
               bounds,
-			  localBounds,
+              localBounds,
               reverseTableCloned,
               groupId,
               remixIdsCloned);
@@ -227,7 +227,7 @@ namespace com.google.apps.peltzer.client.model.core
               new Dictionary<int, Vertex>(verticesById),
               facesCloned,
               bounds,
-			  localBounds,
+              localBounds,
               new Dictionary<int, HashSet<int>>(reverseTable),
               newGroupId,
               remixIds == null ? null : new HashSet<string>(remixIds));
@@ -484,7 +484,7 @@ namespace com.google.apps.peltzer.client.model.core
             foreach (Vertex vert in verticesById.Values)
             {
                 Vector3 loc = MeshCoordsToModelCoords(vert.loc);
-				Vector3 locL = vert.loc;
+                Vector3 locL = vert.loc;
                 minX = Mathf.Min(minX, loc.x);
                 minY = Mathf.Min(minY, loc.y);
                 minZ = Mathf.Min(minZ, loc.z);
