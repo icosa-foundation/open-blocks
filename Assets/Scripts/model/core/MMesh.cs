@@ -97,6 +97,11 @@ namespace com.google.apps.peltzer.client.model.core
         public Bounds bounds { get; private set; }
 
         /// <summary>
+        /// Bounds of this mesh in local Mesh coordinates.
+        /// </summary>
+        public Bounds localBounds { get; private set; }
+
+        /// <summary>
         /// ID of the group to which this mesh belongs, or GROUP_NONE if this mesh is ungrouped.
         /// Meshes with the same groupId belong to the same group and stay together during
         /// selection/move/etc.
@@ -139,7 +144,7 @@ namespace com.google.apps.peltzer.client.model.core
 
         public MMesh(int id, Vector3 offset, Quaternion rotation,
           Dictionary<int, Vertex> verticesById, Dictionary<int, Face> facesById,
-          Bounds bounds, Dictionary<int, HashSet<int>> reverseTable, int groupId = GROUP_NONE,
+          Bounds bounds, Bounds localBounds, Dictionary<int, HashSet<int>> reverseTable, int groupId = GROUP_NONE,
           HashSet<string> remixIds = null)
         {
             _id = id;
@@ -153,6 +158,7 @@ namespace com.google.apps.peltzer.client.model.core
             this.verticesById = verticesById;
             this.facesById = facesById;
             this.bounds = bounds;
+            this.localBounds = localBounds;
             this.reverseTable = reverseTable;
             this.groupId = groupId;
             this.remixIds = remixIds;
@@ -186,6 +192,7 @@ namespace com.google.apps.peltzer.client.model.core
               verticesCloned,
               facesCloned,
               bounds,
+			  localBounds,
               reverseTableCloned,
               groupId,
               remixIdsCloned);
@@ -220,6 +227,7 @@ namespace com.google.apps.peltzer.client.model.core
               new Dictionary<int, Vertex>(verticesById),
               facesCloned,
               bounds,
+			  localBounds,
               new Dictionary<int, HashSet<int>>(reverseTable),
               newGroupId,
               remixIds == null ? null : new HashSet<string>(remixIds));
@@ -300,10 +308,19 @@ namespace com.google.apps.peltzer.client.model.core
         /// <summary>
         ///   Get the bounds for this mesh.
         /// </summary>
-        /// <returns>The bounds, in model coordinates.</returns>
+        /// <returns>The bounds, in model (ie: world) coordinates.</returns>
         public Bounds GetBounds()
         {
             return bounds;
+        }
+
+        /// <summary>
+        ///   Get the local bounds for this mesh.
+        /// </summary>
+        /// <returns>The bounds, in mesh coordinates.</returns>
+        public Bounds GetLocalBounds()
+        {
+            return localBounds;
         }
 
         /// <summary>
@@ -462,19 +479,32 @@ namespace com.google.apps.peltzer.client.model.core
             // is an extreme hotspot.
             float minX = float.MaxValue, minY = float.MaxValue, minZ = float.MaxValue;
             float maxX = float.MinValue, maxY = float.MinValue, maxZ = float.MinValue;
+            float minXL = float.MaxValue, minYL = float.MaxValue, minZL = float.MaxValue;
+            float maxXL = float.MinValue, maxYL = float.MinValue, maxZL = float.MinValue;
             foreach (Vertex vert in verticesById.Values)
             {
                 Vector3 loc = MeshCoordsToModelCoords(vert.loc);
+				Vector3 locL = vert.loc;
                 minX = Mathf.Min(minX, loc.x);
                 minY = Mathf.Min(minY, loc.y);
                 minZ = Mathf.Min(minZ, loc.z);
                 maxX = Mathf.Max(maxX, loc.x);
                 maxY = Mathf.Max(maxY, loc.y);
                 maxZ = Mathf.Max(maxZ, loc.z);
+
+                minXL = Mathf.Min(minXL, locL.x);
+                minYL = Mathf.Min(minYL, locL.y);
+                minZL = Mathf.Min(minZL, locL.z);
+                maxXL = Mathf.Max(maxXL, locL.x);
+                maxYL = Mathf.Max(maxYL, locL.y);
+                maxZL = Mathf.Max(maxZL, locL.z);
             }
             bounds = new Bounds(
               /* center */ new Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2),
               /* size */ new Vector3(maxX - minX, maxY - minY, maxZ - minZ));
+            localBounds = new Bounds(
+              /* center */ new Vector3((minXL + maxXL) / 2, (minYL + maxYL) / 2, (minZL + maxZL) / 2),
+              /* size */ new Vector3(maxXL - minXL, maxYL - minYL, maxZL - minZL));
         }
 
         /// <summary>

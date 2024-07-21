@@ -79,6 +79,9 @@ namespace com.google.apps.peltzer.client.model.core
         private CollisionSystem<int> meshBounds;
         private Dictionary<FaceKey, FaceInfo> faceInfo;
         private Dictionary<EdgeKey, EdgeInfo> edgeInfo;
+		private Dictionary<int,Vector3> offsets;
+		private Dictionary<int,Quaternion> rotations;
+        private Dictionary<int,Bounds> meshBoundsLocal;
 
         // A reference to the model, which is the single point of truth as to whether an item exists, despite the fact
         // that this spatial index contains collections of meshes and other items.
@@ -115,6 +118,9 @@ namespace com.google.apps.peltzer.client.model.core
 
             faceInfo = new Dictionary<FaceKey, FaceInfo>();
             edgeInfo = new Dictionary<EdgeKey, EdgeInfo>();
+			offsets = new Dictionary<int, Vector3>();
+			rotations = new Dictionary<int, Quaternion>();
+            meshBoundsLocal = new Dictionary<int, Bounds>();
         }
 
         /// <summary>
@@ -173,6 +179,18 @@ namespace com.google.apps.peltzer.client.model.core
             if (meshBounds.HasItem(mesh.id))
             {
                 meshBounds.Remove(mesh.id);
+            }
+            if (offsets.ContainsKey(mesh.id))
+            {
+                offsets.Remove(mesh.id);
+            }
+            if (rotations.ContainsKey(mesh.id))
+            {
+                rotations.Remove(mesh.id);
+            }
+            if (meshBoundsLocal.ContainsKey(mesh.id))
+            {
+                meshBoundsLocal.Remove(mesh.id);
             }
             if (meshes.HasItem(mesh.id))
             {
@@ -249,6 +267,7 @@ namespace com.google.apps.peltzer.client.model.core
         public bool FindNearestMeshTo(Vector3 point, float radius, out int? nearestMesh,
           bool ignoreHiddenMeshes = false)
         {
+			Vector3 point4 = new Vector4(point.x, point.y, point.z, 1); // we need this for the matrix multiplication later
             Bounds searchBounds = new Bounds(point, Vector3.one * radius * 2);
             nearestMesh = null;
             HashSet<int> meshIds;
@@ -277,6 +296,17 @@ namespace com.google.apps.peltzer.client.model.core
                         {
                             continue;
                         }
+
+						// we've probed the world-aligned bounds, but meshes can be rotated. So we check now
+						// if the point lies within the rotated and offset bounds.
+						Bounds localBounds = meshBoundsLocal[meshId];
+						Vector3 localPoint = Matrix4x4.TRS(offsets[meshId],rotations[meshId],Vector3.one).inverse *point4;
+						if( !localBounds.Contains(localPoint) )
+						{
+							continue;
+						}
+						
+
                         float distanceToPoint = Vector3.Distance(bounds.center, point);
                         if (distanceToPoint < minDistance)
                         {
@@ -846,6 +876,9 @@ namespace com.google.apps.peltzer.client.model.core
             }
             meshes.Add(mesh.id, mesh.bounds);
             meshBounds.Add(mesh.id, mesh.bounds);
+            meshBoundsLocal.Add(mesh.id, mesh.localBounds);
+			offsets.Add(mesh.id, mesh.offset);
+			rotations.Add(mesh.id, mesh.rotation);
             foreach (KeyValuePair<FaceKey, FaceInfo> pair in faceInfos)
             {
                 faces.Add(pair.Key, pair.Value.bounds);
