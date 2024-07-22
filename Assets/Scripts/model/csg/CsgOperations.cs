@@ -191,7 +191,7 @@ namespace com.google.apps.peltzer.client.model.csg
 
             FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
             List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.OUTSIDE, PolygonStatus.SAME);
-            polys.AddRange(SelectPolygons(rightObj, true, facePropertiesForNewFaces, PolygonStatus.OUTSIDE));
+            polys.AddRange(SelectPolygons(rightObj, false, facePropertiesForNewFaces, PolygonStatus.OUTSIDE));
 
             return polys;
         }
@@ -209,7 +209,7 @@ namespace com.google.apps.peltzer.client.model.csg
 
             FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
             List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.INSIDE, PolygonStatus.SAME);
-            polys.AddRange(SelectPolygons(rightObj, true, facePropertiesForNewFaces, PolygonStatus.INSIDE));
+            polys.AddRange(SelectPolygons(rightObj, false, facePropertiesForNewFaces, PolygonStatus.INSIDE));
 
             return polys;
         }
