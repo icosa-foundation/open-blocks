@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.util;
-using com.google.apps.peltzer.client.model.render;
 
 namespace com.google.apps.peltzer.client.model.csg
 {
