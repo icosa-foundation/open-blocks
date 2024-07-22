@@ -380,8 +380,7 @@ namespace com.google.apps.peltzer.client.tools
             // Create the primitive.
             List<MMesh> newMeshes = new List<MMesh>();
             // TODO(bug) Replace pink with wireframe
-            int material = peltzerController.mode == ControllerMode.subtract ?
-              /* pink wireframe */ MaterialRegistry.PINK_WIREFRAME_ID : peltzerController.currentMaterial;
+            int material = peltzerController.currentMaterial;
 
             Vector3 scale;
             if (peltzerController.shapesMenu.showingShapeMenu)
@@ -845,12 +844,12 @@ namespace com.google.apps.peltzer.client.tools
             {
                 if (peltzerController.mode == ControllerMode.insertVolume)
                 {
-                    peltzerController.ChangeMode(ControllerMode.subtract);
                     peltzerController.shapesMenu.ChangeShapesMenuMaterial(MaterialRegistry.PINK_WIREFRAME_ID);
+                    peltzerController.ChangeMode(ControllerMode.subtract, ObjectFinder.ObjectById("ID_ToolShapes"));
                 }
                 else if (peltzerController.mode == ControllerMode.subtract)
                 {
-                    peltzerController.ChangeMode(ControllerMode.insertVolume);
+                    peltzerController.ChangeMode(ControllerMode.insertVolume, ObjectFinder.ObjectById("ID_ToolShapes"));
                     peltzerController.shapesMenu.ChangeShapesMenuMaterial(peltzerController.currentMaterial);
                 }
             }

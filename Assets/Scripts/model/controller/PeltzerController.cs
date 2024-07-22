@@ -1423,6 +1423,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     break;
                 case ControllerMode.insertStroke:
                 case ControllerMode.insertVolume:
+                case ControllerMode.subtract:
                     if (Config.Instance.VrHardware == VrHardware.Vive)
                     {
                         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.015f);
