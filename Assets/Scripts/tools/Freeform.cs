@@ -942,6 +942,9 @@ namespace com.google.apps.peltzer.client.tools
                 checkpointOperation.AddFace(newFaceVertexIds, new FaceProperties(peltzerController.currentMaterial));
             }
 
+            // Remove the old front face
+            checkpointOperation.DeleteFace(currentFrontFace.id);
+
             // Create a new front face.
             currentFrontFace = checkpointOperation.AddFace(newVertexIds, currentFrontFace.properties);
             checkpointOperation.Commit();
