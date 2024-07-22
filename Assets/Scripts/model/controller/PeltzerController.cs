@@ -1423,7 +1423,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     break;
                 case ControllerMode.insertStroke:
                 case ControllerMode.insertVolume:
-                case ControllerMode.subtract:
+                case ControllerMode.csg:
                     if (Config.Instance.VrHardware == VrHardware.Vive)
                     {
                         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.015f);
@@ -1673,7 +1673,7 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (mode)
             {
                 case ControllerMode.insertVolume:
-                case ControllerMode.subtract:
+                case ControllerMode.csg:
                     currentOverlayGO = controllerGeometry.volumeInserterOverlay;
                     break;
                 case ControllerMode.insertStroke:
@@ -1721,7 +1721,7 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (mode)
             {
                 case ControllerMode.insertVolume:
-                case ControllerMode.subtract:
+                case ControllerMode.csg:
                     ChangeTouchpadOverlay(TouchpadOverlay.VOLUME_INSERTER);
                     break;
                 case ControllerMode.insertStroke:
