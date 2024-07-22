@@ -47,7 +47,7 @@ namespace com.google.apps.peltzer.client.model.csg
                 foreach (int meshId in intersectingMeshIds)
                 {
                     MMesh mesh = model.GetMesh(meshId);
-                    MMesh result = DoCsgOperation(mesh, brush);
+                    MMesh result = DoCsgOperation(mesh, brush, csgOp);
                     commands.Add(new DeleteMeshCommand(mesh.id));
                     // If the result is null, it means the mesh was entirely erased.  No need to add a new version back.
                     if (result != null)
