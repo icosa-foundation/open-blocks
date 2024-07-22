@@ -540,7 +540,7 @@ namespace com.google.apps.peltzer.client.tools
             }
             else if (peltzerController.mode == ControllerMode.subtract)
             {
-                if (CsgOperations.SubtractMeshFromModel(model, spatialIndex, meshToInsert))
+                if (CsgOperations.CsgMeshFromModel(model, spatialIndex, meshToInsert))
                 {
                     audioLibrary.PlayClip(audioLibrary.deleteSound);
                     peltzerController.TriggerHapticFeedback(
