@@ -1,5 +1,27 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-4239547474570446416
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4176a3824bbcefc46a3a4462facf3679, type: 3}
+  m_Name: ScreenSpaceCurvature
+  m_EditorClassIdentifier: 
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  ridge:
+    overrideState: 1
+    value: 0
+  valley:
+    overrideState: 1
+    value: 0.562
 --- !u!114 &-3680059828405760202
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -12,7 +34,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1cb7e9e120078f43bce4f0b1be547a7, type: 3}
   m_Name: AmbientOcclusion
   m_EditorClassIdentifier: 
-  active: 1
+  active: 0
   enabled:
     overrideState: 1
     value: 1
@@ -63,3 +85,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   settings:
   - {fileID: -3680059828405760202}
+  - {fileID: -4239547474570446416}
+  - {fileID: 5444608840401130976}
+--- !u!114 &5444608840401130976
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdd244f2cc946ba41ae445169d0901e0, type: 3}
+  m_Name: CaviFree
+  m_EditorClassIdentifier: 
+  active: 0
+  enabled:
+    overrideState: 1
+    value: 1
+  ridge:
+    overrideState: 0
+    value: 1
+  valley:
+    overrideState: 0
+    value: 1

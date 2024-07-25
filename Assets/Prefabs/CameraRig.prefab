@@ -29429,7 +29429,7 @@ MonoBehaviour:
   volumeTrigger: {fileID: 4372130950751408}
   volumeLayer:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 4294967295
   stopNaNPropagation: 1
   finalBlitToCameraTarget: 1
   antialiasingMode: 0
@@ -29473,7 +29473,11 @@ MonoBehaviour:
   breakBeforeColorGrading: 0
   m_BeforeTransparentBundles: []
   m_BeforeStackBundles: []
-  m_AfterStackBundles: []
+  m_AfterStackBundles:
+  - assemblyQualifiedName: ScreenSpaceCurvature, Assembly-CSharp, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+  - assemblyQualifiedName: CaviFree, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
 --- !u!114 &3326459383624913714
 MonoBehaviour:
   m_ObjectHideFlags: 0
