@@ -562,7 +562,7 @@ namespace com.google.apps.peltzer.client.model.main
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
                 // Create the left controller geometry for the palette controller.
-                GameObject controllerGeometryLeft;
+                GameObject controllerGeometryLeft = null;
                 if (Config.Instance.sdkMode == SdkMode.Oculus)
                 {
                     controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.oculusRiftHolder.transform, false);
@@ -570,16 +570,12 @@ namespace com.google.apps.peltzer.client.model.main
                 else if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
                     // TODO
-                    controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.oculusRiftHolder.transform, false);
-                }
-                else
-                {
                     controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.openXRHolder.transform, false);
                 }
                 paletteController.controllerGeometry = controllerGeometryLeft.GetComponent<ControllerGeometry>();
 
                 // Create the right controller geometry for the peltzer controller.
-                GameObject controllerGeometryRight;
+                GameObject controllerGeometryRight = null;
                 if (Config.Instance.sdkMode == SdkMode.Oculus)
                 {
                     controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.oculusRiftHolder.transform, false);
@@ -587,13 +583,9 @@ namespace com.google.apps.peltzer.client.model.main
                 else if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
                     // TODO
-                    controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.oculusRiftHolder.transform, false);
-                }
-                else
-                {
                     controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.openXRHolder.transform, false);
                 }
-                peltzerController.controllerGeometry = controllerGeometryRight.GetComponent<ControllerGeometry>();
+                peltzerController.controllerGeometry = controllerGeometryRight?.GetComponent<ControllerGeometry>();
 
                 // Only allow hand toggling from the menu if the user is using a Rift.
                 ObjectFinder.ObjectById("ID_toggle_left_handed").SetActive(true);

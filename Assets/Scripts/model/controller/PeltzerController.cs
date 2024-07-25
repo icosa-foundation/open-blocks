@@ -188,6 +188,13 @@ namespace com.google.apps.peltzer.client.model.controller
         private bool menuIsInDefaultState;
 
         /// <summary>
+        ///   Local position of the wand tip / selector when using Quest with OpenXR.
+        /// </summary>
+        Vector3 WAND_TIP_POSITION_QUEST = new Vector3(0.0073f, -.0668f, .0022f);
+        Vector3 WAND_TIP_ROTATION_OFFSET_QUEST = new Vector3(-45, 0, 0);
+
+
+        /// <summary>
         ///   Local position of the wand tip / selector when using RIFT.
         /// </summary>
         Vector3 WAND_TIP_POSITION_RIFT = new Vector3(0.0073f, -.0668f, .0022f);
@@ -348,7 +355,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 // Adjust the placement of the selector position for Rift.
                 if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    wandTip.transform.parent.transform.localPosition = WAND_TIP_POSITION_RIFT;
+                    wandTip.transform.parent.transform.localPosition = WAND_TIP_POSITION_QUEST;
                 }
                 else // Oculus SDK
                 {
@@ -453,7 +460,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 {
                     if (Config.Instance.sdkMode == SdkMode.OpenXR)
                     {
-                        wandTip.transform.localRotation = Quaternion.Euler(WAND_TIP_ROTATION_OFFSET_RIFT);
+                        wandTip.transform.localRotation = Quaternion.Euler(WAND_TIP_ROTATION_OFFSET_QUEST);
                     }
                     else
                     {
@@ -1448,7 +1455,7 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_RIFT - new Vector3(0f, 0f, -0.045f);
+                    defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_QUEST - new Vector3(0f, 0f, -0.045f);
                 }
                 else
                 {

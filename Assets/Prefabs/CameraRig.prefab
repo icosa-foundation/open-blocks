@@ -31206,7 +31206,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4729913668253784}
   m_Layer: 10
-  m_Name: SteamRiftHolder
+  m_Name: OpenXRHolder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -31221,7 +31221,7 @@ Transform:
   m_GameObject: {fileID: 1386834709207246}
   serializedVersion: 2
   m_LocalRotation: {x: 0.33581755, y: -0.021987034, z: -0.007899157, w: 0.9416373}
-  m_LocalPosition: {x: -0.0041, y: -0.0421, z: -0.038}
+  m_LocalPosition: {x: -0.006, y: -0.04, z: -0.038}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -55282,7 +55282,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   controllerGeometry: {fileID: 0}
-  openXRHolder: {fileID: 1417187831548636}
+  openXRHolder: {fileID: 1386834709207246}
   oculusRiftHolder: {fileID: 1417187831548636}
   wandTip: {fileID: 1513310049355346}
   wandTipLabel: {fileID: 102031247094875194}
