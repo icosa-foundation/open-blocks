@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System.Linq;
@@ -214,18 +215,20 @@ namespace com.google.apps.peltzer.client.desktop_app
                         PeltzerMain.Instance.hmd.transform.position);
                     Vector3 headForward = PeltzerMain.Instance.hmd.transform.forward;
 
-
+                    List<MMesh> meshes = null;
                     MMesh mesh = null;
                     switch (fileType)
                     {
                         case FileType.OBJ:
                             model.MMeshFromObj(modelFilenames, out mesh);
+                            meshes = new List<MMesh> { mesh };
                             break;
                         case FileType.OFF:
                             model.MMeshFromOff(modelFilenames, out mesh);
+                            meshes = new List<MMesh> { mesh };
                             break;
                         case FileType.GLTF:
-                            mesh = model.MMeshFromGltf(modelFilenames);
+                            meshes = model.MMeshFromGltf(modelFilenames);
                             break;
                         case FileType.BLOCKS:
                             // Everything done in DoBlocksImport
@@ -234,10 +237,13 @@ namespace com.google.apps.peltzer.client.desktop_app
 
                     // Request that the geometry be positioned reasonably, so that it appears in front
                     // of the user at the given minimum distance.
-                    model.AddMMesh(mesh,
+                    model.AddMMesh(
+                        meshes,
                         headInModelSpace,
                         headForward,
-                        MIN_IMPORTED_OBJ_DISTANCE_FROM_USER);
+                        MIN_IMPORTED_OBJ_DISTANCE_FROM_USER,
+                        asGroup: true
+                    );
                 }
             }
         }

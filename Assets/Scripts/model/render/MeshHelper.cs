@@ -497,42 +497,42 @@ namespace com.google.apps.peltzer.client.model.render
             return MMeshFromMeshes(id, mDict);
         }
 
-        public static MMesh MMeshFromMeshes(List<Mesh> meshes)
+        public static List<MMesh> MMeshFromMeshes(List<Mesh> meshes, List<Color> meshBaseColors)
         {
-            var allVertices = new List<Vector3>();
-            var allFaces = new List<List<int>>();
-            var allFaceProperties = new List<FaceProperties>();
+            var mmeshes = new List<MMesh>();
 
-            foreach (var mesh in meshes)
+            for (var i = 0; i < meshes.Count; i++)
             {
+                var mesh = meshes[i];
                 var faces = new List<List<int>>();
                 var faceProperties = new List<FaceProperties>();
                 var colors = mesh.colors;
-                var verts = mesh.vertices;
-                for (var i = 0; i < mesh.colors.Length; i += 3)
+                for (var vertexIndex = 0; vertexIndex < mesh.triangles.Length - 3; vertexIndex += 3)
                 {
-                    var face = new List<int>(3);
-                    var col = colors[i];
-                    var vert = verts[i];
-                    face.Add(i + allVertices.Count);
-                    face.Add(i + allVertices.Count + 1);
-                    face.Add(i + allVertices.Count + 2);
+                    var face = new List<int>
+                    {
+                        mesh.triangles[vertexIndex],
+                        mesh.triangles[vertexIndex + 1],
+                        mesh.triangles[vertexIndex + 2]
+                    };
                     faces.Add(face);
+                    Color col = meshBaseColors[i];
+                    if (colors.Length > vertexIndex)
+                    {
+                        col *= colors[vertexIndex];
+                    }
                     faceProperties.Add(new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(col)));
                 }
-                allFaceProperties.AddRange(faceProperties);
-                allFaces.AddRange(faces);
-                allVertices.AddRange(mesh.vertices.ToList());
+                mmeshes.Add(new MMesh(
+                    PeltzerMain.Instance.model.GenerateMeshId(),
+                    Vector3.zero,
+                    Quaternion.identity,
+                    mesh.vertices.ToList(),
+                    faces,
+                    faceProperties
+                ));
             }
-            var mmesh = new MMesh(
-                PeltzerMain.Instance.model.GenerateMeshId(),
-                Vector3.zero,
-                Quaternion.identity,
-                allVertices,
-                allFaces,
-                allFaceProperties
-            );
-            return mmesh;
+            return mmeshes;
         }
 
         public static MMesh MMeshFromMeshes(int id, Dictionary<Material, List<MeshVerticesAndTriangles>> materialsAndMeshes)
