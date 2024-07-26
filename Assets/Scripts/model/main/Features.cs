@@ -26,7 +26,7 @@ namespace com.google.apps.peltzer.client.model.main
     public class Features
     {
         // If true, CSG subtraction (subtracting one shape from another, also known as "carving") is enabled.
-        public static bool csgSubtractEnabled = false;
+        public static bool csgSubtractEnabled = true;
 
         // If true, saves creations in the Mogwai object store.
         public static bool saveToMogwaiObjectStore = true;

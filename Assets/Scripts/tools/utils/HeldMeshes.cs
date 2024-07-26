@@ -456,7 +456,7 @@ namespace com.google.apps.peltzer.client.tools.utils
                   model,
                   spatialIndex,
                   worldSpace,
-                  peltzerController.mode == ControllerMode.subtract,
+                  peltzerController.mode == ControllerMode.csg,
                   out finalVolumePreviewMeshRotation,
                   out previewFace,
                   out coplanarPreviewFaceVerticesAtOrigin,

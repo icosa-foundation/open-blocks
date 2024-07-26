@@ -68,7 +68,7 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <summary>
         /// Mode for deleting meshes via subtraction (csg).
         /// </summary>
-        subtract,
+        csg,
         /// <summary>
         /// Mode for deleting edges.
         /// </summary>
