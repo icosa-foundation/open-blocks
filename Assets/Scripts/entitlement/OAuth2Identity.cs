@@ -270,7 +270,7 @@ namespace com.google.apps.peltzer.client.entitlement
         }
 
         /// <summary>
-        ///   Attempt to authorise the user via a refresh token, or by giving them a browser window 
+        ///   Attempt to authorise the user via a refresh token, or by giving them a browser window
         ///   to authorize permissions then get refresh and access tokens.
         /// </summary>
         /// <param name="onSuccess">Callback on success</param>
