@@ -1,9 +1,36 @@
-# Blocks README
+# Open Blocks - 3D Modelling for Everyone
 
-Blocks is licensed under Apache 2.0. It is not an officially supported
-Google product. See the [LICENSE](LICENSE) file for more details.
+![Current Version](https://img.shields.io/github/v/release/icosa-foundation/open-blocks)
+![Prerelease Version](https://img.shields.io/github/v/release/icosa-foundation/open-blocks?include_prereleases&label=prerelease)
+[![Support us on Open Collective!](https://img.shields.io/opencollective/all/icosa?logo=open-collective&label=Support%20us%20on%20Open%20Collective%21)](https://opencollective.com/icosa)
+[![X](https://img.shields.io/badge/follow-%40openblocksapp-blue.svg?style=flat&logo=x)](https://x.com/openblocksapp)
+[![Discord](https://discordapp.com/api/guilds/783806589991780412/embed.png?style=shield)](https://discord.gg/W7NCEYnEfy)
 
-## Trademarks
+
+[![Open Blocks Banner](open-blocks.png)](https://openblocks.app)
+
+Open Blocks is a free fork of Blocks by Google, An app designed to make creating 3D models fun, easy, and accessible. We are in the process of making large number of changes. Please check our progress and our roadmap on our [docs site](https://docs.openblocks.app).
+
+We hope to maintain and improve upon Blocks as a community-led project, free forever!
+
+As the original repo is archived we cannot submit PRs, so feel free to submit them here!
+
+[User Guide](https://docs.openblocks.app/)  
+[Please join the Icosa Discord and get involved!](https://discord.com/invite/W7NCEYnEfy)  
+[Support us on Open Collective](https://opencollective.com/icosa)
+
+## Downloads
+### Stores
+(Coming Soon)
+
+### GitHub
+- [Formal GitHub Releases](https://github.com/icosa-foundation/open-blocks/releases/latest)
+
+
+## Acknowledgements
+* Thank you to the original developers for your amazing work and for finding a way to open source the app!
+
+## Important note from the original Blocks README
 
 The Blocks trademark and logo (“Blocks Trademarks”) are trademarks of
 Google, and are treated separately from the copyright or patent license grants
@@ -14,19 +41,15 @@ approved in advance.
 For more information, read the
 [Blocks Brand Guidelines](BRAND_GUIDELINES.md).
 
-## Building the application
+---
 
-Get the Blocks open-source application running on your own devices.
+# Building the application
 
-### Prerequisites #TODO
+Get the Open Blocks open-source application running on your own devices.
 
-*   [Unity 2018.4.11f1](unityhub://2018.4.11f1/7098af2f11ea)
-*   [SteamVR](https://store.steampowered.com/app/250820/SteamVR/)
+### Prerequisites
 
-The code is provided as-is.  Some external dependencies were removed.  It will
-not build out of the box.  Someone who is comfortable with Unity and SteamVR
-will likely be able to get it running in an afternoon (maybe with some
-functionality disabled).
+*   [Unity 2019.4.25f1](unityhub://2019.4.25f1/01a0494af254)
 
 ### Changing the application name
 
@@ -42,64 +65,19 @@ Please see the [Blocks Brand Guidelines](BRAND_GUIDELINES.md) for more details.
 Some systems in Blocks were removed or replaced with alternatives due to
 open-source licensing issues. These are:
 
- * OpenVR
- * AnimatedGifEncoder32
- * LZWEncoder
+* AnimatedGifEncoder32
+* LZWEncoder
+
+## Known issues
+
+OculusVR mode and reference image insertion are not currently functional in this
+branch.
 
 ## Google service API support
 
-Set up Google API support to access Google services in the app.
+Legacy code is included to connect to Google APIs for People and Drive
+integrations. This is not critical to the Blocks experience, but is left
+as a convenience for any forks that wish to make use of it with a new backend.
 
-### Enabling Google service APIs
-
-Follow these steps when enabling Google service APIs:
-
-1.  Create a new project in the
-    [Google Cloud Console](https://console.developers.google.com/).
-1.  Enable the following APIs and services:
-
-    *   **Google Drive API** — for backup to Google Drive
-    *   **People API** — for username and profile picture
-
-Note: The name of your application on the developer console should match the
-name you've given the app in `App.kGoogleServicesAppName` in `App.cs`.
-
-### Creating a Google API key
-
-Follow these steps when creating a Google API key:
-
-1.  Go to the Credentials page from the Google Cloud Console.
-1.  Click **Create Credential** and select **API key** from the drop-down menu.
-
-### Google OAuth consent screen information
-
-The OAuth consent screen asks users for permission to access their Google
-account. You should be able to configure it from the Credentials screen.
-
-Follow these steps when configuring the OAuth consent screen:
-
-1.  Fill in the name and logo of your app, as well as the scope of the user data
-    that the app will access.
-1.  Add the following paths to the list of scopes:
-
-    *   Google Drive API `../auth/drive.appdata`
-    *   Google Drive API `../auth/drive.file`
-
-### Creating an OAuth credential
-
-The credential identifies the application to the Google servers. Follow these
-steps to create an OAuth credential:
-
-1.  Create a new credential on the Credentials screen.
-1.  Select **OAuth**, and then select **Other**. Take note of the client ID and
-    client secret values that are created for you. Keep the client secret a
-    secret!
-
-### Storing the Google API Key and credential data
-
-Follow these steps to store the Google API Key and credential data: #TODO
-
-1.  There is an asset in the `Assets/` directory called `Secrets` that contains
-    a `Secrets` field. Add a new item to this field.
-2.  Select `Google` as the service. Paste in the API key, client ID, and client
-    secret that were generated earlier.
+You must register new projects and obtain new keys and credentials from the
+Google Cloud Console to make use of these features.
