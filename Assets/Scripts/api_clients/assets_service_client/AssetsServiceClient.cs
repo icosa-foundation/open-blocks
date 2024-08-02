@@ -333,10 +333,12 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             // A bit ugly: we simply take one arbitrary entry (we assume only one entry exists, as we only ever upload one).
             //blocksAsset.rootUrl = asset["formats"]["7"]["format"][0]["root"]["dataUrl"].ToString();
             var assets = asset["formats"].AsJEnumerable();
-            blocksAsset.rootUrl = assets.First(x =>
-                x["formatType"].ToString() == "BLOCKS" ||
-                x["formatType"].ToString() == "GLTF" ||
-                x["formatType"].ToString() == "GLTF2").ToString();
+            var blocksEntry = assets.FirstOrDefault(x => x["formatType"].ToString() == "BLOCKS");
+            if (blocksEntry == null)
+            {
+                return false;
+            }
+            blocksAsset.rootUrl = blocksEntry["root"]["url"].ToString();
             blocksAsset.baseFile = "";
             entryAssets.peltzer = blocksAsset;
             objectStoreEntry.assets = entryAssets;
