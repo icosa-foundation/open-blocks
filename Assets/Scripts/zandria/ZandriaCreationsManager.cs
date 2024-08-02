@@ -863,7 +863,8 @@ namespace com.google.apps.peltzer.client.zandria
             }
             else
             {
-                UnityWebRequest request = assetsServiceClient.GetRequest(entry.thumbnail, "image/png");
+                // TODO Do we ever need to authenticate thumbnail requests?
+                UnityWebRequest request = assetsServiceClient.GetRequest(entry.thumbnail, "image/png", false);
                 PeltzerMain.Instance.webRequestManager.EnqueueRequest(
                   () => { return request; },
                   (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
