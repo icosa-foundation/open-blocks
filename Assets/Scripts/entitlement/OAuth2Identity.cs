@@ -712,7 +712,7 @@ namespace com.google.apps.peltzer.client.entitlement
 
         private static string UserInfoRequestUri()
         {
-            return String.Format("{0}&key={1}", m_UserInfoUri, AssetsServiceClient.POLY_KEY);
+            return String.Format("{0}", m_UserInfoUri);
         }
 
         private IEnumerator GetUserInfo()
