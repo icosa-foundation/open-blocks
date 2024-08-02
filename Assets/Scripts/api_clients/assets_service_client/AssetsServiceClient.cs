@@ -19,6 +19,7 @@ using System.Text;
 using System.IO;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -244,28 +245,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             // Try and actually parse the string.
             JObject results = JObject.Parse(response);
-            IJEnumerable<JToken> assets = results["asset"].AsJEnumerable();
+            IJEnumerable<JToken> assets = results["assets"].AsJEnumerable();
             if (assets == null)
             {
                 return false;
-            }
-
-            // Build accountId to name map first
-            Dictionary<string, string> authorNamesById = new Dictionary<string, string>();
-            JToken accounts = results["account"];
-            if (accounts != null)
-            {
-                foreach (JToken account in accounts)
-                {
-                    string id = account.First["accountId"].ToString();
-                    string name = "";
-                    JToken displayName = account.First["displayName"];
-                    if (displayName != null)
-                    {
-                        name = displayName.ToString();
-                    }
-                    authorNamesById.Add(id, name);
-                }
             }
 
             // Then parse the assets.
@@ -276,15 +259,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 ObjectStoreEntry objectStoreEntry;
                 string author = null;
-                var accountId = asset["accountId"];
-                if (accountId != null)
-                {
-                    authorNamesById.TryGetValue(accountId.ToString(), out author);
-                }
+                var accountId = asset["authorId"];
 
                 if (type == PolyMenuMain.CreationType.FEATURED || type == PolyMenuMain.CreationType.LIKED)
                 {
-                    string assetId = asset["assetId"].ToString();
+                    string assetId = asset["url"].ToString();
                     if (firstAssetId == null)
                     {
                         firstAssetId = assetId;
@@ -325,23 +304,18 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             objectStoreEntry = new ObjectStoreEntry();
 
-            if (asset["accessLevel"] == null)
+            if (asset["visibility"] == null)
             {
                 Debug.Log("Asset had no access level set");
                 return false;
             }
-            objectStoreEntry.isPrivateAsset = asset["accessLevel"].ToString() == "PRIVATE";
+            objectStoreEntry.isPrivateAsset = asset["visibility"].ToString() == "PRIVATE";
 
-            objectStoreEntry.id = asset["assetId"].ToString();
+            objectStoreEntry.id = asset["url"].ToString();
             JToken thumbnailRoot = asset["thumbnail"];
             if (thumbnailRoot != null)
             {
-                IJEnumerable<JToken> thumbnailElements = asset["thumbnail"].AsJEnumerable();
-                foreach (JToken thumbnailElement in thumbnailElements)
-                {
-                    objectStoreEntry.thumbnail = thumbnailElement["typeInfo"]["imageInfo"]["fifeUrl"].ToString();
-                    break;
-                }
+                objectStoreEntry.thumbnail = asset["thumbnail"]["relativePath"].ToString();
             }
             List<string> tags = new List<string>();
             IJEnumerable<JToken> assetTags = asset["tag"].AsJEnumerable();
@@ -356,18 +330,22 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     objectStoreEntry.tags = tags.ToArray();
                 }
             }
-            ObjectStoreObjectAssetsWrapper entryAssets = new ObjectStoreObjectAssetsWrapper();
-            ObjectStorePeltzerAssets blocksAsset = new ObjectStorePeltzerAssets();
+            var entryAssets = new ObjectStoreObjectAssetsWrapper();
+            var blocksAsset = new ObjectStorePeltzerAssets();
             // 7 is the enum for Blocks in ElementType
             // A bit ugly: we simply take one arbitrary entry (we assume only one entry exists, as we only ever upload one).
-            blocksAsset.rootUrl = asset["formatList"]["7"]["format"][0]["root"]["dataUrl"].ToString();
-
+            //blocksAsset.rootUrl = asset["formats"]["7"]["format"][0]["root"]["dataUrl"].ToString();
+            var assets = asset["formats"].AsJEnumerable();
+            blocksAsset.rootUrl = assets.First(x =>
+                x["formatType"].ToString() == "BLOCKS" || 
+                x["formatType"].ToString() == "GLTF" ||
+                x["formatType"].ToString() == "GLTF2").ToString();
             blocksAsset.baseFile = "";
             entryAssets.peltzer = blocksAsset;
             objectStoreEntry.assets = entryAssets;
             objectStoreEntry.title = asset["displayName"].ToString();
             objectStoreEntry.createdDate = DateTime.Parse(asset["createTime"].ToString());
-            objectStoreEntry.cameraForward = GetCameraForward(asset["cameraParams"]);
+            objectStoreEntry.cameraForward = GetCameraForward(asset["presentationParams"]["orientingRotation"]);
             return true;
         }
 
