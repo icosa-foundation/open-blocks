@@ -312,7 +312,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             JToken thumbnailRoot = asset["thumbnail"];
             if (thumbnailRoot != null)
             {
-                objectStoreEntry.thumbnail = asset["thumbnail"]["relativePath"].ToString();
+                objectStoreEntry.thumbnail = asset["thumbnail"]["url"].ToString();
             }
             List<string> tags = new List<string>();
             IJEnumerable<JToken> assetTags = asset["tag"].AsJEnumerable();
@@ -947,9 +947,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
               .Append("Response Code: ").AppendLine(request.responseCode.ToString())
               .Append("Error Message: ").AppendLine(request.error);
 
-            foreach (KeyValuePair<string, string> header in request.GetResponseHeaders())
+            var headers = request.GetResponseHeaders();
+            if (headers != null)
             {
-                debugString.Append(header.Key).Append(" : ").AppendLine(header.Value);
+                foreach (KeyValuePair<string, string> header in headers)
+                {
+                    debugString.Append(header.Key).Append(" : ").AppendLine(header.Value);
+                }
             }
             return debugString.ToString();
         }
