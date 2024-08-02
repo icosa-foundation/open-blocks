@@ -386,7 +386,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           bool isRecursion = false)
         {
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
-            UnityWebRequest request = GetRequest(FeaturedModelsSearchUrl(), "text/text");
+            UnityWebRequest request = GetRequest(FeaturedModelsSearchUrl(), "text/text", false);
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
             () => { return request; },
             (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
@@ -426,7 +426,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public void GetYourModels(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
           bool isRecursion = false)
         {
-            UnityWebRequest request = GetRequest(YourModelsSearchUrl(), "text/text");
+            UnityWebRequest request = GetRequest(YourModelsSearchUrl(), "text/text", true);
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
@@ -466,7 +466,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <param name="callback">A callback to which to pass the results.</param>
         public void GetLikedModels(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback)
         {
-            UnityWebRequest request = GetRequest(LikedModelsSearchUrl(), "text/text");
+            UnityWebRequest request = GetRequest(LikedModelsSearchUrl(), "text/text", true);
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
@@ -503,8 +503,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <param name="callback">A callback to which to pass the results.</param>
         public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback)
         {
-            UnityWebRequest request = GetRequest(url, "text/text");
             string url = String.Format("{0}/assets/{1}", BaseUrl(), assetId);
+            UnityWebRequest request = GetRequest(url, "text/text", false); // TODO How do we decide whether we need to authenticate?
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
@@ -1031,12 +1031,12 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <summary>
         ///   Forms a GET request from a HTTP path.
         /// </summary>
-        public UnityWebRequest GetRequest(string path, string contentType)
+        public UnityWebRequest GetRequest(string path, string contentType, bool requireAuth)
         {
             // The default constructor for a UnityWebRequest gives a GET request.
             UnityWebRequest request = new UnityWebRequest(path);
             request.SetRequestHeader("Content-type", contentType);
-            if (OAuth2Identity.Instance.HasAccessToken)
+            if (requireAuth && OAuth2Identity.Instance.HasAccessToken)
             {
                 OAuth2Identity.Instance.Authenticate(request);
             }
