@@ -108,7 +108,6 @@ namespace com.google.apps.peltzer.client.model.export
         /// </summary>
         static void CallBackFunction(string str)
         {
-            Debug.Log("Callback " + str);
         }
 
         /// <summary>
@@ -154,7 +153,7 @@ namespace com.google.apps.peltzer.client.model.export
         {
             // We do not wish to duplicate vertices that are shared across faces. As such, we maintain a dictionary from
             // Vertex.id to the index in the vertices list this method updates. We only need to maintain this dictionary
-            // per mesh, as Vertex.id is only shared within a single MMesh. Similar to what the .obj exporter does to 
+            // per mesh, as Vertex.id is only shared within a single MMesh. Similar to what the .obj exporter does to
             // maintain non-duplicate vertices, but zero indexed.
             List<Vector3> meshVertices = new List<Vector3>();
             List<Vector3> meshNormals = new List<Vector3>();
