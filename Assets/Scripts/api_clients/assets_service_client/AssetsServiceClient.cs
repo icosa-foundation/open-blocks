@@ -190,7 +190,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
             return String.Format("{0}/assets?filter=format_type:BLOCKS,admin_tag:blocksgallery,license:CREATIVE_COMMONS_BY" +
-              "&order_by=create_time%20desc&page_size={2}", BaseUrl(), pageSize);
+              "&order_by=create_time%20desc&page_size={1}", BaseUrl(), pageSize);
         }
 
         private static string LikedModelsSearchUrl()
