@@ -334,7 +334,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             //blocksAsset.rootUrl = asset["formats"]["7"]["format"][0]["root"]["dataUrl"].ToString();
             var assets = asset["formats"].AsJEnumerable();
             blocksAsset.rootUrl = assets.First(x =>
-                x["formatType"].ToString() == "BLOCKS" || 
+                x["formatType"].ToString() == "BLOCKS" ||
                 x["formatType"].ToString() == "GLTF" ||
                 x["formatType"].ToString() == "GLTF2").ToString();
             blocksAsset.baseFile = "";
