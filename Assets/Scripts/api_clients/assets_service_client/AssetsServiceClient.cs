@@ -171,9 +171,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
     public class AssetsServiceClient : MonoBehaviour
     {
-        public static string AUTOPUSH_BASE_URL = "https://icosa-api.ixxy.co.uk/v1";
-        public static string PROD_BASE_URL = "https://icosa-api.ixxy.co.uk/v1";
         public static string WEB_BASE_URL = "https://icosa.ixxy.co.uk";
+        private static string AUTOPUSH_BASE_URL = "https://icosa-api.ixxy.co.uk/v1";
+        private static string PROD_BASE_URL = "https://icosa-api.ixxy.co.uk/v1";
 
         public static string BaseUrl() { return Features.useZandriaProd ? PROD_BASE_URL : AUTOPUSH_BASE_URL; }
         // The base for the URL to be opened in a user's browser if they wish to publish.
@@ -207,7 +207,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
 
-            return String.Format("{0}/accounts/me/assets?filter=format_type:BLOCKS&access_level=PRIVATE" +
+            return String.Format("{0}/users/me/assets?filter=format_type:BLOCKS&access_level=PRIVATE" +
               "&order_by=create_time%20desc&page_size={1}", BaseUrl(), pageSize);
         }
 
@@ -902,14 +902,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private IEnumerator AddResource(string filename, string mimeType, byte[] data, string key)
         {
             elementUploadStates.Add(key, UploadState.IN_PROGRESS);
-            string url = string.Format("{0}/uploads", BaseUrl());
+            string url = string.Format("{0}/assets", BaseUrl());
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
             for (int i = 0; i < 2; i++)
             {
                 request = PostRequest(url, "multipart/form-data; boundary=" + BOUNDARY, data, compressResourceUpload);
-                request.SetRequestHeader("X-Google-Project-Override", "apikey");
                 request.downloadHandler = new DownloadHandlerBuffer();
 
                 yield return request.Send();

@@ -593,8 +593,8 @@ namespace com.google.apps.peltzer.client.entitlement
         private const string m_ClientId = "TODO";
         private const string m_ClientSecret = "TODO";
         //private const string m_AccessTokenUri = "https://accounts.google.com/o/oauth2/token";
-        private static string m_UserInfoUri = $"{AssetsServiceClient.PROD_BASE_URL}/users/me";
-        private static string m_LoginUrl = $"{AssetsServiceClient.PROD_BASE_URL}/login/device_login";
+        private static string m_UserInfoUri = $"{AssetsServiceClient.BaseUrl()}/users/me";
+        private static string m_LoginUrl = $"{AssetsServiceClient.BaseUrl()}/login/device_login";
         private const string m_OAuthScope = "profile email " +
           "https://www.googleapis.com/auth/plus.me " +
           "https://www.googleapis.com/auth/plus.peopleapi.readwrite";
@@ -711,7 +711,7 @@ namespace com.google.apps.peltzer.client.entitlement
         /// Sign an outgoing request.
         public void Authenticate(UnityWebRequest www)
         {
-            www.SetRequestHeader("Authorization", String.Format("Bearer {0}", m_AccessToken));
+            www.SetRequestHeader("Authorization", $"Bearer {m_AccessToken}");
         }
 
         private static string UserInfoRequestUri()
@@ -721,7 +721,7 @@ namespace com.google.apps.peltzer.client.entitlement
 
         private IEnumerator GetUserInfo()
         {
-            if (String.IsNullOrEmpty(m_RefreshToken))
+            if (String.IsNullOrEmpty(m_AccessToken))
             {
                 yield break;
             }
@@ -732,31 +732,17 @@ namespace com.google.apps.peltzer.client.entitlement
                 using (UnityWebRequest www = UnityWebRequest.Get(UserInfoRequestUri()))
                 {
                     Authenticate(www);
-                    yield return www.Send();
+                    yield return www.SendWebRequest();
                     if (www.responseCode == 200)
                     {
                         JObject json = JObject.Parse(www.downloadHandler.text);
-                        user.id = json["resourceName"].ToString();
-                        user.name = json["names"][0]["displayName"].ToString();
-                        string iconUri = json["photos"][0]["url"].ToString();
-                        if (json["residences"] != null)
-                        {
-                            user.location = json["residences"][0]["value"].ToString();
-                        }
-                        if (json["emailAddresses"] != null)
-                        {
-                            foreach (var email in json["emailAddresses"])
-                            {
-                                var primary = email["metadata"]["primary"];
-                                if (primary != null && primary.Value<bool>())
-                                {
-                                    user.email = email["value"].ToString();
-                                    break;
-                                }
-                            }
-                        }
+                        user.id = json["id"].ToString();
+                        user.name = json["displayName"].ToString();
+                        user.email = json["email"].ToString();
                         Profile = user;
-                        yield return LoadProfileIcon(iconUri);
+                        // TODO
+                        // string iconUri = json["photos"][0]["url"].ToString();
+                        // yield return LoadProfileIcon(iconUri);
 
                         Debug.Log(Profile.name + " logged in.");
                         yield break;
