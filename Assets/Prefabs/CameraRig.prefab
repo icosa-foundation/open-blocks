@@ -21592,6 +21592,7 @@ MonoBehaviour:
   publishSignInPrompt: {fileID: 0}
   tutorialExitPrompt: {fileID: 0}
   saveLocallyPrompt: {fileID: 0}
+  keyboardGameobject: {fileID: 0}
 --- !u!114 &114047447275928684
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -72297,6 +72298,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Keyboard
       objectReference: {fileID: 0}
+    - target: {fileID: 1934243545717122, guid: ef7eb6dda2db50c4bbf6c682e4a21736, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 224560323429904302, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}
       propertyPath: m_Pivot.x
@@ -72355,7 +72360,7 @@ PrefabInstance:
     - target: {fileID: 224560323429904302, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.293
+      value: -0.32
       objectReference: {fileID: 0}
     - target: {fileID: 224560323429904302, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}

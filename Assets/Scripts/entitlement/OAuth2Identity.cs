@@ -26,6 +26,8 @@ using UnityEngine.Networking;
 using Newtonsoft.Json.Linq;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
+using com.google.apps.peltzer.client.model.controller;
+using TiltBrush;
 
 namespace com.google.apps.peltzer.client.entitlement
 {
@@ -590,9 +592,9 @@ namespace com.google.apps.peltzer.client.entitlement
         private const string m_ServiceName = "Google";
         private const string m_ClientId = "TODO";
         private const string m_ClientSecret = "TODO";
-        private const string m_RequestTokenUri = "https://accounts.google.com/o/oauth2/auth";
-        private const string m_AccessTokenUri = "https://accounts.google.com/o/oauth2/token";
-        private const string m_UserInfoUri = "[Removed]";
+        //private const string m_AccessTokenUri = "https://accounts.google.com/o/oauth2/token";
+        private static string m_UserInfoUri = $"{AssetsServiceClient.PROD_BASE_URL}/users/me";
+        private static string m_LoginUrl = $"{AssetsServiceClient.PROD_BASE_URL}/login/device_login";
         private const string m_OAuthScope = "profile email " +
           "https://www.googleapis.com/auth/plus.me " +
           "https://www.googleapis.com/auth/plus.peopleapi.readwrite";
@@ -651,11 +653,21 @@ namespace com.google.apps.peltzer.client.entitlement
             }
         }
 
-        // TODO AB
-        public bool LoggedIn => true;
+        public bool LoggedIn
+        {
+            // We don't consider us logged in until we have the UserInfo
+            get { return HasAccessToken && Profile != null; }
+        }
 
-        // TODO AB
-        public bool HasAccessToken => true;
+        public bool HasAccessToken
+        {
+            get { return m_AccessToken != null; }
+        }
+
+        public void SetAccessToken(string accessToken)
+        {
+            m_AccessToken = accessToken;
+        }
 
         void Awake()
         {
@@ -676,32 +688,24 @@ namespace com.google.apps.peltzer.client.entitlement
 
         public void Login(System.Action onSuccess, System.Action onFailure, bool promptUserIfNoToken)
         {
-            // TODO AB
-            return;
             StartCoroutine(Authorize(onSuccess, onFailure, promptUserIfNoToken));
         }
 
         public void Logout()
         {
-            // TODO AB
-            return;
-
-            if (m_RefreshToken != null)
+            // Not sure if it's possible for m_User to be null here.
+            if (Profile != null)
             {
-                // Not sure if it's possible for m_User to be null here.
-                if (Profile != null)
-                {
-                    Debug.Log(Profile.name + " logged out.");
-                }
-                else
-                {
-                    Debug.Log("Logged out.");
-                }
-                m_RefreshToken = null;
-                m_AccessToken = null;
-                Profile = null;
-                PlayerPrefs.DeleteKey(m_PlayerPrefRefreshKey);
+                Debug.Log(Profile.name + " logged out.");
             }
+            else
+            {
+                Debug.Log("Logged out.");
+            }
+            m_RefreshToken = null;
+            m_AccessToken = null;
+            Profile = null;
+            PlayerPrefs.DeleteKey(m_PlayerPrefRefreshKey);
         }
 
         /// Sign an outgoing request.
@@ -712,7 +716,7 @@ namespace com.google.apps.peltzer.client.entitlement
 
         private static string UserInfoRequestUri()
         {
-            return String.Format("{0}", m_UserInfoUri);
+            return m_UserInfoUri;
         }
 
         private IEnumerator GetUserInfo()
@@ -772,41 +776,40 @@ namespace com.google.apps.peltzer.client.entitlement
             Profile = null;
         }
 
-        // I have a refresh token, I need an access token.
         public IEnumerator<object> Reauthorize()
         {
-            // TODO AB
+            // TODO What do we need to do here?
             yield break;
-            m_AccessToken = null;
-            if (!String.IsNullOrEmpty(m_RefreshToken))
-            {
-                Dictionary<string, string> parameters = new Dictionary<string, string>();
-                parameters.Add("client_id", m_ClientId);
-                parameters.Add("client_secret", m_ClientSecret);
-                parameters.Add("refresh_token", m_RefreshToken);
-                parameters.Add("grant_type", "refresh_token");
-                using (UnityWebRequest www = UnityWebRequest.Post(m_AccessTokenUri, parameters))
-                {
-                    yield return www.Send();
-                    if (www.isNetworkError)
-                    {
-                        Debug.LogError("Network error");
-                        yield break;
-                    }
-
-                    if (www.responseCode == 400 || www.responseCode == 401)
-                    {
-                        // Refresh token revoked or expired - forget it
-                        m_RefreshToken = null;
-                        PlayerPrefs.DeleteKey(m_PlayerPrefRefreshKey);
-                    }
-                    else
-                    {
-                        JObject json = JObject.Parse(www.downloadHandler.text);
-                        m_AccessToken = json["access_token"].ToString();
-                    }
-                }
-            }
+            // m_AccessToken = null;
+            // if (!String.IsNullOrEmpty(m_RefreshToken))
+            // {
+            //     Dictionary<string, string> parameters = new Dictionary<string, string>();
+            //     parameters.Add("client_id", m_ClientId);
+            //     parameters.Add("client_secret", m_ClientSecret);
+            //     parameters.Add("refresh_token", m_RefreshToken);
+            //     parameters.Add("grant_type", "refresh_token");
+            //     using (UnityWebRequest www = UnityWebRequest.Post(m_AccessTokenUri, parameters))
+            //     {
+            //         yield return www.Send();
+            //         if (www.isNetworkError)
+            //         {
+            //             Debug.LogError("Network error");
+            //             yield break;
+            //         }
+            //
+            //         if (www.responseCode == 400 || www.responseCode == 401)
+            //         {
+            //             // Refresh token revoked or expired - forget it
+            //             m_RefreshToken = null;
+            //             PlayerPrefs.DeleteKey(m_PlayerPrefRefreshKey);
+            //         }
+            //         else
+            //         {
+            //             JObject json = JObject.Parse(www.downloadHandler.text);
+            //             m_AccessToken = json["access_token"].ToString();
+            //         }
+            //     }
+            // }
         }
 
         /// <summary>
@@ -818,11 +821,76 @@ namespace com.google.apps.peltzer.client.entitlement
         /// <param name="promptUserIfNoToken">
         ///   If true, will prompt the user to sign in via a browser if no refresh token found.
         /// </param>
-        public IEnumerator<object> Authorize(System.Action onSuccess, System.Action onFailure, bool promptUserIfNoToken)
+        public IEnumerator<object> Authorize(Action onSuccess, Action onFailure, bool promptUserIfNoToken)
         {
             if (String.IsNullOrEmpty(m_RefreshToken) && promptUserIfNoToken)
             {
-                m_RefreshToken = "TODO";
+                string deviceCodeUrl = $"{AssetsServiceClient.WEB_BASE_URL}/device";
+                // Something about the url makes OpenURL() not work on OSX, so use a workaround
+                if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer)
+                {
+                    System.Diagnostics.Process.Start(deviceCodeUrl);
+                }
+                else
+                {
+                    Application.OpenURL(deviceCodeUrl);
+                }
+
+                void onSubmit(object sender, string deviceCode)
+                {
+                    m_VerificationCode = deviceCode;
+                }
+
+                PeltzerMain.Instance.paletteController.EnableKeyboard(onSubmit);
+                PeltzerMain.Instance.paletteController.publishedTakeOffHeadsetPrompt.SetActive(false);
+
+                if (m_WaitingOnAuthorization)
+                {
+                    // A previous attempt is already waiting
+                    yield break;
+                }
+                m_WaitingOnAuthorization = true;
+                m_VerificationCode = null;
+                m_VerificationError = false;
+
+                // Wait for verification
+                while (m_VerificationCode == null || m_VerificationError)
+                {
+                    yield return null;
+                }
+
+                if (m_VerificationError)
+                {
+                    Debug.LogError("Account verification failed");
+                    Debug.LogFormat("Verification error {0}", m_VerificationCode);
+                    m_WaitingOnAuthorization = false;
+                    yield break;
+                }
+
+                // TODO: For Unity 2021+
+                var www = UnityWebRequest.Post($"{m_LoginUrl}?device_code={m_VerificationCode}", "{}");
+
+                yield return www.Send();
+                if (www.isNetworkError)
+                {
+                    Debug.LogError("Network error");
+                    m_WaitingOnAuthorization = false;
+                    yield break;
+                }
+                else if (www.responseCode >= 400)
+                {
+                    Debug.LogError("Authorization failed");
+                    Debug.LogFormat("Authorization error {0}", www.downloadHandler.text);
+                    m_WaitingOnAuthorization = false;
+                    yield break;
+                }
+
+                JObject json = JObject.Parse(www.downloadHandler.text);
+                if (json != null)
+                {
+                    m_AccessToken = json["access_token"].ToString();
+                }
+                m_WaitingOnAuthorization = false;
             }
 
             yield return GetUserInfo();
