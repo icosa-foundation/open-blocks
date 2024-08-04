@@ -88,7 +88,7 @@ public class NativeSpatial<T> : CollisionSystem<T>
         }
         catch (Exception e)
         {
-            Debug.LogWarning("Error initializing NativeSpatial: " + e);
+            Debug.LogError("Failed to allocate spatial partitioner: " + e.Message);
         }
     }
 
