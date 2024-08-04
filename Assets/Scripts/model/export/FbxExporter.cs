@@ -99,7 +99,7 @@ namespace com.google.apps.peltzer.client.model.export
             catch (Exception ex)
             {
                 // Missing FBX DLL.
-                Debug.LogError("Unable to load FBXExporter DLL: " + ex.ToString());
+                Debug.LogWarning("Unable to load FBXExporter DLL: " + ex.ToString());
             }
         }
 

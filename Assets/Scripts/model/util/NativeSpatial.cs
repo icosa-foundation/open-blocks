@@ -82,7 +82,14 @@ public class NativeSpatial<T> : CollisionSystem<T>
     {
         // We call this to ensure that the callback that allows debug statements from native is set up.
         FbxExporter.Setup();
-        spatialPartitionId = NativeSpatialFunction.AllocSpatialPartitioner(Vector3.up, Vector3.back);
+        try
+        {
+            spatialPartitionId = NativeSpatialFunction.AllocSpatialPartitioner(Vector3.up, Vector3.back);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("Error initializing NativeSpatial: " + e);
+        }
     }
 
     /// <summary>
