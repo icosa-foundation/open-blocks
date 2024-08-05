@@ -499,7 +499,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback)
         {
             string url = String.Format("{0}/assets/{1}", BaseUrl(), assetId);
-            UnityWebRequest request = GetRequest(url, "text/text", false); // TODO How do we decide whether we need to authenticate?
+            UnityWebRequest request = GetRequest(url, "text/text", true); // Authentication is sometimes required
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
