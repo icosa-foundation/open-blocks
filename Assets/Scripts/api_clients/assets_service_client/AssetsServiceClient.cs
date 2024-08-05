@@ -188,28 +188,18 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         public static string SaveUrl() { return Features.useZandriaProd ? PROD_DEFAULT_SAVE_URL : AUTOPUSH_SAVE_URL; }
 
-        // Search request strings corresponding to ListAssetRequest protos, see point of call for details.
-        private static string FeaturedModelsSearchUrl()
+        private static string commonQueryParams
         {
-            int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-            return String.Format("{0}/assets?filter=format_type:BLOCKS,admin_tag:blocksgallery,license:CREATIVE_COMMONS_BY" +
-              "&order_by=create_time%20desc&page_size={1}", BaseUrl(), pageSize);
+            get
+            {
+                int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
+                return $"format=BLOCKS&page_size={pageSize}";
+            }
         }
 
-        private static string LikedModelsSearchUrl()
-        {
-            int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-
-            return String.Format("{0}/assets?filter=format_type:BLOCKS,liked:true,license:CREATIVE_COMMONS_BY" +
-              "&order_by=liked_time%20desc&page_size={1}", BaseUrl(), pageSize);
-        }
-        private static string YourModelsSearchUrl()
-        {
-            int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-
-            return String.Format("{0}/users/me/assets?filter=format_type:BLOCKS&access_level=PRIVATE" +
-              "&order_by=create_time%20desc&page_size={1}", BaseUrl(), pageSize);
-        }
+        private static string FeaturedModelsSearchUrl() => $"{BaseUrl()}/assets?&curated=true&{commonQueryParams}"; // TODO &license=CREATIVE_COMMONS_BY
+        private static string LikedModelsSearchUrl() => $"{BaseUrl()}/users/me/likedassets?{commonQueryParams}"; // TODO &license=CREATIVE_COMMONS_BY
+        private static string YourModelsSearchUrl() => $"{BaseUrl()}/users/me/assets?{commonQueryParams}";
 
         // Some regex.
         private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";
