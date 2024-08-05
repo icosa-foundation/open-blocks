@@ -711,7 +711,12 @@ namespace com.google.apps.peltzer.client.entitlement
         /// Sign an outgoing request.
         public void Authenticate(UnityWebRequest www)
         {
-            www.SetRequestHeader("Authorization", $"Bearer {m_AccessToken}");
+            // NEVER add the access token to a URL that isn't our API base url
+            // It will leak the token.
+            if (www.url.StartsWith(AssetsServiceClient.BaseUrl()))
+            {
+                www.SetRequestHeader("Authorization", $"Bearer {m_AccessToken}");
+            }
         }
 
         private static string UserInfoRequestUri()
