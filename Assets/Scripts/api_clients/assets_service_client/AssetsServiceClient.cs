@@ -17,10 +17,13 @@ using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Text;
 using System.IO;
+using System.IO.Compression;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -31,6 +34,8 @@ using com.google.apps.peltzer.client.api_clients.objectstore_client;
 using com.google.apps.peltzer.client.entitlement;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.menu;
+using ICSharpCode.SharpZipLibUnityPort.Zip;
+using ZipFile = ICSharpCode.SharpZipLibUnityPort.Zip.ZipFile;
 
 namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 {
@@ -551,15 +556,112 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile, bool publish, bool saveSelected)
         {
 
-            // Upload the resources.
-            yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
-                blocksFile, thumbnailFile, saveSelected);
+            string url = $"{BaseUrl()}/assets";
 
-            // Create an asset if all uploads succeded.
-            if (resourceUploadSuccess)
+            string zipName = "model.zip";
+
+            var zipContents = new Dictionary<string, byte[]>
             {
-                yield return CreateNewAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds, saveSelected);
+                {"model.obj", objFile},
+                {"triangulated_model.obj", triangulatedObjFile},
+                {"model.mtl", mtlFile},
+                {"model.gltf", gltfData.root.multipartBytes},
+                {"model.fbx", fbxFile},
+                {"model.blocks", blocksFile},
+                {"thumbnail.png", thumbnailFile}
+            };
+
+            string zipPath = Path.Combine(Application.temporaryCachePath, zipName);
+            using (var zipStream = new ZipOutputStream(File.Create(zipPath)))
+            {
+                foreach (var bytesToZip in zipContents)
+                {
+                    string archivedName = bytesToZip.Key;
+                    var entry = new ZipEntry(archivedName);
+                    zipStream.PutNextEntry(entry);
+                    zipStream.Write(bytesToZip.Value, 0, bytesToZip.Value.Length);
+                    zipStream.CloseEntry();
+                    yield return true;
+                }
             }
+
+            // No compression because it's a compressed .zip already
+            var uploader = new UnityWebRequest($"{url}", "POST");
+            OAuth2Identity.Instance.Authenticate(uploader);
+
+            // Read bytes from zipPath
+            byte[] data = File.ReadAllBytes(zipPath);
+            uploader = PostRequest(url, "multipart/form-data; boundary=" + BOUNDARY, data, false);
+            uploader.downloadHandler = new DownloadHandlerBuffer();
+
+            var reply = uploader.SendWebRequest();
+            yield return reply;
+
+
+            // var (prefix, suffix, wrapperType) = SerializeMultipartForm(
+            //     parameterName, destFilename, contentType,
+            //     moreParams);
+            //
+            //     temporaryFileName = FileUtils.GenerateNonexistentFilename(
+            //         temporaryDirectory ?? Path.Combine(Application.temporaryCachePath, "WebRequest"),
+            //         Path.GetFileName(destFilename), ".form.tmp");
+            //     if (!FileUtils.InitializeDirectoryWithUserError(Path.GetDirectoryName(temporaryFileName)))
+            //     {
+            //         return new Reply(null);
+            //     }
+            //
+                // using (Stream outputStream = OpenFileForWrite(temporaryFileName, m_Compressed))
+                // {
+                //     outputStream.Write(prefix, 0, prefix.Length);
+                //
+                //     long srcLength = srcData.Length;
+                //     // No cancellation token because the copy will self-destruct when the using() blocks exit.
+                //     Task task = srcData.CopyToAsync(outputStream, 81920);
+                //     // Use task.Wait() so exceptions and task cancellation get propagated.
+                //     while (!task.Wait(0))
+                //     {
+                //         m_PreUploadProgress = Mathf.Clamp01((srcData.Position + 1) / (float)(srcLength + 1));
+                //         await Awaiters.NextFrame;
+                //     }
+                //
+                //     outputStream.Write(suffix, 0, suffix.Length);
+                // }
+
+                // int debugId = RequestDebugGetNewId();
+                // RequestDebugLogFile(debugId, "form", temporaryFileName);
+
+                // Func<UploadHandler> payloadCreator;
+                // if (App.PlatformConfig.AvoidUploadHandlerFile)
+                // {
+                //     byte[] fileContents = await Task.Run(() => File.ReadAllBytes(temporaryFileName));
+                //     payloadCreator = () => new UploadHandlerRaw(fileContents);
+                // }
+                // else
+                // {
+                //     payloadCreator = () => new UploadHandlerFile(temporaryFileName)
+                //     {
+                //         contentType = wrapperType
+                //     };
+                // }
+
+
+
+
+            // var reply = uploader.SendWebRequest(
+            //     "files", File.OpenRead(zipPath), Path.GetFileName(zipPath), "application/zip",
+            //     moreParams: moreParams, token, temporaryDirectory);
+            // return reply.Deserialize<CreateResponse>();
+
+
+            // // Upload the resources.
+            // yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
+            //     blocksFile, thumbnailFile, saveSelected);
+            //
+            // // Create an asset if all uploads succeded.
+            // if (resourceUploadSuccess)
+            // {
+            //     yield return CreateNewAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds, saveSelected);
+            // }
 
             // Show a toast informing the user that they uploaded to Zandria (or that there was an error.)
             PeltzerMain.Instance
@@ -725,7 +827,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             string json = CreateJsonForAssetResources(saveData, remixIds, objPolyCount, triangulatedObjPolyCount,
               /* displayName */ "(Untitled)", saveSelected);
-            string url = String.Format("{0}/assets", BaseUrl());
+            string url = $"{BaseUrl()}/assets";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -892,7 +994,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private IEnumerator AddResource(string filename, string mimeType, byte[] data, string key)
         {
             elementUploadStates.Add(key, UploadState.IN_PROGRESS);
-            string url = string.Format("{0}/assets", BaseUrl());
+            string url = $"{BaseUrl()}/assets";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -901,7 +1003,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 request = PostRequest(url, "multipart/form-data; boundary=" + BOUNDARY, data, compressResourceUpload);
                 request.downloadHandler = new DownloadHandlerBuffer();
 
-                yield return request.Send();
+                yield return request.SendWebRequest();
 
                 if (request.responseCode == 401 || request.isNetworkError)
                 {
