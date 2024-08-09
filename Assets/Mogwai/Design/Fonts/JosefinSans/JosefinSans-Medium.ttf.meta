@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 588b03f2d613f244dafcc553ceb6aaf2
+guid: 8586db23b6bf74844bbc39559a72d43c
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -11,7 +11,8 @@ TrueTypeFontImporter:
   fontName: Josefin Sans
   fontNames:
   - Josefin Sans
-  fallbackFontReferences: []
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 588b03f2d613f244dafcc553ceb6aaf2, type: 3}
   customCharacters: 
   fontRenderingMode: 0
   ascentCalculationMode: 1
