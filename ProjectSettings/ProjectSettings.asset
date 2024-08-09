@@ -12,8 +12,8 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: Google
-  productName: Blocks
+  companyName: Icosa Foundation
+  productName: Open Blocks
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -40,7 +40,8 @@ PlayerSettings:
     width: 1
     height: 1
   m_SplashScreenLogos: []
-  m_VirtualRealitySplashScreen: {fileID: 0}
+  m_VirtualRealitySplashScreen: {fileID: 2800000, guid: 58673065f1f7c1c43a47e235fd04408f,
+    type: 3}
   m_HolographicTrackingLossScreen: {fileID: 0}
   defaultScreenWidth: 1024
   defaultScreenHeight: 768
@@ -168,8 +169,8 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Android: com.oculus.UnitySample
-    Standalone: unity.Google.Blocks
+    Android: foundation.icosa.openbrush
+    Standalone: foundation.icosa.openbrush
     Tizen: com.oculus.UnitySample
     iPhone: com.oculus.UnitySample
     tvOS: com.oculus.UnitySample
