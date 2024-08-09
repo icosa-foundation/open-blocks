@@ -220,7 +220,7 @@ namespace com.google.apps.peltzer.client.menu
                     terrainFloor.SetActive(false);
                     introLogo.SetActive(false);
                     introAnim.SetActive(true);
-                    introAnim.GetComponentInChildren<Animator>().speed = INTRO_ANIMATION_SPEED_SCALE;
+                    introAnim.GetComponentsInChildren<Animator>().ForEach(x => x.speed = INTRO_ANIMATION_SPEED_SCALE);
                     audioLibrary.PlayClip(audioLibrary.startupSound);
                     countdown = INTRO_ANIMATION_DURATION;
                     SetSkyboxLightFactor(0f);
