@@ -222,7 +222,7 @@ namespace com.google.apps.peltzer.client.menu
                     terrainFloor.SetActive(false);
                     introLogo.SetActive(false);
                     introAnim.SetActive(true);
-                    foreach(var animator in introAnim.GetComponentsInChildren<Animator>(includeInactive: true))
+                    foreach (var animator in introAnim.GetComponentsInChildren<Animator>(includeInactive: true))
                     {
                         animator.speed = INTRO_ANIMATION_SPEED_SCALE;
                     };
