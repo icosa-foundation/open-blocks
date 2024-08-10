@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using UnityEngine;
@@ -26,8 +27,6 @@ using UnityEngine.Networking;
 using Newtonsoft.Json.Linq;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
-using com.google.apps.peltzer.client.model.controller;
-using TiltBrush;
 
 namespace com.google.apps.peltzer.client.entitlement
 {
@@ -596,11 +595,32 @@ namespace com.google.apps.peltzer.client.entitlement
         private static string m_UserInfoUri = $"{AssetsServiceClient.BaseUrl()}/users/me";
         private static string m_LoginUrl = $"{AssetsServiceClient.BaseUrl()}/login/device_login";
         private const string m_OAuthScope = "profile email " +
-          "https://www.googleapis.com/auth/plus.me " +
-          "https://www.googleapis.com/auth/plus.peopleapi.readwrite";
+            "https://www.googleapis.com/auth/plus.me " +
+            "https://www.googleapis.com/auth/plus.peopleapi.readwrite";
         private const string m_CallbackPath = "/callback";
         private const string m_ReplaceHeadset = "ReplaceHeadset";
         private string m_CallbackFailedMessage = "Sorry!";
+
+        // Encryption key that should be unique per build, user and device
+        // Note this is not intrinsically more secure than storing in PlayerPrefs in plain text
+        // as if you've got registry access then it's mostly game over anyway.
+        private static byte[] m_EncryptionKey
+        {
+            get
+            {
+                string input = $"{Application.persistentDataPath}-{Application.buildGUID}-{SystemInfo.deviceUniqueIdentifier}";
+                using (SHA256 sha256 = SHA256.Create())
+                {
+                    byte[] hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+
+                    // Extract the required number of bytes for the key
+                    int keySizeInBytes = 256 / 8;
+                    byte[] key = new byte[keySizeInBytes];
+                    Array.Copy(hash, key, keySizeInBytes);
+                    return key;
+                }
+            }
+        }
 
         // User avatar pixel density. This is the number of pixels that correspond to one unit in world space.
         // Larger values will make a smaller (more dense) avatar. Smaller values will make it larger (less dense).
@@ -626,8 +646,8 @@ namespace com.google.apps.peltzer.client.entitlement
         }
 
         private static event Action m_OnProfileUpdated;
-        private static string PLAYER_PREF_REFRESH_KEY_SUFFIX = "BlocksOAuthRefreshKey";
-        private string m_PlayerPrefRefreshKey;
+        private static string PLAYER_PREF_ACCESS_TOKEN_SUFFIX = "BlocksInternal";
+        private string m_PlayerPrefAccessToken;
         private const string kIconSizeSuffix = "?sz=128";
 
         private string m_AccessToken;
@@ -672,12 +692,14 @@ namespace com.google.apps.peltzer.client.entitlement
         void Awake()
         {
             Instance = this;
-            m_PlayerPrefRefreshKey = String.Format("{0}{1}", m_ServiceName, PLAYER_PREF_REFRESH_KEY_SUFFIX);
+            m_PlayerPrefAccessToken = $"{m_ServiceName}{PLAYER_PREF_ACCESS_TOKEN_SUFFIX}";
 
-            if (PlayerPrefs.HasKey(m_PlayerPrefRefreshKey))
+
+            if (PlayerPrefs.HasKey(m_PlayerPrefAccessToken))
             {
-                m_RefreshToken = PlayerPrefs.GetString(m_PlayerPrefRefreshKey);
+                m_AccessToken = Decrypt(PlayerPrefs.GetString(m_PlayerPrefAccessToken));
             }
+
             Profile = new UserInfo
             {
                 name = "Test User",
@@ -705,7 +727,7 @@ namespace com.google.apps.peltzer.client.entitlement
             m_RefreshToken = null;
             m_AccessToken = null;
             Profile = null;
-            PlayerPrefs.DeleteKey(m_PlayerPrefRefreshKey);
+            PlayerPrefs.DeleteKey(m_PlayerPrefAccessToken);
         }
 
         /// Sign an outgoing request.
@@ -861,7 +883,7 @@ namespace com.google.apps.peltzer.client.entitlement
                 // TODO: For Unity 2021+
                 var www = UnityWebRequest.Post($"{m_LoginUrl}?device_code={m_VerificationCode}", "{}");
 
-                yield return www.Send();
+                yield return www.SendWebRequest();
                 if (www.isNetworkError)
                 {
                     Debug.LogError("Network error");
@@ -888,11 +910,65 @@ namespace com.google.apps.peltzer.client.entitlement
 
             if (LoggedIn)
             {
+                PlayerPrefs.SetString(m_PlayerPrefAccessToken, Encrypt(m_AccessToken));
                 onSuccess();
             }
             else
             {
                 onFailure();
+            }
+        }
+
+        public static string Encrypt(string plainText)
+        {
+            byte[] keyBytes = m_EncryptionKey;
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = keyBytes;
+                aes.GenerateIV();
+                ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    ms.Write(aes.IV, 0, aes.IV.Length);
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter sw = new StreamWriter(cs))
+                        {
+                            sw.Write(plainText);
+                        }
+                    }
+                    return Convert.ToBase64String(ms.ToArray());
+                }
+            }
+        }
+
+        public static string Decrypt(string encryptedText)
+        {
+            byte[] fullCipher = Convert.FromBase64String(encryptedText);
+            byte[] iv = new byte[16];
+            byte[] cipher = new byte[16];
+
+            Array.Copy(fullCipher, iv, iv.Length);
+            Array.Copy(fullCipher, iv.Length, cipher, 0, cipher.Length);
+
+            byte[] keyBytes = m_EncryptionKey;
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = keyBytes;
+                aes.IV = iv;
+                ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+
+                using (MemoryStream ms = new MemoryStream(cipher))
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader sr = new StreamReader(cs))
+                        {
+                            return sr.ReadToEnd();
+                        }
+                    }
+                }
             }
         }
 
@@ -904,7 +980,7 @@ namespace com.google.apps.peltzer.client.entitlement
             }
             using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(uri + kIconSizeSuffix))
             {
-                yield return www.Send();
+                yield return www.SendWebRequest();
                 if (www.isNetworkError || www.responseCode >= 400)
                 {
                     Debug.LogErrorFormat("Error downloading {0}, error {1}", uri, www.responseCode);
