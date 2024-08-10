@@ -34,7 +34,7 @@ namespace com.google.apps.peltzer.client.entitlement
 
     /// Handle accessing OAuth2 based web services. There are known issues with non-square avatars.
 
-    #if USE_OAUTH2
+#if USE_OAUTH2
     public class OAuth2Identity : MonoBehaviour
     {
         public class UserInfo
@@ -574,7 +574,7 @@ namespace com.google.apps.peltzer.client.entitlement
             return circleTexture;
         }
     }
-    #endif
+#endif
 
     public class OAuth2Identity : MonoBehaviour
     {
