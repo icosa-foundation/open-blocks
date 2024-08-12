@@ -31,6 +31,7 @@ using com.google.apps.peltzer.client.api_clients.objectstore_client;
 using com.google.apps.peltzer.client.entitlement;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.menu;
+using SimpleJSON;
 
 namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 {
@@ -203,8 +204,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         // Some regex.
         private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";
-        private const string ASSET_ID_MATCH = "assetId\": \"(.+?)\"";
-        private const string ELEMENT_ID_MATCH = "elementId\": \"(.+?)\"";
 
         // Most recent asset IDs we have seen in the "Featured" and "Liked" sections.
         // Used for polling economically (so we know which part of the results is new and which part isn't).
@@ -296,7 +295,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             if (asset["visibility"] == null)
             {
-                Debug.Log("Asset had no access level set");
+                Debug.LogWarning("Asset had no access level set");
                 return false;
             }
             objectStoreEntry.isPrivateAsset = asset["visibility"].ToString() == "PRIVATE";
@@ -399,7 +398,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 if (isRecursion)
                 {
-                    Debug.Log(GetDebugString(request, "Failed to get featured models"));
+                    Debug.LogError(GetDebugString(request, "Failed to get featured models"));
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
@@ -439,7 +438,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 if (isRecursion)
                 {
-                    Debug.Log(GetDebugString(request, "Failed to get your models"));
+                    Debug.LogError(GetDebugString(request, "Failed to get your models"));
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
@@ -479,7 +478,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 if (isRecursion)
                 {
-                    Debug.Log(GetDebugString(request, "Failed to get liked models"));
+                    Debug.LogError(GetDebugString(request, "Failed to get liked models"));
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
@@ -515,7 +514,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 if (isRecursion)
                 {
-                    Debug.Log(GetDebugString(request, "Failed to fetch an asset with id " + assetId));
+                    Debug.LogError(GetDebugString(request, "Failed to fetch an asset with id " + assetId));
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
@@ -551,25 +550,34 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile, bool publish, bool saveSelected)
         {
 
-            // Upload the resources.
-            yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
-                blocksFile, thumbnailFile, saveSelected);
+            yield return CreateNewAsset(saveSelected);
 
+            // Upload the resources.
             // Create an asset if all uploads succeded.
-            if (resourceUploadSuccess)
+            if (assetCreationSuccess)
             {
-                yield return CreateNewAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds, saveSelected);
+                yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
+                    blocksFile, thumbnailFile, saveSelected);
             }
 
-            // Show a toast informing the user that they uploaded to Zandria (or that there was an error.)
-            PeltzerMain.Instance
-              .HandleSaveComplete(/* success */ assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
+            if (resourceUploadSuccess)
+            {
+                // TODO
+                // yield return FinalizeAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds, saveSelected);
+            }
+            else
+            {
+                // TODO: Handle failure.
+            }
+
+            // Show a toast informing the user that they uploaded to Zandria (or that there was an error)
+            PeltzerMain.Instance.HandleSaveComplete(assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
             if (assetCreationSuccess)
             {
                 PeltzerMain.Instance.LoadSavedModelOntoPolyMenu(assetId, publish);
             }
 
-            if (assetCreationSuccess)
+            if (assetCreationSuccess && resourceUploadSuccess)
             {
                 // If we are only saving the selected content, then we don't want to overwrite the LastSavedAssetId
                 // as the id we are currently using is meant to be temporary.
@@ -641,11 +649,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public static void OpenPublishUrl(string assetId)
         {
             string publishUrl = PublishUrl() + assetId;
-            string emailAddress = OAuth2Identity.Instance.Profile == null ? null : OAuth2Identity.Instance.Profile.email;
-            string urlToOpen = emailAddress == null ? publishUrl :
-              string.Format("https://accounts.google.com/AccountChooser?Email={0}&continue={1}", emailAddress, publishUrl);
             PeltzerMain.Instance.paletteController.SetPublishDialogActive();
-            System.Diagnostics.Process.Start(urlToOpen);
+            System.Diagnostics.Process.Start(publishUrl);
         }
 
         private void OpenSaveUrl()
@@ -654,10 +659,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 return;
             }
-            string emailAddress = OAuth2Identity.Instance.Profile == null ? null : OAuth2Identity.Instance.Profile.email;
-            string urlToOpen = emailAddress == null ? SaveUrl() :
-              string.Format("https://accounts.google.com/AccountChooser?Email={0}&continue={1}", emailAddress, SaveUrl());
-            System.Diagnostics.Process.Start(urlToOpen);
+            System.Diagnostics.Process.Start(SaveUrl());
             PeltzerMain.Instance.HasOpenedSaveUrlThisSession = true;
         }
 
@@ -669,12 +671,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           bool saveSelected)
         {
             StartCoroutine(AddResource(ExportUtils.OBJ_FILENAME, "text/plain", objFile, "obj"));
-            StartCoroutine(AddResource(ExportUtils.TRIANGULATED_OBJ_FILENAME, "text/plain", triangulatedObjFile,
-              "triangulated-obj"));
+            StartCoroutine(AddResource(ExportUtils.TRIANGULATED_OBJ_FILENAME, "text/plain", triangulatedObjFile, "triangulated-obj"));
             StartCoroutine(AddResource(ExportUtils.MTL_FILENAME, "text/plain", mtlFile, "mtl"));
             StartCoroutine(AddResource(ExportUtils.FBX_FILENAME, "application/octet-stream", fbxFile, "fbx"));
-            StartCoroutine(AddResource(gltfData.root.fileName, gltfData.root.mimeType, gltfData.root.multipartBytes,
-              gltfData.root.tag));
+            StartCoroutine(AddResource(gltfData.root.fileName, gltfData.root.mimeType, gltfData.root.multipartBytes, gltfData.root.tag));
 
             for (int i = 0; i < gltfData.resources.Count; i++)
             {
@@ -698,7 +698,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     switch (pair.Value)
                     {
                         case UploadState.FAILED:
-                            Debug.Log("Failed to upload " + pair.Key);
+                            Debug.LogError("Failed to upload " + pair.Key);
                             allSucceeded = false;
                             overallState = UploadState.FAILED;
                             resourceUploadSuccess = false;
@@ -720,53 +720,63 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <summary>
         ///   Create a new asset from the uploaded files.
         /// </summary>
-        private IEnumerator CreateNewAsset(FormatSaveData saveData, int objPolyCount, int triangulatedObjPolyCount,
-          HashSet<string> remixIds, bool saveSelected)
+        private IEnumerator CreateNewAsset(bool saveSelected)
         {
-            string json = CreateJsonForAssetResources(saveData, remixIds, objPolyCount, triangulatedObjPolyCount,
-              /* displayName */ "(Untitled)", saveSelected);
-            string url = String.Format("{0}/assets", BaseUrl());
+            string url = $"{BaseUrl()}/assets";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
             for (int i = 0; i < 2; i++)
             {
-                request = PostRequest(url, "application/json", Encoding.UTF8.GetBytes(json));
+                // TODO add metadata to the asset
+                // string json = CreateJsonForAssetResources(remixIds, objPolyCount, triangulatedObjPolyCount, "(Untitled)", saveSelected);
+
+                // Create an empty asset ready to be filled with resources.
+                request = PostRequest(
+                    url,
+                    "multipart/form-data; boundary=" + BOUNDARY,
+                    Array.Empty<byte>(),
+                    compressResourceUpload
+                );
                 request.downloadHandler = new DownloadHandlerBuffer();
 
-                yield return request.Send();
+                yield return request.SendWebRequest();
 
                 if (request.responseCode == 401 || request.isNetworkError)
                 {
                     yield return OAuth2Identity.Instance.Reauthorize();
                     continue;
                 }
-                else
+
+                if (request.responseCode < 200 || request.responseCode >= 300)
                 {
-                    assetId = null;
-                    Regex regex = new Regex(ASSET_ID_MATCH);
-                    Match match = regex.Match(request.downloadHandler.text);
-                    if (match.Success)
-                    {
-                        assetId = match.Groups[1].Captures[0].Value;
-                        // Only update the global AssetId if the user has not hit 'new model' or opened a model
-                        // since this save began, and if we are not only saving selected content, as the id used
-                        // is meant to be temporary.
-                        if (!PeltzerMain.Instance.newModelSinceLastSaved && !saveSelected)
-                        {
-                            PeltzerMain.Instance.AssetId = assetId;
-                        }
-                        assetCreationSuccess = true;
-                    }
-                    else
-                    {
-                        Debug.Log("Failed to save to Assets Store. Response: " + request.downloadHandler.text);
-                    }
+                    Debug.LogError($"Unexpected response from Icosa: {request.downloadHandler.text}");
                     yield break;
                 }
+                try
+                {
+                    var json = JSON.Parse(request.downloadHandler.text);
+                    // TODO return id directly in the response
+                    assetId = json["edit_url"].Value.Split('/').Last();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Exception while save to Icosa: {request.downloadHandler.text}\n{e}");
+                    yield break;
+                }
+
+                // Only update the global AssetId if the user has not hit 'new model' or opened a model
+                // since this save began, and if we are not only saving selected content, as the id used
+                // is meant to be temporary.
+                if (!PeltzerMain.Instance.newModelSinceLastSaved && !saveSelected)
+                {
+                    PeltzerMain.Instance.AssetId = assetId;
+                }
+                assetCreationSuccess = true;
+                yield break;
             }
 
-            Debug.Log(GetDebugString(request, "Failed to save to asset store"));
+            Debug.LogError(GetDebugString(request, "Failed to save to asset store"));
         }
 
         /// <summary>
@@ -793,25 +803,22 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     yield return OAuth2Identity.Instance.Reauthorize();
                     continue;
                 }
-                else
+
+                assetId = null;
+                try
                 {
-                    assetId = null;
-                    Regex regex = new Regex(ASSET_ID_MATCH);
-                    Match match = regex.Match(request.downloadHandler.text);
-                    if (match.Success)
-                    {
-                        assetId = match.Groups[1].Captures[0].Value;
-                        PeltzerMain.Instance.UpdateCloudModelOntoPolyMenu(request.downloadHandler.text);
-                        assetCreationSuccess = true;
-                    }
-                    else
-                    {
-                        Debug.Log("Failed to update " + assetId + " in Assets Store. Response: " + request.downloadHandler.text);
-                    }
-                    yield break;
+                    var responseJson = JSON.Parse(request.downloadHandler.text);
+                    assetId = responseJson["edit_url"].Value.Split('/').Last();
+                    PeltzerMain.Instance.UpdateCloudModelOntoPolyMenu(responseJson);
+                    assetCreationSuccess = true;
                 }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to update {assetId} on Icosa. Response: {request.downloadHandler.text}\n{e}"); ;
+                }
+                yield break;
             }
-            Debug.Log(GetDebugString(request, "Failed to save to asset store"));
+            Debug.LogError(GetDebugString(request, "Failed to save to Icosa"));
         }
 
         private string CreateJsonForAssetResources(FormatSaveData saveData, HashSet<string> remixIds,
@@ -852,36 +859,40 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             remixBlockBuilder.Append("}");
             remixBlock = remixBlockBuilder.ToString();
 
-            string prelude = displayName == null ? "{ " : String.Format("{{ \"display_name\": \"{0}\",", displayName);
+            string prelude = displayName == null ? "{ " : $@"{{ ""display_name"": ""{displayName}"",";
 
             string json;
             if (!saveSelected)
             {
-                json = String.Format(
-                  "{0}\"thumbnail_id\": \"{1}\"," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_WAVEFRONT_OBJ\", \"root_id\": \"{2}\", {3} \"resource_id\": \"{4}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_WAVEFRONT_OBJ_TRIANGULATED\", \"root_id\": \"{5}\", {6} \"resource_id\": \"{7}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_AUTODESK_FBX\", \"root_id\": \"{8}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_BLOCKS\", \"root_id\": \"{9}\" }} ], {10}, {11} }}",
-                  prelude, elementIds["png"],
-                  elementIds["obj"], objFormatComplexity, elementIds["mtl"],
-                  elementIds["triangulated-obj"], triangulatedObjFormatComplexity, elementIds["mtl"],
-                  elementIds["fbx"],
-                  elementIds["blocks"], gltfBlock, remixBlock);
+                // TODO Proper serialization
+                json = $@"{prelude}
+                ""thumbnail_id"": ""{elementIds["png"]}"",
+                    ""format"": [
+                        {{ ""format_type"": ""FORMAT_WAVEFRONT_OBJ"", ""root_id"": ""{elementIds["obj"]}"", {objFormatComplexity} ""resource_id"": ""{elementIds["mtl"]}"" }}
+                    ],
+                    ""format"": [
+                        {{ ""format_type"": ""FORMAT_WAVEFRONT_OBJ_TRIANGULATED"", ""root_id"": ""{elementIds["triangulated-obj"]}"", {triangulatedObjFormatComplexity} ""resource_id"": ""{elementIds["mtl"]}"" }}
+                    ],
+                    ""format"": [
+                        {{ ""format_type"": ""FORMAT_AUTODESK_FBX"", ""root_id"": ""{elementIds["fbx"]}"" }}
+                    ],
+                    ""format"": [
+                        {{ ""format_type"": ""FORMAT_BLOCKS"", ""root_id"": ""{elementIds["blocks"]}"" }}
+                    ],
+                    {gltfBlock}, {remixBlock} }}";
             }
             else
             {
-                json = String.Format(
-                  "{0}" +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_WAVEFRONT_OBJ\", \"root_id\": \"{1}\", {2} \"resource_id\": \"{3}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_WAVEFRONT_OBJ_TRIANGULATED\", \"root_id\": \"{4}\", {5} \"resource_id\": \"{6}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_AUTODESK_FBX\", \"root_id\": \"{7}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_BLOCKS\", \"root_id\": \"{8}\" }} ], {9}, {10} }}",
-                  prelude,
-                  elementIds["obj"], objFormatComplexity, elementIds["mtl"],
-                  elementIds["triangulated-obj"], triangulatedObjFormatComplexity, elementIds["mtl"],
-                  elementIds["fbx"],
-                  elementIds["blocks"], gltfBlock, remixBlock);
+                // TODO Proper serialization
+                json = $@"{prelude}
+                    ""format"": [
+                        {{ ""format_type"": ""FORMAT_WAVEFRONT_OBJ"", ""root_id"": ""{elementIds["obj"]}"", {objFormatComplexity} ""resource_id"": ""{elementIds["mtl"]}"" }} ],
+                    ""format"": [
+                        {{ ""format_type"": ""FORMAT_WAVEFRONT_OBJ_TRIANGULATED"", ""root_id"": ""{elementIds["triangulated-obj"]}"", {triangulatedObjFormatComplexity} ""resource_id"": ""{elementIds["mtl"]}"" }} ],
+                    ""format"":
+                        [ {{ ""format_type"": ""FORMAT_AUTODESK_FBX"", ""root_id"": ""{elementIds["fbx"]}"" }} ],
+                    ""format"": [
+                        {{ ""format_type"": ""FORMAT_BLOCKS"", ""root_id"": ""{elementIds["blocks"]}"" }} ], {gltfBlock}, {remixBlock} }}";
             }
             return json;
         }
@@ -892,7 +903,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private IEnumerator AddResource(string filename, string mimeType, byte[] data, string key)
         {
             elementUploadStates.Add(key, UploadState.IN_PROGRESS);
-            string url = string.Format("{0}/assets", BaseUrl());
+            string url = $"{BaseUrl()}/assets/{assetId}/format";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -908,26 +919,22 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     yield return OAuth2Identity.Instance.Reauthorize();
                     continue;
                 }
-                else
+                try
                 {
-                    Regex regex = new Regex(ELEMENT_ID_MATCH);
-                    Match match = regex.Match(request.downloadHandler.text);
-                    if (match.Success)
-                    {
-                        elementIds[key] = match.Groups[1].Captures[0].Value;
-                        elementUploadStates[key] = UploadState.SUCCEEDED;
-                    }
-                    else
-                    {
-                        Debug.Log(GetDebugString(request, "Failed to save " + filename + " to Assets Store."));
-                        elementUploadStates[key] = UploadState.FAILED;
-                    }
-                    yield break;
+                    // TODO do we still need this?
+                    // elementIds[key] = match.Groups[1].Captures[0].Value;
+                    elementUploadStates[key] = UploadState.SUCCEEDED;
                 }
+                catch (Exception e)
+                {
+                    Debug.LogError(GetDebugString(request, $"Failed to save " + filename + " to Icosa: {e}"));
+                    elementUploadStates[key] = UploadState.FAILED;
+                }
+                yield break;
             }
 
             elementUploadStates[key] = UploadState.FAILED;
-            Debug.Log(GetDebugString(request, "Failed to save " + filename + " to asset store"));
+            Debug.LogError(GetDebugString(request, "Failed to save " + filename + " to asset store"));
         }
 
         /// <summary>
@@ -1023,7 +1030,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
             }
 
-            Debug.Log(GetDebugString(request, "Failed to delete " + assetId));
+            Debug.LogError(GetDebugString(request, "Failed to delete " + assetId));
         }
 
         /// <summary>
