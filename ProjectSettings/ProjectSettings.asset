@@ -169,8 +169,8 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Android: foundation.icosa.openbrush
-    Standalone: foundation.icosa.openbrush
+    Android: foundation.icosa.openblocks
+    Standalone: foundation.icosa.openblocks
     Tizen: com.oculus.UnitySample
     iPhone: com.oculus.UnitySample
     tvOS: com.oculus.UnitySample
