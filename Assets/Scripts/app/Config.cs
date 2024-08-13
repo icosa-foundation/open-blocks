@@ -206,6 +206,8 @@ namespace com.google.apps.peltzer.client.app
           newDevices = new string[] { "OpenVR" };
           UnityEditorInternal.VR.VREditor.SetVREnabledDevicesOnTargetGroup(UnityEditor.BuildTargetGroup.Standalone, newDevices);
           break;
+        case SdkMode.Desktop:
+            break;
         default:
           newDevices = new string[] { "" };
           UnityEditorInternal.VR.VREditor.SetVREnabledDevicesOnTargetGroup(UnityEditor.BuildTargetGroup.Standalone, newDevices);
