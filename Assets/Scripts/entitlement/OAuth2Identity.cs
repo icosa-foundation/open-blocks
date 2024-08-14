@@ -947,7 +947,7 @@ namespace com.google.apps.peltzer.client.entitlement
         {
             byte[] fullCipher = Convert.FromBase64String(encryptedText);
             byte[] iv = new byte[16];
-            byte[] cipher = new byte[16];
+            byte[] cipher = new byte[fullCipher.Length - iv.Length];
 
             Array.Copy(fullCipher, iv, iv.Length);
             Array.Copy(fullCipher, iv.Length, cipher, 0, cipher.Length);
