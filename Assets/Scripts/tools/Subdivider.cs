@@ -21,8 +21,6 @@ using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.tools.utils;
-using com.google.apps.peltzer.client.model.render;
-using System;
 
 namespace com.google.apps.peltzer.client.tools
 {
@@ -211,49 +209,59 @@ namespace com.google.apps.peltzer.client.tools
                 PeltzerMain.Instance.highlightUtils.TurnOff(highlightToTurnOff.Value);
             }
 
-            // Do we also need to check for subdividePlane?
-            if (!PeltzerController.AcquireIfNecessary(ref peltzerController) ||
-                peltzerController.mode != ControllerMode.subdivideFace)
+            bool anySubdivideMode =
+                peltzerController.mode == ControllerMode.subdivideFace ||
+                peltzerController.mode == ControllerMode.subdividePlane;
+            if (anySubdivideMode && PeltzerController.AcquireIfNecessary(ref peltzerController))
             {
-                return;
+                bool isNewMode = false;
+                if (pressAndHoldEnabled
+                    && isTriggerBeingHeld
+                    && Time.time > triggerHoldStartTime + PRESS_AND_HOLD_DELAY)
+                {
+                    currentMode = Mode.LOOP_SUBDIVIDE;
+                    audioLibrary.PlayClip(audioLibrary.genericSelectSound);
+                    peltzerController.TriggerHapticFeedback();
+                    isTriggerBeingHeld = false;
+                    isNewMode = true;
+                }
+
+                // Update the position of the selector.
+                if (currentMode == Mode.PLANE_SUBDIVIDE)
+                {
+                    selector.SelectMeshAtPosition(peltzerController.LastPositionModel, Selector.MESHES_ONLY);
+                }
+                else
+                {
+                    selector.SelectAtPosition(peltzerController.LastPositionModel, Selector.FACES_ONLY);
+                }
+                selector.UpdateInactive(Selector.EDGES_ONLY);
+
+                // Clean up all temp edges.
+                foreach (EdgeTemporaryStyle.TemporaryEdge tempEdge in currentTemporaryEdges)
+                {
+                    PeltzerMain.Instance.highlightUtils.TurnOff(tempEdge);
+                }
+                currentTemporaryEdges.Clear();
+
+                UpdateHighlights(isNewMode);
             }
 
-            bool isNewMode = false;
-            if (pressAndHoldEnabled
-              && isTriggerBeingHeld
-              && Time.time > triggerHoldStartTime + PRESS_AND_HOLD_DELAY)
-            {
-                currentMode = Mode.LOOP_SUBDIVIDE;
-                audioLibrary.PlayClip(audioLibrary.genericSelectSound);
-                peltzerController.TriggerHapticFeedback();
-                isTriggerBeingHeld = false;
-                isNewMode = true;
-            }
-
-            // Update the position of the selector.
-            if (currentMode == Mode.PLANE_SUBDIVIDE)
-            {
-                selector.SelectMeshAtPosition(peltzerController.LastPositionModel, Selector.MESHES_ONLY);
-            }
-            else
-            {
-                selector.SelectAtPosition(peltzerController.LastPositionModel, Selector.FACES_ONLY);
-            }
-            selector.UpdateInactive(Selector.EDGES_ONLY);
-
-            // Clean up all temp edges.
-            foreach (EdgeTemporaryStyle.TemporaryEdge tempEdge in currentTemporaryEdges)
-            {
-                PeltzerMain.Instance.highlightUtils.TurnOff(tempEdge);
-            }
-            currentTemporaryEdges.Clear();
-
-            UpdateHighlights(isNewMode);
         }
 
         private void ControllerModeChangedHandler(ControllerMode oldMode, ControllerMode newMode)
         {
-            if (oldMode == ControllerMode.subdivideFace || oldMode == ControllerMode.subdividePlane)
+            switch (newMode)
+            {
+                case ControllerMode.subdivideFace:
+                    currentMode = Mode.SINGLE_FACE_SUBDIVIDE;
+                    break;
+                case ControllerMode.subdividePlane:
+                    currentMode = Mode.PLANE_SUBDIVIDE;
+                    break;
+            }
+            if (oldMode == ControllerMode.subdivideFace ||
+                oldMode == ControllerMode.subdividePlane)
             {
                 ClearState();
                 UnsetAllHoverTooltips();
@@ -859,15 +867,6 @@ namespace com.google.apps.peltzer.client.tools
             Destroy(guidanceMesh);
             guidanceMesh = null;
             activeSubdivisions.Clear();
-
-            if (Features.planeSubdivideEnabled)
-            {
-                currentMode = Mode.PLANE_SUBDIVIDE;
-            }
-            else
-            {
-                currentMode = Mode.SINGLE_FACE_SUBDIVIDE;
-            }
         }
 
         private bool IsStartPressAndHoldEvent(ControllerEventArgs args)
@@ -1248,7 +1247,8 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private void ControllerEventHandler(object sender, ControllerEventArgs args)
         {
-            if (peltzerController.mode != ControllerMode.subdivideFace && peltzerController.mode != ControllerMode.subdividePlane)
+            if (peltzerController.mode != ControllerMode.subdivideFace &&
+                peltzerController.mode != ControllerMode.subdividePlane)
                 return;
 
             if (IsStartPressAndHoldEvent(args))

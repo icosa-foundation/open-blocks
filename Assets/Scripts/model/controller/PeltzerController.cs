@@ -742,7 +742,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 return;
             }
 
-            // At this point, we know something on the menu has been hit, so we update variables accordingly and 
+            // At this point, we know something on the menu has been hit, so we update variables accordingly and
             // hide the shapes menu.
             menuIsInDefaultState = false;
             isPointingAtMenu = true;
@@ -1617,14 +1617,18 @@ namespace com.google.apps.peltzer.client.model.controller
                     controllerGeometry.modifyOverlay.GetComponent<Overlay>().upIcon.color = halfWhite;
                     // Extrude.
                     controllerGeometry.modifyOverlay.GetComponent<Overlay>().rightIcon.color = halfWhite;
+                    // Plane.
+                    controllerGeometry.modifyOverlay.GetComponent<Overlay>().downIcon.color = halfWhite;
                     break;
                 case ControllerMode.subdividePlane:
                     // Subdivide.
-                    controllerGeometry.modifyOverlay.GetComponent<Overlay>().leftIcon.color = fullWhite;
+                    controllerGeometry.modifyOverlay.GetComponent<Overlay>().leftIcon.color = halfWhite;
                     // Reshape.
                     controllerGeometry.modifyOverlay.GetComponent<Overlay>().upIcon.color = halfWhite;
                     // Extrude.
                     controllerGeometry.modifyOverlay.GetComponent<Overlay>().rightIcon.color = halfWhite;
+                    // Plane.
+                    controllerGeometry.modifyOverlay.GetComponent<Overlay>().downIcon.color = fullWhite;
                     break;
                 case ControllerMode.reshape:
                     // Subdivide.
@@ -1633,6 +1637,8 @@ namespace com.google.apps.peltzer.client.model.controller
                     controllerGeometry.modifyOverlay.GetComponent<Overlay>().upIcon.color = fullWhite;
                     // Extrude.
                     controllerGeometry.modifyOverlay.GetComponent<Overlay>().rightIcon.color = halfWhite;
+                    // Plane.
+                    controllerGeometry.modifyOverlay.GetComponent<Overlay>().downIcon.color = halfWhite;
                     break;
                 case ControllerMode.extrude:
                     // Subdivide.
@@ -1641,6 +1647,8 @@ namespace com.google.apps.peltzer.client.model.controller
                     controllerGeometry.modifyOverlay.GetComponent<Overlay>().upIcon.color = halfWhite;
                     // Extrude.
                     controllerGeometry.modifyOverlay.GetComponent<Overlay>().rightIcon.color = fullWhite;
+                    // Plane.
+                    controllerGeometry.modifyOverlay.GetComponent<Overlay>().downIcon.color = halfWhite;
                     break;
                 case ControllerMode.delete:
                     controllerGeometry.deleteOverlay.GetComponent<Overlay>().leftIcon.gameObject
@@ -1744,23 +1752,13 @@ namespace com.google.apps.peltzer.client.model.controller
                     ChangeTouchpadOverlay(TouchpadOverlay.FREEFORM);
                     break;
                 case ControllerMode.reshape:
-                    ChangeTouchpadOverlay(TouchpadOverlay.MODIFY);
-                    break;
                 case ControllerMode.extrude:
-                    ChangeTouchpadOverlay(TouchpadOverlay.MODIFY);
-                    break;
                 case ControllerMode.subdivideFace:
-                    ChangeTouchpadOverlay(TouchpadOverlay.MODIFY);
-                    break;
                 case ControllerMode.subdivideMesh:
-                    ChangeTouchpadOverlay(TouchpadOverlay.MODIFY);
-                    break;
                 case ControllerMode.subdividePlane:
                     ChangeTouchpadOverlay(TouchpadOverlay.MODIFY);
                     break;
                 case ControllerMode.deletePart:
-                    ChangeTouchpadOverlay(TouchpadOverlay.DELETE);
-                    break;
                 case ControllerMode.delete:
                     ChangeTouchpadOverlay(TouchpadOverlay.DELETE);
                     break;
@@ -1768,8 +1766,6 @@ namespace com.google.apps.peltzer.client.model.controller
                     ChangeTouchpadOverlay(TouchpadOverlay.MOVE);
                     break;
                 case ControllerMode.paintMesh:
-                    ChangeTouchpadOverlay(TouchpadOverlay.PAINT);
-                    break;
                 case ControllerMode.paintFace:
                     ChangeTouchpadOverlay(TouchpadOverlay.PAINT);
                     break;
@@ -1869,7 +1865,7 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <summary>
         ///   Determines which tooltip and where to show it when called. These are the grip tooltips to
         ///   advise a user how to move/zoom the world.
-        ///   We only show these tooltips until the user has successfully moved or zoomed the world. 
+        ///   We only show these tooltips until the user has successfully moved or zoomed the world.
         ///   We do not show these tooltips until at least one object is in the scene.
         ///   We do not show these tooltips during tutorials.
         /// </summary>
