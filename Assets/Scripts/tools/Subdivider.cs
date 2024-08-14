@@ -158,7 +158,7 @@ namespace com.google.apps.peltzer.client.tools
         GameObject guidanceMesh;
 
         /// <summary>
-        /// Keeps track of the faces that each edge in the mesh is connecting. This is needed to find 
+        /// Keeps track of the faces that each edge in the mesh is connecting. This is needed to find
         /// the next face when performing loop subdivide operations.
         /// </summary>
         private Dictionary<EdgeKey, List<int>> edgeKeysToFaceIds = new Dictionary<EdgeKey, List<int>>();
@@ -211,7 +211,9 @@ namespace com.google.apps.peltzer.client.tools
                 PeltzerMain.Instance.highlightUtils.TurnOff(highlightToTurnOff.Value);
             }
 
-            if (!PeltzerController.AcquireIfNecessary(ref peltzerController) || peltzerController.mode != ControllerMode.subdivideFace)
+            // Do we also need to check for subdividePlane?
+            if (!PeltzerController.AcquireIfNecessary(ref peltzerController) ||
+                peltzerController.mode != ControllerMode.subdivideFace)
             {
                 return;
             }
@@ -251,7 +253,7 @@ namespace com.google.apps.peltzer.client.tools
 
         private void ControllerModeChangedHandler(ControllerMode oldMode, ControllerMode newMode)
         {
-            if (oldMode == ControllerMode.subdivideFace)
+            if (oldMode == ControllerMode.subdivideFace || oldMode == ControllerMode.subdividePlane)
             {
                 ClearState();
                 UnsetAllHoverTooltips();
@@ -685,8 +687,8 @@ namespace com.google.apps.peltzer.client.tools
 
             // The orientation of these points within an edge is not a concern here because
             // GetFaceVertexIndicesForEdge() will get us the indices as they appear in clockwise
-            // manner along the face. This means that the vertices indices will be flipped for 
-            // a face in which they appear on the exitEdge, and the next subdivision on the 
+            // manner along the face. This means that the vertices indices will be flipped for
+            // a face in which they appear on the exitEdge, and the next subdivision on the
             // chain, in which the same edge will be the origin edge instead.
 
             // Points on the origin edge.
@@ -1246,7 +1248,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private void ControllerEventHandler(object sender, ControllerEventArgs args)
         {
-            if (peltzerController.mode != ControllerMode.subdivideFace)
+            if (peltzerController.mode != ControllerMode.subdivideFace && peltzerController.mode != ControllerMode.subdividePlane)
                 return;
 
             if (IsStartPressAndHoldEvent(args))
