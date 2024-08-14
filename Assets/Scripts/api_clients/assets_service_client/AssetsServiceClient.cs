@@ -173,21 +173,18 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
     public class AssetsServiceClient : MonoBehaviour
     {
         public static string WEB_BASE_URL = "https://icosa.ixxy.co.uk";
-        private static string AUTOPUSH_BASE_URL = "https://icosa-api.ixxy.co.uk/v1";
-        private static string PROD_BASE_URL = "https://icosa-api.ixxy.co.uk/v1";
+        private static string API_BASE_URL = "https://icosa-api.ixxy.co.uk/v1";
 
-        public static string BaseUrl() { return Features.useZandriaProd ? PROD_BASE_URL : AUTOPUSH_BASE_URL; }
+        public static string BaseUrl() => API_BASE_URL;
         // The base for the URL to be opened in a user's browser if they wish to publish.
-        public static string AUTOPUSH_PUBLISH_URL_BASE = Path.Combine(WEB_BASE_URL, "/publish/");
-        public static string PROD_DEFAULT_PUBLISH_URL_BASE = Path.Combine(WEB_BASE_URL, "/publish/");
+        public static string DEFAULT_PUBLISH_URL_BASE = WEB_BASE_URL + "/publish/";
 
-        public static string PublishUrl() { return Features.useZandriaProd ? PROD_DEFAULT_PUBLISH_URL_BASE : AUTOPUSH_PUBLISH_URL_BASE; }
+        public static string PublishUrl() => DEFAULT_PUBLISH_URL_BASE;
         // The base for the URL to be opened in a user's browser if they have saved.
         // Also used as the target for the "Your models" desktop menu
-        public static string AUTOPUSH_SAVE_URL = Path.Combine(WEB_BASE_URL, "/uploads");
-        public static string PROD_DEFAULT_SAVE_URL = Path.Combine(WEB_BASE_URL, "/uploads");
+        public static string DEFAULT_SAVE_URL = WEB_BASE_URL + "/uploads";
 
-        public static string SaveUrl() { return Features.useZandriaProd ? PROD_DEFAULT_SAVE_URL : AUTOPUSH_SAVE_URL; }
+        public static string SaveUrl() => DEFAULT_SAVE_URL;
 
         private static string commonQueryParams
         {
