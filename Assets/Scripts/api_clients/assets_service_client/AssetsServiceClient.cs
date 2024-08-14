@@ -293,13 +293,24 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             if (asset["visibility"] == null)
             {
                 Debug.LogWarning("Asset had no access level set");
+                objectStoreEntry.isPrivateAsset = true; // TODO API should set defaults but should we still have our own default?
+            }
+            else
+            {
+                objectStoreEntry.isPrivateAsset = asset["visibility"].ToString() == "PRIVATE";
+            }
+
+            if (asset["url"] != null)
+            {
+                objectStoreEntry.id = asset["url"].ToString();
+            }
+            else
+            {
+                Debug.LogError($"Asset had no ID: {asset}");
                 return false;
             }
-            objectStoreEntry.isPrivateAsset = asset["visibility"].ToString() == "PRIVATE";
-
-            objectStoreEntry.id = asset["url"].ToString();
             JToken thumbnailRoot = asset["thumbnail"];
-            if (thumbnailRoot != null)
+            if (thumbnailRoot != null && thumbnailRoot["url"] != null)
             {
                 objectStoreEntry.thumbnail = asset["thumbnail"]["url"].ToString();
             }
