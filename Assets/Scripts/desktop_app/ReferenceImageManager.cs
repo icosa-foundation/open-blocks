@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -20,6 +21,7 @@ using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.tools;
+using UnityEngine.Networking;
 
 namespace com.google.apps.peltzer.client.desktop_app
 {
@@ -69,22 +71,38 @@ namespace com.google.apps.peltzer.client.desktop_app
         /// <param name="previewImagePath"></param>
         public void InsertNewReferenceImage(string previewImagePath)
         {
-            WWW www = new WWW("file:///" + System.Uri.EscapeUriString(previewImagePath));
-            Texture2D texture = new Texture2D(500, 500);
-            www.LoadImageIntoTexture(texture);
+            StartCoroutine(LoadTexture(previewImagePath));
+        }
 
-            MoveableReferenceImage.SetupParams setupParams = new MoveableReferenceImage.SetupParams();
-            setupParams.attachToController = true;
-            // Have the image start attached to the controller and right ahead of it.
-            setupParams.positionModelSpace = PeltzerMain.Instance.peltzerController.LastPositionModel +
-              PeltzerMain.Instance.peltzerController.LastRotationModel * Vector3.forward * MoveableObject.HOVER_DISTANCE;
-            setupParams.rotationModelSpace = PeltzerMain.Instance.peltzerController.LastRotationModel;
-            setupParams.scaleModelSpace = Vector3.one * 0.5f;
-            setupParams.texture = texture;
-            setupParams.refImageId = nextId++;
-            setupParams.initialInsertion = true;
+        private IEnumerator LoadTexture(string previewImagePath)
+        {
+            previewImagePath = previewImagePath.Replace('\\', '/');
+            string uri = "file:///" + System.Uri.EscapeUriString(previewImagePath);
+            using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(uri))
+            {
+                yield return www.SendWebRequest();
 
-            pendingReferenceImageCommands.Enqueue(new AddReferenceImageCommand(setupParams));
+                if (www.isNetworkError || www.isHttpError)
+                {
+                    Debug.LogError("Failed to load texture: " + www.error);
+                }
+                else
+                {
+                    Texture2D texture = DownloadHandlerTexture.GetContent(www);
+                    MoveableReferenceImage.SetupParams setupParams = new MoveableReferenceImage.SetupParams();
+                    setupParams.attachToController = true;
+                    // Have the image start attached to the controller and right ahead of it.
+                    setupParams.positionModelSpace = PeltzerMain.Instance.peltzerController.LastPositionModel +
+                    PeltzerMain.Instance.peltzerController.LastRotationModel * Vector3.forward * MoveableObject.HOVER_DISTANCE;
+                    setupParams.rotationModelSpace = PeltzerMain.Instance.peltzerController.LastRotationModel;
+                    setupParams.scaleModelSpace = Vector3.one * 0.5f;
+                    setupParams.texture = texture;
+                    setupParams.refImageId = nextId++;
+                    setupParams.initialInsertion = true;
+
+                    pendingReferenceImageCommands.Enqueue(new AddReferenceImageCommand(setupParams));
+                }
+            }
         }
 
         /// <summary>
