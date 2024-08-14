@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Linq;
 using UnityEngine;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.controller;
 using com.google.apps.peltzer.client.tutorial;
+using TMPro;
 
 namespace com.google.apps.peltzer.client.menu
 {
@@ -41,7 +43,7 @@ namespace com.google.apps.peltzer.client.menu
         /// <summary>
         /// How long to display the Blocks logo after the intro animation.
         /// </summary>
-        private const float INTRO_LOGO_DURATION = 0.7f;
+        private const float INTRO_LOGO_DURATION = 2.0f;
 
         /// <summary>
         /// How long the lighting change takes (from dark to light).
@@ -193,7 +195,7 @@ namespace com.google.apps.peltzer.client.menu
                     // Check to see if it's time to advance.
                     introLogo.transform.LookAt(PeltzerMain.Instance.hmd.transform);
                     float fadeInPct = Mathf.Max(0.0f, Mathf.Min(1.0f, 1 - countdown / INTRO_LOGO_DURATION));
-                    TextMesh textLine1 = introLogoLine1.GetComponent<TextMesh>();
+                    TextMeshPro textLine1 = introLogoLine1.GetComponent<TextMeshPro>();
                     textLine1.color = new Color(textLine1.color.r, textLine1.color.g, textLine1.color.b, fadeInPct);
                     if (countdown <= 0) ChangeState(State.INTRO_LIGHTING);
                     break;
@@ -220,7 +222,10 @@ namespace com.google.apps.peltzer.client.menu
                     terrainFloor.SetActive(false);
                     introLogo.SetActive(false);
                     introAnim.SetActive(true);
-                    introAnim.GetComponentInChildren<Animator>().speed = INTRO_ANIMATION_SPEED_SCALE;
+                    foreach (var animator in introAnim.GetComponentsInChildren<Animator>(includeInactive: true))
+                    {
+                        animator.speed = INTRO_ANIMATION_SPEED_SCALE;
+                    };
                     audioLibrary.PlayClip(audioLibrary.startupSound);
                     countdown = INTRO_ANIMATION_DURATION;
                     SetSkyboxLightFactor(0f);
