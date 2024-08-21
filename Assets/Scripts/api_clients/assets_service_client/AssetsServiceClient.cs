@@ -570,8 +570,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             if (resourceUploadSuccess)
             {
-                // TODO
-                // yield return FinalizeAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds, saveSelected);
+                yield return FinalizeAsset();
             }
             else
             {
@@ -787,6 +786,40 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             Debug.LogError(GetDebugString(request, "Failed to save to asset store"));
         }
 
+        private IEnumerator FinalizeAsset()
+        {
+            string url = $"{BaseUrl()}/assets/{assetId}/finalize";
+            UnityWebRequest request = new UnityWebRequest();
+
+            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
+            for (int i = 0; i < 2; i++)
+            {
+                request = PostRequest(
+                    url,
+                    "application/json",
+                    Array.Empty<byte>(),
+                    false
+                );
+                request.downloadHandler = new DownloadHandlerBuffer();
+
+                yield return request.SendWebRequest();
+
+                if (request.responseCode == 401 || request.isNetworkError)
+                {
+                    yield return OAuth2Identity.Instance.Reauthorize();
+                    continue;
+                }
+
+                if (request.responseCode < 200 || request.responseCode >= 300)
+                {
+                    Debug.LogError($"Unexpected response from Icosa: {request.downloadHandler.text}");
+                    yield break;
+                }
+                yield break;
+            }
+            Debug.LogError(GetDebugString(request, "Failed to save to asset store"));
+        }
+
         /// <summary>
         ///   Update an existing asset.
         /// </summary>
@@ -917,10 +950,12 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
             for (int i = 0; i < 2; i++)
             {
+                compressResourceUpload = false; // TODO remove once we've added support for compressed resources
+
                 request = PostRequest(url, "multipart/form-data; boundary=" + BOUNDARY, data, compressResourceUpload);
                 request.downloadHandler = new DownloadHandlerBuffer();
 
-                yield return request.Send();
+                yield return request.SendWebRequest();
 
                 if (request.responseCode == 401 || request.isNetworkError)
                 {
@@ -978,7 +1013,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             // Write the media part of the request from the data.
             sw.Write("--" + BOUNDARY);
             sw.Write(string.Format(
-              "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{0}\"\r\nContent-Type: {1}\r\n\r\n",
+              "\r\nContent-Disposition: form-data; name=\"files\"; filename=\"{0}\"\r\nContent-Type: {1}\r\n\r\n",
               filename, mimeType));
             sw.Flush();
             stream.Write(data, 0, data.Length);
