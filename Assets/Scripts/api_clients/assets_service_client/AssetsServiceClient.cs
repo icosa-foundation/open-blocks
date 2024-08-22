@@ -788,7 +788,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         private IEnumerator FinalizeAsset()
         {
-            string url = $"{BaseUrl()}/assets/{assetId}/finalize";
+            string url = $"{BaseUrl()}/assets/{assetId}/blocks_finalize";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -944,7 +944,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private IEnumerator AddResource(string filename, string mimeType, byte[] data, string key)
         {
             elementUploadStates.Add(key, UploadState.IN_PROGRESS);
-            string url = $"{BaseUrl()}/assets/{assetId}/format";
+            string url = $"{BaseUrl()}/assets/{assetId}/blocks_format";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
