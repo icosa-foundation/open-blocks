@@ -628,15 +628,17 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
                 blocksFile, thumbnailFile, saveSelected: false);
 
-            // // Update the asset if all uploads succeded.
-            // if (resourceUploadSuccess)
-            // {
-            //     yield return UpdateAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
-            // }
+
+            assetCreationSuccess = true; // Temporary until we reimplement this
+            // Update the asset if all uploads succeded.
+            if (false) // (resourceUploadSuccess)
+            {
+                yield return UpdateAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
+            }
 
             // Show a toast informing the user that they uploaded to Zandria, or that there was an error.
             PeltzerMain.Instance
-              .HandleSaveComplete(/* success */ assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
+              .HandleSaveComplete(assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
             if (assetCreationSuccess)
             {
                 PeltzerMain.Instance.LastSavedAssetId = assetId;
@@ -644,12 +646,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 {
                     OpenPublishUrl(assetId);
                 }
-                else
-                {
-                }
-            }
-            else
-            {
             }
         }
 
@@ -826,9 +822,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private IEnumerator UpdateAsset(FormatSaveData saveData, int objPolyCount,
           int triangulatedObjPolyCount, HashSet<string> remixIds)
         {
-            string json = CreateJsonForAssetResources(saveData, remixIds, objPolyCount, triangulatedObjPolyCount,
-              /* displayName */ null, saveSelected: false);
-            string url = String.Format("{0}/assets/{1}:updateData", BaseUrl(), assetId);
+            string json = CreateJsonForAssetResources(
+                saveData, remixIds, objPolyCount, triangulatedObjPolyCount,
+                null, saveSelected: false
+            );
+            string url = $"{BaseUrl()}/assets/{assetId}:updateData";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
