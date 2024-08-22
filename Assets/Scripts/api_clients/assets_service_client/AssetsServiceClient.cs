@@ -628,11 +628,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
                 blocksFile, thumbnailFile, saveSelected: false);
 
-            // Update the asset if all uploads succeded.
-            if (resourceUploadSuccess)
-            {
-                yield return UpdateAsset(assetId, gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
-            }
+            // // Update the asset if all uploads succeded.
+            // if (resourceUploadSuccess)
+            // {
+            //     yield return UpdateAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
+            // }
 
             // Show a toast informing the user that they uploaded to Zandria, or that there was an error.
             PeltzerMain.Instance
