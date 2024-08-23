@@ -561,7 +561,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             yield return CreateNewAsset(saveSelected);
 
             // Upload the resources.
-            // Create an asset if all uploads succeded.
+            // Create an asset if all uploads succeeded.
             if (assetCreationSuccess)
             {
                 yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
@@ -945,7 +945,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             string url = $"{BaseUrl()}/assets/{assetId}/blocks_format";
             UnityWebRequest request = new UnityWebRequest();
 
-            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
+            // Run this twice so we can re-authorise if access tokens have become stale.
             for (int i = 0; i < 2; i++)
             {
                 compressResourceUpload = false; // TODO remove once we've added support for compressed resources
@@ -974,6 +974,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 yield break;
             }
 
+            // Failed twice
             elementUploadStates[key] = UploadState.FAILED;
             Debug.LogError(GetDebugString(request, "Failed to save " + filename + " to asset store"));
         }
