@@ -4,12 +4,12 @@
 QualitySettings:
   m_ObjectHideFlags: 0
   serializedVersion: 5
-  m_CurrentQuality: 1
+  m_CurrentQuality: 0
   m_QualitySettings:
   - serializedVersion: 3
     name: Desktop
     pixelLightCount: 4
-    shadows: 0
+    shadows: 1
     shadowResolution: 2
     shadowProjection: 1
     shadowCascades: 4
@@ -58,7 +58,7 @@ QualitySettings:
   - serializedVersion: 3
     name: Mobile
     pixelLightCount: 2
-    shadows: 0
+    shadows: 1
     shadowResolution: 1
     shadowProjection: 1
     shadowCascades: 4
