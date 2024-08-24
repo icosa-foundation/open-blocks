@@ -88,8 +88,8 @@ namespace com.google.apps.peltzer.client.model.main
             // Need to make sure all meshes are back in remesher for coalesced gltf export.
             PeltzerMain.Instance.GetSelector().DeselectAll();
             saveData = ExportUtils.SerializeModel(model, meshes,
-              /* saveGltf */ true, /* saveFbx */ true, /* saveTriangulatedObj */ true,
-              /* includeDisplayRotation */ true, serializer, saveSelected);
+              saveGltf: true, saveFbx: false, saveTriangulatedObj: true,
+              includeDisplayRotation: true, serializer, saveSelected);
             saveData.thumbnailBytes = thumbnailBytes;
         }
 
