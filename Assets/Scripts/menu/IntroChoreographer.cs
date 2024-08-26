@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Linq;
 using UnityEngine;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.controller;
 using com.google.apps.peltzer.client.tutorial;
+using TMPro;
 
 namespace com.google.apps.peltzer.client.menu
 {
@@ -41,7 +43,7 @@ namespace com.google.apps.peltzer.client.menu
         /// <summary>
         /// How long to display the Blocks logo after the intro animation.
         /// </summary>
-        private const float INTRO_LOGO_DURATION = 0.7f;
+        private const float INTRO_LOGO_DURATION = 2.0f;
 
         /// <summary>
         /// How long the lighting change takes (from dark to light).
@@ -82,6 +84,7 @@ namespace com.google.apps.peltzer.client.menu
         private GameObject introAnim;
         private GameObject introLogo;
         private GameObject introLogoLine1;
+        private GameObject introLogoLine2;
         private GameObject environment;
         private GameObject terrainLift;
         private GameObject terrainFloor;
@@ -135,6 +138,7 @@ namespace com.google.apps.peltzer.client.menu
             introAnim = ObjectFinder.ObjectById("ID_IntroAnim");
             introLogo = ObjectFinder.ObjectById("ID_IntroLogo");
             introLogoLine1 = ObjectFinder.ObjectById("ID_Logo_Line_1");
+            introLogoLine2 = ObjectFinder.ObjectById("ID_Logo_Line_2");
             environment = ObjectFinder.ObjectById("ID_Environment");
             terrainLift = ObjectFinder.ObjectById("ID_TerrainLift");
             terrainFloor = ObjectFinder.ObjectById("ID_TerrainNoMountains");
@@ -193,8 +197,10 @@ namespace com.google.apps.peltzer.client.menu
                     // Check to see if it's time to advance.
                     introLogo.transform.LookAt(PeltzerMain.Instance.hmd.transform);
                     float fadeInPct = Mathf.Max(0.0f, Mathf.Min(1.0f, 1 - countdown / INTRO_LOGO_DURATION));
-                    TextMesh textLine1 = introLogoLine1.GetComponent<TextMesh>();
+                    TextMeshPro textLine1 = introLogoLine1.GetComponent<TextMeshPro>();
+                    TextMeshPro textLine2 = introLogoLine2.GetComponent<TextMeshPro>();
                     textLine1.color = new Color(textLine1.color.r, textLine1.color.g, textLine1.color.b, fadeInPct);
+                    textLine2.color = new Color(textLine2.color.r, textLine2.color.g, textLine2.color.b, Mathf.Pow(fadeInPct, 3) * 0.5f);
                     if (countdown <= 0) ChangeState(State.INTRO_LIGHTING);
                     break;
                 case State.INTRO_LIGHTING:
@@ -220,7 +226,10 @@ namespace com.google.apps.peltzer.client.menu
                     terrainFloor.SetActive(false);
                     introLogo.SetActive(false);
                     introAnim.SetActive(true);
-                    introAnim.GetComponentInChildren<Animator>().speed = INTRO_ANIMATION_SPEED_SCALE;
+                    foreach (var animator in introAnim.GetComponentsInChildren<Animator>(includeInactive: true))
+                    {
+                        animator.speed = INTRO_ANIMATION_SPEED_SCALE;
+                    };
                     audioLibrary.PlayClip(audioLibrary.startupSound);
                     countdown = INTRO_ANIMATION_DURATION;
                     SetSkyboxLightFactor(0f);
