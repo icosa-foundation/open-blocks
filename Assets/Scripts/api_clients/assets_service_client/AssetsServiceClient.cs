@@ -623,7 +623,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           byte[] triangulatedObjFile, int triangulatedObjPolyCount, byte[] mtlFile, FormatSaveData gltfData,
           byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile, bool publish)
         {
-
+            this.assetId = assetId;
             // Upload the resources.
             yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
                 blocksFile, thumbnailFile, saveSelected: false);
