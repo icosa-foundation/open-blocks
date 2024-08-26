@@ -84,6 +84,7 @@ namespace com.google.apps.peltzer.client.menu
         private GameObject introAnim;
         private GameObject introLogo;
         private GameObject introLogoLine1;
+        private GameObject introLogoLine2;
         private GameObject environment;
         private GameObject terrainLift;
         private GameObject terrainFloor;
@@ -137,6 +138,7 @@ namespace com.google.apps.peltzer.client.menu
             introAnim = ObjectFinder.ObjectById("ID_IntroAnim");
             introLogo = ObjectFinder.ObjectById("ID_IntroLogo");
             introLogoLine1 = ObjectFinder.ObjectById("ID_Logo_Line_1");
+            introLogoLine2 = ObjectFinder.ObjectById("ID_Logo_Line_2");
             environment = ObjectFinder.ObjectById("ID_Environment");
             terrainLift = ObjectFinder.ObjectById("ID_TerrainLift");
             terrainFloor = ObjectFinder.ObjectById("ID_TerrainNoMountains");
@@ -196,7 +198,9 @@ namespace com.google.apps.peltzer.client.menu
                     introLogo.transform.LookAt(PeltzerMain.Instance.hmd.transform);
                     float fadeInPct = Mathf.Max(0.0f, Mathf.Min(1.0f, 1 - countdown / INTRO_LOGO_DURATION));
                     TextMeshPro textLine1 = introLogoLine1.GetComponent<TextMeshPro>();
+                    TextMeshPro textLine2 = introLogoLine2.GetComponent<TextMeshPro>();
                     textLine1.color = new Color(textLine1.color.r, textLine1.color.g, textLine1.color.b, fadeInPct);
+                    textLine2.color = new Color(textLine2.color.r, textLine2.color.g, textLine2.color.b, Mathf.Pow(fadeInPct, 3) * 0.5f);
                     if (countdown <= 0) ChangeState(State.INTRO_LIGHTING);
                     break;
                 case State.INTRO_LIGHTING:
