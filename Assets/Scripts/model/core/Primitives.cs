@@ -44,49 +44,51 @@ namespace com.google.apps.peltzer.client.model.core
         private static readonly float GOLDEN_RATIO_SCALED = 0.1618033988749895f;
 
         private static readonly Vector3[] ICOSAHEDRON_POINTS = {
-      new Vector3(-0.1f, GOLDEN_RATIO_SCALED, 0),
-      new Vector3(0.1f, GOLDEN_RATIO_SCALED, 0),
-      new Vector3(-0.1f, -GOLDEN_RATIO_SCALED, 0),
-      new Vector3(0.1f, -GOLDEN_RATIO_SCALED, 0),
+            new Vector3(-0.1f, GOLDEN_RATIO_SCALED, 0),
+            new Vector3(0.1f, GOLDEN_RATIO_SCALED, 0),
+            new Vector3(-0.1f, -GOLDEN_RATIO_SCALED, 0),
+            new Vector3(0.1f, -GOLDEN_RATIO_SCALED, 0),
 
-      new Vector3(0, -0.1f, GOLDEN_RATIO_SCALED),
-      new Vector3(0, 0.1f, GOLDEN_RATIO_SCALED),
-      new Vector3(0, -0.1f, -GOLDEN_RATIO_SCALED),
-      new Vector3(0, 0.1f, -GOLDEN_RATIO_SCALED),
+            new Vector3(0, -0.1f, GOLDEN_RATIO_SCALED),
+            new Vector3(0, 0.1f, GOLDEN_RATIO_SCALED),
+            new Vector3(0, -0.1f, -GOLDEN_RATIO_SCALED),
+            new Vector3(0, 0.1f, -GOLDEN_RATIO_SCALED),
 
-      new Vector3(GOLDEN_RATIO_SCALED, 0, -0.1f),
-      new Vector3(GOLDEN_RATIO_SCALED, 0, 0.1f),
-      new Vector3(-GOLDEN_RATIO_SCALED, 0, -0.1f),
-      new Vector3(-GOLDEN_RATIO_SCALED, 0, 0.1f)};
+            new Vector3(GOLDEN_RATIO_SCALED, 0, -0.1f),
+            new Vector3(GOLDEN_RATIO_SCALED, 0, 0.1f),
+            new Vector3(-GOLDEN_RATIO_SCALED, 0, -0.1f),
+            new Vector3(-GOLDEN_RATIO_SCALED, 0, 0.1f)
+        };
 
         private static readonly List<int>[] ICOSAHEDRON_FACES = {
-      // Faces around point 0.
-      new List<int> { 0, 11, 5 },
-      new List<int> { 0, 5, 1 },
-      new List<int> { 0, 1, 7 },
-      new List<int> { 0, 7, 10 },
-      new List<int> { 0, 10, 11 },
+            // Faces around point 0.
+            new List<int> { 0, 11, 5 },
+            new List<int> { 0, 5, 1 },
+            new List<int> { 0, 1, 7 },
+            new List<int> { 0, 7, 10 },
+            new List<int> { 0, 10, 11 },
 
-      // Faces adjacent to point 0.
-      new List<int> { 1, 5, 9 },
-      new List<int> { 5, 11, 4 },
-      new List<int> { 11, 10, 2 },
-      new List<int> { 10, 7, 6 },
-      new List<int> { 7, 1, 8 },
+            // Faces adjacent to point 0.
+            new List<int> { 1, 5, 9 },
+            new List<int> { 5, 11, 4 },
+            new List<int> { 11, 10, 2 },
+            new List<int> { 10, 7, 6 },
+            new List<int> { 7, 1, 8 },
 
-      // Faces around point 3.
-      new List<int> { 3, 9, 4 },
-      new List<int> { 3, 4, 2 },
-      new List<int> { 3, 2, 6 },
-      new List<int> { 3, 6, 8 },
-      new List<int> { 3, 8, 9 },
+            // Faces around point 3.
+            new List<int> { 3, 9, 4 },
+            new List<int> { 3, 4, 2 },
+            new List<int> { 3, 2, 6 },
+            new List<int> { 3, 6, 8 },
+            new List<int> { 3, 8, 9 },
 
-      // Faces adjacent to point 3.
-      new List<int> { 4, 9, 5 },
-      new List<int> { 2, 4, 11 },
-      new List<int> { 6, 2, 10 },
-      new List<int> { 8, 6, 7 },
-      new List<int> { 9, 8, 1 }};
+            // Faces adjacent to point 3.
+            new List<int> { 4, 9, 5 },
+            new List<int> { 2, 4, 11 },
+            new List<int> { 6, 2, 10 },
+            new List<int> { 8, 6, 7 },
+            new List<int> { 9, 8, 1 }
+        };
 
         public static MMesh BuildPrimitive(Shape shape, Vector3 scale, Vector3 offset, int id, int material)
         {
