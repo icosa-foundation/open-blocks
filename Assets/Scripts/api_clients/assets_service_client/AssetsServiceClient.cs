@@ -93,7 +93,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
             else
             {
-                StartCoroutine(assetsServiceClient.UpdateModel(remixIds, objMultiPartBytes, saveData.objPolyCount,
+                StartCoroutine(assetsServiceClient.UpdateModel(assetId, remixIds, objMultiPartBytes, saveData.objPolyCount,
                   triangulatedObjMultiPartBytes, saveData.triangulatedObjPolyCount, mtlMultiPartBytes, saveData.GLTFfiles,
                   fbxMultiPartBytes, blocksMultiPartBytes, thumbnailMultiPartBytes, publish));
             }
@@ -619,7 +619,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <summary>
         ///   Updates an existing asset after uploading the new resources for it.
         /// </summary>
-        public IEnumerator UpdateModel(HashSet<string> remixIds, byte[] objFile, int objPolyCount,
+        public IEnumerator UpdateModel(string assetId, HashSet<string> remixIds, byte[] objFile, int objPolyCount,
           byte[] triangulatedObjFile, int triangulatedObjPolyCount, byte[] mtlFile, FormatSaveData gltfData,
           byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile, bool publish)
         {
@@ -820,7 +820,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <summary>
         ///   Update an existing asset.
         /// </summary>
-        private IEnumerator UpdateAsset(FormatSaveData saveData, int objPolyCount,
+        private IEnumerator UpdateAsset(string assetId, FormatSaveData saveData, int objPolyCount,
           int triangulatedObjPolyCount, HashSet<string> remixIds)
         {
             string json = CreateJsonForAssetResources(
