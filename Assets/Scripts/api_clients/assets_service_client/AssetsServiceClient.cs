@@ -631,10 +631,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             assetCreationSuccess = true; // Temporary until we reimplement this
             // Update the asset if all uploads succeded.
-            if (false) // (resourceUploadSuccess)
-            {
-                yield return UpdateAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
-            }
+            // if (resourceUploadSuccess)
+            // {
+            //     yield return UpdateAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
+            // }
 
             // Show a toast informing the user that they uploaded to Zandria, or that there was an error.
             PeltzerMain.Instance
