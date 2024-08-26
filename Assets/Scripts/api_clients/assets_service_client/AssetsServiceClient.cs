@@ -682,13 +682,14 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             for (int i = 0; i < gltfData.resources.Count; i++)
             {
                 FormatDataFile file = gltfData.resources[i];
-                StartCoroutine(AddResource(file.fileName, file.mimeType, file.multipartBytes, file.tag + i));
+                yield return StartCoroutine(AddResource(file.fileName, file.mimeType, file.multipartBytes, file.tag + i));
             }
 
-            StartCoroutine(AddResource(ExportUtils.BLOCKS_FILENAME, "application/octet-stream", blocksFile, "blocks"));
+            yield return StartCoroutine(AddResource(ExportUtils.BLOCKS_FILENAME, "application/octet-stream", blocksFile, "blocks"));
+
             if (!saveSelected)
             {
-                StartCoroutine(AddResource(ExportUtils.THUMBNAIL_FILENAME, "image/png", thumbnailFile, "png"));
+                yield return StartCoroutine(AddResource(ExportUtils.THUMBNAIL_FILENAME, "image/png", thumbnailFile, "png"));
             }
 
             // Wait for all uploads to complete (or fail);
@@ -960,15 +961,23 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     yield return OAuth2Identity.Instance.Reauthorize();
                     continue;
                 }
-                try
+
+                if (request.responseCode >= 200 && request.responseCode <= 299)
                 {
-                    // TODO do we still need this?
-                    // elementIds[key] = match.Groups[1].Captures[0].Value;
-                    elementUploadStates[key] = UploadState.SUCCEEDED;
+                    try
+                    {
+                        elementIds[key] = "some_id"; // match.Groups[1].Captures[0].Value; TODO do we still need this?
+                        elementUploadStates[key] = UploadState.SUCCEEDED;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError(GetDebugString(request, $"Failed to save {filename} Response {request.responseCode}: {e}"));
+                        elementUploadStates[key] = UploadState.FAILED;
+                    }
                 }
-                catch (Exception e)
+                else
                 {
-                    Debug.LogError(GetDebugString(request, $"Failed to save " + filename + " to Icosa: {e}"));
+                    Debug.LogError(GetDebugString(request, $"Failed to save {filename} Response {request.responseCode}"));
                     elementUploadStates[key] = UploadState.FAILED;
                 }
                 yield break;
