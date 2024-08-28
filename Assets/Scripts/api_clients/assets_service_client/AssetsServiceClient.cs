@@ -570,7 +570,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             if (resourceUploadSuccess)
             {
-                yield return FinalizeAsset();
+                yield return FinalizeAsset(assetId, gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
             }
             else
             {
@@ -631,10 +631,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             assetCreationSuccess = true; // Temporary until we reimplement this
             // Update the asset if all uploads succeded.
-            // if (resourceUploadSuccess)
-            // {
-            //     yield return UpdateAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
-            // }
+            if (resourceUploadSuccess)
+            {
+                yield return FinalizeAsset(assetId, gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
+            }
 
             // Show a toast informing the user that they uploaded to Zandria, or that there was an error.
             PeltzerMain.Instance
@@ -759,9 +759,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
                 try
                 {
-                    var json = JSON.Parse(request.downloadHandler.text);
-                    // TODO return id directly in the response
-                    assetId = json["edit_url"].Value.Split('/').Last();
+                    var responseJson = JSON.Parse(request.downloadHandler.text);
+                    assetId = responseJson["assetId"];
                 }
                 catch (Exception e)
                 {
@@ -794,8 +793,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 request = PostRequest(
                     url,
                     "application/json",
-                    Array.Empty<byte>(),
-                    false
+                    Array.Empty<byte>()
                 );
                 request.downloadHandler = new DownloadHandlerBuffer();
 
@@ -812,31 +810,37 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     Debug.LogError($"Unexpected response from Icosa: {request.downloadHandler.text}");
                     yield break;
                 }
+                assetCreationSuccess = true;
                 yield break;
             }
             Debug.LogError(GetDebugString(request, "Failed to save to asset store"));
         }
 
         /// <summary>
-        ///   Update an existing asset.
+        ///   Overload of the above method used for updating an existing asset.
         /// </summary>
-        private IEnumerator UpdateAsset(string assetId, FormatSaveData saveData, int objPolyCount,
+        private IEnumerator FinalizeAsset(string assetId, FormatSaveData saveData, int objPolyCount,
           int triangulatedObjPolyCount, HashSet<string> remixIds)
         {
             string json = CreateJsonForAssetResources(
                 saveData, remixIds, objPolyCount, triangulatedObjPolyCount,
                 null, saveSelected: false
             );
-            string url = $"{BaseUrl()}/assets/{assetId}:updateData";
+
+            string url = $"{BaseUrl()}/assets/{assetId}/blocks_finalize";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
             for (int i = 0; i < 2; i++)
             {
-                request = Patch(url, "application/json", Encoding.UTF8.GetBytes(json));
+                request = PostRequest(
+                    url,
+                    "application/json",
+                    Encoding.UTF8.GetBytes(json)
+                );
                 request.downloadHandler = new DownloadHandlerBuffer();
 
-                yield return request.Send();
+                yield return request.SendWebRequest();
 
                 if (request.responseCode == 401 || request.isNetworkError)
                 {
@@ -844,11 +848,16 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     continue;
                 }
 
-                assetId = null;
+                if (request.responseCode < 200 || request.responseCode >= 300)
+                {
+                    Debug.LogError($"Unexpected response from Icosa: {request.downloadHandler.text}");
+                    yield break;
+                }
+
                 try
                 {
                     var responseJson = JSON.Parse(request.downloadHandler.text);
-                    assetId = responseJson["edit_url"].Value.Split('/').Last();
+                    assetId = responseJson["assetId"];
                     PeltzerMain.Instance.UpdateCloudModelOntoPolyMenu(responseJson);
                     assetCreationSuccess = true;
                 }
@@ -864,29 +873,26 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private string CreateJsonForAssetResources(FormatSaveData saveData, HashSet<string> remixIds,
           int objPolyCount, int triangulatedObjPolyCount, string displayName, bool saveSelected)
         {
-            List<String> gltfResourceFiles = new List<string>();
+
+            var gltfResourceFiles = new List<string>();
             for (int i = 0; i < saveData.resources.Count; i++)
             {
                 FormatDataFile dataFile = saveData.resources[i];
-                gltfResourceFiles.Add(String.Format("\"resource_id\": \"{0}\"", elementIds[dataFile.tag + i]));
+                gltfResourceFiles.Add($@"""resource_id"": ""{elementIds[dataFile.tag + i]}""");
             }
 
             string gltfFormatComplexity = "";
             if (saveData.triangleCount > 0)
             {
-                gltfFormatComplexity = String.Format("\"format_complexity\": {{ \"triangle_count\": {0} }},",
-                  saveData.triangleCount);
+                gltfFormatComplexity = $@"""format_complexity"": {{ ""triangle_count"": {saveData.triangleCount} }},";
             }
-            string objFormatComplexity = String.Format("\"format_complexity\": {{ \"triangle_count\": {0} }},",
-              objPolyCount);
-            string triangulatedObjFormatComplexity = String.Format("\"format_complexity\": {{ \"triangle_count\": {0} }},",
-              triangulatedObjPolyCount);
+            string objFormatComplexity = $@"""format_complexity"": {{ ""triangle_count"": {objPolyCount} }},";
+            string triangulatedObjFormatComplexity = $@"""format_complexity"": {{ ""triangle_count"": {triangulatedObjPolyCount} }},";
 
             // Create asset using the uploaded components.
             // Newtonsoft library doesn't like repeated keys, so we do it by hand.
             string gltfResources = String.Join(",", gltfResourceFiles.ToArray());
-            string gltfBlock = String.Format("\"format\": [ {{ \"root_id\": \"{0}\", {1} " +
-              "{2} }} ]", elementIds[saveData.root.tag], gltfFormatComplexity, gltfResources);
+            string gltfBlock = $@"""format"": [ {{ ""root_id"": ""{elementIds[saveData.root.tag]}"", {gltfFormatComplexity} " + $"{gltfResources} }} ]";
 
             string remixBlock;
             // Note: we have to include the remix_info section even if it's empty, because its absence would
@@ -934,6 +940,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     ""format"": [
                         {{ ""format_type"": ""FORMAT_BLOCKS"", ""root_id"": ""{elementIds["blocks"]}"" }} ], {gltfBlock}, {remixBlock} }}";
             }
+            Debug.Log(json);
             return json;
         }
 
