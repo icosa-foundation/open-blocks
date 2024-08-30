@@ -782,50 +782,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             Debug.LogError(GetDebugString(request, "Failed to save to asset store"));
         }
 
-        private IEnumerator FinalizeAsset()
-        {
-            string url = $"{BaseUrl()}/assets/{assetId}/blocks_finalize";
-            UnityWebRequest request = new UnityWebRequest();
-
-            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
-            for (int i = 0; i < 2; i++)
-            {
-                request = PostRequest(
-                    url,
-                    "application/json",
-                    Array.Empty<byte>()
-                );
-                request.downloadHandler = new DownloadHandlerBuffer();
-
-                yield return request.SendWebRequest();
-
-                if (request.responseCode == 401 || request.isNetworkError)
-                {
-                    yield return OAuth2Identity.Instance.Reauthorize();
-                    continue;
-                }
-
-                if (request.responseCode < 200 || request.responseCode >= 300)
-                {
-                    Debug.LogError($"Unexpected response from Icosa: {request.downloadHandler.text}");
-                    yield break;
-                }
-                assetCreationSuccess = true;
-                yield break;
-            }
-            Debug.LogError(GetDebugString(request, "Failed to save to asset store"));
-        }
-
         /// <summary>
         ///   Overload of the above method used for updating an existing asset.
         /// </summary>
         private IEnumerator FinalizeAsset(string assetId, FormatSaveData saveData, int objPolyCount,
           int triangulatedObjPolyCount, HashSet<string> remixIds)
         {
-            string json = CreateJsonForAssetResources(
-                saveData, remixIds, objPolyCount, triangulatedObjPolyCount,
-                null, saveSelected: false
-            );
+            string json = CreateJsonForAssetResources(remixIds, objPolyCount, triangulatedObjPolyCount, saveSelected: false);
 
             string url = $"{BaseUrl()}/assets/{assetId}/blocks_finalize";
             UnityWebRequest request = new UnityWebRequest();
@@ -856,9 +819,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
                 try
                 {
-                    var responseJson = JSON.Parse(request.downloadHandler.text);
-                    assetId = responseJson["assetId"];
-                    PeltzerMain.Instance.UpdateCloudModelOntoPolyMenu(responseJson);
+                    var responseJson = JObject.Parse(request.downloadHandler.text);
+                    assetId = responseJson["url"].ToString();
+                    PeltzerMain.Instance.UpdateCloudModelOntoPolyMenu(request.downloadHandler.text);
                     assetCreationSuccess = true;
                 }
                 catch (Exception e)
@@ -870,77 +833,14 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             Debug.LogError(GetDebugString(request, "Failed to save to Icosa"));
         }
 
-        private string CreateJsonForAssetResources(FormatSaveData saveData, HashSet<string> remixIds,
-          int objPolyCount, int triangulatedObjPolyCount, string displayName, bool saveSelected)
+        private string CreateJsonForAssetResources(HashSet<string> remixIds, int objPolyCount, int triangulatedObjPolyCount, bool saveSelected)
         {
-
-            var gltfResourceFiles = new List<string>();
-            for (int i = 0; i < saveData.resources.Count; i++)
-            {
-                FormatDataFile dataFile = saveData.resources[i];
-                gltfResourceFiles.Add($@"""resource_id"": ""{elementIds[dataFile.tag + i]}""");
-            }
-
-            string gltfFormatComplexity = "";
-            if (saveData.triangleCount > 0)
-            {
-                gltfFormatComplexity = $@"""format_complexity"": {{ ""triangle_count"": {saveData.triangleCount} }},";
-            }
-            string objFormatComplexity = $@"""format_complexity"": {{ ""triangle_count"": {objPolyCount} }},";
-            string triangulatedObjFormatComplexity = $@"""format_complexity"": {{ ""triangle_count"": {triangulatedObjPolyCount} }},";
-
-            // Create asset using the uploaded components.
-            // Newtonsoft library doesn't like repeated keys, so we do it by hand.
-            string gltfResources = String.Join(",", gltfResourceFiles.ToArray());
-            string gltfBlock = $@"""format"": [ {{ ""root_id"": ""{elementIds[saveData.root.tag]}"", {gltfFormatComplexity} " + $"{gltfResources} }} ]";
-
-            string remixBlock;
-            // Note: we have to include the remix_info section even if it's empty, because its absence would
-            // mean "keep the existing remix IDs" (incorrect), not "there are no remix IDs" (correct).
-            StringBuilder remixBlockBuilder = new StringBuilder("\"remix_info\": { ");
-            foreach (string remixId in remixIds)
-            {
-                remixBlockBuilder.Append("\"source_asset\": \"").Append(remixId).Append("\", ");
-            }
-            remixBlockBuilder.Append("}");
-            remixBlock = remixBlockBuilder.ToString();
-
-            string prelude = displayName == null ? "{ " : $@"{{ ""display_name"": ""{displayName}"",";
-
-            string json;
+            string json = "";
             if (!saveSelected)
             {
-                // TODO Proper serialization
-                json = $@"{prelude}
-                ""thumbnail_id"": ""{elementIds["png"]}"",
-                    ""format"": [
-                        {{ ""format_type"": ""FORMAT_WAVEFRONT_OBJ"", ""root_id"": ""{elementIds["obj"]}"", {objFormatComplexity} ""resource_id"": ""{elementIds["mtl"]}"" }}
-                    ],
-                    ""format"": [
-                        {{ ""format_type"": ""FORMAT_WAVEFRONT_OBJ_TRIANGULATED"", ""root_id"": ""{elementIds["triangulated-obj"]}"", {triangulatedObjFormatComplexity} ""resource_id"": ""{elementIds["mtl"]}"" }}
-                    ],
-                    ""format"": [
-                        {{ ""format_type"": ""FORMAT_AUTODESK_FBX"", ""root_id"": ""{elementIds["fbx"]}"" }}
-                    ],
-                    ""format"": [
-                        {{ ""format_type"": ""FORMAT_BLOCKS"", ""root_id"": ""{elementIds["blocks"]}"" }}
-                    ],
-                    {gltfBlock}, {remixBlock} }}";
+                string remixIdsJson = String.Join(",", remixIds.Select(remixId => $@"""{remixId}"""));
+                json = $@"{{""objPolyCount"": ""{objPolyCount}"", ""triangulatedObjPolyCount"": ""{triangulatedObjPolyCount}"", ""remixIds"": [{remixIdsJson}]}}";
             }
-            else
-            {
-                // TODO Proper serialization
-                json = $@"{prelude}
-                    ""format"": [
-                        {{ ""format_type"": ""FORMAT_WAVEFRONT_OBJ"", ""root_id"": ""{elementIds["obj"]}"", {objFormatComplexity} ""resource_id"": ""{elementIds["mtl"]}"" }} ],
-                    ""format"": [
-                        {{ ""format_type"": ""FORMAT_WAVEFRONT_OBJ_TRIANGULATED"", ""root_id"": ""{elementIds["triangulated-obj"]}"", {triangulatedObjFormatComplexity} ""resource_id"": ""{elementIds["mtl"]}"" }} ],
-                    ""format"":
-                        [ {{ ""format_type"": ""FORMAT_AUTODESK_FBX"", ""root_id"": ""{elementIds["fbx"]}"" }} ],
-                    ""format"": [
-                        {{ ""format_type"": ""FORMAT_BLOCKS"", ""root_id"": ""{elementIds["blocks"]}"" }} ], {gltfBlock}, {remixBlock} }}";
-            }
-            Debug.Log(json);
             return json;
         }
 
