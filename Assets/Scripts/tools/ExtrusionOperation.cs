@@ -475,14 +475,7 @@ public class ExtrusionOperation
         Vector3 projectedDelta;
         if (extrusionParams.lockToNormal)
         {
-            List<Vector3> coplanar = new List<Vector3>() {
-        mesh.VertexPositionInModelCoords(face.vertexIds[0]),
-        mesh.VertexPositionInModelCoords(face.vertexIds[1]),
-        mesh.VertexPositionInModelCoords(face.vertexIds[2])
-      };
-            Vector3 normal = MeshMath.CalculateNormal(coplanar);
-            projectedDelta =
-              Vector3.Project(GridUtils.SnapToGrid(extrusionParams.translationModel), normal);
+            projectedDelta = mesh.rotation * face.normal * extrusionParams.translationModel.magnitude;
         }
         else
         {
