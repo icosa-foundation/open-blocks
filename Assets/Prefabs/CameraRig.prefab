@@ -636,8 +636,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -899,9 +899,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1012231440556298
 GameObject:
@@ -1020,8 +1020,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c03e7400c41ee844695411b3eb677fb7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Liked
   isActive: 1
   isHovered: 0
@@ -1225,9 +1225,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1017894067243148
 GameObject:
@@ -1347,9 +1347,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 10
@@ -1569,9 +1569,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1025412513555526
 GameObject:
@@ -1809,9 +1809,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1028978511406828
 GameObject:
@@ -2025,8 +2025,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -2215,8 +2215,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -2524,8 +2524,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -2701,8 +2701,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rend: {fileID: 0}
 --- !u!1 &1037174131909060
 GameObject:
@@ -3094,7 +3094,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1047465209561092}
-  m_Text: 
+  m_Text:
   m_OffsetZ: 0
   m_CharacterSize: 1
   m_LineSpacing: 1
@@ -3748,8 +3748,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -4239,9 +4239,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 12
   isHovered: 0
@@ -5109,9 +5109,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 6
   isHovered: 0
@@ -5652,9 +5652,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 10
   isHovered: 0
@@ -5765,8 +5765,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -6158,8 +6158,8 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c03e7400c41ee844695411b3eb677fb7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Laaaabs
   isActive: 1
   isHovered: 0
@@ -6262,8 +6262,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -6569,8 +6569,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -6832,8 +6832,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a07552d7dd7a174c8b9d56e1105a1a8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Paint
   isActive: 1
   mode: 8
@@ -6847,8 +6847,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64f3e2433d0d16b4e9ec8d2a766c43f8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   peltzerMain: {fileID: 0}
   peltzerController: {fileID: 114822406110709896}
 --- !u!114 &114682072764322926
@@ -6861,8 +6861,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 045448df66512a245aba33d8502e7594, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   materialObjects:
   - {fileID: 1217489537131310}
   - {fileID: 1880226689144700}
@@ -6990,9 +6990,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 12
@@ -7292,8 +7292,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -7302,7 +7302,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text:
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
   m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
@@ -7522,9 +7522,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 22
   isHovered: 0
@@ -7749,9 +7749,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1103664969473298
 GameObject:
@@ -7940,8 +7940,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -8139,9 +8139,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1104980460922642
 GameObject:
@@ -8582,9 +8582,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 11
@@ -8832,8 +8832,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -9564,9 +9564,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 7
@@ -9770,9 +9770,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 18
@@ -10063,8 +10063,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -10602,9 +10602,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1135745130559078
 GameObject:
@@ -10754,9 +10754,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 23
   isHovered: 0
@@ -10879,9 +10879,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 0
@@ -11314,8 +11314,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -11699,8 +11699,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -11832,7 +11832,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -12012,8 +12012,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -12105,9 +12105,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1156239576150914
 GameObject:
@@ -12334,8 +12334,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 935894f311a980142a6b36a2de82d5a7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Black
   isActive: 1
   theme: 7
@@ -12628,9 +12628,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 9
@@ -12698,9 +12698,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1166364400065800
 GameObject:
@@ -12915,9 +12915,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1169349732194694
 GameObject:
@@ -13058,8 +13058,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -13248,8 +13248,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -13447,9 +13447,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1174096332942516
 GameObject:
@@ -13785,9 +13785,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 1
@@ -14538,8 +14538,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rend: {fileID: 23435276500704136}
 --- !u!1 &1192641163289760
 GameObject:
@@ -14726,25 +14726,12 @@ Transform:
   - {fileID: 4344565513920796}
   m_Father: {fileID: 4887744078202488}
   m_LocalEulerAnglesHint: {x: 2, y: 0, z: 0}
---- !u!1 &1198214166045030
+--- !u!1 &1198214166045030 stripped
 GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 5261558936677338128, guid: ca5e37d3e0639174394ceb62608d04b8,
+    type: 3}
+  m_PrefabInstance: {fileID: 5260360757963664758}
   m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4276393508260116}
-  - component: {fileID: 33250743224764070}
-  - component: {fileID: 23403949212303958}
-  - component: {fileID: 114443143891218914}
-  m_Layer: 10
-  m_Name: ID_Cylinder
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
 --- !u!4 &4276393508260116
 Transform:
   m_ObjectHideFlags: 0
@@ -14760,14 +14747,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4776689306038126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &33250743224764070
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1198214166045030}
-  m_Mesh: {fileID: 4300000, guid: ebde3a528687b4849a1d2a2810d6a753, type: 3}
 --- !u!23 &23403949212303958
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -14810,19 +14789,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &114443143891218914
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1198214166045030}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rend: {fileID: 23403949212303958}
 --- !u!1 &1199106303340802
 GameObject:
   m_ObjectHideFlags: 0
@@ -15314,8 +15280,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -15536,8 +15502,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -15793,8 +15759,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a07552d7dd7a174c8b9d56e1105a1a8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Modify
   isActive: 1
   mode: 2
@@ -15808,8 +15774,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 38ecce2111c51b64eab3d4a20b7b1a39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   peltzerMain: {fileID: 0}
   peltzerController: {fileID: 0}
 --- !u!114 &114447235440733378
@@ -15822,8 +15788,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 045448df66512a245aba33d8502e7594, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   materialObjects:
   - {fileID: 1544457411856116}
   - {fileID: 1694320244838550}
@@ -15948,9 +15914,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 22
@@ -16070,9 +16036,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1215597531267610
 GameObject:
@@ -16651,8 +16617,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -16937,8 +16903,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c03e7400c41ee844695411b3eb677fb7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Options
   isActive: 1
   isHovered: 0
@@ -17232,8 +17198,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a07552d7dd7a174c8b9d56e1105a1a8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Grab
   isActive: 1
   mode: 7
@@ -17247,8 +17213,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c67c549716161c643a55faec81b999e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!114 &114133521616044272
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17259,8 +17225,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 045448df66512a245aba33d8502e7594, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   materialObjects:
   - {fileID: 1940268290095824}
   - {fileID: 1840279138107934}
@@ -17382,9 +17348,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 1
   isHovered: 0
@@ -17505,8 +17471,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c03e7400c41ee844695411b3eb677fb7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Featured
   isActive: 1
   isHovered: 0
@@ -17627,9 +17593,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1231738286647892
 GameObject:
@@ -17726,9 +17692,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!65 &65234455492862002
 BoxCollider:
@@ -17974,8 +17940,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -18304,8 +18270,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -18600,9 +18566,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 0
   isHovered: 0
@@ -18725,9 +18691,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 11
@@ -18838,8 +18804,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -19028,8 +18994,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -19720,8 +19686,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -20438,9 +20404,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fbeb7ca8e2384e5880c2776dffa500d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 36
@@ -20651,8 +20617,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rend: {fileID: 137995563962644822}
 --- !u!1 &1266685645242824
 GameObject:
@@ -20944,9 +20910,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 19
@@ -21173,9 +21139,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 28
@@ -21297,9 +21263,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 14
@@ -21502,7 +21468,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1273218112745022}
-  m_Text: 
+  m_Text:
   m_OffsetZ: 0
   m_CharacterSize: 1
   m_LineSpacing: 1
@@ -21805,8 +21771,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -21996,8 +21962,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -22195,9 +22161,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1280606109595412
 GameObject:
@@ -22452,9 +22418,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1283101344064162
 GameObject:
@@ -22539,7 +22505,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1283101344064162}
-  m_Text: 
+  m_Text:
   m_OffsetZ: 0
   m_CharacterSize: 1
   m_LineSpacing: 0.9
@@ -22673,9 +22639,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fbeb7ca8e2384e5880c2776dffa500d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 37
@@ -22802,9 +22768,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1285232429623884
 GameObject:
@@ -22963,8 +22929,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fa9eee392143f7e458ab45af2bc6f3e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   controllerGeometry: {fileID: 0}
   shapeToolhead: {fileID: 1600640397816846}
   freeformToolhead: {fileID: 1300525507586912}
@@ -22997,8 +22963,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f032f154d79c4140a48661c1ece334f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!114 &114456343242558920
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23009,8 +22975,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6b413bf48c479f8409d0a43a8ad7385e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!114 &4554349501101686113
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23021,8 +22987,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2fadf230d1919748a9aa21d40f74619, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_TrackingType: 0
   m_UpdateType: 0
   m_IgnoreTrackingState: 0
@@ -23033,15 +22999,15 @@ MonoBehaviour:
       m_Type: 0
       m_ExpectedControlType: Vector3
       m_Id: e43013f8-3901-4df5-b1da-0294e69d2279
-      m_Processors: 
-      m_Interactions: 
+      m_Processors:
+      m_Interactions:
       m_SingletonActionBindings:
-      - m_Name: 
+      - m_Name:
         m_Id: 6bb2c5f5-7d9b-4075-a5fc-97c7c6144f27
         m_Path: <XRController>{LeftHand}/devicePosition
-        m_Interactions: 
-        m_Processors: 
-        m_Groups: 
+        m_Interactions:
+        m_Processors:
+        m_Groups:
         m_Action: Position
         m_Flags: 0
       m_Flags: 0
@@ -23053,15 +23019,15 @@ MonoBehaviour:
       m_Type: 0
       m_ExpectedControlType: Quaternion
       m_Id: 36a944f6-4ad8-40dc-b53d-1ee6910858c2
-      m_Processors: 
-      m_Interactions: 
+      m_Processors:
+      m_Interactions:
       m_SingletonActionBindings:
-      - m_Name: 
+      - m_Name:
         m_Id: e904e8fa-9640-4e18-898a-7f600a44facb
         m_Path: <XRController>{LeftHand}/deviceRotation
-        m_Interactions: 
-        m_Processors: 
-        m_Groups: 
+        m_Interactions:
+        m_Processors:
+        m_Groups:
         m_Action: Rotation
         m_Flags: 0
       m_Flags: 0
@@ -23073,35 +23039,35 @@ MonoBehaviour:
       m_Type: 0
       m_ExpectedControlType: Integer
       m_Id: 64e77f91-b20a-4976-a6f0-1a91c7412feb
-      m_Processors: 
-      m_Interactions: 
+      m_Processors:
+      m_Interactions:
       m_SingletonActionBindings:
-      - m_Name: 
+      - m_Name:
         m_Id: 03919b4a-b43a-4d5c-9fd9-d7b681a2bdc9
         m_Path: <XRController>{LeftHand}/trackingState
-        m_Interactions: 
-        m_Processors: 
-        m_Groups: 
+        m_Interactions:
+        m_Processors:
+        m_Groups:
         m_Action: Tracking State
         m_Flags: 0
       m_Flags: 0
     m_Reference: {fileID: 0}
   m_PositionAction:
-    m_Name: 
+    m_Name:
     m_Type: 0
-    m_ExpectedControlType: 
+    m_ExpectedControlType:
     m_Id: eb53f7a2-a410-4865-9994-6dabc89e7388
-    m_Processors: 
-    m_Interactions: 
+    m_Processors:
+    m_Interactions:
     m_SingletonActionBindings: []
     m_Flags: 0
   m_RotationAction:
-    m_Name: 
+    m_Name:
     m_Type: 0
-    m_ExpectedControlType: 
+    m_ExpectedControlType:
     m_Id: 6c7e7145-fad4-4137-8318-bd7183122363
-    m_Processors: 
-    m_Interactions: 
+    m_Processors:
+    m_Interactions:
     m_SingletonActionBindings: []
     m_Flags: 0
 --- !u!1 &1285780960030796
@@ -23558,9 +23524,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1295497161926890
 GameObject:
@@ -23678,9 +23644,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 18
   isHovered: 0
@@ -23791,8 +23757,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -23981,8 +23947,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -24367,8 +24333,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a07552d7dd7a174c8b9d56e1105a1a8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Insert Stroke
   isActive: 1
   mode: 1
@@ -24382,8 +24348,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 045448df66512a245aba33d8502e7594, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   materialObjects:
   - {fileID: 1925220808018088}
   - {fileID: 1462285903410040}
@@ -24505,9 +24471,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1302699313426202
 GameObject:
@@ -24626,7 +24592,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1302892926414850}
-  m_Text: 
+  m_Text:
   m_OffsetZ: 0
   m_CharacterSize: 1
   m_LineSpacing: 1.2
@@ -24857,9 +24823,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 13
@@ -24970,8 +24936,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -25169,9 +25135,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1307665862637526
 GameObject:
@@ -25344,8 +25310,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -25543,9 +25509,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1323485239351024
 GameObject:
@@ -25655,8 +25621,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -25845,8 +25811,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -25992,9 +25958,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1328624422962276
 GameObject:
@@ -26384,9 +26350,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 0
   isHovered: 0
@@ -26919,8 +26885,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -27111,8 +27077,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -27494,8 +27460,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -27504,7 +27470,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text:
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
   m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
@@ -27684,8 +27650,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -27850,7 +27816,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1349144067021996}
-  m_Text: 
+  m_Text:
   m_OffsetZ: 0
   m_CharacterSize: 1
   m_LineSpacing: 1
@@ -28064,9 +28030,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1350612738049274
 GameObject:
@@ -28186,9 +28152,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 27
@@ -28284,9 +28250,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1352674068112858
 GameObject:
@@ -28395,8 +28361,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -28777,42 +28743,14 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!1 &1355734811799646
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4776689306038126}
-  m_Layer: 10
-  m_Name: mockShape
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4776689306038126
+--- !u!4 &4776689306038126 stripped
 Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+    type: 3}
+  m_PrefabInstance: {fileID: 5260360757963664758}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1355734811799646}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 4260725032513540}
-  - {fileID: 4276393508260116}
-  - {fileID: 4142224838695494}
-  - {fileID: 4499153807668788}
-  - {fileID: 4488566617152198}
-  m_Father: {fileID: 4458942072854162}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1356483181366766
 GameObject:
   m_ObjectHideFlags: 0
@@ -28997,9 +28935,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 11
   isHovered: 0
@@ -29142,8 +29080,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -29152,7 +29090,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text:
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
   m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
@@ -29602,9 +29540,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 20
@@ -29706,8 +29644,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -29907,9 +29845,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 23
@@ -30062,9 +30000,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1378201441487200
 GameObject:
@@ -30311,8 +30249,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -30476,7 +30414,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -30966,8 +30904,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -31332,8 +31270,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5a2a9c34df4095f47b9ca8f975175f5b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Device: 0
   m_PoseSource: 2
   m_PoseProviderComponent: {fileID: 0}
@@ -31461,25 +31399,12 @@ Transform:
   - {fileID: 4794172672028276}
   m_Father: {fileID: 4341847308841496}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1393414406857496
+--- !u!1 &1393414406857496 stripped
 GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 5261468187658735214, guid: ca5e37d3e0639174394ceb62608d04b8,
+    type: 3}
+  m_PrefabInstance: {fileID: 5260360757963664758}
   m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4260725032513540}
-  - component: {fileID: 33360638591444160}
-  - component: {fileID: 23397204308243558}
-  - component: {fileID: 114008527105714192}
-  m_Layer: 10
-  m_Name: ID_Cone
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
 --- !u!4 &4260725032513540
 Transform:
   m_ObjectHideFlags: 0
@@ -31495,14 +31420,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4776689306038126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &33360638591444160
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1393414406857496}
-  m_Mesh: {fileID: 4300000, guid: b631e6b9349688b4e883e2433bedaa11, type: 3}
 --- !u!23 &23397204308243558
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -31545,19 +31462,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &114008527105714192
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1393414406857496}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rend: {fileID: 23397204308243558}
 --- !u!1 &1394297423995110
 GameObject:
   m_ObjectHideFlags: 0
@@ -31845,8 +31749,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -32046,9 +31950,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1397986043934018
 GameObject:
@@ -32499,9 +32403,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 8
@@ -32736,9 +32640,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 8
@@ -33207,9 +33111,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 8
   isHovered: 0
@@ -33456,9 +33360,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 018d312e26a70f84abea212a429d85b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 0
   isHovered: 0
   pageChange: 1
@@ -33699,8 +33603,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 935894f311a980142a6b36a2de82d5a7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Day
   isActive: 1
   theme: 0
@@ -33916,8 +33820,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -34460,9 +34364,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 33
@@ -34752,9 +34656,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1439321291621460
 GameObject:
@@ -35022,7 +34926,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1441961722409074}
-  m_Text: 
+  m_Text:
   m_OffsetZ: 0
   m_CharacterSize: 1
   m_LineSpacing: 1
@@ -35155,9 +35059,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 0
@@ -35301,8 +35205,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -35659,8 +35563,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -36130,9 +36034,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 24
   isHovered: 0
@@ -36983,8 +36887,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -37251,9 +37155,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 25
   isHovered: 0
@@ -37373,9 +37277,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1486804040145950
 GameObject:
@@ -37704,9 +37608,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1490861234011590
 GameObject:
@@ -37806,8 +37710,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -38029,8 +37933,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -38755,25 +38659,12 @@ TextMesh:
   m_Color:
     serializedVersion: 2
     rgba: 4294967295
---- !u!1 &1507462442511892
+--- !u!1 &1507462442511892 stripped
 GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 5261846186141270882, guid: ca5e37d3e0639174394ceb62608d04b8,
+    type: 3}
+  m_PrefabInstance: {fileID: 5260360757963664758}
   m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4488566617152198}
-  - component: {fileID: 33710128581894058}
-  - component: {fileID: 23398709150770716}
-  - component: {fileID: 114061465086096124}
-  m_Layer: 10
-  m_Name: ID_Torus
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
 --- !u!4 &4488566617152198
 Transform:
   m_ObjectHideFlags: 0
@@ -38789,14 +38680,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4776689306038126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &33710128581894058
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1507462442511892}
-  m_Mesh: {fileID: 4300000, guid: 8bf663f4906a4e047b41b8444a1e535f, type: 3}
 --- !u!23 &23398709150770716
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -38839,19 +38722,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &114061465086096124
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1507462442511892}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rend: {fileID: 23398709150770716}
 --- !u!1 &1508472887569004
 GameObject:
   m_ObjectHideFlags: 0
@@ -38959,8 +38829,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -39652,9 +39522,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 3
   isHovered: 0
@@ -40145,8 +40015,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rend: {fileID: 0}
 --- !u!1 &1528062715432798
 GameObject:
@@ -40436,9 +40306,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1533727176349236
 GameObject:
@@ -40547,8 +40417,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -41004,8 +40874,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -41203,9 +41073,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1539043395585930
 GameObject:
@@ -41392,9 +41262,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fbeb7ca8e2384e5880c2776dffa500d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 7
@@ -41738,9 +41608,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1544311559506974
 GameObject:
@@ -42109,9 +41979,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 9
@@ -42413,9 +42283,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 018d312e26a70f84abea212a429d85b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 0
   isHovered: 0
   pageChange: -1
@@ -42517,8 +42387,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -42814,9 +42684,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1554818359327396
 GameObject:
@@ -42938,9 +42808,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fbeb7ca8e2384e5880c2776dffa500d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 7
@@ -43069,9 +42939,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 20
@@ -43191,9 +43061,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 17
   isHovered: 0
@@ -43409,8 +43279,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -44050,7 +43920,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -44261,7 +44131,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -44338,8 +44208,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a07552d7dd7a174c8b9d56e1105a1a8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Erase
   isActive: 1
   mode: 6
@@ -44353,8 +44223,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 045448df66512a245aba33d8502e7594, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   materialObjects:
   - {fileID: 1142569803497262}
   - {fileID: 1128047032510804}
@@ -44611,9 +44481,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 32
@@ -44736,9 +44606,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 16
@@ -44817,9 +44687,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01b27e555b53e694dbb5355f5d0613a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!65 &65132507755916298
 BoxCollider:
@@ -44989,7 +44859,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -45185,8 +45055,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -45450,9 +45320,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 30
@@ -45651,8 +45521,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -45913,9 +45783,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1581121923658844
 GameObject:
@@ -46139,8 +46009,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -46475,9 +46345,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 13
   isHovered: 0
@@ -46630,9 +46500,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 5
   isHovered: 0
@@ -46860,9 +46730,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 12
@@ -46973,8 +46843,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -47578,8 +47448,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a07552d7dd7a174c8b9d56e1105a1a8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Insert Shape
   isActive: 1
   mode: 0
@@ -47593,8 +47463,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 045448df66512a245aba33d8502e7594, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   materialObjects:
   - {fileID: 1810290888048458}
   - {fileID: 1393414406857496}
@@ -47726,7 +47596,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -47847,9 +47717,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1602852464900184
 GameObject:
@@ -48316,9 +48186,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1609941614333124
 GameObject:
@@ -48370,7 +48240,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -48672,9 +48542,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1614962191201194
 GameObject:
@@ -49114,8 +48984,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -49495,9 +49365,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 25
@@ -49608,8 +49478,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -49931,8 +49801,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -50122,8 +49992,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -50321,9 +50191,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 20
   isHovered: 0
@@ -51754,8 +51624,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -51956,9 +51826,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 10
@@ -52209,8 +52079,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -52516,8 +52386,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -52719,9 +52589,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fbeb7ca8e2384e5880c2776dffa500d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 7
@@ -52880,9 +52750,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1676203438761100
 GameObject:
@@ -53000,9 +52870,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1676301701724642
 GameObject:
@@ -53120,9 +52990,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1676436847869504
 GameObject:
@@ -53240,9 +53110,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 19
   isHovered: 0
@@ -53469,8 +53339,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -53660,8 +53530,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -54619,8 +54489,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c03e7400c41ee844695411b3eb677fb7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Yours
   isActive: 1
   isHovered: 0
@@ -54743,9 +54613,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 5
@@ -55155,9 +55025,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 3
@@ -55279,8 +55149,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 549dd699486808e4ba7372437445e0f6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   controllerGeometry: {fileID: 0}
   openXRHolder: {fileID: 1386834709207246}
   oculusRiftHolder: {fileID: 1417187831548636}
@@ -55309,8 +55179,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f032f154d79c4140a48661c1ece334f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!114 &114624707270474750
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55321,8 +55191,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 87fa8bb0405aae8489ffbdde3826c9f9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   shapesMenu:
   - {fileID: 0}
   - {fileID: 0}
@@ -55341,8 +55211,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4b4f616721b876940a6ef74104ddc1a5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   destination: {fileID: 0}
   distThresh: 0.25
   hintWidth: 0.001
@@ -55358,8 +55228,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2fadf230d1919748a9aa21d40f74619, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_TrackingType: 0
   m_UpdateType: 0
   m_IgnoreTrackingState: 0
@@ -55370,15 +55240,15 @@ MonoBehaviour:
       m_Type: 0
       m_ExpectedControlType: Vector3
       m_Id: f638d8d3-bc7b-4aef-85c7-c3a600762be3
-      m_Processors: 
-      m_Interactions: 
+      m_Processors:
+      m_Interactions:
       m_SingletonActionBindings:
-      - m_Name: 
+      - m_Name:
         m_Id: 38bac9af-6953-4a05-8dbe-079683f17cfc
         m_Path: <XRController>{RightHand}/devicePosition
-        m_Interactions: 
-        m_Processors: 
-        m_Groups: 
+        m_Interactions:
+        m_Processors:
+        m_Groups:
         m_Action: Position
         m_Flags: 0
       m_Flags: 0
@@ -55390,23 +55260,23 @@ MonoBehaviour:
       m_Type: 0
       m_ExpectedControlType: Quaternion
       m_Id: dadb76f5-e580-4a77-873b-736ee1eff89a
-      m_Processors: 
-      m_Interactions: 
+      m_Processors:
+      m_Interactions:
       m_SingletonActionBindings:
-      - m_Name: 
+      - m_Name:
         m_Id: a2fbde39-b9f5-4568-9c13-c67b3a5fbda0
-        m_Path: 
-        m_Interactions: 
-        m_Processors: 
-        m_Groups: 
+        m_Path:
+        m_Interactions:
+        m_Processors:
+        m_Groups:
         m_Action: Rotation
         m_Flags: 0
-      - m_Name: 
+      - m_Name:
         m_Id: 9d821942-5685-49cc-813c-40d0638b1f2d
         m_Path: <XRController>{RightHand}/deviceRotation
-        m_Interactions: 
-        m_Processors: 
-        m_Groups: 
+        m_Interactions:
+        m_Processors:
+        m_Groups:
         m_Action: Rotation
         m_Flags: 0
       m_Flags: 0
@@ -55418,35 +55288,35 @@ MonoBehaviour:
       m_Type: 0
       m_ExpectedControlType: Integer
       m_Id: 41a59c27-543a-4ed7-b9e5-3b6f78811f95
-      m_Processors: 
-      m_Interactions: 
+      m_Processors:
+      m_Interactions:
       m_SingletonActionBindings:
-      - m_Name: 
+      - m_Name:
         m_Id: ca1b8385-f829-4673-b672-0c3c4524a0a4
         m_Path: <XRController>{RightHand}/trackingState
-        m_Interactions: 
-        m_Processors: 
-        m_Groups: 
+        m_Interactions:
+        m_Processors:
+        m_Groups:
         m_Action: Tracking State
         m_Flags: 0
       m_Flags: 0
     m_Reference: {fileID: 0}
   m_PositionAction:
-    m_Name: 
+    m_Name:
     m_Type: 0
-    m_ExpectedControlType: 
+    m_ExpectedControlType:
     m_Id: 0bbf184c-a438-4dfe-9508-50464b665b25
-    m_Processors: 
-    m_Interactions: 
+    m_Processors:
+    m_Interactions:
     m_SingletonActionBindings: []
     m_Flags: 0
   m_RotationAction:
-    m_Name: 
+    m_Name:
     m_Type: 0
-    m_ExpectedControlType: 
+    m_ExpectedControlType:
     m_Id: 68e3cc93-ef67-405c-938b-cd1f29407ce5
-    m_Processors: 
-    m_Interactions: 
+    m_Processors:
+    m_Interactions:
     m_SingletonActionBindings: []
     m_Flags: 0
 --- !u!1 &1727353551870242
@@ -55602,9 +55472,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1730063772108218
 GameObject:
@@ -55705,8 +55575,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -55798,9 +55668,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1730619268781058
 GameObject:
@@ -55920,8 +55790,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 935894f311a980142a6b36a2de82d5a7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Night
   isActive: 1
   theme: 3
@@ -56077,9 +55947,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 018d312e26a70f84abea212a429d85b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 0
   isHovered: 0
   pageChange: -1
@@ -56201,9 +56071,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 20
@@ -56397,8 +56267,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -56587,8 +56457,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -56836,9 +56706,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1745837040394582
 GameObject:
@@ -57374,8 +57244,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -57672,9 +57542,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1753569567589246
 GameObject:
@@ -58009,8 +57879,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -58484,9 +58354,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 17
@@ -58597,8 +58467,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -59403,8 +59273,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bf2d071b2109af241b618aa51db603fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   framesPerSecond: 1
   frames:
   - {fileID: 2800000, guid: 815a478f39507c140926453e70d90457, type: 3}
@@ -59983,8 +59853,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -60173,8 +60043,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -60469,8 +60339,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -60670,9 +60540,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 29
@@ -60784,8 +60654,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -61017,9 +60887,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 6
@@ -61142,9 +61012,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 5
@@ -61775,7 +61645,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1801263383384902}
-  m_Text: 
+  m_Text:
   m_OffsetZ: 0
   m_CharacterSize: 1
   m_LineSpacing: 1
@@ -62022,31 +61892,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 35
---- !u!1 &1805749316609148
+--- !u!1 &1805749316609148 stripped
 GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 5262144370999937290, guid: ca5e37d3e0639174394ceb62608d04b8,
+    type: 3}
+  m_PrefabInstance: {fileID: 5260360757963664758}
   m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4499153807668788}
-  - component: {fileID: 33197384818061836}
-  - component: {fileID: 23500101839561308}
-  - component: {fileID: 114359718151259900}
-  m_Layer: 10
-  m_Name: ID_Sphere
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
 --- !u!4 &4499153807668788
 Transform:
   m_ObjectHideFlags: 0
@@ -62062,14 +61919,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4776689306038126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &33197384818061836
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1805749316609148}
-  m_Mesh: {fileID: 4300000, guid: 7cbb71bc4a858234fae4bf5fe3659171, type: 3}
 --- !u!23 &23500101839561308
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -62112,19 +61961,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &114359718151259900
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1805749316609148}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rend: {fileID: 23500101839561308}
 --- !u!1 &1806639346632804
 GameObject:
   m_ObjectHideFlags: 0
@@ -62618,8 +62454,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -62817,9 +62653,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 2
   isHovered: 0
@@ -62939,9 +62775,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1813361183421250
 GameObject:
@@ -63091,9 +62927,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1814615909575016
 GameObject:
@@ -63258,8 +63094,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -63996,7 +63832,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -64136,9 +63972,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 9
@@ -64461,9 +64297,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1835774975197056
 GameObject:
@@ -64615,9 +64451,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 31
@@ -64737,9 +64573,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 21
   isHovered: 0
@@ -64859,9 +64695,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1840220148170358
 GameObject:
@@ -64980,9 +64816,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 21
@@ -65283,8 +65119,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -65791,9 +65627,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 018d312e26a70f84abea212a429d85b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 0
   isHovered: 0
   pageChange: 1
@@ -65939,8 +65775,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -66138,9 +65974,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1850003162516534
 GameObject:
@@ -66249,8 +66085,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -66448,9 +66284,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 7
   isHovered: 0
@@ -66722,8 +66558,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -66944,8 +66780,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -67261,8 +67097,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 935894f311a980142a6b36a2de82d5a7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: White
   isActive: 1
   theme: 8
@@ -67446,9 +67282,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1865304801879992
 GameObject:
@@ -67604,9 +67440,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1865584992143352
 GameObject:
@@ -67910,9 +67746,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1869018269730938
 GameObject:
@@ -68311,9 +68147,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1871951738402224
 GameObject:
@@ -68808,8 +68644,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -69180,8 +69016,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -69475,25 +69311,12 @@ TextMesh:
   m_Color:
     serializedVersion: 2
     rgba: 4279308561
---- !u!1 &1894586246155206
+--- !u!1 &1894586246155206 stripped
 GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 5261951628816606896, guid: ca5e37d3e0639174394ceb62608d04b8,
+    type: 3}
+  m_PrefabInstance: {fileID: 5260360757963664758}
   m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4142224838695494}
-  - component: {fileID: 33520721270992564}
-  - component: {fileID: 23338500207545164}
-  - component: {fileID: 114677691667265390}
-  m_Layer: 10
-  m_Name: ID_Cube
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!4 &4142224838695494
 Transform:
   m_ObjectHideFlags: 0
@@ -69509,14 +69332,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4776689306038126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &33520721270992564
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1894586246155206}
-  m_Mesh: {fileID: 4300000, guid: 2c9bb23a0f1defd4fa66d2a936e1350e, type: 3}
 --- !u!23 &23338500207545164
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -69559,19 +69374,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &114677691667265390
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1894586246155206}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  rend: {fileID: 23338500207545164}
 --- !u!1 &1895876776033208
 GameObject:
   m_ObjectHideFlags: 0
@@ -69745,8 +69547,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -70050,8 +69852,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -70252,9 +70054,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 2
@@ -70481,9 +70283,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 26
@@ -70667,9 +70469,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 14
   isHovered: 0
@@ -70889,9 +70691,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 16
   isHovered: 0
@@ -71012,9 +70814,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 6
@@ -71134,9 +70936,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 4
   isHovered: 0
@@ -71279,8 +71081,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -71456,8 +71258,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rend: {fileID: 0}
 --- !u!1 &1922773784607686
 GameObject:
@@ -71576,8 +71378,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c03e7400c41ee844695411b3eb677fb7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Environment
   isActive: 1
   isHovered: 0
@@ -71702,9 +71504,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fbeb7ca8e2384e5880c2776dffa500d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 7
@@ -71839,9 +71641,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fbeb7ca8e2384e5880c2776dffa500d7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 7
@@ -72029,8 +71831,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea4c1758a03182643917b8d44c97d323, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   rend: {fileID: 23350455069635116}
 --- !u!1 &1925440525612578
 GameObject:
@@ -72149,8 +71951,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c03e7400c41ee844695411b3eb677fb7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hoverName: Labs
   isActive: 1
   isHovered: 0
@@ -72619,8 +72421,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -72819,9 +72621,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 25
@@ -72932,8 +72734,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -73356,9 +73158,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1943385785807318
 GameObject:
@@ -73642,9 +73444,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 9
   isHovered: 0
@@ -73971,9 +73773,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1952467471327084
 GameObject:
@@ -74166,8 +73968,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -74368,9 +74170,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0a0f7dcf1a265449a6ca084d0e94862, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 4
@@ -74523,9 +74325,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 262cbd0090ed9334183d5e139b900272, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   materialId: 15
   isHovered: 0
@@ -74694,9 +74496,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 7
@@ -74828,8 +74630,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -75031,9 +74833,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 24
@@ -75580,9 +75382,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1979728658722652
 GameObject:
@@ -75685,7 +75487,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -76071,9 +75873,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1990661856312102
 GameObject:
@@ -76191,9 +75993,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a3db80a5f39cbd488d8b49efae3f7d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
 --- !u!1 &1990959047896994
 GameObject:
@@ -76302,8 +76104,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -76679,9 +76481,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 663438d3132d2664da8b6ad7dd0c11db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hoverName: 
+  m_Name:
+  m_EditorClassIdentifier:
+  hoverName:
   isActive: 1
   isHovered: 0
   action: 15
@@ -76923,8 +76725,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -77006,3 +76808,72 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 23042617817393752}
   m_maskType: 0
+--- !u!1001 &5260360757963664758
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 4458942072854162}
+    m_Modifications:
+    - target: {fileID: 5261434949051473192, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_Name
+      value: mockShape
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5264838129916690968, guid: ca5e37d3e0639174394ceb62608d04b8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ca5e37d3e0639174394ceb62608d04b8, type: 3}
