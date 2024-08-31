@@ -475,7 +475,8 @@ public class ExtrusionOperation
         Vector3 projectedDelta;
         if (extrusionParams.lockToNormal)
         {
-            projectedDelta = mesh.rotation * face.normal * extrusionParams.translationModel.magnitude;
+            var extrudedPoint = GridUtils.SnapToGrid(extrusionParams.translationModel);
+            projectedDelta = mesh.rotation * face.normal * extrudedPoint.magnitude;
         }
         else
         {
