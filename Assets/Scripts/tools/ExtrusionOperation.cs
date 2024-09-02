@@ -49,6 +49,7 @@ public class ExtrusionOperation
         // Indicates the point about which the extruded face should be rotated, AFTER the translation.
         // This is in MODEL space.
         public Vector3 rotationPivotModel;
+        public bool flipped;
     }
 
     /// <summary>
@@ -476,7 +477,7 @@ public class ExtrusionOperation
         if (extrusionParams.lockToNormal)
         {
             var extrudedPoint = GridUtils.SnapToGrid(extrusionParams.translationModel);
-            projectedDelta = mesh.rotation * face.normal * extrudedPoint.magnitude;
+            projectedDelta = mesh.rotation * face.normal * (extrudedPoint.magnitude * (extrusionParams.flipped ? -1 : 1));
         }
         else
         {

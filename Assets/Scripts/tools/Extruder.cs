@@ -90,6 +90,8 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private bool isSnapping = false;
 
+        private Face nearestFace;
+
         /// <summary>
         ///   Every tool is implemented as MonoBehaviour, which means it may do no work in its constructor.
         ///   As such, this setup method must be called before the tool is used for it to have a valid state.
@@ -106,7 +108,7 @@ namespace com.google.apps.peltzer.client.tools
             controllerMain.ControllerActionHandler += ControllerEventHandler;
         }
 
-        private ExtrusionOperation.ExtrusionParams BuildExtrusionParams()
+        private ExtrusionOperation.ExtrusionParams BuildExtrusionParams(bool flipped)
         {
             // Note: ExtrusionParams is a struct, so this is stack allocated and doesn't generate garbage.
             ExtrusionOperation.ExtrusionParams extrusionParams = new ExtrusionOperation.ExtrusionParams();
@@ -116,6 +118,7 @@ namespace com.google.apps.peltzer.client.tools
             extrusionParams.rotationPivotModel = peltzerController.LastPositionModel;
             extrusionParams.rotationModel =
               peltzerController.LastRotationModel * Quaternion.Inverse(extrusionBeginOrientation);
+            extrusionParams.flipped = flipped;
             return extrusionParams;
         }
 
@@ -172,7 +175,14 @@ namespace com.google.apps.peltzer.client.tools
                     triggerUpToRelease = true;
                 }
 
-                ExtrusionOperation.ExtrusionParams extrusionParams = BuildExtrusionParams();
+                bool towards = true;
+                if (nearestFace != null)
+                {
+                    var faceVector = nearestFace.normal;
+                    var dragVector = peltzerController.LastPositionModel - extrusionBeginPosition;
+                    towards = Vector3.Dot(faceVector, dragVector) > 0;
+                }
+                ExtrusionOperation.ExtrusionParams extrusionParams = BuildExtrusionParams(!towards);
                 foreach (ExtrusionOperation operation in extrusions)
                 {
                     operation.UpdateExtrudeGuide(extrusionParams);
@@ -397,7 +407,15 @@ namespace com.google.apps.peltzer.client.tools
             List<Command> commands = new List<Command>();
             Dictionary<int, MMesh> modifiedMeshes = new Dictionary<int, MMesh>();
             Dictionary<int, HashSet<Vertex>> newVerticesInModifiedMeshes = new Dictionary<int, HashSet<Vertex>>();
-            ExtrusionOperation.ExtrusionParams extrusionParams = BuildExtrusionParams();
+
+            bool towards = true;
+            if (nearestFace != null)
+            {
+                var faceVector = nearestFace.normal;
+                var dragVector = peltzerController.LastPositionModel - extrusionBeginPosition;
+                towards = Vector3.Dot(faceVector, dragVector) > 0;
+            }
+            ExtrusionOperation.ExtrusionParams extrusionParams = BuildExtrusionParams(!towards);
 
             foreach (ExtrusionOperation extrusion in extrusions)
             {
@@ -473,6 +491,9 @@ namespace com.google.apps.peltzer.client.tools
                         return;
                     }
                 }
+
+                nearestFace = selector.GetNearestFace(peltzerController.LastPositionModel);
+
                 triggerUpToRelease = false;
                 waitingToDetermineReleaseType = true;
                 triggerDownTime = Time.time;
