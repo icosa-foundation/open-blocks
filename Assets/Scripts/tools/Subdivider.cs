@@ -413,9 +413,35 @@ namespace com.google.apps.peltzer.client.tools
                 selectedMeshes.Add(model.GetMesh(hoverMeshId));
             }
 
-            Vector3 planeNormal = (peltzerController.LastRotationModel * Vector3.up).normalized;
-            Vector3 planeOffset = peltzerController.LastPositionModel;
-            Plane plane = new Plane(planeNormal, planeOffset);
+            Vector3 planeNormal;
+
+            if (isSnapping)
+            {
+                Vector3 forward = peltzerController.LastRotationModel * Vector3.up;
+
+                float dotX = Mathf.Abs(Vector3.Dot(forward, Vector3.right));
+                float dotY = Mathf.Abs(Vector3.Dot(forward, Vector3.up));
+                float dotZ = Mathf.Abs(Vector3.Dot(forward, Vector3.forward));
+
+                if (dotX > dotY && dotX > dotZ)
+                {
+                    planeNormal = Vector3.right; // Closest to the X-axis
+                }
+                else if (dotY > dotX && dotY > dotZ)
+                {
+                    planeNormal = Vector3.up; // Closest to the Y-axis
+                }
+                else
+                {
+                    planeNormal = Vector3.forward; // Closest to the Z-axis
+                }
+            }
+            else
+            {
+                planeNormal = (peltzerController.LastRotationModel * Vector3.up).normalized;
+            }
+
+            Plane plane = new Plane(planeNormal, peltzerController.LastPositionModel);
 
             // Go through each face in each mesh and find intersection points with the plane.
             foreach (MMesh mesh in selectedMeshes)
