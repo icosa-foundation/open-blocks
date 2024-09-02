@@ -414,16 +414,7 @@ namespace com.google.apps.peltzer.client.tools
 
             Vector3 planeNormal = (peltzerController.LastRotationModel * Vector3.up).normalized;
             Vector3 planeOffset = peltzerController.LastPositionModel;
-
-            // TODO(bug): Use Graphics.DrawMesh instead.
             Plane plane = new Plane(planeNormal, planeOffset);
-            if (guidanceMesh == null)
-            {
-                guidanceMesh = CreatePlaneGuidanceMesh();
-            }
-
-            guidanceMesh.transform.position = worldSpace.ModelToWorld(planeOffset);
-            guidanceMesh.transform.rotation = worldSpace.ModelOrientationToWorld(peltzerController.LastRotationModel);
 
             // Go through each face in each mesh and find intersection points with the plane.
             foreach (MMesh mesh in selectedMeshes)
