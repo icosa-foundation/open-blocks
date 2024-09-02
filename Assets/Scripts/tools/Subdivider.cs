@@ -216,6 +216,7 @@ namespace com.google.apps.peltzer.client.tools
             {
                 bool isNewMode = false;
                 if (pressAndHoldEnabled
+                    && currentMode != Mode.PLANE_SUBDIVIDE
                     && isTriggerBeingHeld
                     && Time.time > triggerHoldStartTime + PRESS_AND_HOLD_DELAY)
                 {
