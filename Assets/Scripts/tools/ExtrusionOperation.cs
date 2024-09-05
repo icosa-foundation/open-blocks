@@ -479,13 +479,11 @@ public class ExtrusionOperation
         {
             if (extrusionParams.multipleFaces)
             {
-                Debug.Log($"multiple faces");
                 var extrudedPoint = GridUtils.SnapToGrid(extrusionParams.translationModel);
                 projectedDelta = mesh.rotation * face.normal * (extrudedPoint.magnitude * (extrusionParams.flipped ? -1 : 1));
             }
             else
             {
-                Debug.Log($"single face");
                 List<Vector3> coplanar = new List<Vector3> {
                     mesh.VertexPositionInModelCoords(face.vertexIds[0]),
                     mesh.VertexPositionInModelCoords(face.vertexIds[1]),
