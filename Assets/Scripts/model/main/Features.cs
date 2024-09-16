@@ -86,10 +86,6 @@ namespace com.google.apps.peltzer.client.model.main
         // Incompatible with planeSubdivideEnabled.
         public static bool loopSubdivideEnabled = false;
 
-        // If true, the subdivide tool will turn into the experimental plane subdivide form.
-        // Incompatible with loopSubdivideEnabled.
-        public static bool planeSubdivideEnabled = false;
-
         // If true, allow noncoplanar faces to remain during mesh fixing.
         public static bool allowNoncoplanarFaces = false;
 
