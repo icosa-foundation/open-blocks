@@ -303,9 +303,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 objectStoreEntry.isPrivateAsset = asset["visibility"].ToString() == "PRIVATE";
             }
 
-            if (asset["url"] != null)
+            if (asset["assetId"] != null)
             {
-                objectStoreEntry.id = asset["url"].ToString();
+                objectStoreEntry.id = asset["assetId"].ToString();
             }
             else
             {
@@ -336,7 +336,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             // A bit ugly: we simply take one arbitrary entry (we assume only one entry exists, as we only ever upload one).
             //blocksAsset.rootUrl = asset["formats"]["7"]["format"][0]["root"]["dataUrl"].ToString();
             var assets = asset["formats"].AsJEnumerable();
-            var blocksEntry = assets.FirstOrDefault(x => x["formatType"].ToString() == "BLOCKS");
+            var blocksEntry = assets?.FirstOrDefault(x => x["formatType"].ToString() == "BLOCKS");
             if (blocksEntry == null)
             {
                 return false;
@@ -823,7 +823,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 try
                 {
                     var responseJson = JObject.Parse(request.downloadHandler.text);
-                    assetId = responseJson["url"].ToString();
+                    assetId = responseJson["assetId"].ToString();
                     PeltzerMain.Instance.UpdateCloudModelOntoPolyMenu(request.downloadHandler.text);
                     assetCreationSuccess = true;
                 }
