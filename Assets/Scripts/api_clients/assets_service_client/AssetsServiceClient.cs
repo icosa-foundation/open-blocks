@@ -191,12 +191,15 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             get
             {
                 int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-                return $"format=BLOCKS&page_size={pageSize}";
+                return $"&license=CREATIVE_COMMONS_BY&format=BLOCKS&pageSize={pageSize}";
             }
         }
 
-        private static string FeaturedModelsSearchUrl() => $"{BaseUrl()}/assets?&curated=true&{commonQueryParams}"; // TODO &license=CREATIVE_COMMONS_BY
-        private static string LikedModelsSearchUrl() => $"{BaseUrl()}/users/me/likedassets?{commonQueryParams}"; // TODO &license=CREATIVE_COMMONS_BY
+        // Old way
+        // private static string FeaturedModelsSearchUrl() => $"{BaseUrl()}/assets?&curated=true&{commonQueryParams}";
+        // New way
+        private static string FeaturedModelsSearchUrl() => $"{BaseUrl()}/assets?&orderBy=BEST&{commonQueryParams}";
+        private static string LikedModelsSearchUrl() => $"{BaseUrl()}/users/me/likedassets?{commonQueryParams}";
         private static string YourModelsSearchUrl() => $"{BaseUrl()}/users/me/assets?{commonQueryParams}";
 
         // Some regex.
