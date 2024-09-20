@@ -46,7 +46,7 @@ namespace com.google.apps.peltzer.client.entitlement
         private const string m_ServiceName = "Google";
         private const string m_ClientId = "TODO";
         private const string m_ClientSecret = "TODO";
-        private const string m_RequestTokenUri = "https://accounts.google.com/o/oauth2/auth";
+        private const string m_RequestTokenUri = "https://docs.openblocks.app/saving-and-sharing-on-the-web";
         private const string m_AccessTokenUri = "https://accounts.google.com/o/oauth2/token";
         private const string m_UserInfoUri = "[Removed]";
         private const string m_OAuthScope = "profile email " +

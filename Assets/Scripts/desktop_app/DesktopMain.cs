@@ -81,7 +81,7 @@ namespace com.google.apps.peltzer.client.desktop_app
         /// <summary>
         ///  URL user is taken to when selecting 'About Blocks' from menu
         /// </summary>
-        private const string ABOUT_BLOCKS_URL = "https://vr.google.com/blocks";
+        private const string ABOUT_BLOCKS_URL = "https://openblocks.app";
 
         public void Setup()
         {

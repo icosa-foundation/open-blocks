@@ -548,6 +548,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ControllerMode.move:
                     return grabToolhead;
                 case ControllerMode.subdivideFace:
+                case ControllerMode.subdividePlane:
                 case ControllerMode.reshape:
                 case ControllerMode.extrude:
                     return modifyToolhead;

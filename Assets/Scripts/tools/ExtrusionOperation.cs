@@ -49,6 +49,8 @@ public class ExtrusionOperation
         // Indicates the point about which the extruded face should be rotated, AFTER the translation.
         // This is in MODEL space.
         public Vector3 rotationPivotModel;
+        public bool flipped;
+        public bool multipleFaces;
     }
 
     /// <summary>
@@ -475,14 +477,22 @@ public class ExtrusionOperation
         Vector3 projectedDelta;
         if (extrusionParams.lockToNormal)
         {
-            List<Vector3> coplanar = new List<Vector3>() {
-        mesh.VertexPositionInModelCoords(face.vertexIds[0]),
-        mesh.VertexPositionInModelCoords(face.vertexIds[1]),
-        mesh.VertexPositionInModelCoords(face.vertexIds[2])
-      };
-            Vector3 normal = MeshMath.CalculateNormal(coplanar);
-            projectedDelta =
-              Vector3.Project(GridUtils.SnapToGrid(extrusionParams.translationModel), normal);
+            if (extrusionParams.multipleFaces)
+            {
+                var extrudedPoint = GridUtils.SnapToGrid(extrusionParams.translationModel);
+                projectedDelta = mesh.rotation * face.normal * (extrudedPoint.magnitude * (extrusionParams.flipped ? -1 : 1));
+            }
+            else
+            {
+                List<Vector3> coplanar = new List<Vector3> {
+                    mesh.VertexPositionInModelCoords(face.vertexIds[0]),
+                    mesh.VertexPositionInModelCoords(face.vertexIds[1]),
+                    mesh.VertexPositionInModelCoords(face.vertexIds[2])
+                };
+                Vector3 normal = MeshMath.CalculateNormal(coplanar);
+                projectedDelta =
+                    Vector3.Project(GridUtils.SnapToGrid(extrusionParams.translationModel), normal);
+            }
         }
         else
         {
