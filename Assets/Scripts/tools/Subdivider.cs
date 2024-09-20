@@ -21,8 +21,6 @@ using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.tools.utils;
-using com.google.apps.peltzer.client.model.render;
-using System;
 
 namespace com.google.apps.peltzer.client.tools
 {
@@ -158,7 +156,7 @@ namespace com.google.apps.peltzer.client.tools
         GameObject guidanceMesh;
 
         /// <summary>
-        /// Keeps track of the faces that each edge in the mesh is connecting. This is needed to find 
+        /// Keeps track of the faces that each edge in the mesh is connecting. This is needed to find
         /// the next face when performing loop subdivide operations.
         /// </summary>
         private Dictionary<EdgeKey, List<int>> edgeKeysToFaceIds = new Dictionary<EdgeKey, List<int>>();
@@ -211,47 +209,60 @@ namespace com.google.apps.peltzer.client.tools
                 PeltzerMain.Instance.highlightUtils.TurnOff(highlightToTurnOff.Value);
             }
 
-            if (!PeltzerController.AcquireIfNecessary(ref peltzerController) || peltzerController.mode != ControllerMode.subdivideFace)
+            bool anySubdivideMode =
+                peltzerController.mode == ControllerMode.subdivideFace ||
+                peltzerController.mode == ControllerMode.subdividePlane;
+            if (anySubdivideMode && PeltzerController.AcquireIfNecessary(ref peltzerController))
             {
-                return;
+                bool isNewMode = false;
+                if (pressAndHoldEnabled
+                    && currentMode != Mode.PLANE_SUBDIVIDE
+                    && isTriggerBeingHeld
+                    && Time.time > triggerHoldStartTime + PRESS_AND_HOLD_DELAY)
+                {
+                    currentMode = Mode.LOOP_SUBDIVIDE;
+                    audioLibrary.PlayClip(audioLibrary.genericSelectSound);
+                    peltzerController.TriggerHapticFeedback();
+                    isTriggerBeingHeld = false;
+                    isNewMode = true;
+                }
+
+                // Update the position of the selector.
+                if (currentMode == Mode.PLANE_SUBDIVIDE)
+                {
+                    selector.SelectMeshAtPosition(peltzerController.LastPositionModel, Selector.MESHES_ONLY);
+                }
+                else
+                {
+                    selector.SelectAtPosition(peltzerController.LastPositionModel, Selector.FACES_ONLY);
+                }
+                selector.UpdateInactive(Selector.EDGES_ONLY);
+
+                // Clean up all temp edges.
+                foreach (EdgeTemporaryStyle.TemporaryEdge tempEdge in currentTemporaryEdges)
+                {
+                    PeltzerMain.Instance.highlightUtils.TurnOff(tempEdge);
+                }
+                currentTemporaryEdges.Clear();
+
+                UpdateHighlights(isNewMode);
             }
 
-            bool isNewMode = false;
-            if (pressAndHoldEnabled
-              && isTriggerBeingHeld
-              && Time.time > triggerHoldStartTime + PRESS_AND_HOLD_DELAY)
-            {
-                currentMode = Mode.LOOP_SUBDIVIDE;
-                audioLibrary.PlayClip(audioLibrary.genericSelectSound);
-                peltzerController.TriggerHapticFeedback();
-                isTriggerBeingHeld = false;
-                isNewMode = true;
-            }
-
-            // Update the position of the selector.
-            if (currentMode == Mode.PLANE_SUBDIVIDE)
-            {
-                selector.SelectMeshAtPosition(peltzerController.LastPositionModel, Selector.MESHES_ONLY);
-            }
-            else
-            {
-                selector.SelectAtPosition(peltzerController.LastPositionModel, Selector.FACES_ONLY);
-            }
-            selector.UpdateInactive(Selector.EDGES_ONLY);
-
-            // Clean up all temp edges.
-            foreach (EdgeTemporaryStyle.TemporaryEdge tempEdge in currentTemporaryEdges)
-            {
-                PeltzerMain.Instance.highlightUtils.TurnOff(tempEdge);
-            }
-            currentTemporaryEdges.Clear();
-
-            UpdateHighlights(isNewMode);
         }
 
         private void ControllerModeChangedHandler(ControllerMode oldMode, ControllerMode newMode)
         {
-            if (oldMode == ControllerMode.subdivideFace)
+            switch (newMode)
+            {
+                case ControllerMode.subdivideFace:
+                    currentMode = Mode.SINGLE_FACE_SUBDIVIDE;
+                    break;
+                case ControllerMode.subdividePlane:
+                    currentMode = Mode.PLANE_SUBDIVIDE;
+                    break;
+            }
+            if (oldMode == ControllerMode.subdivideFace ||
+                oldMode == ControllerMode.subdividePlane)
             {
                 ClearState();
                 UnsetAllHoverTooltips();
@@ -402,18 +413,35 @@ namespace com.google.apps.peltzer.client.tools
                 selectedMeshes.Add(model.GetMesh(hoverMeshId));
             }
 
-            Vector3 planeNormal = (peltzerController.LastRotationModel * Vector3.up).normalized;
-            Vector3 planeOffset = peltzerController.LastPositionModel;
+            Vector3 planeNormal;
 
-            // TODO(bug): Use Graphics.DrawMesh instead.
-            Plane plane = new Plane(planeNormal, planeOffset);
-            if (guidanceMesh == null)
+            if (isSnapping)
             {
-                guidanceMesh = CreatePlaneGuidanceMesh();
+                Vector3 forward = peltzerController.LastRotationModel * Vector3.up;
+
+                float dotX = Mathf.Abs(Vector3.Dot(forward, Vector3.right));
+                float dotY = Mathf.Abs(Vector3.Dot(forward, Vector3.up));
+                float dotZ = Mathf.Abs(Vector3.Dot(forward, Vector3.forward));
+
+                if (dotX > dotY && dotX > dotZ)
+                {
+                    planeNormal = Vector3.right; // Closest to the X-axis
+                }
+                else if (dotY > dotX && dotY > dotZ)
+                {
+                    planeNormal = Vector3.up; // Closest to the Y-axis
+                }
+                else
+                {
+                    planeNormal = Vector3.forward; // Closest to the Z-axis
+                }
+            }
+            else
+            {
+                planeNormal = (peltzerController.LastRotationModel * Vector3.up).normalized;
             }
 
-            guidanceMesh.transform.position = worldSpace.ModelToWorld(planeOffset);
-            guidanceMesh.transform.rotation = worldSpace.ModelOrientationToWorld(peltzerController.LastRotationModel);
+            Plane plane = new Plane(planeNormal, peltzerController.LastPositionModel);
 
             // Go through each face in each mesh and find intersection points with the plane.
             foreach (MMesh mesh in selectedMeshes)
@@ -685,8 +713,8 @@ namespace com.google.apps.peltzer.client.tools
 
             // The orientation of these points within an edge is not a concern here because
             // GetFaceVertexIndicesForEdge() will get us the indices as they appear in clockwise
-            // manner along the face. This means that the vertices indices will be flipped for 
-            // a face in which they appear on the exitEdge, and the next subdivision on the 
+            // manner along the face. This means that the vertices indices will be flipped for
+            // a face in which they appear on the exitEdge, and the next subdivision on the
             // chain, in which the same edge will be the origin edge instead.
 
             // Points on the origin edge.
@@ -857,15 +885,6 @@ namespace com.google.apps.peltzer.client.tools
             Destroy(guidanceMesh);
             guidanceMesh = null;
             activeSubdivisions.Clear();
-
-            if (Features.planeSubdivideEnabled)
-            {
-                currentMode = Mode.PLANE_SUBDIVIDE;
-            }
-            else
-            {
-                currentMode = Mode.SINGLE_FACE_SUBDIVIDE;
-            }
         }
 
         private bool IsStartPressAndHoldEvent(ControllerEventArgs args)
@@ -1246,7 +1265,8 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private void ControllerEventHandler(object sender, ControllerEventArgs args)
         {
-            if (peltzerController.mode != ControllerMode.subdivideFace)
+            if (peltzerController.mode != ControllerMode.subdivideFace &&
+                peltzerController.mode != ControllerMode.subdividePlane)
                 return;
 
             if (IsStartPressAndHoldEvent(args))
