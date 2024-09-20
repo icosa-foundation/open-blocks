@@ -191,6 +191,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ControllerMode.reshape:
                 case ControllerMode.subdivideFace:
                 case ControllerMode.subdivideMesh:
+                case ControllerMode.subdividePlane:
                     GetComponent<ModifyToolheadAnimation>().Activate();
                     break;
                 case ControllerMode.move:

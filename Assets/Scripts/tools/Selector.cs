@@ -1563,5 +1563,20 @@ namespace com.google.apps.peltzer.client.tools
         {
             selectedMeshes.Add(meshId);
         }
+
+        public Face GetNearestFace(Vector3 pos)
+        {
+            float selectionThreshold = faceClosenessThreshold * INCREASED_SELECTION_FACTOR;
+            spatialIndex.FindFacesClosestTo(pos, selectionThreshold,
+                false, out List<DistancePair<FaceKey>> temp);
+            if (temp.Count == 0)
+            {
+                return null;
+            }
+            var facekey = temp[0].value;
+            var mesh = model.GetMesh(facekey.meshId);
+            var face = mesh.GetFace(facekey.faceId);
+            return face;
+        }
     }
 }
