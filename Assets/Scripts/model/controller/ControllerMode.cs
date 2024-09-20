@@ -73,5 +73,9 @@ namespace com.google.apps.peltzer.client.model.controller
         /// Mode for deleting edges.
         /// </summary>
         deletePart,
+        /// <summary>
+        /// Mode for plane subdivision.
+        /// </summary>
+        subdividePlane,
     }
 }
