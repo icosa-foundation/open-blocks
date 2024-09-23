@@ -19,9 +19,7 @@ using UnityEngine;
 using com.google.apps.peltzer.client.model.controller;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
-using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.render;
-using com.google.apps.peltzer.client.tools.utils;
 
 namespace com.google.apps.peltzer.client.tools
 {
@@ -30,7 +28,7 @@ namespace com.google.apps.peltzer.client.tools
     ///   Update() loop.
     ///   An extrusion is composed of grabbing a face, (potentially) pulling out the face, and releasing. The face
     ///   itself is moved, and new faces are created to link the moved face back to the mesh.
-    ///  
+    ///
     /// </summary>
     public class Extruder : MonoBehaviour
     {
@@ -72,7 +70,7 @@ namespace com.google.apps.peltzer.client.tools
 
         private WorldSpace worldSpace;
 
-        // Detection for trigger down & straight back up, vs trigger down and hold -- either of which 
+        // Detection for trigger down & straight back up, vs trigger down and hold -- either of which
         // begins an extrusion.
         private bool triggerUpToRelease;
         private float triggerDownTime;
@@ -90,6 +88,8 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private bool isSnapping = false;
 
+        private Face nearestFace;
+
         /// <summary>
         ///   Every tool is implemented as MonoBehaviour, which means it may do no work in its constructor.
         ///   As such, this setup method must be called before the tool is used for it to have a valid state.
@@ -106,7 +106,7 @@ namespace com.google.apps.peltzer.client.tools
             controllerMain.ControllerActionHandler += ControllerEventHandler;
         }
 
-        private ExtrusionOperation.ExtrusionParams BuildExtrusionParams()
+        private ExtrusionOperation.ExtrusionParams BuildExtrusionParams(bool flipped, bool multi)
         {
             // Note: ExtrusionParams is a struct, so this is stack allocated and doesn't generate garbage.
             ExtrusionOperation.ExtrusionParams extrusionParams = new ExtrusionOperation.ExtrusionParams();
@@ -116,6 +116,8 @@ namespace com.google.apps.peltzer.client.tools
             extrusionParams.rotationPivotModel = peltzerController.LastPositionModel;
             extrusionParams.rotationModel =
               peltzerController.LastRotationModel * Quaternion.Inverse(extrusionBeginOrientation);
+            extrusionParams.flipped = flipped;
+            extrusionParams.multipleFaces = multi;
             return extrusionParams;
         }
 
@@ -172,7 +174,14 @@ namespace com.google.apps.peltzer.client.tools
                     triggerUpToRelease = true;
                 }
 
-                ExtrusionOperation.ExtrusionParams extrusionParams = BuildExtrusionParams();
+                bool towards = true;
+                if (nearestFace != null)
+                {
+                    var faceVector = nearestFace.normal;
+                    var dragVector = peltzerController.LastPositionModel - extrusionBeginPosition;
+                    towards = Vector3.Dot(faceVector, dragVector) > 0;
+                }
+                ExtrusionOperation.ExtrusionParams extrusionParams = BuildExtrusionParams(!towards, extrusions.Count > 1);
                 foreach (ExtrusionOperation operation in extrusions)
                 {
                     operation.UpdateExtrudeGuide(extrusionParams);
@@ -397,7 +406,15 @@ namespace com.google.apps.peltzer.client.tools
             List<Command> commands = new List<Command>();
             Dictionary<int, MMesh> modifiedMeshes = new Dictionary<int, MMesh>();
             Dictionary<int, HashSet<Vertex>> newVerticesInModifiedMeshes = new Dictionary<int, HashSet<Vertex>>();
-            ExtrusionOperation.ExtrusionParams extrusionParams = BuildExtrusionParams();
+
+            bool towards = true;
+            if (nearestFace != null)
+            {
+                var faceVector = nearestFace.normal;
+                var dragVector = peltzerController.LastPositionModel - extrusionBeginPosition;
+                towards = Vector3.Dot(faceVector, dragVector) > 0;
+            }
+            ExtrusionOperation.ExtrusionParams extrusionParams = BuildExtrusionParams(!towards, extrusions.Count > 1);
 
             foreach (ExtrusionOperation extrusion in extrusions)
             {
@@ -446,7 +463,7 @@ namespace com.google.apps.peltzer.client.tools
                 }
             }
 
-            // Expire the temporary held face commands, because the originally-held faces have now been removed 
+            // Expire the temporary held face commands, because the originally-held faces have now been removed
             // following a successful extrusion.
             temporaryHeldFaceMaterialCommands.Clear();
             model.ApplyCommand(new CompositeCommand(commands));
@@ -473,6 +490,9 @@ namespace com.google.apps.peltzer.client.tools
                         return;
                     }
                 }
+
+                nearestFace = selector.GetNearestFace(peltzerController.LastPositionModel);
+
                 triggerUpToRelease = false;
                 waitingToDetermineReleaseType = true;
                 triggerDownTime = Time.time;
