@@ -3777,15 +3777,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2787973783457903568, guid: bb348a42d97265844a481bbb818e5ee0,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 4673674705760829659, guid: bb348a42d97265844a481bbb818e5ee0,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bb348a42d97265844a481bbb818e5ee0, type: 3}
 --- !u!114 &806170426 stripped
 MonoBehaviour:
@@ -4426,10 +4418,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: ID_Lighting
       objectReference: {fileID: 0}
-    - target: {fileID: 1000012366247962, guid: 9697423f99e28f8459766058e1e61f57, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 4000013674946052, guid: 9697423f99e28f8459766058e1e61f57, type: 3}
       propertyPath: m_RootOrder
       value: 6
@@ -4461,16 +4449,6 @@ PrefabInstance:
     - target: {fileID: 4000013674946052, guid: 9697423f99e28f8459766058e1e61f57, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0.02557197
-      objectReference: {fileID: 0}
-    - target: {fileID: 20000013087410580, guid: 9697423f99e28f8459766058e1e61f57,
-        type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 114000011749761044, guid: 9697423f99e28f8459766058e1e61f57,
-        type: 3}
-      propertyPath: m_Enabled
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114000011749761044, guid: 9697423f99e28f8459766058e1e61f57,
         type: 3}
