@@ -10,12 +10,15 @@ on:  # yamllint disable-line rule:truthy
       - "**"
     tags:
       - "v*"
+  schedule:
+    - cron: "31 18 * * sat"  # Weekly, Saturday at 18:31 UTC
 
 env:
   UNITY_VERSION: "2019.4.25f1"
 jobs:
   configuration:
     if: |
+      (github.event_name == 'schedule') ||
       (github.event_name == 'pull_request') ||
       (
         github.event_name == 'push' &&
