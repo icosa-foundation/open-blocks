@@ -357,7 +357,7 @@ MonoBehaviour:
   - {fileID: -5196133658107764757}
   m_renderMode: 0
   m_depthSubmissionMode: 1
-  m_optimizeBufferDiscards: 1
+  m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
 --- !u!114 &-1044453806702251804
 MonoBehaviour:
@@ -438,7 +438,7 @@ MonoBehaviour:
   symmetricProjection: 0
   foveatedRenderingApi: 0
   systemSplashScreen: {fileID: 0}
-  optimizeBufferDiscards: 1
+  optimizeBufferDiscards: 0
   lateLatchingMode: 0
   lateLatchingDebug: 0
 --- !u!114 &11400000

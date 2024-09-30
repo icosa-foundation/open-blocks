@@ -22,7 +22,7 @@ Shader "Hidden/FastBlur" {
 
 		#include "UnityCG.cginc"
 
-		sampler2D _MainTex;
+		sampler2D_float _MainTex;
 		sampler2D _Bloom;
 				
 		uniform half4 _MainTex_TexelSize;
@@ -46,7 +46,7 @@ Shader "Hidden/FastBlur" {
 			v2f_tap o;
 
 			o.pos = UnityObjectToClipPos (v.vertex);
-        	o.uv20 = UnityStereoScreenSpaceUVAdjust(v.texcoord + _MainTex_TexelSize.xy, _MainTex_ST);
+        	o.uv20 = UnityStereoScreenSpaceUVAdjust(v.texcoord + _MainTex_TexelSize.xy * half2(0.5h,0.5h), _MainTex_ST);
 			o.uv21 = UnityStereoScreenSpaceUVAdjust(v.texcoord + _MainTex_TexelSize.xy * half2(-0.5h,-0.5h), _MainTex_ST);
 			o.uv22 = UnityStereoScreenSpaceUVAdjust(v.texcoord + _MainTex_TexelSize.xy * half2(0.5h,-0.5h), _MainTex_ST);
 			o.uv23 = UnityStereoScreenSpaceUVAdjust(v.texcoord + _MainTex_TexelSize.xy * half2(-0.5h,0.5h), _MainTex_ST);
@@ -54,13 +54,34 @@ Shader "Hidden/FastBlur" {
 			return o; 
 		}					
 		
-		fixed4 fragDownsample ( v2f_tap i ) : SV_Target
+		float4 fragDownsample ( v2f_tap i ) : SV_Target
 		{				
-			fixed4 color = tex2D (_MainTex, i.uv20);
+			float4 color = tex2D (_MainTex, i.uv20);
 			color += tex2D (_MainTex, i.uv21);
 			color += tex2D (_MainTex, i.uv22);
 			color += tex2D (_MainTex, i.uv23);
 			return color / 4;
+		}
+
+		struct v2f_simple
+		{
+			float4 pos : SV_POSITION;
+			float2 uv : TEXCOORD0;
+		};
+		
+		v2f_simple vert ( appdata_img v )
+		{
+			v2f_simple o;
+
+			o.pos = UnityObjectToClipPos (v.vertex);
+        	o.uv = UnityStereoScreenSpaceUVAdjust(v.texcoord, _MainTex_ST);
+
+			return o; 
+		}					
+		
+		float4 frag (v2f_simple i ) : SV_Target
+		{				
+			return tex2D (_MainTex, i.uv);
 		}
 
 		struct v2f_5tap
@@ -89,35 +110,35 @@ Shader "Hidden/FastBlur" {
     
     
     
-     fixed4 fragDistDownsample ( v2f_5tap i ) : SV_Target
+     float4 fragDistDownsample ( v2f_5tap i ) : SV_Target
         {
-          fixed4 baseColor = float4(tex2D (_MainTex, i.uv00).r, i.uv00, 1);
-          fixed4 color0 = float4(tex2D (_MainTex, i.uv20).r, i.uv20, 1);
-          fixed4 color1 = float4(tex2D (_MainTex, i.uv21).r, i.uv21, 1);
-          fixed4 color2 = float4(tex2D (_MainTex, i.uv22).r, i.uv22, 1);
-          fixed4 color3 = float4(tex2D (_MainTex, i.uv23).r, i.uv23, 1);
+          float4 baseColor = float4(tex2D (_MainTex, i.uv00).r, i.uv00, 1);
+          float4 color0 = float4(tex2D (_MainTex, i.uv20).r, i.uv20, 1);
+          float4 color1 = float4(tex2D (_MainTex, i.uv21).r, i.uv21, 1);
+          float4 color2 = float4(tex2D (_MainTex, i.uv22).r, i.uv22, 1);
+          float4 color3 = float4(tex2D (_MainTex, i.uv23).r, i.uv23, 1);
           color0 = color0.r < color1.r ? color0 : color1;
           color2 = color2.r < color3.r ? color2 : color3;
           color0 = color0.r < color2.r ? color0 : color2;
           return color0;//tex2D (_MainTex, i.uv00);
         }
         
-      fixed4 fragDistBlur ( v2f_5tap i ) : SV_Target
+      float4 fragDistBlur ( v2f_5tap i ) : SV_Target
       {
-        fixed4 baseColor = tex2D (_MainTex, i.uv00);
-        fixed4 color0 = tex2D (_MainTex, i.uv20);
-        fixed4 color1 = tex2D (_MainTex, i.uv21);
-        fixed4 color2 = tex2D (_MainTex, i.uv22);
-        fixed4 color3 = tex2D (_MainTex, i.uv23);
+        float4 baseColor = tex2D (_MainTex, i.uv00);
+        float4 color0 = tex2D (_MainTex, i.uv20);
+        float4 color1 = tex2D (_MainTex, i.uv21);
+        float4 color2 = tex2D (_MainTex, i.uv22);
+        float4 color3 = tex2D (_MainTex, i.uv23);
         color0 = color0.r < color1.r ? color0 : color1;
         color2 = color2.r < color3.r ? color2 : color3;
         color0 = color0.r < color2.r ? color0 : color2;
         return baseColor.r - 0.01 < color0.r ? baseColor : color0;
       }
 
-    fixed4 fragDistField ( v2f_5tap i ) : SV_Target
+    float4 fragDistField ( v2f_5tap i ) : SV_Target
     {
-      fixed4 baseColor = tex2D (_MainTex, i.uv00);
+      float4 baseColor = tex2D (_MainTex, i.uv00);
       return float4(baseColor.r, length(i.uv00 - baseColor.gb), 0, 0);
     }
 
@@ -289,7 +310,15 @@ Shader "Hidden/FastBlur" {
 
       ENDCG
     }
+        // 5
+    Pass {
+      CGPROGRAM
+      #pragma vertex vert
+      #pragma fragment frag
 
+
+      ENDCG
+    }
       }
 
 	
