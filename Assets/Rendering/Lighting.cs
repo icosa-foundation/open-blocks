@@ -239,18 +239,18 @@ public class Lighting : MonoBehaviour
             Graphics.Blit(shadowTexture, blurShadowTexture, blurMat, 0);
             return;
         }
-        
+
         int res = shadowResolution;
         if (downsample)
         {
             res = shadowResolution / 2;
         }
-        
+
         RenderTexture rtQuarter =
             RenderTexture.GetTemporary(res, res, 0, renderTextureFormat, RenderTextureReadWrite.Linear);
         RenderTexture rtQuarterB =
             RenderTexture.GetTemporary(res, res, 0, renderTextureFormat, RenderTextureReadWrite.Linear);
-        
+
         Graphics.Blit(shadowTexture, rtQuarter, blurMat, 0);
 
         for (int i = 0; i < blurIterations; i++)

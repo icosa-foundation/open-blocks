@@ -25,7 +25,7 @@ namespace com.google.apps.peltzer.client.model.controller
     public class ControllerDeviceOpenXR : ControllerDevice
     {
         private UnityEngine.XR.InputDevice device;
-        private readonly UnityXRInputAction actionSet = new ();
+        private readonly UnityXRInputAction actionSet = new();
 
         // Haptics.
         // private OVRHapticsClip rumbleHapticsClip;
