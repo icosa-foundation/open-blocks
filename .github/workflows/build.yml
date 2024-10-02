@@ -12,7 +12,7 @@ on:  # yamllint disable-line rule:truthy
       - "v*"
 
 env:
-  UNITY_VERSION: "2019.4.25f1"
+  UNITY_VERSION: "2022.3.42f1"
 jobs:
   configuration:
     if: |
@@ -176,39 +176,46 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows, Oculus Quest (2+)]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows
             targetPlatform: StandaloneWindows64
             cache: Windows
 
+          - name: Oculus Quest (2+)
+            targetPlatform: Android
+            vrsdk: Oculus
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 1
+            extra_defines: OCULUS_SUPPORTED
+
     steps:
       - name: Set masking
         run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
-        # This takes several minutes, so we only do it where required. As of 12/10/2023, this increases free space from 18GB to 41GB
-        if: false
-        # if: matrix.targetPlatform == 'Android' || matrix.targetPlatform == 'StandaloneWindows64' || matrix.targetPlatform == 'StandaloneLinux64'
+        # As of 02/08/2024, this increases free space from 21GB to 47GB
+        if: matrix.targetPlatform == 'Android'
         run: |
           echo "Initial free space"
           df -h /
           echo "Removing all pre-loaded docker images"
-          docker rmi $(docker image ls -aq)  # Removes ~6GB
+          docker rmi $(docker image ls -aq)  # Removes ~3GB
           df -h /
           echo "Listing 100 largest packages"
           dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
           echo "Removing unneeded large packages"
           sudo apt update
-          sudo apt remove -y '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  # Removes ~7GB  # Adding 'google-cloud-*' removes another 750MB but takes about a minute; not worth it
+          sudo apt remove -y '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' default-jre-headless  mono-devel libgl1-mesa-dri # Removes ~6GB
           sudo apt autoremove -y
           sudo apt clean
           df -h /
-          echo "Listing 100 largest remaining packages"
-          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
-          echo "Removing remaining large directories"
+          echo "Removing Android"
+          sudo rm -rf /usr/local/lib/android # Removes ~9GB
           df -h /
+          echo "Removing remaining large directories"
           rm -rf /usr/share/dotnet/  # Removes ~1GB
-          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~6GB
+          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~7GB
           echo "Disk space after cleanup"
           df -h /
 
@@ -288,7 +295,7 @@ jobs:
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
             echo "filename=$BASENAME.app" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "Android" ]]; then
-            echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
+            echo "filename=foundation.Icosa.$BASENAME.apk" >> $GITHUB_ENV
           fi
 
       - name: Enable Development Mode
@@ -463,6 +470,11 @@ jobs:
         with:
           name: Windows
           path: build_windows
+      - name: Download Build Artifacts (Oculus Quest 2+)
+        uses: actions/download-artifact@v4
+        with:
+          name: Oculus Quest (2+)
+          path: build_oculus_quest
 
       - name: Package Artifacts for release
         env:
@@ -470,8 +482,10 @@ jobs:
         run: |
           mkdir releases
           mv build_windows/StandaloneWindows64/ releases/OpenBlocks_Desktop_$VERSION/
+          mv build_oculus_quest/*/foundation.Icosa.OpenBLocks*apk releases/OpenBlocks_Quest_$VERSION.apk
           cd releases
           zip -r OpenBlocks_Desktop_$VERSION.zip OpenBlocks_Desktop_$VERSION/
+          rm -rf OpenBlocks_Desktop_$VERSION
 
       - name: Publish
         uses: softprops/action-gh-release@v2
