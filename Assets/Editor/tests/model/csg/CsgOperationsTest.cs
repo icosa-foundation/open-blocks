@@ -56,7 +56,7 @@ namespace com.google.apps.peltzer.client.model.csg
             spatialIndex.AddMesh(meshToAdd);
 
             // Now subtract a big cube from the model:
-            bool subtracted = CsgOperations.SubtractMeshFromModel(
+            bool subtracted = CsgOperations.CsgMeshFromModel(
               model, spatialIndex, Primitives.AxisAlignedBox(7, Vector3.zero, Vector3.one, 1));
             NUnit.Framework.Assert.IsTrue(subtracted);
 
@@ -71,7 +71,7 @@ namespace com.google.apps.peltzer.client.model.csg
             NUnit.Framework.Assert.AreEqual(15, model.GetMesh(toIntersect).faceCount);
 
             // Subtract away from the scene to make sure the method returns false.
-            NUnit.Framework.Assert.IsFalse(CsgOperations.SubtractMeshFromModel(model, spatialIndex,
+            NUnit.Framework.Assert.IsFalse(CsgOperations.CsgMeshFromModel(model, spatialIndex,
               Primitives.AxisAlignedBox(7, Vector3.one * -3, Vector3.one, 1)));
         }
 
@@ -276,10 +276,10 @@ namespace com.google.apps.peltzer.client.model.csg
             MMesh largeCube = Primitives.AxisAlignedBox(1, Vector3.zero, Vector3.one, 1);
 
             // Subtracting large cube from small cube should result in empty space.
-            NUnit.Framework.Assert.IsNull(CsgOperations.Subtract(smallCube, largeCube));
+            NUnit.Framework.Assert.IsNull(CsgOperations.DoCsgOperation(smallCube, largeCube));
 
             // Subtracting small cube from large cube should result in just the large cube with an invisible hole.
-            MMesh results = CsgOperations.Subtract(largeCube, smallCube);
+            MMesh results = CsgOperations.DoCsgOperation(largeCube, smallCube);
             NUnit.Framework.Assert.AreEqual(12, results.faceCount);
 
             // Mesh should still be valid:
@@ -290,7 +290,7 @@ namespace com.google.apps.peltzer.client.model.csg
         public void SubtractCubeOverlappingCube()
         {
             // Two cubes next to each other, overlapping.
-            MMesh result = CsgOperations.Subtract(
+            MMesh result = CsgOperations.DoCsgOperation(
               Primitives.AxisAlignedBox(1, new Vector3(-1, 0, 0), Vector3.one, 1),
               Primitives.AxisAlignedBox(2, Vector3.zero, Vector3.one, 1));
 
@@ -301,7 +301,7 @@ namespace com.google.apps.peltzer.client.model.csg
         public void SubtractSphereOverlappingCube()
         {
             // A cube and a sphere, overlapping.
-            MMesh result = CsgOperations.Subtract(
+            MMesh result = CsgOperations.DoCsgOperation(
               Primitives.AxisAlignedBox(1, new Vector3(-1, -0.7f, -0.3f), Vector3.one, 2),
               Primitives.AxisAlignedIcosphere(2, new Vector3(-.2f, 0, 0), Vector3.one, 1));
 
