@@ -87,7 +87,7 @@ namespace com.google.apps.peltzer.client.model.export
                   Path.Combine(PeltzerMain.Instance.modelsPath, GLTF_BIN_FILENAME),
                   model.meshRepresentationCache);
             }
-            if (false) // (saveFbx) Disable for now
+            if (saveFbx)
             {
                 saveData.fbxFile = FbxExporter.FbxFileFromMeshes(meshes, Path.Combine(PeltzerMain.Instance.modelsPath,
                     FBX_FILENAME));
