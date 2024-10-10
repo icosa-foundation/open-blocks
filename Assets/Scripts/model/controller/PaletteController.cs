@@ -22,6 +22,7 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.tutorial;
+using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -53,7 +54,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject modifyToolhead;
         public GameObject eraseToolhead;
 
-        public GameObject steamRiftHolder;
+        public GameObject openXRHolder;
         public GameObject oculusRiftHolder;
 
         /// <summary>
@@ -240,17 +241,17 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void Setup()
         {
-            if (Config.Instance.sdkMode == SdkMode.SteamVR)
+            if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
-#if STEAMVRBUILD
-                controller = new ControllerDeviceSteam(transform);
-#endif
+                var openXRController = new ControllerDeviceOpenXR(transform);
+                openXRController.InitAsWand();
+                controller = openXRController;
             }
             else
             {
-                ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
-                oculusController.controllerType = OVRInput.Controller.LTouch;
-                controller = oculusController;
+                // ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
+                // oculusController.controllerType = OVRInput.Controller.LTouch;
+                // controller = oculusController;
             }
             controllerGeometry.baseControllerAnimation.SetControllerDevice(controller);
 
@@ -264,6 +265,14 @@ namespace com.google.apps.peltzer.client.model.controller
 
             if (Config.Instance.sdkMode == SdkMode.Oculus)
             {
+                menuPanel.transform.localPosition = menuPanelLeftPosOculus;
+                menuPanel.transform.localRotation = menuRotationOculus;
+                polyMenuPanel.transform.localRotation = menuRotationOculus;
+                detailsMenuPanel.transform.localRotation = menuRotationOculus;
+            }
+            else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+            {
+                // TODO
                 menuPanel.transform.localPosition = menuPanelLeftPosOculus;
                 menuPanel.transform.localRotation = menuRotationOculus;
                 polyMenuPanel.transform.localRotation = menuRotationOculus;
@@ -709,6 +718,13 @@ namespace com.google.apps.peltzer.client.model.controller
                     polyMenuPanel.transform.localPosition = menuPanelZandriaLeftPosOculus;
                     detailsMenuPanel.transform.localPosition = detailsPanelZandriaLeftPosOculus;
                 }
+                else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+                {
+                    // TODO
+                    menuPanel.transform.localPosition = menuPanelLeftPosOculus;
+                    polyMenuPanel.transform.localPosition = menuPanelZandriaLeftPosOculus;
+                    detailsMenuPanel.transform.localPosition = detailsPanelZandriaLeftPosOculus;
+                }
                 else
                 {
                     menuPanel.transform.localPosition = Vector3.zero;
@@ -739,6 +755,14 @@ namespace com.google.apps.peltzer.client.model.controller
                     polyMenuPanel.transform.localPosition = menuPanelZandriaRightPosOculus;
                     detailsMenuPanel.transform.localPosition = detailsPanelZandriaRightPosOculus;
                 }
+                else if (Config.Instance.sdkMode == SdkMode.Oculus)
+                {
+                    // TODO
+                    menuPanel.transform.localPosition = menuPanelRightPosOculus;
+                    polyMenuPanel.transform.localPosition = menuPanelZandriaRightPosOculus;
+                    detailsMenuPanel.transform.localPosition = detailsPanelZandriaRightPosOculus;
+                }
+
                 else
                 {
                     menuPanel.transform.localPosition = menuPanelRightPos;

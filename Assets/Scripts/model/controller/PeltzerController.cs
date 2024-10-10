@@ -25,6 +25,7 @@ using com.google.apps.peltzer.client.tools.utils;
 using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.app;
+using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -73,7 +74,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public ControllerDevice controller;
         public ControllerGeometry controllerGeometry;
 
-        public GameObject steamRiftHolder;
+        public GameObject openXRHolder;
         public GameObject oculusRiftHolder;
 
         // Some tools intelligently choose between a 'click and hold' operation and a 'click to begin, click to end'
@@ -185,6 +186,13 @@ namespace com.google.apps.peltzer.client.model.controller
         public static readonly Color MENU_BUTTON_GREEN = new Color(76f / 255f, 175f / 255f, 80f / 255f);
         public static readonly Color MENU_BUTTON_RED = new Color(244f / 255f, 67f / 255f, 54f / 255f);
         private bool menuIsInDefaultState;
+
+        /// <summary>
+        ///   Local position of the wand tip / selector when using Quest with OpenXR.
+        /// </summary>
+        Vector3 WAND_TIP_POSITION_QUEST = new Vector3(0, 0, .0339f);
+        Vector3 WAND_TIP_ROTATION_OFFSET_QUEST = new Vector3(0, 0, 0);
+
 
         /// <summary>
         ///   Local position of the wand tip / selector when using RIFT.
@@ -319,17 +327,19 @@ namespace com.google.apps.peltzer.client.model.controller
         /// </summary>
         public void Setup(VolumeInserter volumeInserter, Freeform freeform)
         {
-            if (Config.Instance.sdkMode == SdkMode.SteamVR)
+            if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
-#if STEAMVRBUILD
-                controller = new ControllerDeviceSteam(transform);
-#endif
+                var openXRController = new ControllerDeviceOpenXR(transform);
+                openXRController.InitAsBrush();
+                // TODO
+                // openXRController.controllerType = OVRInput.Controller.RTouch;
+                controller = openXRController;
             }
             else
             {
-                ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
-                oculusController.controllerType = OVRInput.Controller.RTouch;
-                controller = oculusController;
+                // ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
+                // oculusController.controllerType = OVRInput.Controller.RTouch;
+                // controller = oculusController;
             }
             controllerGeometry.baseControllerAnimation.SetControllerDevice(controller);
 
@@ -343,9 +353,9 @@ namespace com.google.apps.peltzer.client.model.controller
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
                 // Adjust the placement of the selector position for Rift.
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    wandTip.transform.parent.transform.localPosition = WAND_TIP_POSITION_RIFT;
+                    wandTip.transform.parent.transform.localPosition = WAND_TIP_POSITION_QUEST;
                 }
                 else // Oculus SDK
                 {
@@ -449,9 +459,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 }
                 else
                 {
-                    if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                    if (Config.Instance.sdkMode == SdkMode.OpenXR)
                     {
-                        wandTip.transform.localRotation = Quaternion.Euler(WAND_TIP_ROTATION_OFFSET_RIFT);
+                        wandTip.transform.localRotation = Quaternion.Euler(WAND_TIP_ROTATION_OFFSET_QUEST);
                     }
                     else
                     {
@@ -669,10 +679,12 @@ namespace com.google.apps.peltzer.client.model.controller
             Vector3 controllerRayOrigin;
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    controllerRayVector = Quaternion.Euler(45, 0, 0) * Vector3.forward;
-                    controllerRayOrigin = transform.position + new Vector3(0, -0.045f, 0);
+                    // controllerRayVector = Quaternion.Euler(45, 0, 0) * Vector3.forward;
+                    // controllerRayOrigin = transform.position + new Vector3(0, -0.045f, 0);
+                    controllerRayVector = Vector3.forward;
+                    controllerRayOrigin = transform.position;
                 }
                 else
                 {
@@ -1424,43 +1436,43 @@ namespace com.google.apps.peltzer.client.model.controller
             }
 
             // modify the registration point based on the tool.
-            switch (newMode)
-            {
-                case ControllerMode.reshape:
-                    defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.055f);
-                    break;
-                case ControllerMode.insertStroke:
-                case ControllerMode.insertVolume:
-                    if (Config.Instance.VrHardware == VrHardware.Vive)
-                    {
-                        defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.015f);
-                    }
-                    else
-                    {
-                        defaultTipPointerDefaultLocation = new Vector3(0f, 0, -0.045f);
-                    }
-                    break;
-                case ControllerMode.delete:
-                case ControllerMode.deletePart:
-                    defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.035f);
-                    break;
-                default:
-                    defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.045f);
-                    break;
-            }
-
-            if (Config.Instance.VrHardware == VrHardware.Rift)
-            {
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
-                {
-                    defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_RIFT - new Vector3(0f, 0f, -0.045f);
-                }
-                else
-                {
-                    defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_OCULUS - new Vector3(0f, 0f, -0.045f);
-                }
-
-            }
+            // switch (newMode)
+            // {
+            //     case ControllerMode.reshape:
+            //         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.055f);
+            //         break;
+            //     case ControllerMode.insertStroke:
+            //     case ControllerMode.insertVolume:
+            //         if (Config.Instance.VrHardware == VrHardware.Vive)
+            //         {
+            //             defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.015f);
+            //         }
+            //         else
+            //         {
+            //             defaultTipPointerDefaultLocation = new Vector3(0f, 0, -0.045f);
+            //         }
+            //         break;
+            //     case ControllerMode.delete:
+            //     case ControllerMode.deletePart:
+            //         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.035f);
+            //         break;
+            //     default:
+            //         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.045f);
+            //         break;
+            // }
+            //
+            // if (Config.Instance.VrHardware == VrHardware.Rift)
+            // {
+            //     if (Config.Instance.sdkMode == SdkMode.OpenXR)
+            //     {
+            //         defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_QUEST - new Vector3(0f, 0f, -0.045f);
+            //     }
+            //     else
+            //     {
+            //         defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_OCULUS - new Vector3(0f, 0f, -0.045f);
+            //     }
+            //
+            // }
 
         }
 

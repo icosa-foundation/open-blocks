@@ -33,7 +33,7 @@ namespace com.google.apps.peltzer.client.model.csg
 
         public CsgContext(Bounds bounds)
         {
-            tree = new NativeSpatial<CsgVertex>();
+            tree = new OctreeImpl<CsgVertex>(bounds);
         }
 
         public CsgVertex CreateOrGetVertexAt(Vector3 loc)

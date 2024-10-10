@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using ICSharpCode.SharpZipLibUnityPort.Zip;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -24,8 +23,8 @@ using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.export;
 using System.Text;
-using System;
 using com.google.apps.peltzer.client.entitlement;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 {

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define STEAMVRBUILD
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -89,8 +88,8 @@ namespace com.google.apps.peltzer.client.model.main
             // Need to make sure all meshes are back in remesher for coalesced gltf export.
             PeltzerMain.Instance.GetSelector().DeselectAll();
             saveData = ExportUtils.SerializeModel(model, meshes,
-              /* saveGltf */ true, /* saveFbx */ true, /* saveTriangulatedObj */ true,
-              /* includeDisplayRotation */ true, serializer, saveSelected);
+              saveGltf: true, saveFbx: false, saveTriangulatedObj: true,
+              includeDisplayRotation: true, serializer, saveSelected);
             saveData.thumbnailBytes = thumbnailBytes;
         }
 
@@ -262,7 +261,7 @@ namespace com.google.apps.peltzer.client.model.main
         private const string SAVE_MESSAGE = "Saving...";
 
         // The default workspace, a room of 10x10x10 metres.
-        public static readonly Bounds DEFAULT_BOUNDS = new Bounds(Vector3.zero, new Vector3(10f, 10f, 10f));
+        public static readonly Bounds DEFAULT_BOUNDS = new Bounds(Vector3.zero, new Vector3(30f, 30f, 30f));
 
         // Menu actions that are selectable while a tutorial is occurring.
         public static readonly List<MenuAction> TUTORIAL_MENU_ACTIONS =
@@ -550,37 +549,43 @@ namespace com.google.apps.peltzer.client.model.main
             // Add Oculus SDK stuff.
             if (Config.Instance.sdkMode == SdkMode.Oculus)
             {
-                OVRManager manager = gameObject.AddComponent<OVRManager>();
-                manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
-                OculusAuth oculusAuth = gameObject.AddComponent<OculusAuth>();
+                // OVRManager manager = gameObject.AddComponent<OVRManager>();
+                // manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
+                // OculusAuth oculusAuth = gameObject.AddComponent<OculusAuth>();
+            }
+            else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+            {
+                // TODO
             }
 
             // Add Vive hardware stuff.
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
                 // Create the left controller geometry for the palette controller.
-                GameObject controllerGeometryLeft;
+                GameObject controllerGeometryLeft = null;
                 if (Config.Instance.sdkMode == SdkMode.Oculus)
                 {
                     controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.oculusRiftHolder.transform, false);
                 }
-                else
+                else if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.steamRiftHolder.transform, false);
+                    // TODO
+                    controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.openXRHolder.transform, false);
                 }
                 paletteController.controllerGeometry = controllerGeometryLeft.GetComponent<ControllerGeometry>();
 
                 // Create the right controller geometry for the peltzer controller.
-                GameObject controllerGeometryRight;
+                GameObject controllerGeometryRight = null;
                 if (Config.Instance.sdkMode == SdkMode.Oculus)
                 {
                     controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.oculusRiftHolder.transform, false);
                 }
-                else
+                else if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.steamRiftHolder.transform, false);
+                    // TODO
+                    controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.openXRHolder.transform, false);
                 }
-                peltzerController.controllerGeometry = controllerGeometryRight.GetComponent<ControllerGeometry>();
+                peltzerController.controllerGeometry = controllerGeometryRight?.GetComponent<ControllerGeometry>();
 
                 // Only allow hand toggling from the menu if the user is using a Rift.
                 ObjectFinder.ObjectById("ID_toggle_left_handed").SetActive(true);
@@ -646,22 +651,9 @@ namespace com.google.apps.peltzer.client.model.main
             filePickerBackgroundThread.IsBackground = true;
             filePickerBackgroundThread.Priority = System.Threading.ThreadPriority.Lowest;
             filePickerBackgroundThread.Start();
-
+            
             // Set up auto-saving.
-            userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
-
-            // GetFolderPath() can fail, returning an empty string.
-            if (userPath == "")
-            {
-                // If that happens, try a bunch of other folders.
-                userPath = System.Environment.GetFolderPath(
-                    System.Environment.SpecialFolder.MyDocuments);
-                if (userPath == "")
-                {
-                    userPath = System.Environment.GetFolderPath(
-                        System.Environment.SpecialFolder.DesktopDirectory);
-                }
-            }
+            userPath = GetUserPath();
 
             userPath = Path.Combine(userPath, "Blocks");
             if (!Path.IsPathRooted(userPath))
@@ -717,6 +709,33 @@ namespace com.google.apps.peltzer.client.model.main
 
             // Try to perform the setup. If we fail, that's ok, we'll try again in Update() until we succeed.
             TrySetup();
+        }
+        
+        /// <summary>
+        /// Gets the user path depending on the platform.
+        /// </summary>
+        /// <returns>user path used for auto-saving</returns>
+        private string GetUserPath()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            return Application.persistentDataPath;
+#else
+            userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+            
+            // GetFolderPath() can fail, returning an empty string.
+            if (userPath == "")
+            {
+                // If that happens, try a bunch of other folders.
+                userPath = System.Environment.GetFolderPath(
+                    System.Environment.SpecialFolder.MyDocuments);
+                if (userPath == "")
+                {
+                    userPath = System.Environment.GetFolderPath(
+                        System.Environment.SpecialFolder.DesktopDirectory);
+                }
+            }
+            return userPath;
+#endif
         }
 
         /// <summary>
