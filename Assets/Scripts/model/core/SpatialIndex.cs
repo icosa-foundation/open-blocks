@@ -110,11 +110,11 @@ namespace com.google.apps.peltzer.client.model.core
 
         private void Setup(Bounds bounds)
         {
-            meshes = new OctreeImpl<int>(bounds);
-            faces = new OctreeImpl<FaceKey>(bounds);
-            edges = new OctreeImpl<EdgeKey>(bounds);
-            vertices = new OctreeImpl<VertexKey>(bounds);
-            meshBounds = new OctreeImpl<int>(bounds);
+            meshes = new BurstSpatial<int>();
+            faces = new BurstSpatial<FaceKey>();
+            edges = new BurstSpatial<EdgeKey>();
+            vertices = new BurstSpatial<VertexKey>();
+            meshBounds = new BurstSpatial<int>();
 
             faceInfo = new Dictionary<FaceKey, FaceInfo>();
             edgeInfo = new Dictionary<EdgeKey, EdgeInfo>();
