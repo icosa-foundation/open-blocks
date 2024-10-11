@@ -651,7 +651,7 @@ namespace com.google.apps.peltzer.client.model.main
             filePickerBackgroundThread.IsBackground = true;
             filePickerBackgroundThread.Priority = System.Threading.ThreadPriority.Lowest;
             filePickerBackgroundThread.Start();
-            
+
             // Set up auto-saving.
             userPath = GetUserPath();
 
@@ -710,7 +710,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Try to perform the setup. If we fail, that's ok, we'll try again in Update() until we succeed.
             TrySetup();
         }
-        
+
         /// <summary>
         /// Gets the user path depending on the platform.
         /// </summary>
@@ -721,7 +721,7 @@ namespace com.google.apps.peltzer.client.model.main
             return Application.persistentDataPath;
 #else
             userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
-            
+
             // GetFolderPath() can fail, returning an empty string.
             if (userPath == "")
             {
