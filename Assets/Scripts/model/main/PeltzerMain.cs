@@ -718,7 +718,8 @@ namespace com.google.apps.peltzer.client.model.main
         private string GetUserPath()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            return Application.persistentDataPath;
+            return "/sdcard/"; // We can't use persistentDataPath as it doesn't survive app uninstall
+
 #else
             userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
 
