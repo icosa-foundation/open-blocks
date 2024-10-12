@@ -653,20 +653,7 @@ namespace com.google.apps.peltzer.client.model.main
             filePickerBackgroundThread.Start();
 
             // Set up auto-saving.
-            userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
-
-            // GetFolderPath() can fail, returning an empty string.
-            if (userPath == "")
-            {
-                // If that happens, try a bunch of other folders.
-                userPath = System.Environment.GetFolderPath(
-                    System.Environment.SpecialFolder.MyDocuments);
-                if (userPath == "")
-                {
-                    userPath = System.Environment.GetFolderPath(
-                        System.Environment.SpecialFolder.DesktopDirectory);
-                }
-            }
+            userPath = GetUserPath();
 
             userPath = Path.Combine(userPath, "Blocks");
             if (!Path.IsPathRooted(userPath))
@@ -722,6 +709,34 @@ namespace com.google.apps.peltzer.client.model.main
 
             // Try to perform the setup. If we fail, that's ok, we'll try again in Update() until we succeed.
             TrySetup();
+        }
+
+        /// <summary>
+        /// Gets the user path depending on the platform.
+        /// </summary>
+        /// <returns>user path used for auto-saving</returns>
+        private string GetUserPath()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            return "/sdcard/"; // We can't use persistentDataPath as it doesn't survive app uninstall
+
+#else
+            userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+
+            // GetFolderPath() can fail, returning an empty string.
+            if (userPath == "")
+            {
+                // If that happens, try a bunch of other folders.
+                userPath = System.Environment.GetFolderPath(
+                    System.Environment.SpecialFolder.MyDocuments);
+                if (userPath == "")
+                {
+                    userPath = System.Environment.GetFolderPath(
+                        System.Environment.SpecialFolder.DesktopDirectory);
+                }
+            }
+            return userPath;
+#endif
         }
 
         /// <summary>

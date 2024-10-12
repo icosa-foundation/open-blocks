@@ -190,8 +190,8 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <summary>
         ///   Local position of the wand tip / selector when using Quest with OpenXR.
         /// </summary>
-        Vector3 WAND_TIP_POSITION_QUEST = new Vector3(0.0073f, -.0668f, .0022f);
-        Vector3 WAND_TIP_ROTATION_OFFSET_QUEST = new Vector3(-45, 0, 0);
+        Vector3 WAND_TIP_POSITION_QUEST = new Vector3(0, 0, .0339f);
+        Vector3 WAND_TIP_ROTATION_OFFSET_QUEST = new Vector3(0, 0, 0);
 
 
         /// <summary>
@@ -681,8 +681,10 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    controllerRayVector = Quaternion.Euler(45, 0, 0) * Vector3.forward;
-                    controllerRayOrigin = transform.position + new Vector3(0, -0.045f, 0);
+                    // controllerRayVector = Quaternion.Euler(45, 0, 0) * Vector3.forward;
+                    // controllerRayOrigin = transform.position + new Vector3(0, -0.045f, 0);
+                    controllerRayVector = Vector3.forward;
+                    controllerRayOrigin = transform.position;
                 }
                 else
                 {
@@ -1434,43 +1436,43 @@ namespace com.google.apps.peltzer.client.model.controller
             }
 
             // modify the registration point based on the tool.
-            switch (newMode)
-            {
-                case ControllerMode.reshape:
-                    defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.055f);
-                    break;
-                case ControllerMode.insertStroke:
-                case ControllerMode.insertVolume:
-                    if (Config.Instance.VrHardware == VrHardware.Vive)
-                    {
-                        defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.015f);
-                    }
-                    else
-                    {
-                        defaultTipPointerDefaultLocation = new Vector3(0f, 0, -0.045f);
-                    }
-                    break;
-                case ControllerMode.delete:
-                case ControllerMode.deletePart:
-                    defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.035f);
-                    break;
-                default:
-                    defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.045f);
-                    break;
-            }
-
-            if (Config.Instance.VrHardware == VrHardware.Rift)
-            {
-                if (Config.Instance.sdkMode == SdkMode.OpenXR)
-                {
-                    defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_QUEST - new Vector3(0f, 0f, -0.045f);
-                }
-                else
-                {
-                    defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_OCULUS - new Vector3(0f, 0f, -0.045f);
-                }
-
-            }
+            // switch (newMode)
+            // {
+            //     case ControllerMode.reshape:
+            //         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.055f);
+            //         break;
+            //     case ControllerMode.insertStroke:
+            //     case ControllerMode.insertVolume:
+            //         if (Config.Instance.VrHardware == VrHardware.Vive)
+            //         {
+            //             defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.015f);
+            //         }
+            //         else
+            //         {
+            //             defaultTipPointerDefaultLocation = new Vector3(0f, 0, -0.045f);
+            //         }
+            //         break;
+            //     case ControllerMode.delete:
+            //     case ControllerMode.deletePart:
+            //         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.035f);
+            //         break;
+            //     default:
+            //         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.045f);
+            //         break;
+            // }
+            //
+            // if (Config.Instance.VrHardware == VrHardware.Rift)
+            // {
+            //     if (Config.Instance.sdkMode == SdkMode.OpenXR)
+            //     {
+            //         defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_QUEST - new Vector3(0f, 0f, -0.045f);
+            //     }
+            //     else
+            //     {
+            //         defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_OCULUS - new Vector3(0f, 0f, -0.045f);
+            //     }
+            //
+            // }
 
         }
 
