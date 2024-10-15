@@ -35,7 +35,7 @@ namespace com.google.apps.peltzer.client.tools
     ///   retain the last valid state of the mesh, but show the outline of the invalid mesh to the user to help them
     ///   understand that they are being geometrically unreasonable and help guide them back to mathematical sanity.
     /// </summary>
-    public class Reshaper : MonoBehaviour, IMeshRenderOwner
+    public class Reshaper : MonoBehaviour, IBaseTool, IMeshRenderOwner
     {
         /// <summary>
         ///   The factor by which meshes should be scaled.

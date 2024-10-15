@@ -57,6 +57,9 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject openXRHolder;
         public GameObject oculusRiftHolder;
 
+        public GameObject m_InitialPopupAnchor;
+        public GameObject m_Popups;
+
         /// <summary>
         /// Occasionally, the controller is not set when our app starts. This method
         /// will find the controller if it's null, and will return false if the
@@ -280,15 +283,17 @@ namespace com.google.apps.peltzer.client.model.controller
             }
 
             HideTooltips();
+            newModelPrompt = m_Popups.transform.Find($"NewModelPrompt").gameObject;
+            publishedTakeOffHeadsetPrompt = m_Popups.transform.Find($"TakeOffHeadsetPrompt").gameObject;
+            tutorialSavePrompt = m_Popups.transform.Find($"TutorialSavePrompt").gameObject;
+            tutorialBeginPrompt = m_Popups.transform.Find($"TutorialPrompt").gameObject;
+            tutorialExitPrompt = m_Popups.transform.Find($"TutorialExitPrompt").gameObject;
+            publishAfterSavePrompt = m_Popups.transform.Find($"PublishAfterSavePrompt").gameObject;
+            publishSignInPrompt = m_Popups.transform.Find($"PublishSignInPrompt").gameObject;
+            saveLocallyPrompt = m_Popups.transform.Find($"SaveLocallyPrompt").gameObject;
 
-            newModelPrompt = transform.Find("ID_PanelTools/ToolSide/NewModelPrompt").gameObject;
-            publishedTakeOffHeadsetPrompt = transform.Find("ID_PanelTools/ToolSide/TakeOffHeadsetPrompt").gameObject;
-            tutorialSavePrompt = transform.Find("ID_PanelTools/ToolSide/TutorialSavePrompt").gameObject;
-            tutorialBeginPrompt = transform.Find("ID_PanelTools/ToolSide/TutorialPrompt").gameObject;
-            tutorialExitPrompt = transform.Find("ID_PanelTools/ToolSide/TutorialExitPrompt").gameObject;
-            publishAfterSavePrompt = transform.Find("ID_PanelTools/ToolSide/PublishAfterSavePrompt").gameObject;
-            publishSignInPrompt = transform.Find("ID_PanelTools/ToolSide/PublishSignInPrompt").gameObject;
-            saveLocallyPrompt = transform.Find("ID_PanelTools/ToolSide/SaveLocallyPrompt").gameObject;
+            var panels = GetComponentsInChildren<ToolOptionsPanel>(true);
+            PeltzerMain.Instance.peltzerController.SetupToolOptionsPanels(panels);
 
             bool shouldNagForTutorial = !PlayerPrefs.HasKey(TutorialManager.HAS_EVER_STARTED_TUTORIAL_KEY);
             if (shouldNagForTutorial)
