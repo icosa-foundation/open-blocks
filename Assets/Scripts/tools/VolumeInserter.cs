@@ -30,7 +30,7 @@ namespace com.google.apps.peltzer.client.tools
     ///   A tool responsible for adding meshes to the scene.
     ///   An insert is composed of previewing, (potentially) scaling and/or moving, and triggering.
     /// </summary>
-    public class VolumeInserter : MonoBehaviour
+    public class VolumeInserter : MonoBehaviour, IBaseTool
     {
         // The default scale delta.
         private static readonly int DEFAULT_SCALE_DELTA = 2;
@@ -42,7 +42,7 @@ namespace com.google.apps.peltzer.client.tools
         private static readonly float MIN_TIME_BETWEEN_SCALING = 0.2f;
         // The lowest scaleDelta can go, for primitives. This implies a cube of size 2-grid-units.
         private static readonly int MIN_SCALE_DELTA = -4;
-        // The highest scaleDelta can go, for primitives. This implies that four (and a bit) such cubes could fit 
+        // The highest scaleDelta can go, for primitives. This implies that four (and a bit) such cubes could fit
         // side-by-side within bounds.
         private static readonly int MAX_SCALE_DELTA = 220;
         // How long after an insert should it take for the preview mesh to once again show at full opacity.
@@ -386,7 +386,7 @@ namespace com.google.apps.peltzer.client.tools
             Vector3 scale;
             if (peltzerController.shapesMenu.showingShapeMenu)
             {
-                // Scale delta used here is 0 if the shapes menu is open: we want all shapes in the menu the 
+                // Scale delta used here is 0 if the shapes menu is open: we want all shapes in the menu the
                 // same size. Further, we invert the worldSpace scale, as the shapes menu is at a constant scale.
                 scale = Vector3.one * GetScaleForScaleDelta(0) / worldSpace.scale;
             }
