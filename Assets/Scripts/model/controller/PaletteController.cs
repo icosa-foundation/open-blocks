@@ -54,11 +54,16 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject modifyToolhead;
         public GameObject eraseToolhead;
 
+        [Header("Other")]
         public GameObject openXRHolder;
         public GameObject oculusRiftHolder;
 
+        private Dictionary<ControllerMode, ToolOptionsPanel> m_ToolOptionsPanels;
         public GameObject m_InitialPopupAnchor;
         public GameObject m_Popups;
+        public ActionButton m_PanelOptionsButton;
+
+        private bool m_ToolOptionsPanelsEnabled;
 
         /// <summary>
         /// Occasionally, the controller is not set when our app starts. This method
@@ -293,7 +298,7 @@ namespace com.google.apps.peltzer.client.model.controller
             saveLocallyPrompt = m_Popups.transform.Find($"SaveLocallyPrompt").gameObject;
 
             var panels = GetComponentsInChildren<ToolOptionsPanel>(true);
-            PeltzerMain.Instance.peltzerController.SetupToolOptionsPanels(panels);
+            SetupToolOptionsPanels(panels);
 
             bool shouldNagForTutorial = !PlayerPrefs.HasKey(TutorialManager.HAS_EVER_STARTED_TUTORIAL_KEY);
             if (shouldNagForTutorial)
@@ -1307,6 +1312,48 @@ namespace com.google.apps.peltzer.client.model.controller
                     lastTouchpadHoverState = state;
                 }
             }
+        }
+
+        public void SetupToolOptionsPanels(ToolOptionsPanel[] panels)
+        {
+            m_ToolOptionsPanels = new Dictionary<ControllerMode, ToolOptionsPanel>();
+            foreach (var panel in panels)
+            {
+                m_ToolOptionsPanels.Add(panel.m_Mode, panel);
+            }
+        }
+
+        public void RefreshOptionPanelVisibility(ControllerMode mode)
+        {
+            if (m_ToolOptionsPanels != null)
+            {
+                // Disable all panels
+                foreach (var kv in m_ToolOptionsPanels)
+                {
+                    kv.Value.Disable();
+                }
+
+                // Enable the chosen panel
+                var panel = m_ToolOptionsPanels.GetValueOrDefault(mode);
+                if (panel != null)
+                {
+                    m_PanelOptionsButton.Enable(panel.m_Allowed);
+                    if (!m_ToolOptionsPanelsEnabled) return;
+                    panel.Enable(mode);
+                }
+            }
+        }
+
+        public void EnableToolOptionPanels(bool enable)
+        {
+            m_ToolOptionsPanelsEnabled = enable;
+            var mode = PeltzerMain.Instance.peltzerController.mode;
+            RefreshOptionPanelVisibility(mode);
+        }
+
+        public void ToggleToolOptionPanels()
+        {
+            EnableToolOptionPanels(!m_ToolOptionsPanelsEnabled);
         }
     }
 }

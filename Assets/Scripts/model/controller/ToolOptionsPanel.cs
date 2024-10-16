@@ -14,6 +14,7 @@
 
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.tools;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -23,22 +24,41 @@ namespace com.google.apps.peltzer.client.model.controller
     {
         public ControllerMode m_Mode;
         public Transform m_PopupAnchor;
+        public TextMeshPro m_Title;
+        public bool m_Allowed = true;
 
-        public void Enable(bool enable, ControllerMode mode)
+        private bool m_IsOpen;
+
+        public virtual void Enable(ControllerMode mode)
         {
-            if (gameObject.activeSelf == enable) return; // No change
+            m_Title.text = mode.ToString();
 
-            gameObject.SetActive(enable);
-
-            // Move the anchor for the popup panels so that they don't overlap an open option panel
-
+            if (m_IsOpen || !m_Allowed) return; // No change or we've disabled this panel
+            m_IsOpen = true;
+            gameObject.SetActive(true);
             var palette = PeltzerMain.Instance.paletteController;
-            var initialAnchor = palette.m_InitialPopupAnchor.transform;
             var popups = palette.m_Popups.transform;
-
+            // Move the anchor for the popup panels so that they don't overlap an open option panel
             // This assumes the popup panels transform has been re-parented to the original parent
             // As long as we always disable previous panels first then this is a safe assumption
-            popups.SetParent(enable ? m_PopupAnchor : initialAnchor, worldPositionStays: false);
+            popups.SetParent(m_PopupAnchor, worldPositionStays: false);
+        }
+
+        public virtual void Disable()
+        {
+            if (!m_IsOpen) return; // No change
+            m_IsOpen = false;
+            gameObject.SetActive(false);
+            var palette = PeltzerMain.Instance.paletteController;
+            var popups = palette.m_Popups.transform;
+            var initialAnchor = palette.m_InitialPopupAnchor.transform;
+            // Move the popups back to the initial "closed" anchor position
+            popups.SetParent(initialAnchor, worldPositionStays: false);
+        }
+
+        public void ClosePanel()
+        {
+            PeltzerMain.Instance.paletteController.EnableToolOptionPanels(false);
         }
     }
 }

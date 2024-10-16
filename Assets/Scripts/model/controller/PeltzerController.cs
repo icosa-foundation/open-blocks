@@ -187,7 +187,6 @@ namespace com.google.apps.peltzer.client.model.controller
         public static readonly Color MENU_BUTTON_GREEN = new Color(76f / 255f, 175f / 255f, 80f / 255f);
         public static readonly Color MENU_BUTTON_RED = new Color(244f / 255f, 67f / 255f, 54f / 255f);
         private bool menuIsInDefaultState;
-        private Dictionary<ControllerMode, ToolOptionsPanel> m_ToolOptionsPanels;
 
         /// <summary>
         ///   Local position of the wand tip / selector when using Quest with OpenXR.
@@ -1436,15 +1435,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     StartToolHeadAnimation();
                 }
 
-                // Hide show tool options panels
-                if (m_ToolOptionsPanels != null)
-                {
-                    foreach (var panel in m_ToolOptionsPanels)
-                    {
-                        panel.Value.Enable(false, previousMode);
-                    }
-                    m_ToolOptionsPanels.GetValueOrDefault(mode)?.Enable(true, mode);
-                }
+                PeltzerMain.Instance.paletteController.RefreshOptionPanelVisibility(mode);
             }
 
             // modify the registration point based on the tool.
@@ -1998,14 +1989,5 @@ namespace com.google.apps.peltzer.client.model.controller
         }
 
         public TouchpadOverlay TouchpadOverlay { get { return currentOverlay; } }
-
-        public void SetupToolOptionsPanels(ToolOptionsPanel[] panels)
-        {
-            m_ToolOptionsPanels = new Dictionary<ControllerMode, ToolOptionsPanel>();
-            foreach (var panel in panels)
-            {
-                m_ToolOptionsPanels.Add(panel.m_Mode, panel);
-            }
-        }
     }
 }

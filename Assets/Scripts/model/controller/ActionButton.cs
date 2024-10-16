@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using com.google.apps.peltzer.client.model.main;
+using UnityEngine;
 using UnityEngine.Events;
 
 namespace com.google.apps.peltzer.client.model.controller
@@ -36,6 +37,13 @@ namespace com.google.apps.peltzer.client.model.controller
             m_Action.Invoke();
             main.audioLibrary.PlayClip(main.audioLibrary.menuSelectSound);
             StartBump();
+        }
+
+        public void Enable(bool enable)
+        {
+            isActive = enable;
+            var icon = transform.GetChild(0).GetComponent<SpriteRenderer>();
+            icon.color = enable ? Color.white : Color.gray;
         }
     }
 }
