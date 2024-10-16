@@ -74922,7 +74922,7 @@ PrefabInstance:
     - target: {fileID: 3879522860456695884, guid: 5dac744749868004ab4365c89ca2fab6,
         type: 3}
       propertyPath: isActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3879522860456695884, guid: 5dac744749868004ab4365c89ca2fab6,
         type: 3}
@@ -75329,10 +75329,20 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4657463438926638}
     m_Modifications:
+    - target: {fileID: 3896392404863120199, guid: 9d12e6c8a14b7a24e8ffc926ed203565,
+        type: 3}
+      propertyPath: m_Allowed
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3930944731616475599, guid: 9d12e6c8a14b7a24e8ffc926ed203565,
         type: 3}
       propertyPath: m_Name
       value: Tool Options Panels
+      objectReference: {fileID: 0}
+    - target: {fileID: 4624124601864769699, guid: 9d12e6c8a14b7a24e8ffc926ed203565,
+        type: 3}
+      propertyPath: m_Allowed
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5387130165687297604, guid: 9d12e6c8a14b7a24e8ffc926ed203565,
         type: 3}
