@@ -364,6 +364,44 @@ namespace com.google.apps.peltzer.client.model.main
         private GifRecorder gifRecorder;
         private Zoomer zoomer;
 
+        public IBaseTool GetToolForMode(ControllerMode mode)
+        {
+            switch (mode)
+            {
+                case ControllerMode.insertVolume:
+                    return volumeInserter;
+                case ControllerMode.insertStroke:
+                    return freeform;
+                case ControllerMode.reshape:
+                    return reshaper;
+                case ControllerMode.extrude:
+                    return extruder;
+                case ControllerMode.subdivideFace:
+                    return subdivider;
+                case ControllerMode.subdivideMesh:
+                    return subdivider;
+                case ControllerMode.delete:
+                    return deleter;
+                case ControllerMode.move:
+                    return mover;
+                case ControllerMode.paintMesh:
+                    return painter;
+                case ControllerMode.paintFace:
+                    return painter;
+                case ControllerMode.paintDropper:
+                    return painter;
+                case ControllerMode.subtract:
+                    return volumeInserter;
+                case ControllerMode.deletePart:
+                    return deleter;
+                case ControllerMode.subdividePlane:
+                    return subdivider;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
+            }
+
+        }
+
         // Creations Handler.
         private ZandriaCreationsManager zandriaCreationsManager;
 
