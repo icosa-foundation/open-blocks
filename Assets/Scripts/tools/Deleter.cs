@@ -24,7 +24,7 @@ namespace com.google.apps.peltzer.client.tools
     /// <summary>
     ///   Tool which handles deletion of meshes.
     /// </summary>
-    public class Deleter : MonoBehaviour
+    public class Deleter : MonoBehaviour, IBaseTool
     {
         public ControllerMain controllerMain;
         private PeltzerController peltzerController;
@@ -281,7 +281,7 @@ namespace com.google.apps.peltzer.client.tools
             // 4) For each adjacent face add the vertexid at the index previously stored (which is one of the ones in the
             //    edgekey) and then from that index continue adding vertex ids until we hit another vert in the edgekey.  That
             //    vertex is NOT added.
-            // 5) There's now a vertex list for the new face, so we add this along with the face properties from one of the 
+            // 5) There's now a vertex list for the new face, so we add this along with the face properties from one of the
             //    two adjacent faces (choosing arbitrarily).
 
             MMesh mesh = model.GetMesh(edgeKey.meshId).Clone();
@@ -303,7 +303,7 @@ namespace com.google.apps.peltzer.client.tools
                 // (x - 1) % count doesn't work, but (x + count - 1) % count is mathematically equivalent
                 int modulusMinusOne = vertCount - 1;
                 int startVert = -1;
-                // Find the point 
+                // Find the point
                 for (int i = 0; i < vertCount; i++)
                 {
                     if (edgeKey.ContainsVertex(face1.vertexIds[i]))
