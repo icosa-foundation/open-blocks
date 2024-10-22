@@ -14,6 +14,7 @@
 
 #define STEAMVRBUILD
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -1433,6 +1434,8 @@ namespace com.google.apps.peltzer.client.model.controller
                     added.SetActive(false);
                     StartToolHeadAnimation();
                 }
+
+                PeltzerMain.Instance.paletteController.RefreshOptionPanelVisibility(mode);
             }
 
             // modify the registration point based on the tool.

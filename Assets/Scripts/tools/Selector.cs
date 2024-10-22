@@ -29,7 +29,7 @@ namespace com.google.apps.peltzer.client.tools
     /// <summary>
     ///   A tool that handles the hovering and selection of meshes, faces, or vertices.
     /// </summary>
-    public class Selector : MonoBehaviour, IMeshRenderOwner
+    public class Selector : MonoBehaviour, IBaseTool, IMeshRenderOwner
     {
         /// <summary>
         /// Options to customize the selector's selection logic.
@@ -739,7 +739,7 @@ namespace com.google.apps.peltzer.client.tools
                 model.ExpandMeshIdsToGroupMates(touchedMeshIds);
             }
 
-            // In multi-select mode, append any newly-hovered meshes to the selected list. This is also the functionality we want 
+            // In multi-select mode, append any newly-hovered meshes to the selected list. This is also the functionality we want
             // when forcing click to select functionality.
             if (isMultiSelecting || forceSelection)
             {

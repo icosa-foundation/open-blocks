@@ -26,6 +26,7 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 ### GitHub
 - [Formal GitHub Releases](https://github.com/icosa-foundation/open-blocks/releases/latest)
 
+Note that despite a Windows build, it does work on Linux. For example one can add as a non-Steam game to their library, force compatibility with Proton experimental and run Open Blocks as-is, without any modification.
 
 ## Acknowledgements
 * Thank you to the original developers for your amazing work and for finding a way to open source the app!

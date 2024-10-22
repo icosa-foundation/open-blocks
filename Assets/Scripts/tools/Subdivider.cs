@@ -28,7 +28,7 @@ namespace com.google.apps.peltzer.client.tools
     /// Tool for subdividing faces. User sees a line across a face, and is able to subdivide the face
     /// into two faces based on the line.
     /// </summary>
-    public class Subdivider : MonoBehaviour
+    public class Subdivider : MonoBehaviour, IBaseTool
     {
 
         /// <summary>
