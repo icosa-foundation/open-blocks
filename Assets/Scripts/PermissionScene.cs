@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.SceneManagement;
+
 namespace TiltBrush
 {
     public class PermissionScene : MonoBehaviour
@@ -24,7 +25,9 @@ namespace TiltBrush
                     yield return new WaitForEndOfFrame();
                 }
             }
+
 #endif
+            yield return null;
             SceneManager.LoadScene("MainScene", LoadSceneMode.Single);
         }
 
@@ -60,7 +63,7 @@ namespace TiltBrush
             }
             catch (AndroidJavaException e)
             {
-                m_FolderPermissionOverride = true;                
+                m_FolderPermissionOverride = true;
                 Debug.LogError("Java Exception caught and ignored: " + e.Message);
                 Debug.LogError("Assuming this means we don't need android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION (e.g., Android SDK < 30)");
             }
