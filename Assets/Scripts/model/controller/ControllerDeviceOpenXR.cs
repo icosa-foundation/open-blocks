@@ -16,6 +16,8 @@ using TiltBrush;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR;
+using UnityEngine.XR.OpenXR.Input;
+using CommonUsages = UnityEngine.XR.CommonUsages;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -82,7 +84,10 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public Vector3 GetVelocity()
         {
-            // TODO
+            if (device.TryGetFeatureValue(CommonUsages.deviceVelocity, out Vector3 velocity))
+            {
+                return velocity;
+            }
             return Vector3.zero;
         }
 
