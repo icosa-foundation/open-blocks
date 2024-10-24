@@ -108,9 +108,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Touchpad:
                     return touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("PrimaryButton").IsPressed();
-                case ButtonId.ApplicationMenu:
                     return FindAction("SecondaryButton").IsPressed();
+                case ButtonId.ApplicationMenu:
+                    return FindAction("PrimaryButton").IsPressed();
                 default:
                     return false;
             }
@@ -127,9 +127,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Touchpad:
                     return !touchpadWasPressedLastFrame && touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("PrimaryButton").WasPressedThisFrame();
-                case ButtonId.ApplicationMenu:
                     return FindAction("SecondaryButton").WasPressedThisFrame();
+                case ButtonId.ApplicationMenu:
+                    return FindAction("PrimaryButton").WasPressedThisFrame();
                 default:
                     return false;
             }
@@ -146,9 +146,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Touchpad:
                     return touchpadWasPressedLastFrame && !touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("PrimaryButton").WasReleasedThisFrame();
-                case ButtonId.ApplicationMenu:
                     return FindAction("SecondaryButton").WasReleasedThisFrame();
+                case ButtonId.ApplicationMenu:
+                    return FindAction("PrimaryButton").WasReleasedThisFrame();
                 default:
                     return false;
             }
@@ -181,9 +181,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Touchpad:
                     return touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("PrimaryTouch").WasPressedThisFrame();
+                    return FindAction("SecondaryButton").WasPressedThisFrame();
                 case ButtonId.ApplicationMenu:
-                    return FindAction("SecondaryTouch").WasPressedThisFrame();
+                    return FindAction("PrimaryButton").WasPressedThisFrame();
                 default:
                     return false;
             }
