@@ -164,6 +164,15 @@ namespace TiltBrush
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MenuButton"",
+                    ""type"": ""Button"",
+                    ""id"": ""9f8dbc87-f6c9-4bb9-a5db-e6d4d7b134b2"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -540,6 +549,17 @@ namespace TiltBrush
                     ""action"": ""ThumbTouch"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0c3aad22-4a40-4360-9ed6-e64086ddeb72"",
+                    ""path"": """",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MenuButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -668,7 +688,7 @@ namespace TiltBrush
                     ""name"": ""SecondaryTouch"",
                     ""type"": ""Button"",
                     ""id"": ""2e4c62b6-e52b-4df2-b25b-937c3000e9f1"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -678,6 +698,24 @@ namespace TiltBrush
                     ""type"": ""Button"",
                     ""id"": ""39846e4e-38e0-4d04-a16b-73a2dfa49299"",
                     ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MenuButton"",
+                    ""type"": ""Button"",
+                    ""id"": ""98bc9b78-3c41-425e-a313-24c6bee3bd1a"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MenuButton1"",
+                    ""type"": ""Button"",
+                    ""id"": ""507bed38-7411-4021-913d-f3d96d290346"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -1057,6 +1095,28 @@ namespace TiltBrush
                     ""action"": ""TriggerTouch"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a4bbb3e9-ca1f-4154-b0d1-62749bd133ae"",
+                    ""path"": ""<XRController>{LeftHand}/menu"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MenuButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9bcae3a0-e026-4194-8af7-c5bcda5f547e"",
+                    ""path"": ""<XRController>{LeftHand}/menu"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MenuButton1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -1147,6 +1207,7 @@ namespace TiltBrush
             m_Brush_PrimaryButton = m_Brush.FindAction("PrimaryButton", throwIfNotFound: true);
             m_Brush_SecondaryTouch = m_Brush.FindAction("SecondaryTouch", throwIfNotFound: true);
             m_Brush_SecondaryButton = m_Brush.FindAction("SecondaryButton", throwIfNotFound: true);
+            m_Brush_MenuButton = m_Brush.FindAction("MenuButton", throwIfNotFound: true);
             // Wand
             m_Wand = asset.FindActionMap("Wand", throwIfNotFound: true);
             m_Wand_TriggerAxis = m_Wand.FindAction("TriggerAxis", throwIfNotFound: true);
@@ -1164,6 +1225,8 @@ namespace TiltBrush
             m_Wand_PrimaryButton = m_Wand.FindAction("PrimaryButton", throwIfNotFound: true);
             m_Wand_SecondaryTouch = m_Wand.FindAction("SecondaryTouch", throwIfNotFound: true);
             m_Wand_SecondaryButton = m_Wand.FindAction("SecondaryButton", throwIfNotFound: true);
+            m_Wand_MenuButton = m_Wand.FindAction("MenuButton", throwIfNotFound: true);
+            m_Wand_MenuButton1 = m_Wand.FindAction("MenuButton1", throwIfNotFound: true);
         }
 
         ~@UnityXRInputAction()
@@ -1246,6 +1309,7 @@ namespace TiltBrush
         private readonly InputAction m_Brush_PrimaryButton;
         private readonly InputAction m_Brush_SecondaryTouch;
         private readonly InputAction m_Brush_SecondaryButton;
+        private readonly InputAction m_Brush_MenuButton;
         public struct BrushActions
         {
             private @UnityXRInputAction m_Wrapper;
@@ -1265,6 +1329,7 @@ namespace TiltBrush
             public InputAction @PrimaryButton => m_Wrapper.m_Brush_PrimaryButton;
             public InputAction @SecondaryTouch => m_Wrapper.m_Brush_SecondaryTouch;
             public InputAction @SecondaryButton => m_Wrapper.m_Brush_SecondaryButton;
+            public InputAction @MenuButton => m_Wrapper.m_Brush_MenuButton;
             public InputActionMap Get() { return m_Wrapper.m_Brush; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -1319,6 +1384,9 @@ namespace TiltBrush
                 @SecondaryButton.started += instance.OnSecondaryButton;
                 @SecondaryButton.performed += instance.OnSecondaryButton;
                 @SecondaryButton.canceled += instance.OnSecondaryButton;
+                @MenuButton.started += instance.OnMenuButton;
+                @MenuButton.performed += instance.OnMenuButton;
+                @MenuButton.canceled += instance.OnMenuButton;
             }
 
             private void UnregisterCallbacks(IBrushActions instance)
@@ -1368,6 +1436,9 @@ namespace TiltBrush
                 @SecondaryButton.started -= instance.OnSecondaryButton;
                 @SecondaryButton.performed -= instance.OnSecondaryButton;
                 @SecondaryButton.canceled -= instance.OnSecondaryButton;
+                @MenuButton.started -= instance.OnMenuButton;
+                @MenuButton.performed -= instance.OnMenuButton;
+                @MenuButton.canceled -= instance.OnMenuButton;
             }
 
             public void RemoveCallbacks(IBrushActions instance)
@@ -1404,6 +1475,8 @@ namespace TiltBrush
         private readonly InputAction m_Wand_PrimaryButton;
         private readonly InputAction m_Wand_SecondaryTouch;
         private readonly InputAction m_Wand_SecondaryButton;
+        private readonly InputAction m_Wand_MenuButton;
+        private readonly InputAction m_Wand_MenuButton1;
         public struct WandActions
         {
             private @UnityXRInputAction m_Wrapper;
@@ -1423,6 +1496,8 @@ namespace TiltBrush
             public InputAction @PrimaryButton => m_Wrapper.m_Wand_PrimaryButton;
             public InputAction @SecondaryTouch => m_Wrapper.m_Wand_SecondaryTouch;
             public InputAction @SecondaryButton => m_Wrapper.m_Wand_SecondaryButton;
+            public InputAction @MenuButton => m_Wrapper.m_Wand_MenuButton;
+            public InputAction @MenuButton1 => m_Wrapper.m_Wand_MenuButton1;
             public InputActionMap Get() { return m_Wrapper.m_Wand; }
             public void Enable() { Get().Enable(); }
             public void Disable() { Get().Disable(); }
@@ -1477,6 +1552,12 @@ namespace TiltBrush
                 @SecondaryButton.started += instance.OnSecondaryButton;
                 @SecondaryButton.performed += instance.OnSecondaryButton;
                 @SecondaryButton.canceled += instance.OnSecondaryButton;
+                @MenuButton.started += instance.OnMenuButton;
+                @MenuButton.performed += instance.OnMenuButton;
+                @MenuButton.canceled += instance.OnMenuButton;
+                @MenuButton1.started += instance.OnMenuButton1;
+                @MenuButton1.performed += instance.OnMenuButton1;
+                @MenuButton1.canceled += instance.OnMenuButton1;
             }
 
             private void UnregisterCallbacks(IWandActions instance)
@@ -1526,6 +1607,12 @@ namespace TiltBrush
                 @SecondaryButton.started -= instance.OnSecondaryButton;
                 @SecondaryButton.performed -= instance.OnSecondaryButton;
                 @SecondaryButton.canceled -= instance.OnSecondaryButton;
+                @MenuButton.started -= instance.OnMenuButton;
+                @MenuButton.performed -= instance.OnMenuButton;
+                @MenuButton.canceled -= instance.OnMenuButton;
+                @MenuButton1.started -= instance.OnMenuButton1;
+                @MenuButton1.performed -= instance.OnMenuButton1;
+                @MenuButton1.canceled -= instance.OnMenuButton1;
             }
 
             public void RemoveCallbacks(IWandActions instance)
@@ -1614,6 +1701,7 @@ namespace TiltBrush
             void OnPrimaryButton(InputAction.CallbackContext context);
             void OnSecondaryTouch(InputAction.CallbackContext context);
             void OnSecondaryButton(InputAction.CallbackContext context);
+            void OnMenuButton(InputAction.CallbackContext context);
         }
         public interface IWandActions
         {
@@ -1632,6 +1720,8 @@ namespace TiltBrush
             void OnPrimaryButton(InputAction.CallbackContext context);
             void OnSecondaryTouch(InputAction.CallbackContext context);
             void OnSecondaryButton(InputAction.CallbackContext context);
+            void OnMenuButton(InputAction.CallbackContext context);
+            void OnMenuButton1(InputAction.CallbackContext context);
         }
     }
 }

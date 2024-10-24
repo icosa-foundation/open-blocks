@@ -139,6 +139,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "MenuButton",
+                    "type": "Button",
+                    "id": "9f8dbc87-f6c9-4bb9-a5db-e6d4d7b134b2",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -515,6 +524,17 @@
                     "action": "ThumbTouch",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "0c3aad22-4a40-4360-9ed6-e64086ddeb72",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MenuButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         },
@@ -643,7 +663,7 @@
                     "name": "SecondaryTouch",
                     "type": "Button",
                     "id": "2e4c62b6-e52b-4df2-b25b-937c3000e9f1",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -653,6 +673,24 @@
                     "type": "Button",
                     "id": "39846e4e-38e0-4d04-a16b-73a2dfa49299",
                     "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MenuButton",
+                    "type": "Button",
+                    "id": "98bc9b78-3c41-425e-a313-24c6bee3bd1a",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MenuButton1",
+                    "type": "Button",
+                    "id": "507bed38-7411-4021-913d-f3d96d290346",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -1030,6 +1068,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "TriggerTouch",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a4bbb3e9-ca1f-4154-b0d1-62749bd133ae",
+                    "path": "<XRController>{LeftHand}/menu",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MenuButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9bcae3a0-e026-4194-8af7-c5bcda5f547e",
+                    "path": "<XRController>{LeftHand}/menu",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MenuButton1",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
