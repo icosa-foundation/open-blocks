@@ -239,10 +239,18 @@ namespace com.google.apps.peltzer.client.menu
             // the menu is active.
             operationStartTime = 0f;
 
+
             if (Config.Instance.sdkMode == SdkMode.Oculus)
             {
                 menuHintRoot.transform.localPosition = ROOT_POSITION_OCULUS;
                 menuHintRoot.transform.localRotation = Quaternion.Euler(ROOT_ROTATION_OCULUS);
+            }
+            else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+            {
+                // TODO
+                menuHintRoot.transform.localPosition = ROOT_POSITION_OCULUS;
+                menuHintRoot.transform.localRotation = Quaternion.Euler(ROOT_ROTATION_OCULUS);
+
             }
         }
 
@@ -284,7 +292,7 @@ namespace com.google.apps.peltzer.client.menu
                 }
                 else
                 {
-                    // Animate the previews into existance. 
+                    // Animate the previews into existance.
                     previewSpace.scale = Mathf.Lerp(0f, DEFAULT_SCALE, pctDone);
                 }
             }
