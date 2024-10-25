@@ -207,7 +207,8 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void TriggerHapticPulse(ushort durationMicroSec = 500)
         {
-            device.SendHapticImpulse(0, 0.75f, durationMicroSec);
+            float durationSec = durationMicroSec / 1000000f;
+            device.SendHapticImpulse(0, 0.75f, durationSec);
         }
 
         public void InitAsBrush()
