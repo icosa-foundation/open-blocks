@@ -71,8 +71,8 @@ namespace com.google.apps.peltzer.client.model.controller
             // Calculate the normalized positions (0 to 1)
             var normalized = Mathf.InverseLerp(localMin.x, localMax.x, localHitPoint.x);
             // Fudge factor because my maths is off somewhere
-            float fudge = 0.2f;
-            normalized = Mathf.InverseLerp(0 - fudge, 1 + fudge, normalized);
+            float fudge = 0.1f;
+            normalized = Mathf.InverseLerp(0 + fudge, 1 - fudge, normalized);
             return normalized;
         }
 

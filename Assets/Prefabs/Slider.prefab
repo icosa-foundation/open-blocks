@@ -77,7 +77,7 @@ MonoBehaviour:
   m_SliderRenderer: {fileID: 6551581032341960475}
   m_Minimum: 0
   m_Maximum: 1
-  m_Step: 0.1
+  m_Step: 0.01
   m_UpdateInterval: 1
   m_UpdateOnlyOnRelease: 0
 --- !u!1 &2722577641726268315

@@ -325,11 +325,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Options_InsertVolume
       objectReference: {fileID: 0}
-    - target: {fileID: 1091944798805812783, guid: a29b63e4d35688042aadc575023c769f,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1338206105780383609, guid: a29b63e4d35688042aadc575023c769f,
         type: 3}
       propertyPath: m_LocalPosition.x
