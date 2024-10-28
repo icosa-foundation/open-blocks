@@ -16,6 +16,8 @@ using TiltBrush;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR;
+using UnityEngine.XR.OpenXR.Input;
+using CommonUsages = UnityEngine.XR.CommonUsages;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -82,7 +84,10 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public Vector3 GetVelocity()
         {
-            // TODO
+            if (device.TryGetFeatureValue(CommonUsages.deviceVelocity, out Vector3 velocity))
+            {
+                return velocity;
+            }
             return Vector3.zero;
         }
 
@@ -103,9 +108,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Touchpad:
                     return touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("PrimaryButton").IsPressed();
-                case ButtonId.ApplicationMenu:
                     return FindAction("SecondaryButton").IsPressed();
+                case ButtonId.ApplicationMenu:
+                    return FindAction("PrimaryButton").IsPressed();
                 default:
                     return false;
             }
@@ -122,9 +127,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Touchpad:
                     return !touchpadWasPressedLastFrame && touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("PrimaryButton").WasPressedThisFrame();
-                case ButtonId.ApplicationMenu:
                     return FindAction("SecondaryButton").WasPressedThisFrame();
+                case ButtonId.ApplicationMenu:
+                    return FindAction("PrimaryButton").WasPressedThisFrame();
                 default:
                     return false;
             }
@@ -141,9 +146,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Touchpad:
                     return touchpadWasPressedLastFrame && !touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("PrimaryButton").WasReleasedThisFrame();
-                case ButtonId.ApplicationMenu:
                     return FindAction("SecondaryButton").WasReleasedThisFrame();
+                case ButtonId.ApplicationMenu:
+                    return FindAction("PrimaryButton").WasReleasedThisFrame();
                 default:
                     return false;
             }
@@ -176,9 +181,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.Touchpad:
                     return touchpadCurrentlyPressed;
                 case ButtonId.SecondaryButton:
-                    return FindAction("PrimaryTouch").WasPressedThisFrame();
+                    return FindAction("SecondaryButton").WasPressedThisFrame();
                 case ButtonId.ApplicationMenu:
-                    return FindAction("SecondaryTouch").WasPressedThisFrame();
+                    return FindAction("PrimaryButton").WasPressedThisFrame();
                 default:
                     return false;
             }
@@ -202,8 +207,8 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void TriggerHapticPulse(ushort durationMicroSec = 500)
         {
-            // TODO
-            // throw new System.NotImplementedException();
+            float durationSec = durationMicroSec / 1000000f;
+            device.SendHapticImpulse(0, 0.75f, durationSec);
         }
 
         public void InitAsBrush()

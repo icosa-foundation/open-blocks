@@ -322,6 +322,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         private bool setupDone;
         private bool triggerIsDown;
+        private bool m_isDraggingSlider;
 
         /// <summary>
         /// Performs one-time setup. This must be called before anything else.
@@ -489,6 +490,7 @@ namespace com.google.apps.peltzer.client.model.controller
         private void UpdateMenuItemPoint()
         {
             bool isTriggerDown = controller.IsPressed(ButtonId.Trigger);
+
             bool isOperationInProgress = freeformInstance.IsStroking() ||
               PeltzerMain.Instance.GetMover().IsMoving() ||
               PeltzerMain.Instance.GetReshaper().IsReshaping() ||
@@ -506,7 +508,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
             // Only update the hover state if the trigger is NOT down (if the trigger is down, don't change states because
             // the user is currently in the process of trying to click something that's already hovered).
-            if (!isTriggerDown)
+            if (!isTriggerDown || m_isDraggingSlider)
             {
                 HandleMenuItemPoint();
             }
@@ -517,10 +519,22 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             TouchpadLocation location = controller.GetTouchpadLocation();
 
+            m_isDraggingSlider = false;
+
             foreach (ButtonId buttonId in buttons)
             {
                 if (buttonId == ButtonId.Trigger && currentSelectableMenuItem != null)
                 {
+                    // Sliders need all trigger events
+                    var slider = currentSelectableMenuItem as Slider;
+                    if (slider != null)
+                    {
+                        m_isDraggingSlider = controller.IsPressed(ButtonId.Trigger);
+                        DetectTrigger(controller);
+                        // Swallow this event, so the other tools don't fire.
+                        continue;
+                    }
+
                     // If the user has pulled the trigger while pointing at a palette menu item, invoke the action handler.
                     if (controller.WasJustPressed(buttonId))
                     {
@@ -529,6 +543,7 @@ namespace com.google.apps.peltzer.client.model.controller
                         // Swallow this event, so the other tools don't fire.
                         continue;
                     }
+
                 }
                 else if (buttonId == ButtonId.Trigger)
                 {
@@ -791,6 +806,12 @@ namespace com.google.apps.peltzer.client.model.controller
             else
             {
                 wandTipLabel.text = "";
+            }
+
+            Slider slider = menuHit.transform.GetComponent<Slider>();
+            if (slider != null && slider.isActive)
+            {
+                slider.SetHitPoint(menuHit);
             }
 
             // Reset the hover animation and start time if this is a new item or not a save submenu.
