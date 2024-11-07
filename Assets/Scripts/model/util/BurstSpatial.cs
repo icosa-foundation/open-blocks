@@ -14,9 +14,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.util;
 using NativeTrees;
+using Unity.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -24,44 +26,58 @@ using UnityEngine;
 /// </summary>
 public static class BurstSpatialFunction
 {
-    private static List<NativeOctree<int>> _indices = new();
+    private static List<NativeOctree<int>> _octrees = new();
 
     public static int AllocSpatialPartitioner()
     {
         var octree = new NativeOctree<int>();
-        _indices.Add(octree);
-        return _indices.Count - 1;
+        _octrees.Add(octree);
+        return _octrees.Count - 1;
     }
 
     public static void SpatialPartitionerAddItem(int idx, int itemId, Vector3 center, Vector3 extents)
     {
-        _indices[idx].InsertPoint(itemId, center);
+        _octrees[idx].InsertPoint(itemId, center);
     }
 
     public static void SpatialPartitionerUpdateAll(int idx, object itemIds)
     {
         var octree = new NativeOctree<int>();
-        _indices[idx] = _indices[idx];
-    }
-
-    public static void SpatialPartitionerRemoveItem(int idx, int itemId)
-    {
-        throw new NotImplementedException();
-    }
-
-    public static int SpatialPartitionerContainedBy(int idx, Vector3 testCenter, Vector3 testExtents, int[] returnArray, int returnArrayMaxSize)
-    {
-        throw new NotImplementedException();
+        octree = _octrees[idx];
+        jgtuu
     }
 
     public static int SpatialPartitionerIntersectedBy(int idx, Vector3 testCenter, Vector3 testExtents, int[] returnArray, int returnArrayMaxSize)
     {
-        throw new NotImplementedException();
+        AABB range = new AABB(testCenter, testExtents);
+        var results = new NativeParallelHashSet<int>(returnArrayMaxSize, Allocator.TempJob);
+        RangeAABBUnique(_octrees[idx], range, results);
+        returnArray = results.ToArray();
     }
 
-    public static int HasItem(int idx, int itemHandle)
+    public static void RangeAABBUnique<T>(this NativeOctree<T> octree, AABB range, NativeParallelHashSet<T> results)
+        where T : unmanaged, IEquatable<T>
     {
-        throw new NotImplementedException();
+        var vistor = new RangeAABBUniqueVisitor<T>()
+        {
+            results = results
+        };
+
+        octree.Range(range, ref vistor);
+    }
+
+    struct RangeAABBUniqueVisitor<T> : IOctreeRangeVisitor<T> where T : unmanaged, IEquatable<T>
+    {
+        public NativeParallelHashSet<T> results;
+
+        public bool OnVisit(T obj, AABB objBounds, AABB queryRange)
+        {
+            // check if our object's AABB overlaps with the query AABB
+            if (objBounds.Overlaps(queryRange))
+                results.Add(obj);
+
+            return true; // always keep iterating, we want to catch all objects
+        }
     }
 }
 
@@ -97,19 +113,6 @@ public class BurstSpatial<T> : CollisionSystem<T>
         itemBounds[item] = bounds;
         BurstSpatialFunction.SpatialPartitionerAddItem(spatialPartitionId, id, bounds.center, bounds.extents);
     }
-    public void UpdateItemBounds(T item, Bounds bounds)
-    {
-        throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// Updates the bounding box of an item already in the collision system.
-    /// </summary>
-    // public void UpdateItemBounds(T item, Bounds bounds)
-    // {
-    //     itemIds[item].b
-    //     BurstSpatialFunction.SpatialPartitionerUpdateAll(spatialPartitionId, itemIds);
-    // }
 
     /// <summary>
     /// Remove an item from the system.
@@ -124,29 +127,6 @@ public class BurstSpatial<T> : CollisionSystem<T>
         idsToItems.Remove(id);
         itemBounds.Remove(item);
         BurstSpatialFunction.SpatialPartitionerUpdateAll(spatialPartitionId, itemIds);
-    }
-
-    /// <summary>
-    ///   Find items contained entirely within the given bounds.
-    ///   This method will create a set when the number of items
-    ///   is greater than zero.
-    /// </summary>
-    /// <param name="bounds">Containing bounds.</param>
-    /// <param name="items">Set of items found.  Null when this
-    /// method returns false.</param>
-    /// <param name="limit">Maximum number of items to find.</param>
-    /// <returns>true if any items are found.</returns>
-    public bool ContainedBy(Bounds bounds, out HashSet<T> items,
-      int limit = SpatialIndex.MAX_INTERSECT_RESULTS)
-    {
-        int numResults = BurstSpatialFunction.SpatialPartitionerContainedBy(spatialPartitionId, bounds.center,
-          bounds.extents, results, limit);
-        items = new HashSet<T>();
-        for (int i = 0; i < numResults; i++)
-        {
-            items.Add(idsToItems[results[i]]);
-        }
-        return items.Count > 0;
     }
 
     /// <summary>

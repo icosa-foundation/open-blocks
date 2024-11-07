@@ -37,35 +37,12 @@ namespace com.google.apps.peltzer.client.model.util
         void Add(T item, Bounds bounds);
 
         /// <summary>
-        ///   Update the bounds of an item.  The item must already exist
-        ///   in the index.
-        /// </summary>
-        /// <param name="item">The item to update.</param>
-        /// <param name="bounds">The item's updated bounds.</param>
-        /// <exception cref="System.Exception">
-        ///  Thrown when the item isn't in the tree.</exception>
-        void UpdateItemBounds(T item, Bounds bounds);
-
-        /// <summary>
         ///   Remove an item from the index.
         /// </summary>
         /// <param name="item">Item to remove.</param>
         /// <exception cref="System.Exception">
         ///  Thrown when the item isn't in the tree.</exception>
         void Remove(T item);
-
-        /// <summary>
-        ///   Find items contained entirely within the given bounds.
-        ///   This method will create a set when the number of items
-        ///   is greater than zero.
-        /// </summary>
-        /// <param name="bounds">Containing bounds.</param>
-        /// <param name="items">Set of items found.  Null when this
-        /// method returns false.</param>
-        /// <param name="limit">Maximum number of items to find.</param>
-        /// <returns>true if any items are found.</returns>
-        bool ContainedBy(Bounds bounds, out HashSet<T> items,
-          int limit = SpatialIndex.MAX_INTERSECT_RESULTS);
 
         /// <summary>
         ///   Find items that intersect the given bounds.

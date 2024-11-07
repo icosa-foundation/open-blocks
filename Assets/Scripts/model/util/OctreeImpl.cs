@@ -67,22 +67,6 @@ namespace com.google.apps.peltzer.client.model.util
         }
 
         /// <summary>
-        ///   Update the bounds of an item.  The item must already exist
-        ///   in the index.
-        /// </summary>
-        /// <param name="item">The item to update.</param>
-        /// <param name="bounds">The item's updated bounds.</param>
-        /// <exception cref="System.Exception">
-        ///  Thrown when the item isn't in the tree.</exception>
-        public void UpdateItemBounds(T item, Bounds bounds)
-        {
-            OTNode oldNode = itemNode[item];
-            oldNode.Remove(item);
-            itemBounds[item] = bounds;
-            itemNode[item] = root.Add(item, bounds);
-        }
-
-        /// <summary>
         ///   Remove an item from the index.
         /// </summary>
         /// <param name="item">Item to remove.</param>
