@@ -172,8 +172,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
     public class AssetsServiceClient : MonoBehaviour
     {
-        public static string WEB_BASE_URL = "https://icosa.ixxy.co.uk";
-        private static string API_BASE_URL = "https://icosa-api.ixxy.co.uk/v1";
+        public static string WEB_BASE_URL = "https://icosa.gallery";
+        private static string API_BASE_URL = "https://api.icosa.gallery/v1";
 
         public static string BaseUrl() => API_BASE_URL;
         // The base for the URL to be opened in a user's browser if they wish to publish.
