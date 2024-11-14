@@ -35,7 +35,7 @@ Shader "Mogwai/IntroBlockMat"
 		{
 		  Name "BasePassUniform"
 			CGPROGRAM
-			#pragma vertex vert
+			#pragma vertex vertWithTangents
 			#pragma fragment frag
       #pragma target 5.0
 			#include "UnityCG.cginc"
@@ -45,16 +45,6 @@ Shader "Mogwai/IntroBlockMat"
 			float4 _Color;
       float4 _OverrideColor;
       float _OverrideAmount;
-
-		TVertexOutput vert(struct PNVertexInput vertex) {
-		    TVertexOutput output;
-		    // Transform the vertex position from object space to clip space
-		    output.position = UnityObjectToClipPos(vertex.position);
-		    // Transform the vertex normal to world space
-		    output.normal = normalize(mul((float3x3)unity_ObjectToWorld, vertex.normal));
-		    return output;
-		}
-
 
 			float4 frag (TVertexOutput fragment) : SV_Target
 			{
