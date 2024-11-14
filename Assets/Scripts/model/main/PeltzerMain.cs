@@ -86,9 +86,9 @@ namespace com.google.apps.peltzer.client.model.main
         public void BackgroundWork()
         {
             // Need to make sure all meshes are back in remesher for coalesced gltf export.
-            PeltzerMain.Instance.GetSelector().DeselectAll();
+            // PeltzerMain.Instance.GetSelector().DeselectAll();
             saveData = ExportUtils.SerializeModel(model, meshes,
-              saveGltf: true, saveFbx: false, saveTriangulatedObj: true,
+              saveGltf: false, saveFbx: false, saveTriangulatedObj: true,
               includeDisplayRotation: true, serializer, saveSelected);
             saveData.thumbnailBytes = thumbnailBytes;
         }
@@ -1405,9 +1405,14 @@ namespace com.google.apps.peltzer.client.model.main
             // Take a screenshot at the end of the next frame.
             StartCoroutine(PeltzerMain.Instance.autoThumbnailCamera.TakeScreenShot((byte[] pngBytes) =>
             {
+
+                // put it here instead of in BackgroundWork to avoid GetComponent() calls in background thread
+                PeltzerMain.Instance.GetSelector().DeselectAll();
+
                 // TODO bug - Temporarily doing this in the foreground, as GLTF export can't run in the background.
                 // This should be moved back to the background thread as soon as GLTF export is fixed to not use Unity objects.
-                SerializeWork serWork = new SerializeWork(model, meshes, pngBytes, (SaveData saveData) =>
+                // SerializeWork serWork = 
+                DoPolyMenuBackgroundWork(new SerializeWork(model, meshes, pngBytes, (SaveData saveData) =>
                 {
                     // NOTE: this callback only means data is now serialized. It hasn't been saved yet!
 
@@ -1419,10 +1424,10 @@ namespace com.google.apps.peltzer.client.model.main
                     saveData.remixIds = model.GetAllRemixIds(meshes);
                     // Now let's save the serialized data. This will be done asynchronously.
                     SaveSerializedData(saveData, publish, saveSelected);
-                }, serializerForManualSave, saveSelected);
+                }, serializerForManualSave, saveSelected));
 
-                serWork.BackgroundWork();
-                serWork.PostWork();
+                // serWork.BackgroundWork();
+                // serWork.PostWork();
             }));
         }
 
