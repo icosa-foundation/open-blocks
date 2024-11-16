@@ -101,6 +101,8 @@ jobs:
           MAJOR=$(echo $VERSION | cut -d '.' -f 1)
           MINOR=$(echo $VERSION | cut -d '.' -f 2)
           ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
+          # Temporarily lower the version number dramatically while we're on a branch
+          ANDROID_VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH_VERSION))
           echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
           echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
       - name: Calculate Release tags for Changelog and raw changelog
@@ -154,7 +156,8 @@ jobs:
             fi
             echo "description=-btb-description ${DESCRIPTION}" >> $GITHUB_OUTPUT
             IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[\/#_-]//g')
-            echo "basename=OpenBlocks-${IDENTIFIER}" >> $GITHUB_OUTPUT
+            # echo "basename=OpenBlocks-${IDENTIFIER}" >> $GITHUB_OUTPUT
+            echo "basename=OpenBlocks" >> $GITHUB_OUTPUT
           fi
           echo "uid=$(id -u)" >> $GITHUB_OUTPUT
           echo "gid=$(id -g)" >> $GITHUB_OUTPUT
@@ -640,7 +643,7 @@ jobs:
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-blocks' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/openxr' || contains(github.ref, 'refs/tags/v'))
 
     steps:
       - name: Download Build Artifacts (Oculus Quest 2+)
@@ -670,5 +673,5 @@ jobs:
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_Quest_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group MIXED_AGES
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_Quest_$VERSION.apk --channel Alpha:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group MIXED_AGES
           fi
