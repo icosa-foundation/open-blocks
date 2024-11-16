@@ -674,5 +674,5 @@ jobs:
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_Quest_$VERSION.apk --channel LIVE:quest2+ --age-group MIXED_AGES
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_Quest_$VERSION.apk --channel Alpha:quest2+ --notes "${CHANGELOG}" --age-group MIXED_AGES
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_Quest_$VERSION.apk --channel Alpha:quest2+ --age-group MIXED_AGES
           fi
