@@ -101,6 +101,8 @@ jobs:
           MAJOR=$(echo $VERSION | cut -d '.' -f 1)
           MINOR=$(echo $VERSION | cut -d '.' -f 2)
           ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
+          # Temporarily lower the version number dramatically while we're on a branch
+          ANDROID_VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH_VERSION))
           echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
           echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
       - name: Calculate Release tags for Changelog and raw changelog
@@ -154,7 +156,8 @@ jobs:
             fi
             echo "description=-btb-description ${DESCRIPTION}" >> $GITHUB_OUTPUT
             IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[\/#_-]//g')
-            echo "basename=OpenBlocks-${IDENTIFIER}" >> $GITHUB_OUTPUT
+            # echo "basename=OpenBlocks-${IDENTIFIER}" >> $GITHUB_OUTPUT
+            echo "basename=OpenBlocks" >> $GITHUB_OUTPUT
           fi
           echo "uid=$(id -u)" >> $GITHUB_OUTPUT
           echo "gid=$(id -g)" >> $GITHUB_OUTPUT
@@ -485,7 +488,7 @@ jobs:
         run: |
           mkdir releases
           mv build_windows/StandaloneWindows64/ releases/OpenBlocks_Desktop_$VERSION/
-          mv build_oculus_quest/*/foundation.Icosa.OpenBLocks*apk releases/OpenBlocks_Quest_$VERSION.apk
+          mv build_oculus_quest/*/OpenBlocks*apk releases/OpenBlocks_Quest_$VERSION.apk
           cd releases
           zip -r OpenBlocks_Desktop_$VERSION.zip OpenBlocks_Desktop_$VERSION/
           rm -rf OpenBlocks_Desktop_$VERSION
@@ -632,3 +635,44 @@ jobs:
         with:
           name: steamcmd logs
           path: build_output/
+
+  publish_oculus_quest:
+    name: Publish Oculus Quest 2+ Release
+    needs: [configuration, build]
+    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-blocks' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/openxr' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Oculus Quest 2+)
+        uses: actions/download-artifact@v4
+        with:
+          name: Oculus Quest (2+)
+          path: build_oculus_quest
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          OCULUS_QUEST_APP_ID: ${{ vars.OCULUS_QUEST_APP_ID }}
+          OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
+        run: |
+          mkdir releases
+          mv build_oculus_quest/*/OpenBlocks*apk releases/OpenBlocks_Quest_$VERSION.apk
+          ls build_oculus_quest/*/
+          # mv build_oculus_quest/*/foundation.Icosa.OpenBlocks*.symbols.zip releases/symbols.zip
+
+          cd releases
+          # unzip symbols.zip
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          chmod 755 ovr-platform-util
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_Quest_$VERSION.apk --channel LIVE:quest2+ --age-group MIXED_AGES
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_Quest_$VERSION.apk --channel Alpha:quest2+ --age-group MIXED_AGES
+          fi
