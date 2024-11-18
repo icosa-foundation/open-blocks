@@ -9,7 +9,8 @@
         android:requestLegacyExternalStorage="true">
         <activity
             android:launchMode="singleTask"
-            android:name="com.unity3d.player.UnityPlayerActivity">
+            android:name="com.unity3d.player.UnityPlayerActivity"
+            android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
