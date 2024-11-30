@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #define STEAMVRBUILD
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,6 +24,7 @@ using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.tutorial;
 using UnityEngine.Serialization;
+using TiltBrush;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -191,6 +193,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject publishSignInPrompt;
         public GameObject tutorialExitPrompt;
         public GameObject saveLocallyPrompt;
+        public GameObject keyboardGameobject;
 
         /// <summary>
         ///   Library to generate haptic feedback.
@@ -297,6 +300,15 @@ namespace com.google.apps.peltzer.client.model.controller
             publishSignInPrompt = m_Popups.transform.Find($"PublishSignInPrompt").gameObject;
             saveLocallyPrompt = m_Popups.transform.Find($"SaveLocallyPrompt").gameObject;
 
+            newModelPrompt = transform.Find("ID_PanelTools/ToolSide/NewModelPrompt").gameObject;
+            publishedTakeOffHeadsetPrompt = transform.Find("ID_PanelTools/ToolSide/TakeOffHeadsetPrompt").gameObject;
+            tutorialSavePrompt = transform.Find("ID_PanelTools/ToolSide/TutorialSavePrompt").gameObject;
+            tutorialBeginPrompt = transform.Find("ID_PanelTools/ToolSide/TutorialPrompt").gameObject;
+            tutorialExitPrompt = transform.Find("ID_PanelTools/ToolSide/TutorialExitPrompt").gameObject;
+            publishAfterSavePrompt = transform.Find("ID_PanelTools/ToolSide/PublishAfterSavePrompt").gameObject;
+            publishSignInPrompt = transform.Find("ID_PanelTools/ToolSide/PublishSignInPrompt").gameObject;
+            saveLocallyPrompt = transform.Find("ID_PanelTools/ToolSide/SaveLocallyPrompt").gameObject;
+            keyboardGameobject = transform.GetComponentInChildren<KeyboardUI>(includeInactive: true).gameObject;
             var panels = GetComponentsInChildren<ToolOptionsPanel>(true);
             SetupToolOptionsPanels(panels);
 
@@ -1354,6 +1366,22 @@ namespace com.google.apps.peltzer.client.model.controller
         public void ToggleToolOptionPanels()
         {
             EnableToolOptionPanels(!m_ToolOptionsPanelsEnabled);
+        }
+
+        public void EnableKeyboard(EventHandler<string> onSubmit, bool preservePreviousContent = false)
+        {
+            var keyboardUI = keyboardGameobject.GetComponent<KeyboardUI>();
+            void OnKeyPressed(object sender, KeyboardKeyEventArgs args)
+            {
+                if (args.Key.KeyType == KeyboardKeyType.Enter)
+                {
+                    onSubmit(sender, keyboardUI.ConsoleContent);
+                    keyboardGameobject.SetActive(false);
+                }
+            }
+            if (!preservePreviousContent) keyboardUI.Clear();
+            keyboardGameobject.SetActive(true);
+            keyboardUI.KeyPressed += OnKeyPressed;
         }
     }
 }

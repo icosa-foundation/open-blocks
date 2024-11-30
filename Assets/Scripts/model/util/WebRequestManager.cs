@@ -83,11 +83,6 @@ namespace com.google.apps.peltzer.client.model.util
         public class WebRequestManagerConfig
         {
             /// <summary>
-            /// The API key to use (mandatory).
-            /// </summary>
-            public string apiKey;
-
-            /// <summary>
             /// Whether or not to use caching for web requests (recommended).
             /// </summary>
             public bool cacheEnabled = true;
@@ -108,9 +103,8 @@ namespace com.google.apps.peltzer.client.model.util
             /// </summary>
             public string cachePathOverride = null;
 
-            public WebRequestManagerConfig(string apiKey)
+            public WebRequestManagerConfig()
             {
-                this.apiKey = apiKey;
             }
         }
 
