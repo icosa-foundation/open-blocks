@@ -881,7 +881,7 @@ namespace com.google.apps.peltzer.client.entitlement
                 }
 
                 // TODO: For Unity 2021+
-                var www = UnityWebRequest.Post($"{m_LoginUrl}?device_code={m_VerificationCode}", "{}");
+                var www = UnityWebRequest.PostWwwForm($"{m_LoginUrl}?device_code={m_VerificationCode}", "{}");
 
                 yield return www.SendWebRequest();
                 if (www.isNetworkError)

@@ -299,16 +299,8 @@ namespace com.google.apps.peltzer.client.model.controller
             publishAfterSavePrompt = m_Popups.transform.Find($"PublishAfterSavePrompt").gameObject;
             publishSignInPrompt = m_Popups.transform.Find($"PublishSignInPrompt").gameObject;
             saveLocallyPrompt = m_Popups.transform.Find($"SaveLocallyPrompt").gameObject;
-
-            newModelPrompt = transform.Find("ID_PanelTools/ToolSide/NewModelPrompt").gameObject;
-            publishedTakeOffHeadsetPrompt = transform.Find("ID_PanelTools/ToolSide/TakeOffHeadsetPrompt").gameObject;
-            tutorialSavePrompt = transform.Find("ID_PanelTools/ToolSide/TutorialSavePrompt").gameObject;
-            tutorialBeginPrompt = transform.Find("ID_PanelTools/ToolSide/TutorialPrompt").gameObject;
-            tutorialExitPrompt = transform.Find("ID_PanelTools/ToolSide/TutorialExitPrompt").gameObject;
-            publishAfterSavePrompt = transform.Find("ID_PanelTools/ToolSide/PublishAfterSavePrompt").gameObject;
-            publishSignInPrompt = transform.Find("ID_PanelTools/ToolSide/PublishSignInPrompt").gameObject;
-            saveLocallyPrompt = transform.Find("ID_PanelTools/ToolSide/SaveLocallyPrompt").gameObject;
             keyboardGameobject = transform.GetComponentInChildren<KeyboardUI>(includeInactive: true).gameObject;
+
             var panels = GetComponentsInChildren<ToolOptionsPanel>(true);
             SetupToolOptionsPanels(panels);
 
