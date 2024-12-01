@@ -247,12 +247,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             foreach (JToken asset in assets)
             {
                 ObjectStoreEntry objectStoreEntry;
-                string author = null;
-                var accountId = asset["authorId"];
 
                 if (type == PolyMenuMain.CreationType.FEATURED || type == PolyMenuMain.CreationType.LIKED)
                 {
-                    string assetId = asset["url"].ToString();
+                    string assetId = asset["url"]?.ToString();
                     if (firstAssetId == null)
                     {
                         firstAssetId = assetId;
@@ -268,7 +266,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
                 if (ParseAsset(asset, out objectStoreEntry, hackUrls))
                 {
-                    objectStoreEntry.author = author;
                     objectStoreEntries.Add(objectStoreEntry);
                 }
             }
@@ -346,6 +343,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             entryAssets.peltzer = blocksAsset;
             objectStoreEntry.assets = entryAssets;
             objectStoreEntry.title = asset["displayName"].ToString();
+            objectStoreEntry.author = asset["authorName"].ToString();
             objectStoreEntry.createdDate = DateTime.Parse(asset["createTime"].ToString());
             objectStoreEntry.cameraForward = GetCameraForward(asset["presentationParams"]["orientingRotation"]);
             return true;
