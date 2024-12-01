@@ -70,7 +70,7 @@ namespace com.google.apps.peltzer.client.menu
 
         private static float DETAIL_TILE_SIZE = 0.15f;
 
-        private static string TAKE_HEADSET_OFF_FOR_SIGN_IN_PROMPT = "Take off your headset to sign in";
+        private static string USE_BROWSER_FOR_SIGN_IN_PROMPT = "Continue sign-in using your web browser";
 
         private static StringBuilder BASE_CREATOR = new StringBuilder("by ");
 
@@ -1067,7 +1067,7 @@ namespace com.google.apps.peltzer.client.menu
         /// </summary>
         public void PromptUserToSignIn()
         {
-            signInText.text = TAKE_HEADSET_OFF_FOR_SIGN_IN_PROMPT;
+            signInText.text = USE_BROWSER_FOR_SIGN_IN_PROMPT;
         }
 
         /// <summary>
