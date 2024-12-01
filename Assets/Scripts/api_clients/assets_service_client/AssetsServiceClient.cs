@@ -190,7 +190,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             get
             {
-                int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
+                int pageSize = ZandriaCreationsManager.MaxCreations;
                 return $"&license=CREATIVE_COMMONS_BY&format=BLOCKS&pageSize={pageSize}";
             }
         }

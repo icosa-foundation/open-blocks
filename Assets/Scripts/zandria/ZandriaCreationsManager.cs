@@ -203,12 +203,9 @@ namespace com.google.apps.peltzer.client.zandria
                 pendingThumbnailLoadRequestIndices[i] = pendingThumbnailLoadRequestIndices[i] + 1;
             }
 
-            int maxCreations =
-              ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-
             // We are going to load this creation no matter what to the front of the list. But that might put the number of
             // creations over the limit and we have to cut one from the end of the list.
-            if (creations.Count() > maxCreations)
+            if (creations.Count() > ZandriaCreationsManager.MaxCreations)
             {
                 int removedIndex = creations.Count() - 1;
                 Creation removedCreation = creations.Last();
@@ -349,6 +346,7 @@ namespace com.google.apps.peltzer.client.zandria
         private float timeLastPolled;
 
         public AssetsServiceClient assetsServiceClient;
+        public static int MaxCreations => MAX_NUMBER_OF_PAGES * NUMBER_OF_CREATIONS_PER_PAGE;
 
         public void Setup()
         {
