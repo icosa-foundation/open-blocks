@@ -327,7 +327,9 @@ namespace com.google.apps.peltzer.client.zandria
 
         // We implement polling for the "Featured" and "Liked" sections in order to show any
         // new models that get featured or liked by the user while Blocks is running.
-        private const float POLLING_INTERVAL_SECONDS = 8;
+        private const float LIKED_POLLING_INTERVAL_SECONDS = 8;
+        // Less likely to change but still possible.
+        private const float FEATURED_POLLING_INTERVAL_SECONDS = 300;
 
         // WARNING: All dictionaries in ZandriaCreationsManager are private because they are not threadsafe. They must be
         // accessed from within ZandriaCreationsManager and they must be locked before access.
@@ -343,7 +345,8 @@ namespace com.google.apps.peltzer.client.zandria
         private WorldSpace identityWorldSpace;
 
         // When we last polled for updates to the menu.
-        private float timeLastPolled;
+        private float timeLikedLastPolled;
+        private float timeFeaturedLastPolled;
 
         public AssetsServiceClient assetsServiceClient;
         public static int MaxCreations => MAX_NUMBER_OF_PAGES * NUMBER_OF_CREATIONS_PER_PAGE;
@@ -414,17 +417,21 @@ namespace com.google.apps.peltzer.client.zandria
             // Note: we don't poll the "Your models" section because (1) it's harder to optimize (it's not ordered
             // by modified time) and (2) that flow is already covered in an ad-hoc way: we update the poly menu
             // manually when the user saves a model.
-            if (PeltzerMain.Instance.polyMenuMain.PolyMenuIsActive() && Time.time - timeLastPolled > POLLING_INTERVAL_SECONDS)
+            if (PeltzerMain.Instance.polyMenuMain.PolyMenuIsActive() && Time.time - timeLikedLastPolled > LIKED_POLLING_INTERVAL_SECONDS)
+            {
+                if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
+                {
+                    Poll(PolyMenuMain.CreationType.LIKED);
+                }
+                timeLikedLastPolled = Time.time;
+            }
+            if (PeltzerMain.Instance.polyMenuMain.PolyMenuIsActive() && Time.time - timeFeaturedLastPolled > FEATURED_POLLING_INTERVAL_SECONDS)
             {
                 if (loadsByType.ContainsKey(PolyMenuMain.CreationType.FEATURED))
                 {
                     Poll(PolyMenuMain.CreationType.FEATURED);
                 }
-                if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
-                {
-                    Poll(PolyMenuMain.CreationType.LIKED);
-                }
-                timeLastPolled = Time.time;
+                timeFeaturedLastPolled = Time.time;
             }
         }
 
