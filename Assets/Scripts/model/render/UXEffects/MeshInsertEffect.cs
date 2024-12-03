@@ -44,7 +44,6 @@ namespace com.google.apps.peltzer.client.model.render
 
         private bool inSnapThreshhold = false;
         private Model model;
-        private float startTime = 0f;
         private float pctDone = 0f;
 
         /// <summary>

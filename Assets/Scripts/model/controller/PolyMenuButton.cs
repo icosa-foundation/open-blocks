@@ -27,14 +27,14 @@ namespace com.google.apps.peltzer.client.model.controller
         private readonly float BUMP_DURATION = 0.1f;
         private readonly float HOVER_DURATION = 0.25f;
 
-        private float defaultYPosition;
-        private float defaultYScale;
+        protected float defaultYPosition;
+        protected float defaultYScale;
 
-        private float hoveredYPosition;
-        private float hoveredYScale;
+        protected float hoveredYPosition;
+        protected float hoveredYScale;
 
-        private float bumpedYPosition;
-        private float bumpedYScale;
+        protected float bumpedYPosition;
+        protected float bumpedYScale;
 
         private bool isBumping = false;
         public bool isHovered = false;
@@ -43,7 +43,7 @@ namespace com.google.apps.peltzer.client.model.controller
         private float timeStartedLerping;
         private float currentLerpDuration;
 
-        public void Start()
+        public virtual void Start()
         {
             defaultYPosition = transform.localPosition.y;
             defaultYScale = transform.localScale.y;
@@ -59,7 +59,7 @@ namespace com.google.apps.peltzer.client.model.controller
         ///   Lerps towards a target position and scale over BUMP_DURATION. If we are bumping, then when the 'bumped'
         ///   positions and scales are reached, reverts to the 'hovered' positions and scales.
         /// </summary>
-        void Update()
+        public virtual void Update()
         {
             if (targetPosition == null || targetScale == null)
             {

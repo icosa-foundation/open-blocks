@@ -85,7 +85,7 @@ namespace com.google.apps.peltzer.client.model.core
 
         // A reference to the model, which is the single point of truth as to whether an item exists, despite the fact
         // that this spatial index contains collections of meshes and other items.
-        // The reason we wish to treat the model as a single point of truth is that changes to the model happen on the 
+        // The reason we wish to treat the model as a single point of truth is that changes to the model happen on the
         // main thread, whereas the spatial index is updated on a background thread. The major worry is that something
         // is removed from the model, but returned from the spatial index to a tool. See bug for discussion.
         private Model model;
@@ -110,11 +110,11 @@ namespace com.google.apps.peltzer.client.model.core
 
         private void Setup(Bounds bounds)
         {
-            meshes = new NativeSpatial<int>();
-            faces = new NativeSpatial<FaceKey>();
-            edges = new NativeSpatial<EdgeKey>();
-            vertices = new NativeSpatial<VertexKey>();
-            meshBounds = new NativeSpatial<int>();
+            meshes = new OctreeImpl<int>(bounds);
+            faces = new OctreeImpl<FaceKey>(bounds);
+            edges = new OctreeImpl<EdgeKey>(bounds);
+            vertices = new OctreeImpl<VertexKey>(bounds);
+            meshBounds = new OctreeImpl<int>(bounds);
 
             faceInfo = new Dictionary<FaceKey, FaceInfo>();
             edgeInfo = new Dictionary<EdgeKey, EdgeInfo>();

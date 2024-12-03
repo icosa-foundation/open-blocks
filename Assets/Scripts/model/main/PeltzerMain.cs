@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define STEAMVRBUILD
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -87,10 +86,10 @@ namespace com.google.apps.peltzer.client.model.main
         public void BackgroundWork()
         {
             // Need to make sure all meshes are back in remesher for coalesced gltf export.
-            PeltzerMain.Instance.GetSelector().DeselectAll();
+            // PeltzerMain.Instance.GetSelector().DeselectAll();
             saveData = ExportUtils.SerializeModel(model, meshes,
-              /* saveGltf */ true, /* saveFbx */ true, /* saveTriangulatedObj */ true,
-              /* includeDisplayRotation */ true, serializer, saveSelected);
+              saveGltf: false, saveFbx: false, saveTriangulatedObj: true,
+              includeDisplayRotation: true, serializer, saveSelected);
             saveData.thumbnailBytes = thumbnailBytes;
         }
 
@@ -262,7 +261,7 @@ namespace com.google.apps.peltzer.client.model.main
         private const string SAVE_MESSAGE = "Saving...";
 
         // The default workspace, a room of 10x10x10 metres.
-        public static readonly Bounds DEFAULT_BOUNDS = new Bounds(Vector3.zero, new Vector3(10f, 10f, 10f));
+        public static readonly Bounds DEFAULT_BOUNDS = new Bounds(Vector3.zero, new Vector3(30f, 30f, 30f));
 
         // Menu actions that are selectable while a tutorial is occurring.
         public static readonly List<MenuAction> TUTORIAL_MENU_ACTIONS =
@@ -364,6 +363,44 @@ namespace com.google.apps.peltzer.client.model.main
         private Painter painter;
         private GifRecorder gifRecorder;
         private Zoomer zoomer;
+
+        public IBaseTool GetToolForMode(ControllerMode mode)
+        {
+            switch (mode)
+            {
+                case ControllerMode.insertVolume:
+                    return volumeInserter;
+                case ControllerMode.insertStroke:
+                    return freeform;
+                case ControllerMode.reshape:
+                    return reshaper;
+                case ControllerMode.extrude:
+                    return extruder;
+                case ControllerMode.subdivideFace:
+                    return subdivider;
+                case ControllerMode.subdivideMesh:
+                    return subdivider;
+                case ControllerMode.delete:
+                    return deleter;
+                case ControllerMode.move:
+                    return mover;
+                case ControllerMode.paintMesh:
+                    return painter;
+                case ControllerMode.paintFace:
+                    return painter;
+                case ControllerMode.paintDropper:
+                    return painter;
+                case ControllerMode.subtract:
+                    return volumeInserter;
+                case ControllerMode.deletePart:
+                    return deleter;
+                case ControllerMode.subdividePlane:
+                    return subdivider;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
+            }
+
+        }
 
         // Creations Handler.
         private ZandriaCreationsManager zandriaCreationsManager;
@@ -545,42 +582,48 @@ namespace com.google.apps.peltzer.client.model.main
 
             // Create and set up the web request manager.
             webRequestManager = gameObject.AddComponent<WebRequestManager>();
-            webRequestManager.Setup(new WebRequestManager.WebRequestManagerConfig(AssetsServiceClient.POLY_KEY));
+            webRequestManager.Setup(new WebRequestManager.WebRequestManagerConfig());
 
             // Add Oculus SDK stuff.
             if (Config.Instance.sdkMode == SdkMode.Oculus)
             {
-                OVRManager manager = gameObject.AddComponent<OVRManager>();
-                manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
-                OculusAuth oculusAuth = gameObject.AddComponent<OculusAuth>();
+                // OVRManager manager = gameObject.AddComponent<OVRManager>();
+                // manager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
+                // OculusAuth oculusAuth = gameObject.AddComponent<OculusAuth>();
+            }
+            else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+            {
+                // TODO
             }
 
             // Add Vive hardware stuff.
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
                 // Create the left controller geometry for the palette controller.
-                GameObject controllerGeometryLeft;
+                GameObject controllerGeometryLeft = null;
                 if (Config.Instance.sdkMode == SdkMode.Oculus)
                 {
                     controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.oculusRiftHolder.transform, false);
                 }
-                else
+                else if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.steamRiftHolder.transform, false);
+                    // TODO
+                    controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftRiftPrefab, paletteController.openXRHolder.transform, false);
                 }
                 paletteController.controllerGeometry = controllerGeometryLeft.GetComponent<ControllerGeometry>();
 
                 // Create the right controller geometry for the peltzer controller.
-                GameObject controllerGeometryRight;
+                GameObject controllerGeometryRight = null;
                 if (Config.Instance.sdkMode == SdkMode.Oculus)
                 {
                     controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.oculusRiftHolder.transform, false);
                 }
-                else
+                else if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.steamRiftHolder.transform, false);
+                    // TODO
+                    controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.openXRHolder.transform, false);
                 }
-                peltzerController.controllerGeometry = controllerGeometryRight.GetComponent<ControllerGeometry>();
+                peltzerController.controllerGeometry = controllerGeometryRight?.GetComponent<ControllerGeometry>();
 
                 // Only allow hand toggling from the menu if the user is using a Rift.
                 ObjectFinder.ObjectById("ID_toggle_left_handed").SetActive(true);
@@ -648,20 +691,7 @@ namespace com.google.apps.peltzer.client.model.main
             filePickerBackgroundThread.Start();
 
             // Set up auto-saving.
-            userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
-
-            // GetFolderPath() can fail, returning an empty string.
-            if (userPath == "")
-            {
-                // If that happens, try a bunch of other folders.
-                userPath = System.Environment.GetFolderPath(
-                    System.Environment.SpecialFolder.MyDocuments);
-                if (userPath == "")
-                {
-                    userPath = System.Environment.GetFolderPath(
-                        System.Environment.SpecialFolder.DesktopDirectory);
-                }
-            }
+            userPath = GetUserPath();
 
             userPath = Path.Combine(userPath, "Blocks");
             if (!Path.IsPathRooted(userPath))
@@ -717,6 +747,34 @@ namespace com.google.apps.peltzer.client.model.main
 
             // Try to perform the setup. If we fail, that's ok, we'll try again in Update() until we succeed.
             TrySetup();
+        }
+
+        /// <summary>
+        /// Gets the user path depending on the platform.
+        /// </summary>
+        /// <returns>user path used for auto-saving</returns>
+        private string GetUserPath()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            return "/sdcard/"; // We can't use persistentDataPath as it doesn't survive app uninstall
+
+#else
+            userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
+
+            // GetFolderPath() can fail, returning an empty string.
+            if (userPath == "")
+            {
+                // If that happens, try a bunch of other folders.
+                userPath = System.Environment.GetFolderPath(
+                    System.Environment.SpecialFolder.MyDocuments);
+                if (userPath == "")
+                {
+                    userPath = System.Environment.GetFolderPath(
+                        System.Environment.SpecialFolder.DesktopDirectory);
+                }
+            }
+            return userPath;
+#endif
         }
 
         /// <summary>
@@ -1347,9 +1405,14 @@ namespace com.google.apps.peltzer.client.model.main
             // Take a screenshot at the end of the next frame.
             StartCoroutine(PeltzerMain.Instance.autoThumbnailCamera.TakeScreenShot((byte[] pngBytes) =>
             {
+
+                // put it here instead of in BackgroundWork to avoid GetComponent() calls in background thread
+                PeltzerMain.Instance.GetSelector().DeselectAll();
+
                 // TODO bug - Temporarily doing this in the foreground, as GLTF export can't run in the background.
                 // This should be moved back to the background thread as soon as GLTF export is fixed to not use Unity objects.
-                SerializeWork serWork = new SerializeWork(model, meshes, pngBytes, (SaveData saveData) =>
+                // SerializeWork serWork = 
+                DoPolyMenuBackgroundWork(new SerializeWork(model, meshes, pngBytes, (SaveData saveData) =>
                 {
                     // NOTE: this callback only means data is now serialized. It hasn't been saved yet!
 
@@ -1361,10 +1424,10 @@ namespace com.google.apps.peltzer.client.model.main
                     saveData.remixIds = model.GetAllRemixIds(meshes);
                     // Now let's save the serialized data. This will be done asynchronously.
                     SaveSerializedData(saveData, publish, saveSelected);
-                }, serializerForManualSave, saveSelected);
+                }, serializerForManualSave, saveSelected));
 
-                serWork.BackgroundWork();
-                serWork.PostWork();
+                // serWork.BackgroundWork();
+                // serWork.PostWork();
             }));
         }
 

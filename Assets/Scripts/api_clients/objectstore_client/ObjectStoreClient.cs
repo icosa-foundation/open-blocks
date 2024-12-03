@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using ICSharpCode.SharpZipLibUnityPort.Zip;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -24,8 +23,8 @@ using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.export;
 using System.Text;
-using System;
 using com.google.apps.peltzer.client.entitlement;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 {
@@ -188,6 +187,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             {
                 callback(File.ReadAllBytes(entry.localPeltzerFile));
             }
+            // Doesn't seem to be used currently for .blocks files
             else if (entry.assets.peltzer_package != null
                       && !string.IsNullOrEmpty(entry.assets.peltzer_package.rootUrl)
                       && !string.IsNullOrEmpty(entry.assets.peltzer_package.baseFile))
@@ -302,7 +302,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             UnityWebRequest request = new UnityWebRequest(url.ToString());
             request.method = UnityWebRequest.kHttpVerbGET;
             request.SetRequestHeader("Content-Type", contentType);
-            request.SetRequestHeader("Token", "[Removed]");
+            // request.SetRequestHeader("Token", "[Removed]");
             request.downloadHandler = new DownloadHandlerBuffer();
 
             if (OAuth2Identity.Instance.HasAccessToken)

@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using UnityEngine;
@@ -32,6 +33,7 @@ namespace com.google.apps.peltzer.client.entitlement
 
     /// Handle accessing OAuth2 based web services. There are known issues with non-square avatars.
 
+#if USE_OAUTH2
     public class OAuth2Identity : MonoBehaviour
     {
         public class UserInfo
@@ -269,7 +271,7 @@ namespace com.google.apps.peltzer.client.entitlement
         }
 
         /// <summary>
-        ///   Attempt to authorise the user via a refresh token, or by giving them a browser window 
+        ///   Attempt to authorise the user via a refresh token, or by giving them a browser window
         ///   to authorize permissions then get refresh and access tokens.
         /// </summary>
         /// <param name="onSuccess">Callback on success</param>
@@ -543,6 +545,460 @@ namespace com.google.apps.peltzer.client.entitlement
             int port = ((IPEndPoint)listener.LocalEndpoint).Port;
             listener.Stop();
             return port;
+        }
+
+        private Texture2D CropSquareTextureToCircle(Texture2D squareTexture)
+        {
+            float width = squareTexture.width;
+            float height = squareTexture.height;
+            float radius = width / 2;
+            float centerX = squareTexture.width / 2;
+            float centerY = squareTexture.height / 2;
+            Color[] c = squareTexture.GetPixels(0, 0, (int)width, (int)height);
+            Texture2D circleTexture = new Texture2D((int)height, (int)width);
+            for (int i = 0; i < height * width; i++)
+            {
+                int y = Mathf.FloorToInt(i / width);
+                int x = Mathf.FloorToInt(i - (y * width));
+                if (radius * radius >= (x - centerX) * (x - centerX) + (y - centerY) * (y - centerY))
+                {
+                    circleTexture.SetPixel(x, y, c[i]);
+                }
+                else
+                {
+                    circleTexture.SetPixel(x, y, UI_BACKGROUND_COLOR);
+                }
+            }
+            circleTexture.Apply();
+            return circleTexture;
+        }
+    }
+#endif
+
+    public class OAuth2Identity : MonoBehaviour
+    {
+        public class UserInfo
+        {
+            public string id;
+            public string name;
+            public string email;
+            public string location;
+            public Sprite icon;
+        }
+
+        public Sprite m_DefaultIcon;
+
+        private const string m_ServiceName = "Google";
+        private const string m_ClientId = "TODO";
+        private const string m_ClientSecret = "TODO";
+        //private const string m_AccessTokenUri = "https://accounts.google.com/o/oauth2/token";
+        private static string m_UserInfoUri = $"{AssetsServiceClient.BaseUrl()}/users/me";
+        private static string m_LoginUrl = $"{AssetsServiceClient.BaseUrl()}/login/device_login";
+        private const string m_OAuthScope = "profile email " +
+            "https://www.googleapis.com/auth/plus.me " +
+            "https://www.googleapis.com/auth/plus.peopleapi.readwrite";
+        private const string m_CallbackPath = "/callback";
+        private const string m_ReplaceHeadset = "ReplaceHeadset";
+        private string m_CallbackFailedMessage = "Sorry!";
+
+        // Encryption key that should be unique per build, user and device
+        // Note this is not intrinsically more secure than storing in PlayerPrefs in plain text
+        // as if you've got registry access then it's mostly game over anyway.
+        private static byte[] m_EncryptionKey
+        {
+            get
+            {
+                string input = $"{Application.persistentDataPath}-{Application.buildGUID}-{SystemInfo.deviceUniqueIdentifier}";
+                using (SHA256 sha256 = SHA256.Create())
+                {
+                    byte[] hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+
+                    // Extract the required number of bytes for the key
+                    int keySizeInBytes = 256 / 8;
+                    byte[] key = new byte[keySizeInBytes];
+                    Array.Copy(hash, key, keySizeInBytes);
+                    return key;
+                }
+            }
+        }
+
+        // User avatar pixel density. This is the number of pixels that correspond to one unit in world space.
+        // Larger values will make a smaller (more dense) avatar. Smaller values will make it larger (less dense).
+        private const int USER_AVATAR_PIXELS_PER_UNIT = 30;
+
+        private static Color UI_BACKGROUND_COLOR = Color.clear;
+
+        public static OAuth2Identity Instance;
+        public static event Action OnProfileUpdated
+        {
+            add
+            {
+                if (Instance != null)
+                {
+                    value();  // Call the event once for the current profile.
+                }
+                m_OnProfileUpdated += value;
+            }
+            remove
+            {
+                m_OnProfileUpdated -= value;
+            }
+        }
+
+        private static event Action m_OnProfileUpdated;
+        private static string PLAYER_PREF_ACCESS_TOKEN_SUFFIX = "BlocksInternal";
+        private string m_PlayerPrefAccessToken;
+        private const string kIconSizeSuffix = "?sz=128";
+
+        private string m_AccessToken;
+        private string m_RefreshToken;
+        private UserInfo m_User = null;
+
+        private HttpListener m_HttpListener;
+        private int m_HttpPort;
+        private bool m_WaitingOnAuthorization;
+        private string m_VerificationCode;
+        private Boolean m_VerificationError;
+
+        public UserInfo Profile
+        {
+            get { return m_User; }
+            set
+            {
+                m_User = value;
+                if (m_OnProfileUpdated != null)
+                {
+                    m_OnProfileUpdated();
+                }
+            }
+        }
+
+        public bool LoggedIn
+        {
+            // We don't consider us logged in until we have the UserInfo
+            get { return HasAccessToken && Profile != null; }
+        }
+
+        public bool HasAccessToken
+        {
+            get { return m_AccessToken != null; }
+        }
+
+        public void SetAccessToken(string accessToken)
+        {
+            m_AccessToken = accessToken;
+        }
+
+        void Awake()
+        {
+            Instance = this;
+            m_PlayerPrefAccessToken = $"{m_ServiceName}{PLAYER_PREF_ACCESS_TOKEN_SUFFIX}";
+
+
+            if (PlayerPrefs.HasKey(m_PlayerPrefAccessToken))
+            {
+                m_AccessToken = Decrypt(PlayerPrefs.GetString(m_PlayerPrefAccessToken));
+            }
+
+            Profile = new UserInfo
+            {
+                name = "Test User",
+                email = "test@example.com",
+                icon = m_DefaultIcon
+            };
+        }
+
+        public void Login(System.Action onSuccess, System.Action onFailure, bool promptUserIfNoToken)
+        {
+            StartCoroutine(Authorize(onSuccess, onFailure, promptUserIfNoToken));
+        }
+
+        public void Logout()
+        {
+            // Not sure if it's possible for m_User to be null here.
+            if (Profile != null)
+            {
+                Debug.Log(Profile.name + " logged out.");
+            }
+            else
+            {
+                Debug.Log("Logged out.");
+            }
+            m_RefreshToken = null;
+            m_AccessToken = null;
+            Profile = null;
+            PlayerPrefs.DeleteKey(m_PlayerPrefAccessToken);
+        }
+
+        /// Sign an outgoing request.
+        public void Authenticate(UnityWebRequest www)
+        {
+            // NEVER add the access token to a URL that isn't our API base url
+            // It will leak the token.
+            if (www.url.StartsWith(AssetsServiceClient.BaseUrl()))
+            {
+                www.SetRequestHeader("Authorization", $"Bearer {m_AccessToken}");
+            }
+        }
+
+        private static string UserInfoRequestUri()
+        {
+            return m_UserInfoUri;
+        }
+
+        private IEnumerator GetUserInfo()
+        {
+            if (String.IsNullOrEmpty(m_AccessToken))
+            {
+                yield break;
+            }
+
+            UserInfo user = new UserInfo();
+            for (int i = 0; i < 2; i++)
+            {
+                using (UnityWebRequest www = UnityWebRequest.Get(UserInfoRequestUri()))
+                {
+                    Authenticate(www);
+                    yield return www.SendWebRequest();
+                    if (www.responseCode == 200)
+                    {
+                        JObject json = JObject.Parse(www.downloadHandler.text);
+                        user.id = json["id"].ToString();
+                        user.name = json["displayName"].ToString();
+                        user.email = json["email"].ToString();
+                        Profile = user;
+                        // TODO
+                        // string iconUri = json["photos"][0]["url"].ToString();
+                        // yield return LoadProfileIcon(iconUri);
+
+                        Debug.Log(Profile.name + " logged in.");
+                        yield break;
+                    }
+                    else if (www.responseCode == 401)
+                    {
+                        yield return Reauthorize();
+                    }
+                    else
+                    {
+                        Debug.Log(www.responseCode);
+                        Debug.Log(www.error);
+                        Debug.Log(www.downloadHandler.text);
+                    }
+                }
+            }
+            Profile = null;
+        }
+
+        public IEnumerator<object> Reauthorize()
+        {
+            // TODO What do we need to do here?
+            yield break;
+            // m_AccessToken = null;
+            // if (!String.IsNullOrEmpty(m_RefreshToken))
+            // {
+            //     Dictionary<string, string> parameters = new Dictionary<string, string>();
+            //     parameters.Add("client_id", m_ClientId);
+            //     parameters.Add("client_secret", m_ClientSecret);
+            //     parameters.Add("refresh_token", m_RefreshToken);
+            //     parameters.Add("grant_type", "refresh_token");
+            //     using (UnityWebRequest www = UnityWebRequest.Post(m_AccessTokenUri, parameters))
+            //     {
+            //         yield return www.Send();
+            //         if (www.isNetworkError)
+            //         {
+            //             Debug.LogError("Network error");
+            //             yield break;
+            //         }
+            //
+            //         if (www.responseCode == 400 || www.responseCode == 401)
+            //         {
+            //             // Refresh token revoked or expired - forget it
+            //             m_RefreshToken = null;
+            //             PlayerPrefs.DeleteKey(m_PlayerPrefRefreshKey);
+            //         }
+            //         else
+            //         {
+            //             JObject json = JObject.Parse(www.downloadHandler.text);
+            //             m_AccessToken = json["access_token"].ToString();
+            //         }
+            //     }
+            // }
+        }
+
+        /// <summary>
+        ///   Attempt to authorise the user via a refresh token, or by giving them a browser window
+        ///   to authorize permissions then get refresh and access tokens.
+        /// </summary>
+        /// <param name="onSuccess">Callback on success</param>
+        /// <param name="onFailure">Callback on failure</param>
+        /// <param name="promptUserIfNoToken">
+        ///   If true, will prompt the user to sign in via a browser if no refresh token found.
+        /// </param>
+        public IEnumerator<object> Authorize(Action onSuccess, Action onFailure, bool promptUserIfNoToken)
+        {
+            if (String.IsNullOrEmpty(m_RefreshToken) && promptUserIfNoToken)
+            {
+                string deviceCodeUrl = $"{AssetsServiceClient.WEB_BASE_URL}/device";
+                // Something about the url makes OpenURL() not work on OSX, so use a workaround
+                if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer)
+                {
+                    System.Diagnostics.Process.Start(deviceCodeUrl);
+                }
+                else
+                {
+                    Application.OpenURL(deviceCodeUrl);
+                }
+
+                void onSubmit(object sender, string deviceCode)
+                {
+                    m_VerificationCode = deviceCode;
+                }
+
+                PeltzerMain.Instance.paletteController.EnableKeyboard(onSubmit);
+                PeltzerMain.Instance.paletteController.publishedTakeOffHeadsetPrompt.SetActive(false);
+
+                if (m_WaitingOnAuthorization)
+                {
+                    // A previous attempt is already waiting
+                    yield break;
+                }
+                m_WaitingOnAuthorization = true;
+                m_VerificationCode = null;
+                m_VerificationError = false;
+
+                // Wait for verification
+                while (m_VerificationCode == null || m_VerificationError)
+                {
+                    yield return null;
+                }
+
+                if (m_VerificationError)
+                {
+                    Debug.LogError("Account verification failed");
+                    Debug.LogFormat("Verification error {0}", m_VerificationCode);
+                    m_WaitingOnAuthorization = false;
+                    yield break;
+                }
+
+                // TODO: For Unity 2021+
+                var www = UnityWebRequest.PostWwwForm($"{m_LoginUrl}?device_code={m_VerificationCode}", "{}");
+
+                yield return www.SendWebRequest();
+                if (www.isNetworkError)
+                {
+                    Debug.LogError("Network error");
+                    m_WaitingOnAuthorization = false;
+                    yield break;
+                }
+                else if (www.responseCode >= 400)
+                {
+                    Debug.LogError("Authorization failed");
+                    Debug.LogFormat("Authorization error {0}", www.downloadHandler.text);
+                    m_WaitingOnAuthorization = false;
+                    yield break;
+                }
+
+                JObject json = JObject.Parse(www.downloadHandler.text);
+                if (json != null)
+                {
+                    m_AccessToken = json["access_token"].ToString();
+                }
+                m_WaitingOnAuthorization = false;
+            }
+
+            yield return GetUserInfo();
+
+            if (LoggedIn)
+            {
+                PlayerPrefs.SetString(m_PlayerPrefAccessToken, Encrypt(m_AccessToken));
+                onSuccess();
+            }
+            else
+            {
+                onFailure();
+            }
+        }
+
+        public static string Encrypt(string plainText)
+        {
+            byte[] keyBytes = m_EncryptionKey;
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = keyBytes;
+                aes.GenerateIV();
+                ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    ms.Write(aes.IV, 0, aes.IV.Length);
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter sw = new StreamWriter(cs))
+                        {
+                            sw.Write(plainText);
+                        }
+                    }
+                    return Convert.ToBase64String(ms.ToArray());
+                }
+            }
+        }
+
+        public static string Decrypt(string encryptedText)
+        {
+            byte[] fullCipher = Convert.FromBase64String(encryptedText);
+            byte[] iv = new byte[16];
+            byte[] cipher = new byte[fullCipher.Length - iv.Length];
+
+            Array.Copy(fullCipher, iv, iv.Length);
+            Array.Copy(fullCipher, iv.Length, cipher, 0, cipher.Length);
+
+            byte[] keyBytes = m_EncryptionKey;
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = keyBytes;
+                aes.IV = iv;
+                ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+
+                using (MemoryStream ms = new MemoryStream(cipher))
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader sr = new StreamReader(cs))
+                        {
+                            return sr.ReadToEnd();
+                        }
+                    }
+                }
+            }
+        }
+
+        private IEnumerator LoadProfileIcon(string uri)
+        {
+            if (Profile == null)
+            {
+                yield break;
+            }
+            using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(uri + kIconSizeSuffix))
+            {
+                yield return www.SendWebRequest();
+                if (www.isNetworkError || www.responseCode >= 400)
+                {
+                    Debug.LogErrorFormat("Error downloading {0}, error {1}", uri, www.responseCode);
+                    Profile.icon = null;
+                }
+                else
+                {
+                    // Convert the texture to a circle and set it as the user's avatar in the UI and the PolyMenu.
+                    Texture2D profileImage = DownloadHandlerTexture.GetContent(www);
+                    Profile.icon = Sprite.Create(CropSquareTextureToCircle(profileImage),
+                      new Rect(0, 0, profileImage.width, profileImage.height), new Vector2(0.5f, 0.5f),
+                      USER_AVATAR_PIXELS_PER_UNIT);
+                }
+                if (m_OnProfileUpdated != null)
+                {
+                    m_OnProfileUpdated();
+                }
+            }
         }
 
         private Texture2D CropSquareTextureToCircle(Texture2D squareTexture)

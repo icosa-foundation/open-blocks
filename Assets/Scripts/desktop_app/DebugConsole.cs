@@ -30,6 +30,8 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.app;
+using com.google.apps.peltzer.client.entitlement;
+using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.desktop_app
@@ -50,6 +52,7 @@ namespace com.google.apps.peltzer.client.desktop_app
           "insertduration <duration>\n  sets the mesh insert effect duration (e.g. 0.6).\n" +
           "loadfile <path>\n  loads a model from the given file (use full path).\n" +
           "loadres <path>\n  loads a model from the given resource file.\n" +
+          "login <code>\n  logs in using either a device code or a bearer token.\n" +
           "minfo\n  prints info about the selected meshes.\n" +
           "movev\n  moves vertices by a given delta.\n" +
           "osq <query>\n  queries objects from the object store.\n" +
@@ -87,8 +90,8 @@ namespace com.google.apps.peltzer.client.desktop_app
         private void Update()
         {
             // Key combination: Ctrl + D
-            bool keyComboPressed = Input.GetKeyDown(KeyCode.D) && Input.GetKey(KeyCode.LeftControl);
-            bool escPressed = Input.GetKeyDown(KeyCode.Escape);
+            bool keyComboPressed = Keyboard.current.dKey.wasPressedThisFrame && Keyboard.current.leftCtrlKey.isPressed;
+            bool escPressed = Keyboard.current.escapeKey.wasPressedThisFrame;
 
             // To open the console, the user has to press the key combo.
             // To close it, either ESC or the key combo are accepted.
@@ -155,6 +158,9 @@ namespace com.google.apps.peltzer.client.desktop_app
                     break;
                 case "loadfile":
                     CommandLoadFile(parts);
+                    break;
+                case "login":
+                    CommandLogin(parts);
                     break;
                 case "loadres":
                     CommandLoadRes(parts);
@@ -477,6 +483,24 @@ namespace com.google.apps.peltzer.client.desktop_app
             }
             PrintLn("Starting tutorial #" + tutorialNumber);
             PeltzerMain.Instance.tutorialManager.StartTutorial(tutorialNumber);
+        }
+
+        private void CommandLogin(string[] parts)
+        {
+            if (parts.Length != 2)
+            {
+                PrintLn("Syntax: login <code>");
+                PrintLn("   Logs in using either a device code or a bearer token.");
+                return;
+            }
+            var token = parts[1];
+            if (token.Length <= 5)
+            {
+                // TODO
+                // Exchange device code for token.
+            }
+            OAuth2Identity.Instance.SetAccessToken(token);
+            PeltzerMain.Instance.SignIn(false);
         }
 
         private void CommandLoadRes(string[] parts)

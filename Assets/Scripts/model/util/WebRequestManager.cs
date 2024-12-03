@@ -24,7 +24,7 @@ namespace com.google.apps.peltzer.client.model.util
     /// <summary>
     /// Manages web requests, limiting how many can happen simultaneously at any given time and re-using
     /// buffers as much as possible to avoid reallocation and garbage collection.
-    /// 
+    ///
     /// Not *all* web requests must be routed through this class. Small, infrequent web requests can be made directly
     /// via UnityWebRequest without using this class. However, larger or frequent requests should use this, since this
     /// will avoid the expensive allocation of numerous download buffers (a typical UnityWebRequest allocates many
@@ -83,11 +83,6 @@ namespace com.google.apps.peltzer.client.model.util
         public class WebRequestManagerConfig
         {
             /// <summary>
-            /// The API key to use (mandatory).
-            /// </summary>
-            public string apiKey;
-
-            /// <summary>
             /// Whether or not to use caching for web requests (recommended).
             /// </summary>
             public bool cacheEnabled = true;
@@ -108,9 +103,8 @@ namespace com.google.apps.peltzer.client.model.util
             /// </summary>
             public string cachePathOverride = null;
 
-            public WebRequestManagerConfig(string apiKey)
+            public WebRequestManagerConfig()
             {
-                this.apiKey = apiKey;
             }
         }
 
@@ -183,12 +177,17 @@ namespace com.google.apps.peltzer.client.model.util
 
             if (config.cacheEnabled)
             {
-                string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                string defaultCachePath = Path.Combine(Path.Combine(Path.Combine(
-                  appDataPath, Application.companyName), Application.productName), "WebRequestCache");
 
-                string cachePath = config.cachePathOverride ?? defaultCachePath;
-                // Note: Directory.CreateDirectory creates all directories in the path.
+                string cachePath;
+                if (!string.IsNullOrEmpty(config.cachePathOverride))
+                {
+                    cachePath = config.cachePathOverride;
+                }
+                else
+                {
+                    string baseCachePath = Application.persistentDataPath;
+                    cachePath = Path.Combine(Path.Combine(baseCachePath, Application.companyName), "WebRequestCache");
+                }
                 Directory.CreateDirectory(cachePath);
 
                 cache = gameObject.AddComponent<PersistentBlobCache>();

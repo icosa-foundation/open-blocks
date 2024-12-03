@@ -319,8 +319,8 @@ namespace com.google.apps.peltzer.client.zandria
         // to the PolyMenu.
         public enum LoadStatus { NONE, LOADING_THUMBNAIL, LOADING_MODEL, FAILED, SUCCESSFUL }
         public const int NUMBER_OF_CREATIONS_PER_PAGE = 9;
-        public const int MAX_NUMBER_OF_PAGES = 10;
-        public const int NUMBER_OF_PAGES_AT_START = 2;
+        public const int MAX_NUMBER_OF_PAGES = 30;
+        public const int NUMBER_OF_PAGES_AT_START = 1;
         // The PPU for imported thumbnails from Zandria that will be displayed on the menu. Chosen by eyeballing it.
         // More positive numbers will give smaller thumbnails, and vice-versa.
         private const int THUMBNAIL_IMPORT_PIXELS_PER_UNIT = 300;
@@ -863,7 +863,8 @@ namespace com.google.apps.peltzer.client.zandria
             }
             else
             {
-                UnityWebRequest request = assetsServiceClient.GetRequest(entry.thumbnail, "image/png");
+                // TODO Do we ever need to authenticate thumbnail requests?
+                UnityWebRequest request = assetsServiceClient.GetRequest(entry.thumbnail, "image/png", false);
                 PeltzerMain.Instance.webRequestManager.EnqueueRequest(
                   () => { return request; },
                   (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
