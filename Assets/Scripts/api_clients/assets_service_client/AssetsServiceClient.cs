@@ -64,19 +64,29 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         public void BackgroundWork()
         {
-            saveData.GLTFfiles.root.multipartBytes = assetsServiceClient.MultiPartContent(saveData.GLTFfiles.root.fileName,
-              saveData.GLTFfiles.root.mimeType, saveData.GLTFfiles.root.bytes);
-            foreach (FormatDataFile file in saveData.GLTFfiles.resources)
+            if (saveData.GLTFfiles != null)
             {
-                file.multipartBytes = assetsServiceClient.MultiPartContent(file.fileName, file.mimeType, file.bytes);
+                saveData.GLTFfiles.root.multipartBytes = assetsServiceClient.MultiPartContent(saveData.GLTFfiles.root.fileName,
+                    saveData.GLTFfiles.root.mimeType, saveData.GLTFfiles.root.bytes);
+                foreach (FormatDataFile file in saveData.GLTFfiles.resources)
+                {
+                    file.multipartBytes = assetsServiceClient.MultiPartContent(file.fileName, file.mimeType, file.bytes);
+                }
+            }
+            if (saveData.objFile != null)
+            {
+                objMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.OBJ_FILENAME, "text/plain", saveData.objFile);
+                triangulatedObjMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.TRIANGULATED_OBJ_FILENAME,
+                    "text/plain", saveData.triangulatedObjFile);
+                mtlMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.MTL_FILENAME, "text/plain", saveData.mtlFile);
+            }
+            if (saveData.fbxFile != null)
+            {
+                fbxMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.FBX_FILENAME, "application/octet-stream",
+                    saveData.fbxFile);
             }
 
-            objMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.OBJ_FILENAME, "text/plain", saveData.objFile);
-            triangulatedObjMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.TRIANGULATED_OBJ_FILENAME,
-              "text/plain", saveData.triangulatedObjFile);
-            mtlMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.MTL_FILENAME, "text/plain", saveData.mtlFile);
-            fbxMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.FBX_FILENAME, "application/octet-stream",
-              saveData.fbxFile);
+            // Blocks format MUST be present
             blocksMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.BLOCKS_FILENAME, "application/octet-stream",
               saveData.blocksFile);
             thumbnailMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.THUMBNAIL_FILENAME, "image/png",
@@ -674,16 +684,24 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           byte[] mtlFile, FormatSaveData gltfData, byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile,
           bool saveSelected)
         {
-            yield return StartCoroutine(AddResource(ExportUtils.OBJ_FILENAME, "text/plain", objFile, "obj"));
-            yield return StartCoroutine(AddResource(ExportUtils.TRIANGULATED_OBJ_FILENAME, "text/plain", triangulatedObjFile, "triangulated-obj"));
-            yield return StartCoroutine(AddResource(ExportUtils.MTL_FILENAME, "text/plain", mtlFile, "mtl"));
-            yield return StartCoroutine(AddResource(ExportUtils.FBX_FILENAME, "application/octet-stream", fbxFile, "fbx"));
-            yield return StartCoroutine(AddResource(gltfData.root.fileName, gltfData.root.mimeType, gltfData.root.multipartBytes, gltfData.root.tag));
-
-            for (int i = 0; i < gltfData.resources.Count; i++)
+            if (objFile != null)
             {
-                FormatDataFile file = gltfData.resources[i];
-                yield return StartCoroutine(AddResource(file.fileName, file.mimeType, file.multipartBytes, file.tag + i));
+                yield return StartCoroutine(AddResource(ExportUtils.OBJ_FILENAME, "text/plain", objFile, "obj"));
+                yield return StartCoroutine(AddResource(ExportUtils.TRIANGULATED_OBJ_FILENAME, "text/plain", triangulatedObjFile, "triangulated-obj"));
+                yield return StartCoroutine(AddResource(ExportUtils.MTL_FILENAME, "text/plain", mtlFile, "mtl"));
+            }
+            if (fbxFile != null)
+            {
+                yield return StartCoroutine(AddResource(ExportUtils.FBX_FILENAME, "application/octet-stream", fbxFile, "fbx"));
+            }
+            if (gltfData != null)
+            {
+                yield return StartCoroutine(AddResource(gltfData.root.fileName, gltfData.root.mimeType, gltfData.root.multipartBytes, gltfData.root.tag));
+                for (int i = 0; i < gltfData.resources.Count; i++)
+                {
+                    FormatDataFile file = gltfData.resources[i];
+                    yield return StartCoroutine(AddResource(file.fileName, file.mimeType, file.multipartBytes, file.tag + i));
+                }
             }
 
             yield return StartCoroutine(AddResource(ExportUtils.BLOCKS_FILENAME, "application/octet-stream", blocksFile, "blocks"));
