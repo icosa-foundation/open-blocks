@@ -33,7 +33,6 @@ public class PolyWorldBounds : MonoBehaviour
 
     public void HandleFeatureToggle()
     {
-        Debug.Log(Features.enableWorldSpaceGridPlanes);
         gridPlanes.SetActive(Features.enableWorldSpaceGridPlanes);
     }
 }
