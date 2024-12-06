@@ -355,7 +355,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             objectStoreEntry.title = asset["displayName"].ToString();
             objectStoreEntry.author = asset["authorName"].ToString();
             objectStoreEntry.createdDate = DateTime.Parse(asset["createTime"].ToString());
-            objectStoreEntry.cameraForward = GetCameraForward(asset["presentationParams"]["orientingRotation"]);
+            objectStoreEntry.cameraForward = GetCameraForward(asset["presentationParams"]?["orientingRotation"]);
             return true;
         }
 
@@ -372,6 +372,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <returns>A string of three float values separated by spaces that represent the camera forward.</returns>
         private static Vector3 GetCameraForward(JToken cameraParams)
         {
+            if (cameraParams == null) return Vector3.zero;
             JToken cameraMatrix = cameraParams["matrix4x4"];
             if (cameraMatrix == null) return Vector3.zero;
             // We want the third column, which holds the camera's forward.
