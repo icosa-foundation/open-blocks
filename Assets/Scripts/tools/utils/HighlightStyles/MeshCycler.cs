@@ -70,7 +70,7 @@ namespace com.google.apps.peltzer.client.tools.utils
                 mesh = new Mesh();
             }
 
-            matDict[meshId] = mesh;
+            matDict[materialId] = mesh;
             return mesh;
         }
 
