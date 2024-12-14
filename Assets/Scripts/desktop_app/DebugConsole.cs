@@ -52,8 +52,6 @@ namespace com.google.apps.peltzer.client.desktop_app
           "login <code>\n  logs in using either a device code or a bearer token.\n" +
           "minfo\n  prints info about the selected meshes.\n" +
           "movev\n  moves vertices by a given delta.\n" +
-          "osq <query>\n  queries objects from the object store.\n" +
-          "osload <num>\n  loads the given search result# of the last osq command.\n" +
           "publish\n  saves & publishes the current scene.\n" +
           "rest\n  change restrictions.\n" +
           "savefile <path>\n  saves model to the given file (use full path).\n" +
@@ -165,15 +163,6 @@ namespace com.google.apps.peltzer.client.desktop_app
                     break;
                 case "movev":
                     CommandMoveV(parts);
-                    break;
-                case "osq":
-                    CommandOsQ(parts);
-                    break;
-                case "osload":
-                    CommandOsLoad(parts);
-                    break;
-                case "ospublish":
-                    CommandOsPublish(parts);
                     break;
                 case "publish":
                     CommandPublish(parts);
