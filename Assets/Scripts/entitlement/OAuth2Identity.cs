@@ -592,8 +592,8 @@ namespace com.google.apps.peltzer.client.entitlement
         private const string m_ClientId = "TODO";
         private const string m_ClientSecret = "TODO";
         //private const string m_AccessTokenUri = "https://accounts.google.com/o/oauth2/token";
-        private static string m_UserInfoUri = $"{AssetsServiceClient.BaseUrl()}/users/me";
-        private static string m_LoginUrl = $"{AssetsServiceClient.BaseUrl()}/login/device_login";
+        private static string m_UserInfoUri = $"{AssetsServiceClient.ApiBaseUrl}/users/me";
+        private static string m_LoginUrl = $"{AssetsServiceClient.ApiBaseUrl}/login/device_login";
         private const string m_OAuthScope = "profile email " +
             "https://www.googleapis.com/auth/plus.me " +
             "https://www.googleapis.com/auth/plus.peopleapi.readwrite";
@@ -735,7 +735,7 @@ namespace com.google.apps.peltzer.client.entitlement
         {
             // NEVER add the access token to a URL that isn't our API base url
             // It will leak the token.
-            if (www.url.StartsWith(AssetsServiceClient.BaseUrl()))
+            if (www.url.StartsWith(AssetsServiceClient.ApiBaseUrl))
             {
                 www.SetRequestHeader("Authorization", $"Bearer {m_AccessToken}");
             }
@@ -838,7 +838,7 @@ namespace com.google.apps.peltzer.client.entitlement
         {
             if (String.IsNullOrEmpty(m_RefreshToken) && promptUserIfNoToken)
             {
-                string deviceCodeUrl = $"{AssetsServiceClient.WEB_BASE_URL}/device";
+                string deviceCodeUrl = $"{AssetsServiceClient.WebBaseUrl}/device";
                 // Something about the url makes OpenURL() not work on OSX, so use a workaround
                 if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer)
                 {

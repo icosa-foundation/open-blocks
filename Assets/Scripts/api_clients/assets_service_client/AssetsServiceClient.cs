@@ -182,19 +182,37 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
     public class AssetsServiceClient : MonoBehaviour
     {
-        public static string WEB_BASE_URL = "https://icosa.gallery";
-        private static string API_BASE_URL = "https://api.icosa.gallery/v1";
+        // Defaults
+        public static string DEFAULT_WEB_BASE_URL = "https://icosa.gallery";
+        private static string DEFAULT_API_BASE_URL = "https://api.icosa.gallery/v1";
 
-        public static string BaseUrl() => API_BASE_URL;
+        // Key names for player prefs
+        public static string WEB_BASE_URL_KEY = "WEB_BASE_URL";
+        public static string API_BASE_URL_KEY = "API_BASE_URL";
+
+        public static string WebBaseUrl
+        {
+            get => GetPlayerPrefOrDefault(WEB_BASE_URL_KEY, DEFAULT_WEB_BASE_URL);
+            set => PlayerPrefs.SetString(WEB_BASE_URL_KEY, value);
+        }
+        public static string ApiBaseUrl
+        {
+            get => GetPlayerPrefOrDefault(API_BASE_URL_KEY, DEFAULT_API_BASE_URL);
+            set => PlayerPrefs.SetString(API_BASE_URL_KEY, value);
+        }
+
+        public static string GetPlayerPrefOrDefault(string key, string defaultValue)
+        {
+            return PlayerPrefs.HasKey(key) ? PlayerPrefs.GetString(key) : defaultValue;
+        }
+
         // The base for the URL to be opened in a user's browser if they wish to publish.
-        public static string DEFAULT_PUBLISH_URL_BASE = WEB_BASE_URL + "/publish/";
+        public static string DEFAULT_PUBLISH_URL_BASE = WebBaseUrl + "/publish/";
 
-        public static string PublishUrl() => DEFAULT_PUBLISH_URL_BASE;
+        public static string PublishUrl => DEFAULT_PUBLISH_URL_BASE;
         // The base for the URL to be opened in a user's browser if they have saved.
         // Also used as the target for the "Your models" desktop menu
-        public static string DEFAULT_SAVE_URL = WEB_BASE_URL + "/uploads";
-
-        public static string SaveUrl() => DEFAULT_SAVE_URL;
+        public static string DEFAULT_SAVE_URL = WebBaseUrl + "/uploads";
 
         private static string commonQueryParams
         {
@@ -206,11 +224,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
 
         // Old way
-        // private static string FeaturedModelsSearchUrl() => $"{BaseUrl()}/assets?&curated=true&{commonQueryParams}";
+        // private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&curated=true&{commonQueryParams}";
         // New way
-        private static string FeaturedModelsSearchUrl() => $"{BaseUrl()}/assets?&orderBy=BEST&{commonQueryParams}";
-        private static string LikedModelsSearchUrl() => $"{BaseUrl()}/users/me/likedassets?{commonQueryParams}";
-        private static string YourModelsSearchUrl() => $"{BaseUrl()}/users/me/assets?{commonQueryParams}";
+        private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&orderBy=BEST&{commonQueryParams}";
+        private static string LikedModelsSearchUrl() => $"{ApiBaseUrl}/users/me/likedassets?{commonQueryParams}";
+        private static string YourModelsSearchUrl() => $"{ApiBaseUrl}/users/me/assets?{commonQueryParams}";
 
         // Some regex.
         private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";
@@ -517,7 +535,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <param name="callback">A callback to which to pass the results.</param>
         public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback)
         {
-            string url = String.Format("{0}/assets/{1}", BaseUrl(), assetId);
+            string url = String.Format("{0}/assets/{1}", ApiBaseUrl, assetId);
             UnityWebRequest request = GetRequest(url, "text/text", true); // Authentication is sometimes required
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
@@ -663,7 +681,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         public static void OpenPublishUrl(string assetId)
         {
-            string publishUrl = PublishUrl() + assetId;
+            string publishUrl = PublishUrl + assetId;
             PeltzerMain.Instance.paletteController.SetPublishDialogActive();
             System.Diagnostics.Process.Start(publishUrl);
         }
@@ -674,7 +692,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 return;
             }
-            System.Diagnostics.Process.Start(SaveUrl());
+            System.Diagnostics.Process.Start(DEFAULT_SAVE_URL);
             PeltzerMain.Instance.HasOpenedSaveUrlThisSession = true;
         }
 
@@ -746,7 +764,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// </summary>
         private IEnumerator CreateNewAsset(bool saveSelected)
         {
-            string url = $"{BaseUrl()}/assets";
+            string url = $"{ApiBaseUrl}/assets";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -810,7 +828,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             string json = CreateJsonForAssetResources(remixIds, objPolyCount, triangulatedObjPolyCount, saveSelected: false);
 
-            string url = $"{BaseUrl()}/assets/{assetId}/blocks_finalize";
+            string url = $"{ApiBaseUrl}/assets/{assetId}/blocks_finalize";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -870,7 +888,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private IEnumerator AddResource(string filename, string mimeType, byte[] data, string key)
         {
             elementUploadStates.Add(key, UploadState.IN_PROGRESS);
-            string url = $"{BaseUrl()}/assets/{assetId}/blocks_format";
+            string url = $"{ApiBaseUrl}/assets/{assetId}/blocks_format";
             UnityWebRequest request = new UnityWebRequest();
 
             // Run this twice so we can re-authorise if access tokens have become stale.
@@ -987,7 +1005,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// </summary>
         public IEnumerator DeleteAsset(string assetId)
         {
-            string url = String.Format("{0}/assets/{1}", BaseUrl(), assetId);
+            string url = String.Format("{0}/assets/{1}", ApiBaseUrl, assetId);
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
