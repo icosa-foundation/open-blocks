@@ -167,6 +167,9 @@ namespace com.google.apps.peltzer.client.desktop_app
                 case "publish":
                     CommandPublish(parts);
                     break;
+                case "ram":
+                    CommandLogRam(parts);
+                    break;
                 case "rest":
                     CommandRest(parts);
                     break;
@@ -195,6 +198,44 @@ namespace com.google.apps.peltzer.client.desktop_app
         private void PrintLn(string message)
         {
             consoleOutput.text += message + "\n";
+        }
+
+        private void CommandLogRam(string[] parts)
+        {
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                using (var activityManager = activity.Call<AndroidJavaObject>("getSystemService", "activity"))
+                using (var memoryInfo = new AndroidJavaObject("android.app.ActivityManager$MemoryInfo"))
+                {
+                    activityManager.Call("getMemoryInfo", memoryInfo);
+
+                    long availMem = memoryInfo.Get<long>("availMem");
+                    long totalMem = memoryInfo.Get<long>("totalMem");
+                    long threshold = memoryInfo.Get<long>("threshold");
+
+                    long usedMem = totalMem - availMem;
+
+                    PrintLn($"Total Memory: {totalMem / (1024.0 * 1024.0):F2} MB");
+                    PrintLn($"Available Memory: {availMem / (1024.0 * 1024.0):F2} MB");
+                    PrintLn($"Used Memory: {usedMem / (1024.0 * 1024.0):F2} MB");
+                    PrintLn($"Low Memory Threshold: {threshold / (1024.0 * 1024.0):F2} MB");
+
+                    // Compare app memory usage
+                    long appMemoryUsage = System.GC.GetTotalMemory(false);
+                    PrintLn($"App Memory Usage: {appMemoryUsage / (1024.0 * 1024.0):F2} MB");
+
+                    if (availMem < threshold)
+                    {
+                        PrintLn("Warning. Device is running low on memory. App may be terminated soon.");
+                    }
+                }
+            }
+            else
+            {
+                PrintLn("This feature is available only on Android.");
+            }
         }
 
         private void CommandOsQ(string[] parts)
