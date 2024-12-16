@@ -51,6 +51,14 @@ namespace com.google.apps.peltzer.client.model.core
         // Which Layer this mesh will be drawn to.
         public int Layer = DEFAULT_LAYER;
 
+        public void OnDestroy()
+        {
+            foreach (MeshWithMaterial meshWithMaterial in meshes)
+            {
+                Destroy(meshWithMaterial.mesh);
+            }
+        }
+
         public void Init(WorldSpace worldSpace)
         {
             this.worldSpace = worldSpace;
