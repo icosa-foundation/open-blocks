@@ -1550,6 +1550,8 @@ namespace com.google.apps.peltzer.client.model.main
             zoomer.ClearState();
             model.Clear(worldSpace);
             volumeInserter.ClearState();
+            MeshCycler.DestroyMeshes();
+
             spatialIndex.Reset(DEFAULT_BOUNDS);
             if (resetAttentionCaller)
             {
