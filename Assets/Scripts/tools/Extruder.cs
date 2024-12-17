@@ -30,7 +30,7 @@ namespace com.google.apps.peltzer.client.tools
     ///   itself is moved, and new faces are created to link the moved face back to the mesh.
     ///
     /// </summary>
-    public class Extruder : MonoBehaviour
+    public class Extruder : MonoBehaviour, IBaseTool
     {
         // TODO(bug): refactor this to use background mesh validation like Reshaper.
 
