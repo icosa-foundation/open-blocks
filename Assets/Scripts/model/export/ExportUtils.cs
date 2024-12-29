@@ -38,7 +38,7 @@ namespace com.google.apps.peltzer.client.model.export
         ///   Serialize the model to bytes in a range of formats.
         /// </summary>
         /// <param name="model">The model.</param>
-        /// <param name="meshes">The meshes composing the content we would like to serialize and save.</param>    
+        /// <param name="meshes">The meshes composing the content we would like to serialize and save.</param>
         /// <param name="saveGltf">If true, will serialize a .gltf file</param>
         /// <param name="saveFbx">If true, will serialize a .fbx file</param>
         /// <param name="saveTriangulatedObj">If true, will serialize a triangulated .obj file</param>
@@ -46,19 +46,22 @@ namespace com.google.apps.peltzer.client.model.export
         ///   Whether or not to include the recommended model display rotation in save.
         /// </param>
         /// <param name="serializer">A serializer to perform the work for .blocks files.</param>
-        public static SaveData SerializeModel(Model model, ICollection<MMesh> meshes,
-          bool saveGltf, bool saveFbx, bool saveTriangulatedObj, bool includeDisplayRotation, PolySerializer serializer, bool saveSelected)
+        public static SaveData SerializeModel(
+            Model model, ICollection<MMesh> meshes,
+            bool saveGltf, bool saveFbx, bool saveTriangulatedObj,
+            bool includeDisplayRotation, PolySerializer serializer,
+            bool saveSelected)
         {
 
             // Serialize data.
             SaveData saveData = new SaveData();
             HashSet<int> materials = new HashSet<int>();
             ObjFileExporter.ObjFileFromMeshes(meshes, MTL_FILENAME, model.meshRepresentationCache, ref materials,
-              /*triangulated*/ false, out saveData.objFile, out saveData.objPolyCount);
+              triangulated: false, out saveData.objFile, out saveData.objPolyCount);
             if (saveTriangulatedObj)
             {
                 ObjFileExporter.ObjFileFromMeshes(meshes, MTL_FILENAME, model.meshRepresentationCache, ref materials,
-                /*triangulated*/ true, out saveData.triangulatedObjFile, out saveData.triangulatedObjPolyCount);
+                triangulated: true, out saveData.triangulatedObjFile, out saveData.triangulatedObjPolyCount);
             }
 
             saveData.mtlFile = ObjFileExporter.MtlFileFromSet(materials);
@@ -84,8 +87,11 @@ namespace com.google.apps.peltzer.client.model.export
                   Path.Combine(PeltzerMain.Instance.modelsPath, GLTF_BIN_FILENAME),
                   model.meshRepresentationCache);
             }
-            saveData.fbxFile = FbxExporter.FbxFileFromMeshes(meshes, Path.Combine(PeltzerMain.Instance.modelsPath,
-                FBX_FILENAME));
+            if (saveFbx)
+            {
+                saveData.fbxFile = FbxExporter.FbxFileFromMeshes(meshes, Path.Combine(PeltzerMain.Instance.modelsPath,
+                    FBX_FILENAME));
+            }
             saveData.blocksFile = PeltzerFileHandler.PeltzerFileFromMeshes(meshes, includeDisplayRotation, serializer);
             saveData.remixIds = model.GetAllRemixIds(meshes);
 

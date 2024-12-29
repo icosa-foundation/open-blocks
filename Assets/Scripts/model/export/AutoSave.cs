@@ -63,7 +63,14 @@ namespace com.google.apps.peltzer.client.model.export
             autoSavePath = Path.Combine(modelsPath, "Autosave");
             if (!Directory.Exists(autoSavePath))
             {
-                Directory.CreateDirectory(autoSavePath);
+                try
+                {
+                    Directory.CreateDirectory(autoSavePath);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning($"Error creating autosave directory: {exception.Message}\n{exception.StackTrace}");
+                }
             }
         }
 

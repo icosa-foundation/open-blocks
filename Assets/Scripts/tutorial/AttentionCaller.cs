@@ -190,7 +190,7 @@ namespace com.google.apps.peltzer.client.tutorial
         private const string SAVE_SELECTED_BUTTON_PATH = "ID_PanelTools/ToolSide/Menu-Save/Save-Selected";
         private const string GRID_BUTTON_PATH = "ID_PanelTools/ToolSide/Actions/Blockmode";
         private const string TUTORIAL_BUTTON_PATH = "ID_PanelTools/ToolSide/Actions/Tutorial";
-        private const string TAKE_A_TUTORIAL_BUTTON_PATH = "ID_PanelTools/ToolSide/TutorialPrompt/Btns/YesTutorial";
+        private const string TAKE_A_TUTORIAL_BUTTON_PATH = "TutorialPrompt/Btns/YesTutorial";
 
         private const int RED_MATERIAL_ID = 8;
 
@@ -304,22 +304,22 @@ namespace com.google.apps.peltzer.client.tutorial
             elements[Element.SAVE_BUTTON_ICON] = FindOrDie(paletteController.gameObject, SAVE_BUTTON_ICON_PATH);
             elements[Element.GRID_BUTTON] = FindOrDie(paletteController.gameObject, GRID_BUTTON_PATH);
             elements[Element.TUTORIAL_BUTTON] = FindOrDie(paletteController.gameObject, TUTORIAL_BUTTON_PATH);
-            elements[Element.TAKE_A_TUTORIAL_BUTTON] = FindOrDie(paletteController.gameObject, TAKE_A_TUTORIAL_BUTTON_PATH);
+            elements[Element.TAKE_A_TUTORIAL_BUTTON] = FindOrDie(paletteController.m_Popups, TAKE_A_TUTORIAL_BUTTON_PATH);
             elements[Element.SIREN] = ObjectFinder.ObjectById("ID_Siren");
             elements[Element.SAVE_SELECTED_BUTTON] = FindOrDie(paletteController.gameObject, SAVE_SELECTED_BUTTON_PATH);
 
             this.spherePrefab = Resources.Load<GameObject>("Prefabs/GlowOrb");
 
             lightBulbs = new List<GameObject>{
-        ObjectFinder.ObjectById("ID_Light_1"),
-        ObjectFinder.ObjectById("ID_Light_2"),
-        ObjectFinder.ObjectById("ID_Light_3"),
-        ObjectFinder.ObjectById("ID_Light_4"),
-        ObjectFinder.ObjectById("ID_Light_5"),
-        ObjectFinder.ObjectById("ID_Light_6"),
-        ObjectFinder.ObjectById("ID_Light_7"),
-        ObjectFinder.ObjectById("ID_Light_8"),
-        ObjectFinder.ObjectById("ID_Light_9")};
+                ObjectFinder.ObjectById("ID_Light_1"),
+                ObjectFinder.ObjectById("ID_Light_2"),
+                ObjectFinder.ObjectById("ID_Light_3"),
+                ObjectFinder.ObjectById("ID_Light_4"),
+                ObjectFinder.ObjectById("ID_Light_5"),
+                ObjectFinder.ObjectById("ID_Light_6"),
+                ObjectFinder.ObjectById("ID_Light_7"),
+                ObjectFinder.ObjectById("ID_Light_8"),
+                ObjectFinder.ObjectById("ID_Light_9")};
         }
 
         /// <summary>

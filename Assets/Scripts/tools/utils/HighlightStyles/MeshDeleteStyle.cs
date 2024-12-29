@@ -72,16 +72,19 @@ namespace com.google.apps.peltzer.client.tools.utils
                     int matId = pair.Key;
                     MeshGenContext meshGenContext = pair.Value;
 
-                    Mesh curMesh = new Mesh();
+                    Mesh curMesh = MeshCycler.GetTempMeshForMeshMatId(key, matId, out bool needToPopulateMesh);
                     Material curMaterial = animPct >= .99f ? matDict[MaterialRegistry.GetMaterialType(matId)].GetFixedMaterial() :
                       matDict[MaterialRegistry.GetMaterialType(matId)].GetInstanceOfMaterial();
                     curMaterial.SetFloat("_OverrideAmount", emissiveAmount);
                     curMaterial.SetColor("_OverrideColor", ERASE_COLOR);
                     curMaterial.renderQueue = 3000;
-                    curMesh.SetVertices(meshGenContext.verts);
-                    curMesh.SetColors(meshGenContext.colors);
-                    curMesh.SetTriangles(meshGenContext.triangles, /* subMesh */ 0);
-                    curMesh.RecalculateNormals();
+                    if (needToPopulateMesh)
+                    {
+                        curMesh.SetVertices(meshGenContext.verts);
+                        curMesh.SetColors(meshGenContext.colors);
+                        curMesh.SetTriangles(meshGenContext.triangles, /* subMesh */ 0);
+                        curMesh.RecalculateNormals();
+                    }
 
                     Graphics.DrawMesh(curMesh, worldSpace.modelToWorld, curMaterial, 0);
                 }
