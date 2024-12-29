@@ -662,7 +662,7 @@ jobs:
         run: |
           mkdir releases
           mv build_oculus_quest/*/OpenBlocks*apk releases/OpenBlocks_Quest_$VERSION.apk
-          mv build_oculus_quest/*/foundation.Icosa.OpenBlocks*.symbols.zip releases/symbols.zip
+          mv build_oculus_quest/*/OpenBlocks*.symbols.zip releases/symbols.zip
 
           cd releases
           unzip symbols.zip
