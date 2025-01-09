@@ -29,5 +29,17 @@ namespace com.google.apps.peltzer.client.model.render
             this.mesh = mesh;
             this.materialAndColor = materialAndColor;
         }
+
+        public MeshWithMaterial Copy()
+        {
+            var m = new Mesh
+            {
+                vertices = mesh.vertices,
+                normals = mesh.normals,
+                triangles = mesh.triangles,
+                colors32 = mesh.colors32
+            };
+            return new MeshWithMaterial(m, materialAndColor.Clone());
+        }
     }
 }

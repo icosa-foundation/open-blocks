@@ -283,9 +283,19 @@ namespace com.google.apps.peltzer.client.model.core
         /// <param name="other">The other MeshWithMaterialRenderer</param>
         public void SetupAsCopyOf(MeshWithMaterialRenderer other)
         {
-            meshes = new List<MeshWithMaterial>(other.meshes);
+            meshes = CopyMeshes(other.meshes);
             worldSpace = other.worldSpace;
             smoother = new SmoothMoves(other.smoother);
+        }
+
+        private List<MeshWithMaterial> CopyMeshes(List<MeshWithMaterial> other)
+        {
+            var newList = new List<MeshWithMaterial>(other.Count);
+            foreach (var mwm in other)
+            {
+                newList.Add(mwm.Copy());
+            }
+            return newList;
         }
 
         public Vector3 GetCurrentAnimatedScale()
