@@ -4383,6 +4383,7 @@ GameObject:
   - component: {fileID: 837912009}
   - component: {fileID: 837912007}
   - component: {fileID: 837912006}
+  - component: {fileID: 837912012}
   m_Layer: 0
   m_Name: ID_ThumbnailCamera
   m_TagString: Untagged
@@ -4484,6 +4485,45 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &837912012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837912005}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a879e317c20b0d41a9a56f1a97f4cf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ApplyMethod: 0
+  SampleCount: 1
+  PerPixelNormals: 0
+  Intensity: 1
+  Tint: {r: 0.11009027, g: 0.13927083, b: 0.191, a: 1}
+  Radius: 5
+  PowerExponent: 1.8
+  Bias: 0.05
+  Thickness: 1
+  Downsample: 0
+  CacheAware: 1
+  FadeEnabled: 0
+  FadeStart: 100
+  FadeLength: 50
+  FadeToIntensity: 0
+  FadeToTint: {r: 0, g: 0, b: 0, a: 1}
+  FadeToRadius: 2
+  FadeToPowerExponent: 1.8
+  FadeToThickness: 1
+  BlurEnabled: 1
+  BlurRadius: 2
+  BlurPasses: 1
+  BlurSharpness: 10
+  FilterEnabled: 1
+  FilterDownsample: 1
+  FilterBlending: 0.8
+  FilterResponse: 0.5
 --- !u!1 &867659318 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1421840633838918, guid: 789375d7cedc38f4bb55fa91d9a97de5,
@@ -5877,6 +5917,7 @@ MonoBehaviour:
   m_DeselectOnBackgroundClick: 1
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
 --- !u!1001 &2055044495
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5885,6 +5926,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1389873695960628, guid: 789375d7cedc38f4bb55fa91d9a97de5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1439321291621460, guid: 789375d7cedc38f4bb55fa91d9a97de5, type: 3}
       propertyPath: m_Name
       value: '[CameraRig]'
@@ -5932,8 +5977,106 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1389873695960628, guid: 789375d7cedc38f4bb55fa91d9a97de5,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2055044499}
+    - targetCorrespondingSourceObject: {fileID: 8697257038037221240, guid: 789375d7cedc38f4bb55fa91d9a97de5,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2055044498}
   m_SourcePrefab: {fileID: 100100000, guid: 789375d7cedc38f4bb55fa91d9a97de5, type: 3}
+--- !u!1 &2055044496 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8697257038037221240, guid: 789375d7cedc38f4bb55fa91d9a97de5,
+    type: 3}
+  m_PrefabInstance: {fileID: 2055044495}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2055044497 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1389873695960628, guid: 789375d7cedc38f4bb55fa91d9a97de5,
+    type: 3}
+  m_PrefabInstance: {fileID: 2055044495}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2055044498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2055044496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a879e317c20b0d41a9a56f1a97f4cf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ApplyMethod: 0
+  SampleCount: 1
+  PerPixelNormals: 0
+  Intensity: 1
+  Tint: {r: 0.11009027, g: 0.13927083, b: 0.191, a: 1}
+  Radius: 5
+  PowerExponent: 1.8
+  Bias: 0.05
+  Thickness: 1
+  Downsample: 0
+  CacheAware: 1
+  FadeEnabled: 0
+  FadeStart: 100
+  FadeLength: 50
+  FadeToIntensity: 0
+  FadeToTint: {r: 0, g: 0, b: 0, a: 1}
+  FadeToRadius: 2
+  FadeToPowerExponent: 1.8
+  FadeToThickness: 1
+  BlurEnabled: 1
+  BlurRadius: 2
+  BlurPasses: 1
+  BlurSharpness: 10
+  FilterEnabled: 1
+  FilterDownsample: 1
+  FilterBlending: 0.8
+  FilterResponse: 0.5
+--- !u!114 &2055044499
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2055044497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a879e317c20b0d41a9a56f1a97f4cf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ApplyMethod: 0
+  SampleCount: 1
+  PerPixelNormals: 0
+  Intensity: 1
+  Tint: {r: 0.11009027, g: 0.13927083, b: 0.191, a: 1}
+  Radius: 5
+  PowerExponent: 1.8
+  Bias: 0.05
+  Thickness: 1
+  Downsample: 0
+  CacheAware: 1
+  FadeEnabled: 0
+  FadeStart: 100
+  FadeLength: 50
+  FadeToIntensity: 0
+  FadeToTint: {r: 0, g: 0, b: 0, a: 1}
+  FadeToRadius: 2
+  FadeToPowerExponent: 1.8
+  FadeToThickness: 1
+  BlurEnabled: 1
+  BlurRadius: 2
+  BlurPasses: 1
+  BlurSharpness: 10
+  FilterEnabled: 1
+  FilterDownsample: 1
+  FilterBlending: 0.8
+  FilterResponse: 0.5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
