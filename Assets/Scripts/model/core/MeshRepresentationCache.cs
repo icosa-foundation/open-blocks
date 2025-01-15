@@ -63,7 +63,7 @@ namespace com.google.apps.peltzer.client.model.core
             model.OnMeshChanged += (MMesh mesh, bool materialsChanged, bool geometryChanged, bool facesOrVertsChanged) =>
             {
                 // Only invalidate if the mesh mutated (but not if it was just transformed).
-                if (materialsChanged || geometryChanged)
+                if (materialsChanged)
                 {
                     InvalidatePreviews(mesh.id);
                 }
@@ -167,7 +167,9 @@ namespace com.google.apps.peltzer.client.model.core
             {
                 // The template belongs to our cache, so we want to return a copy, not our precious cached template.
                 result = GameObject.Instantiate(template);
-                result.GetComponent<MeshWithMaterialRenderer>().SetupAsCopyOf(template.GetComponent<MeshWithMaterialRenderer>());
+                var mwmr = result.GetComponent<MeshWithMaterialRenderer>();
+                mwmr.SetupAsCopyOf(template.GetComponent<MeshWithMaterialRenderer>());
+                mwmr.isPreview = true; // this means we don't want to destroy the meshes this preview is referencing when mwmr is destroyed
             }
             else
             {
@@ -317,6 +319,7 @@ namespace com.google.apps.peltzer.client.model.core
         {
             if (normalTemplateForMeshId.ContainsKey(meshId))
             {
+                normalTemplateForMeshId[meshId].GetComponent<MeshWithMaterialRenderer>().isPreview = false;
                 GameObject.DestroyImmediate(normalTemplateForMeshId[meshId]);
                 normalTemplateForMeshId.Remove(meshId);
             }
@@ -324,6 +327,7 @@ namespace com.google.apps.peltzer.client.model.core
             {
                 if (dict.ContainsKey(meshId))
                 {
+                    normalTemplateForMeshId[meshId].GetComponent<MeshWithMaterialRenderer>().isPreview = false;
                     GameObject.DestroyImmediate(dict[meshId]);
                     dict.Remove(meshId);
                 }
@@ -337,12 +341,14 @@ namespace com.google.apps.peltzer.client.model.core
         {
             foreach (int meshId in normalTemplateForMeshId.Keys)
             {
+                normalTemplateForMeshId[meshId].GetComponent<MeshWithMaterialRenderer>().isPreview = false;
                 GameObject.DestroyImmediate(normalTemplateForMeshId[meshId]);
             }
             foreach (Dictionary<int, GameObject> dict in highlightedTemplatesForMeshIdsByMaterial.Values)
             {
                 foreach (GameObject preview in dict.Values)
                 {
+                    preview.GetComponent<MeshWithMaterialRenderer>().isPreview = false;
                     GameObject.DestroyImmediate(preview);
                 }
             }

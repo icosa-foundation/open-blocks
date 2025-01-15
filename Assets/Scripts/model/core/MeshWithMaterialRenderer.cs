@@ -29,6 +29,7 @@ namespace com.google.apps.peltzer.client.model.core
 
         public List<MeshWithMaterial> meshes;
         public WorldSpace worldSpace;
+        public bool isPreview = false;
 
         protected bool overrideWithPreviewShader = false;
 
@@ -53,9 +54,12 @@ namespace com.google.apps.peltzer.client.model.core
 
         public void OnDestroy()
         {
-            foreach (MeshWithMaterial meshWithMaterial in meshes)
+            if (!isPreview)
             {
-                Destroy(meshWithMaterial.mesh);
+                foreach (MeshWithMaterial meshWithMaterial in meshes)
+                {
+                    Destroy(meshWithMaterial.mesh);
+                }
             }
         }
 
