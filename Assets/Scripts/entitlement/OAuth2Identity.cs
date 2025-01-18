@@ -592,8 +592,9 @@ namespace com.google.apps.peltzer.client.entitlement
         private const string m_ClientId = "TODO";
         private const string m_ClientSecret = "TODO";
         //private const string m_AccessTokenUri = "https://accounts.google.com/o/oauth2/token";
-        private static string m_UserInfoUri = $"{AssetsServiceClient.ApiBaseUrl}/users/me";
-        private static string m_LoginUrl = $"{AssetsServiceClient.ApiBaseUrl}/login/device_login";
+        private static string m_UserInfoUri;
+        private static string m_LoginUrl;
+        private string m_DeviceCodeUrl;
         private const string m_OAuthScope = "profile email " +
             "https://www.googleapis.com/auth/plus.me " +
             "https://www.googleapis.com/auth/plus.peopleapi.readwrite";
@@ -693,7 +694,9 @@ namespace com.google.apps.peltzer.client.entitlement
         {
             Instance = this;
             m_PlayerPrefAccessToken = $"{m_ServiceName}{PLAYER_PREF_ACCESS_TOKEN_SUFFIX}";
-
+            m_DeviceCodeUrl = $"{AssetsServiceClient.WebBaseUrl}/device";
+            m_UserInfoUri = $"{AssetsServiceClient.ApiBaseUrl}/users/me";
+            m_LoginUrl = $"{AssetsServiceClient.ApiBaseUrl}/login/device_login";
 
             if (PlayerPrefs.HasKey(m_PlayerPrefAccessToken))
             {
@@ -838,15 +841,14 @@ namespace com.google.apps.peltzer.client.entitlement
         {
             if (String.IsNullOrEmpty(m_RefreshToken) && promptUserIfNoToken)
             {
-                string deviceCodeUrl = $"{AssetsServiceClient.WebBaseUrl}/device";
                 // Something about the url makes OpenURL() not work on OSX, so use a workaround
                 if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer)
                 {
-                    System.Diagnostics.Process.Start(deviceCodeUrl);
+                    System.Diagnostics.Process.Start(m_DeviceCodeUrl);
                 }
                 else
                 {
-                    Application.OpenURL(deviceCodeUrl);
+                    Application.OpenURL(m_DeviceCodeUrl);
                 }
 
                 void onSubmit(object sender, string deviceCode)
