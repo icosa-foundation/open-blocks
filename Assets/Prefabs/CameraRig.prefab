@@ -22368,6 +22368,7 @@ MonoBehaviour:
   m_PanelOptionsButton: {fileID: 3155492863654425242}
   tutorialButton: {fileID: 0}
   UIPanels: {fileID: 0}
+  addReferenceImageButton: {fileID: 1181734849718400}
   speed: 0.03
   menuPanel: {fileID: 0}
   handedness: 1

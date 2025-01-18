@@ -99,6 +99,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public GameObject tutorialButton;
         public GameObject UIPanels;
+        public GameObject addReferenceImageButton;
         public float speed;
 
         /// <summary>
@@ -273,6 +274,11 @@ namespace com.google.apps.peltzer.client.model.controller
             polyMenuPanel = transform.Find("Panel-Menu").gameObject;
             detailsMenuPanel = transform.Find("Model-Details").gameObject;
             tutorialButton = transform.Find("ID_PanelTools/ToolSide/Actions/Tutorial").gameObject;
+            // TODO Android file picker
+            if (Application.isMobilePlatform)
+            {
+                addReferenceImageButton.GetComponentInChildren<MenuActionItem>().isActive = false;
+            }
 
             if (Config.Instance.sdkMode == SdkMode.Oculus)
             {
