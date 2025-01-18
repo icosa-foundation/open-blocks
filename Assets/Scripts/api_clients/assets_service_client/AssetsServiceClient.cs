@@ -186,6 +186,22 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public static string DEFAULT_WEB_BASE_URL = "https://icosa.gallery";
         private static string DEFAULT_API_BASE_URL = "https://api.icosa.gallery/v1";
 
+        private static int maxPolyModelTriangles
+        {
+            get
+            {
+                // TODO make this user configurable
+                if (Application.isMobilePlatform)
+                {
+                    return 5000;
+                }
+                else
+                {
+                    // -1 for "no limit"
+                    return -1;
+                }
+            }
+        }
         // Key names for player prefs
         public static string WEB_BASE_URL_KEY = "WEB_BASE_URL";
         public static string API_BASE_URL_KEY = "API_BASE_URL";
@@ -223,11 +239,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
         }
 
+        public static string maxPolyModelTrianglesParam => maxPolyModelTriangles == -1 ? "" : $"maxPolyModelTriangles={maxPolyModelTriangles}";
+
         // Old way
         // private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&curated=true&{commonQueryParams}";
         // New way
-        private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&orderBy=BEST&{commonQueryParams}";
-        private static string LikedModelsSearchUrl() => $"{ApiBaseUrl}/users/me/likedassets?{commonQueryParams}";
+        private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&orderBy=BEST&{commonQueryParams}&{maxPolyModelTrianglesParam}";
+        private static string LikedModelsSearchUrl() => $"{ApiBaseUrl}/users/me/likedassets?{commonQueryParams}&{maxPolyModelTrianglesParam}";
         private static string YourModelsSearchUrl() => $"{ApiBaseUrl}/users/me/assets?{commonQueryParams}";
 
         // Some regex.
