@@ -384,7 +384,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 return false;
             }
-            blocksAsset.rootUrl = blocksEntry["root"]["url"].ToString();
+            blocksAsset.rootUrl = blocksEntry["root"]?["url"]?.ToString();
+            if (string.IsNullOrEmpty(blocksAsset.rootUrl))
+            {
+                return false;
+            }
             blocksAsset.baseFile = "";
             entryAssets.peltzer = blocksAsset;
             objectStoreEntry.assets = entryAssets;
