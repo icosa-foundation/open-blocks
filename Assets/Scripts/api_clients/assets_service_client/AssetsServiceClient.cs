@@ -239,7 +239,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
         }
 
-        public static string maxPolyModelTrianglesParam => maxPolyModelTriangles == -1 ? "" : $"maxPolyModelTriangles={maxPolyModelTriangles}";
+        public static string maxPolyModelTrianglesParam => maxPolyModelTriangles == -1 ? "" : $"triangleCountMax={maxPolyModelTriangles}";
 
         // Old way
         // private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&curated=true&{commonQueryParams}";
