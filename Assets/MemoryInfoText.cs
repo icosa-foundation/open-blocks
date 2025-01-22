@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
+using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.model.controller;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
@@ -13,29 +15,69 @@ public class MemoryInfoText : MonoBehaviour
 {
     public GameObject enabledTextIcon;
     public GameObject disabledTextIcon;
+    public GameObject panelOutside;
     public TMPro.TextMeshPro textOutside;
     private float timeSinceLastUpdate;
     private bool lowMemory;
+    public bool memInfoEnabled = false;
+
+    private int MAX_VERTICES = 0;
     private int numVertices;
     private int numFaces;
-    private string stats;
-    private float thresholdPercentage = 0.6f; // the threshold in percentage of the total memory that will trigger the low memory warning
+
+    // Android
+#if UNITY_ANDROID && !UNITY_EDITOR
+    private long totalMemAndroid;
+    private long availMemAndroid;
+    private int totalPssAndroid;
+#else
+    // Unity Profiler
+    private long totalAllocUnity;
+    private long totalReservedUnity;
+#endif
+
+    private string memoryWarningString =
+        "LOW MEMORY\n" +
+        "Max number of vertices reached!\n" +
+        "Performance will be impacted and the app could crash!\n" +
+        "Save your work to avoid losing it!\n";
+
+    private StringBuilder statsBuilder = new StringBuilder(300);
+    private char[] statsCharArray = new char[300];
+
+    private void ClearCharArray(char[] arr)
+    {
+        for (int i = 0; i < arr.Length; i++)
+        {
+            arr[i] = '\0';
+        }
+    }
 
     private void LowMemory()
     {
+        if (lowMemory) return; // only show it once (remove this if warning should stay)
         lowMemory = true;
-        textOutside.gameObject.SetActive(true);
+        panelOutside.SetActive(true);
         enabledTextIcon.SetActive(true);
         disabledTextIcon.SetActive(false);
+
+        statsBuilder.Clear();
+        statsBuilder.Append(memoryWarningString);
+        ClearCharArray(statsCharArray);
+        statsBuilder.CopyTo(0, statsCharArray, 0, statsBuilder.Length);
+        textOutside.SetCharArray(statsCharArray);
+
     }
 
     void Start()
     {
-        textOutside.gameObject.SetActive(false);
+        panelOutside.SetActive(false);
         // Application.lowMemory += LowMemory;
         PeltzerMain.Instance.model.OnMeshAdded += (OnMeshAdded);
         PeltzerMain.Instance.model.OnMeshDeleted += (OnMeshDeleted);
         PeltzerMain.Instance.model.OnModelCleared += (OnModelCleared);
+
+        GetMemoryInfo(); // also sets MAX_VERTICES
     }
 
     private void OnMeshAdded(MMesh mesh)
@@ -59,42 +101,68 @@ public class MemoryInfoText : MonoBehaviour
     public void OnToggleMemoryInfo()
     {
         // show the memory info text outside with the tools menu
-        textOutside.gameObject.SetActive(!textOutside.gameObject.activeSelf);
+        panelOutside.SetActive(!panelOutside.activeSelf);
         enabledTextIcon.SetActive(!enabledTextIcon.activeSelf);
         disabledTextIcon.SetActive(!disabledTextIcon.activeSelf);
+
+        if (panelOutside.activeSelf)
+        {
+            BuildStats();
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (PeltzerMain.Instance.introChoreographer.state != IntroChoreographer.State.DONE) return;
+
         timeSinceLastUpdate += Time.deltaTime;
         if (timeSinceLastUpdate >= 1.0f)
         {
-            stats = "";
-#if UNITY_ANDROID && !UNITY_EDITOR
-            stats = GetProcessMemoryInfo();
-#else
-            // on desktop memory isn't as much of an issue, here we just show Unity's memory stats
-            var totalAllocatedMemory = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1024 / 1024;
-            var totalReservedMemory = UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() / 1024 / 1024;
-            stats += $"{totalAllocatedMemory:D} MB used memory\n";
-            stats += $"{totalReservedMemory:D} MB reserved memory\n";
-#endif
-            stats += $"{numVertices} vertices\n";
-            stats += $"{numFaces} faces\n";
-            if (lowMemory)
-            {
-                stats = "Memory low!!! \nSave your work to avoid losing it!\n" + stats;
-                textOutside.color = Color.red;
-            }
-            else
-            {
-                textOutside.color = Color.white;
-            }
-            textOutside.text = stats;
+
+            if (memInfoEnabled)
+                GetMemoryInfo();
+
             timeSinceLastUpdate = 0;
+
+            if (MAX_VERTICES != 0 && numVertices > MAX_VERTICES)
+            {
+                LowMemory();
+            }
+            else if (panelOutside.activeSelf)
+            {
+                BuildStats();
+            }
         }
     }
+
+    private void GetMemoryInfo()
+    {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        GetAndroidMemoryInfo();
+#else
+        GetUnityProfilerInfo();
+#endif
+    }
+
+    private void BuildStats()
+    {
+        statsBuilder.Clear();
+        statsBuilder.Append("MEMORY STATS:\n");
+#if UNITY_ANDROID && !UNITY_EDITOR
+        statsBuilder.AppendFormat("Vertices:\n{0:D}/{1:D} ({2:F0}%)\nFaces: {3:D}\n", numVertices, MAX_VERTICES, (float)numVertices/MAX_VERTICES * 100, numFaces);
+        if (memInfoEnabled)
+            statsBuilder.AppendFormat("{0:D} MB (total memory)\n{1:D} avail mem, {2:D} MB (app memory usage) ({3:F0}%)", totalMemAndroid, availMemAndroid, totalPssAndroid, (float)totalPssAndroid/totalMemAndroid*100);
+#else
+        statsBuilder.AppendFormat("Vertices: {0:D}\nFaces: {1:D}\n", numVertices, numFaces);
+        if (memInfoEnabled)
+            statsBuilder.AppendFormat("{0:D} MB used memory\n{1:D} MB reserved memory\n", totalAllocUnity, totalReservedUnity);
+#endif
+        ClearCharArray(statsCharArray);
+        statsBuilder.CopyTo(0, statsCharArray, 0, statsBuilder.Length);
+        textOutside.SetCharArray(statsCharArray);
+    }
+
 
 #if UNITY_ANDROID && !UNITY_EDITOR
     private int GetProcessId()
@@ -103,80 +171,46 @@ public class MemoryInfoText : MonoBehaviour
         return processClass.CallStatic<int>("myPid");
     }
     
-    private string GetProcessMemoryInfo()
+    private void GetAndroidMemoryInfo()
     {
-        string memInfo = string.Empty;
-
         try
         {
             using (AndroidJavaClass unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
             using (AndroidJavaObject currentActivity = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity"))
             {
-                // Access the ActivityManager system service
                 using (AndroidJavaObject activityManager = currentActivity.Call<AndroidJavaObject>("getSystemService", "activity"))
                 {
                     AndroidJavaObject memoryInfo = new AndroidJavaObject("android.app.ActivityManager$MemoryInfo");
                     activityManager.Call("getMemoryInfo", memoryInfo);
-                    long totalMem = memoryInfo.Get<long>("totalMem") / (1024 * 1024);
-                    // long availMem = memoryInfo.Get<long>("availMem");
+                    totalMemAndroid = memoryInfo.Get<long>("totalMem") / (1024 * 1024);
+                    availMemAndroid = memoryInfo.Get<long>("availMem") / (1024 * 1024);
                     // long threshold = memoryInfo.Get<long>("threshold");
                     // bool lowMemory = memoryInfo.Get<bool>("lowMemory");
-                    memInfo += $"{totalMem:D} MB (total memory) \n"; // total memory in MB (RAM)
-                    // s += $"{availMem / (1024 * 1024)} MB avail mem \n";
-                    // s += $"{threshold / (1024 * 1024)} MB threshold \n";
-                    // $"{lowMemory} low Mem\n";
                     
                     // Get the process memory info for the current process ID
                     int[] pids = new int[] { GetProcessId() };
                     AndroidJavaObject[] memoryInfoArray = activityManager.Call<AndroidJavaObject[]>("getProcessMemoryInfo", pids);
-
-                    // Call methods on the MemoryInfo object to extract memory details
-                    // AndroidJavaClass array = new AndroidJavaClass("java.lang.reflect.Array");
-                    // AndroidJavaObject memoryInfo = array.CallStatic<AndroidJavaObject>("get", memoryInfoArray, 0);
-
-                    // Get memory stats such as PSS (Proportional Set Size), private dirty, shared dirty
-                    int totalPss = memoryInfoArray[0].Call<int>("getTotalPss") / 1024;
-                    // int totalPrivateDirty = memoryInfoArray[0].Call<int>("getTotalPrivateDirty");
-                    // int totalSharedDirty = memoryInfoArray[0].Call<int>("getTotalSharedDirty");
-                    // int totalPrivateClean = memoryInfoArray[0].Call<int>("getTotalPrivateClean");
-                    // int totalSharedClean = memoryInfoArray[0].Call<int>("getTotalSharedClean");
-                    // int nativePss = memoryInfoArray[0].Get<int>("nativePss");
-                    // int otherPSS = memoryInfoArray[0].Get<int>("otherPss");
                     
-                    memInfo += $"{totalPss:D} MB (app memory usage) ({(float)totalPss/totalMem*100:F0}%)\n"; // total PSS in MB
-                    // memInfo += $"Total RSS: {(totalPrivateDirty + totalSharedDirty + totalPrivateClean + totalSharedClean) / 1024} MB \n";
-                    // memInfo += $"Total USS: {(totalPrivateClean + totalPrivateDirty) / 1024 } MB\n";
-                    // memInfo += $"Total Private Dirty: {totalPrivateDirty / 1024} MB\n";
-                    // memInfo += $"Total Shared Dirty: {totalSharedDirty / 1024} MB\n";
-                    // memInfo += $"Total Private Clean: {totalPrivateClean / 1024} MB\n";
-                    // memInfo += $"Total Shared Clean: {totalSharedClean / 1024} MB\n";
+                    totalPssAndroid = memoryInfoArray[0].Call<int>("getTotalPss") / 1024;
                     
-                    var threshold = totalMem * thresholdPercentage;
-                    memInfo += $"{threshold:F0} MB (memory threshold)\n";
-                    // check if the memory usage is above the threshold
-                    if (totalPss >= threshold)
+                    if (MAX_VERTICES == 0)
                     {
-                        if (!lowMemory)
-                            LowMemory();
-                    }
-                    else
-                    {
-                        if (lowMemory)
-                            lowMemory = false;
+                        MAX_VERTICES = totalMemAndroid > 6000 ? 300000 : 90000;
                     }
                 }
             }
         }
         catch (System.Exception ex)
         {
-            memInfo = "Error retrieving memory info: " + ex.Message;
+            statsBuilder.Append("Error getting memory info!");
         }
-        return memInfo;
+    }
+#else
+    private void GetUnityProfilerInfo()
+    {
+        // on desktop memory isn't as much of an issue, here we just show Unity's memory stats
+        totalAllocUnity = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1024 / 1024;
+        totalReservedUnity = UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() / 1024 / 1024;
     }
 #endif
-
-    private void OnDestroy()
-    {
-        // Application.lowMemory -= LowMemory;
-    }
 }
