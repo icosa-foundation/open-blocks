@@ -33,8 +33,8 @@ namespace com.google.apps.peltzer.client.model.controller
         private readonly Vector3 TARGET_LOCAL_POSITION_VIVE = new Vector3(0.0004f, -0.0068f, -0.0037f);
         private readonly Vector3 TARGET_LOCAL_POSITION_STEAM_RIFT_RIGHT = new Vector3(0, 0, -0.0182f);
         private readonly Vector3 TARGET_LOCAL_ROTATION_STEAM_RIFT_RIGHT = new Vector3(0, 0, 0);
-        private readonly Vector3 TARGET_LOCAL_POSITION_STEAM_RIFT_LEFT = new Vector3(-.0025f, -0.0325f, -.034f);
-        private readonly Vector3 TARGET_LOCAL_ROTATION_STEAM_RIFT_LEFT = new Vector3(39.259f, -6.693f, -5.973f);
+        private readonly Vector3 TARGET_LOCAL_POSITION_STEAM_RIFT_LEFT = new Vector3(0, 0, -0.0182f);
+        private readonly Vector3 TARGET_LOCAL_ROTATION_STEAM_RIFT_LEFT = new Vector3(0, 0, 0);
 
         private readonly Vector3 TARGET_LOCAL_POSITION_OCULUS_RIGHT = new Vector3(.00031f, -.00835f, .0362f);
         private readonly Vector3 TARGET_LOCAL_ROTATION_OCULUS_RIGHT = new Vector3(-5.056f, .547f, 7.56f);

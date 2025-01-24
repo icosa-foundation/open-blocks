@@ -135,11 +135,11 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <summary>
         ///   Position reference for the menu panel when in the right hand.
         /// </summary>
-        private readonly Vector3 menuPanelRightPos = new Vector3(-0.29f, 0f, 0f);
+        private readonly Vector3 menuPanelRightPos = new Vector3(-0.29f, 0.025f, 0.025f);
         /// <summary>
         ///   Position reference for the menu panel when in the right hand.
         /// </summary>
-        private readonly Vector3 menuPanelZandriaRightPos = new Vector3(-0.34f, 0f, 0f);
+        private readonly Vector3 menuPanelZandriaRightPos = new Vector3(-0.34f, 0.025f, 0.025f);
         /// <summary>
         ///   Position reference for the details panel when in the left hand.
         /// </summary>

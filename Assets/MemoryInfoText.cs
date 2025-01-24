@@ -17,6 +17,8 @@ public class MemoryInfoText : MonoBehaviour
     public GameObject disabledTextIcon;
     public GameObject panelOutside;
     public TMPro.TextMeshPro textOutside;
+    private PeltzerMain peltzerMain;
+    private Handedness handedness;
     private float timeSinceLastUpdate;
     private bool lowMemory;
     private bool memInfoEnabled = false;
@@ -24,6 +26,9 @@ public class MemoryInfoText : MonoBehaviour
     private int MAX_VERTICES = 0;
     private int numVertices;
     private int numFaces;
+
+    private Vector3 rightHandedPosition = new Vector3(-0.36f, -0.02f, -0.04f);
+    private Vector3 leftHandedPosition = new Vector3(0.36f, -0.02f, -0.04f);
 
     // Android
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -45,10 +50,23 @@ public class MemoryInfoText : MonoBehaviour
     private StringBuilder statsBuilder = new StringBuilder(300);
     private char[] statsCharArray = new char[300];
 
+
+    // we only check handedness when we enable the panel
+    // if someone changes handedness while the panel is open, it will not update
+    // but that's a rare case and not worth the extra checks in Update
+    // the panel position will update when the panel is closed and opened again
+    private void CheckHandedness()
+    {
+        if (peltzerMain.paletteController.handedness == handedness) return;
+        transform.localPosition = peltzerMain.paletteController.handedness == Handedness.RIGHT ? rightHandedPosition : leftHandedPosition;
+        handedness = peltzerMain.paletteController.handedness;
+    }
+
     private void LowMemory()
     {
         if (lowMemory) return; // only show it once (remove this if warning should stay)
         lowMemory = true;
+        CheckHandedness();
         panelOutside.SetActive(true);
         enabledTextIcon.SetActive(true);
         disabledTextIcon.SetActive(false);
@@ -63,9 +81,10 @@ public class MemoryInfoText : MonoBehaviour
     {
         panelOutside.SetActive(false);
         // Application.lowMemory += LowMemory;
-        PeltzerMain.Instance.model.OnMeshAdded += (OnMeshAdded);
-        PeltzerMain.Instance.model.OnMeshDeleted += (OnMeshDeleted);
-        PeltzerMain.Instance.model.OnModelCleared += (OnModelCleared);
+        peltzerMain = PeltzerMain.Instance;
+        peltzerMain.model.OnMeshAdded += (OnMeshAdded);
+        peltzerMain.model.OnMeshDeleted += (OnMeshDeleted);
+        peltzerMain.model.OnModelCleared += (OnModelCleared);
 
         GetMemoryInfo(); // also sets MAX_VERTICES
     }
@@ -91,6 +110,7 @@ public class MemoryInfoText : MonoBehaviour
     public void OnToggleMemoryInfo()
     {
         // show the memory info text outside with the tools menu
+        CheckHandedness();
         panelOutside.SetActive(!panelOutside.activeSelf);
         enabledTextIcon.SetActive(!enabledTextIcon.activeSelf);
         disabledTextIcon.SetActive(!disabledTextIcon.activeSelf);
