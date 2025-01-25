@@ -17,13 +17,18 @@ public class MemoryInfoText : MonoBehaviour
     public GameObject disabledTextIcon;
     public GameObject panelOutside;
     public TMPro.TextMeshPro textOutside;
+    private PeltzerMain peltzerMain;
+    private Handedness handedness;
     private float timeSinceLastUpdate;
     private bool lowMemory;
-    public bool memInfoEnabled = false;
+    private bool memInfoEnabled = false;
 
     private int MAX_VERTICES = 0;
     private int numVertices;
     private int numFaces;
+
+    private Vector3 rightHandedPosition = new Vector3(-0.36f, -0.02f, -0.04f);
+    private Vector3 leftHandedPosition = new Vector3(0.36f, -0.02f, -0.04f);
 
     // Android
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -45,37 +50,41 @@ public class MemoryInfoText : MonoBehaviour
     private StringBuilder statsBuilder = new StringBuilder(300);
     private char[] statsCharArray = new char[300];
 
-    private void ClearCharArray(char[] arr)
+
+    // we only check handedness when we enable the panel
+    // if someone changes handedness while the panel is open, it will not update
+    // but that's a rare case and not worth the extra checks in Update
+    // the panel position will update when the panel is closed and opened again
+    private void CheckHandedness()
     {
-        for (int i = 0; i < arr.Length; i++)
-        {
-            arr[i] = '\0';
-        }
+        if (peltzerMain.paletteController.handedness == handedness) return;
+        transform.localPosition = peltzerMain.paletteController.handedness == Handedness.RIGHT ? rightHandedPosition : leftHandedPosition;
+        handedness = peltzerMain.paletteController.handedness;
     }
 
     private void LowMemory()
     {
         if (lowMemory) return; // only show it once (remove this if warning should stay)
         lowMemory = true;
+        CheckHandedness();
         panelOutside.SetActive(true);
         enabledTextIcon.SetActive(true);
         disabledTextIcon.SetActive(false);
 
         statsBuilder.Clear();
         statsBuilder.Append(memoryWarningString);
-        ClearCharArray(statsCharArray);
         statsBuilder.CopyTo(0, statsCharArray, 0, statsBuilder.Length);
         textOutside.SetCharArray(statsCharArray);
-
     }
 
     void Start()
     {
         panelOutside.SetActive(false);
         // Application.lowMemory += LowMemory;
-        PeltzerMain.Instance.model.OnMeshAdded += (OnMeshAdded);
-        PeltzerMain.Instance.model.OnMeshDeleted += (OnMeshDeleted);
-        PeltzerMain.Instance.model.OnModelCleared += (OnModelCleared);
+        peltzerMain = PeltzerMain.Instance;
+        peltzerMain.model.OnMeshAdded += (OnMeshAdded);
+        peltzerMain.model.OnMeshDeleted += (OnMeshDeleted);
+        peltzerMain.model.OnModelCleared += (OnModelCleared);
 
         GetMemoryInfo(); // also sets MAX_VERTICES
     }
@@ -101,6 +110,7 @@ public class MemoryInfoText : MonoBehaviour
     public void OnToggleMemoryInfo()
     {
         // show the memory info text outside with the tools menu
+        CheckHandedness();
         panelOutside.SetActive(!panelOutside.activeSelf);
         enabledTextIcon.SetActive(!enabledTextIcon.activeSelf);
         disabledTextIcon.SetActive(!disabledTextIcon.activeSelf);
@@ -119,7 +129,6 @@ public class MemoryInfoText : MonoBehaviour
         timeSinceLastUpdate += Time.deltaTime;
         if (timeSinceLastUpdate >= 1.0f)
         {
-
             if (memInfoEnabled)
                 GetMemoryInfo();
 
@@ -131,6 +140,7 @@ public class MemoryInfoText : MonoBehaviour
             }
             else if (panelOutside.activeSelf)
             {
+                lowMemory = false;
                 BuildStats();
             }
         }
@@ -145,22 +155,65 @@ public class MemoryInfoText : MonoBehaviour
 #endif
     }
 
+    private float GetModelSizeEstimate()
+    {
+        var estimate = 0.0f;
+        var meshes = PeltzerMain.Instance.model.GetAllMeshes();
+        foreach (var mesh in meshes)
+        {
+            estimate += (float)mesh.GetSerializedSizeEstimate() / (1024 * 1024);
+        }
+        // round to 1 decimal places
+        return (float)Math.Round(estimate, 1);
+    }
+
     private void BuildStats()
     {
         statsBuilder.Clear();
         statsBuilder.Append("MEMORY STATS:\n");
+        if (lowMemory)
+            statsBuilder.Append(" (LOW MEMORY)\n");
 #if UNITY_ANDROID && !UNITY_EDITOR
-        statsBuilder.AppendFormat("Vertices:\n{0:D}/{1:D} ({2:F0}%)\nFaces: {3:D}\n", numVertices, MAX_VERTICES, (float)numVertices/MAX_VERTICES * 100, numFaces);
+        statsBuilder.Append("Vertices:\n");
+        statsBuilder.Append(numVertices);
+        statsBuilder.Append("/");
+        statsBuilder.Append(MAX_VERTICES);
+        statsBuilder.Append(" (");
+        statsBuilder.Append((int)((float)numVertices/MAX_VERTICES * 100));
+        statsBuilder.Append("%)\n");
+        statsBuilder.Append("Faces: ");
+        statsBuilder.Append(numFaces);
+        statsBuilder.Append("\n");
+        // statsBuilder.Append("Model size: ");
+        // statsBuilder.Append(GetModelSizeEstimate());
+        // statsBuilder.Append(" MB\n");
         if (memInfoEnabled)
-            statsBuilder.AppendFormat("{0:D} MB (total memory)\n{1:D} avail mem, {2:D} MB (app memory usage) ({3:F0}%)", totalMemAndroid, availMemAndroid, totalPssAndroid, (float)totalPssAndroid/totalMemAndroid*100);
+        {
+            statsBuilder.Append(totalMemAndroid);
+            statsBuilder.Append(" MB (total memory)\n");
+            statsBuilder.Append(availMemAndroid);
+            statsBuilder.Append("/");
+            statsBuilder.Append(totalPssAndroid);
+            statsBuilder.Append(" MB (available, app usage) (");
+            statsBuilder.Append((int)((float)totalPssAndroid/totalMemAndroid * 100));
+            statsBuilder.Append("%)");
+        }
 #else
-        statsBuilder.AppendFormat("Vertices: {0:D}\nFaces: {1:D}\n", numVertices, numFaces);
+        statsBuilder.Append("Vertices: ");
+        statsBuilder.Append(numVertices);
+        statsBuilder.Append("\nFaces: ");
+        statsBuilder.Append(numFaces);
+        statsBuilder.Append("\n");
         if (memInfoEnabled)
-            statsBuilder.AppendFormat("{0:D} MB used memory\n{1:D} MB reserved memory\n", totalAllocUnity, totalReservedUnity);
+        {
+            statsBuilder.Append(totalAllocUnity);
+            statsBuilder.Append(" MB used memory\n");
+            statsBuilder.Append(totalReservedUnity);
+            statsBuilder.Append(" MB reserved memory\n");
+        }
 #endif
-        ClearCharArray(statsCharArray);
         statsBuilder.CopyTo(0, statsCharArray, 0, statsBuilder.Length);
-        textOutside.SetCharArray(statsCharArray);
+        textOutside.SetCharArray(statsCharArray, 0, statsBuilder.Length);
     }
 
 
@@ -195,7 +248,7 @@ public class MemoryInfoText : MonoBehaviour
                     
                     if (MAX_VERTICES == 0)
                     {
-                        MAX_VERTICES = totalMemAndroid > 6000 ? 300000 : 90000;
+                        MAX_VERTICES = totalMemAndroid > 6000 ? 250000 : 80000;
                     }
                 }
             }

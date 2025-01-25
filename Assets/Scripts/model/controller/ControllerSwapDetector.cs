@@ -16,6 +16,7 @@
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.model.main;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
 using UnityEngine.UI;
 
@@ -256,9 +257,32 @@ namespace com.google.apps.peltzer.client.model.controller
 
             if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
-                // TODO
-                // var peltzerTrackedObj = peltzerController.GetComponent<TrackedPoseDriver>();
-                // var paletteTrackedObj = paletteController.GetComponent<TrackedPoseDriver>();
+                // Debug.Log("OpenXR controller swap!");
+                var peltzerTrackedObj = peltzerController.GetComponent<TrackedPoseDriver>();
+                var paletteTrackedObj = paletteController.GetComponent<TrackedPoseDriver>();
+
+                if (!userIsNowRightHanded)
+                {
+                    peltzerTrackedObj.positionInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/pointerPosition");
+                    peltzerTrackedObj.rotationInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/pointerRotation");
+                    peltzerTrackedObj.trackingStateInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/trackingState");
+
+                    paletteTrackedObj.positionInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/pointerPosition");
+                    paletteTrackedObj.rotationInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/pointerRotation");
+                    paletteTrackedObj.trackingStateInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/trackingState");
+                }
+                else
+                {
+                    peltzerTrackedObj.positionInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/pointerPosition");
+                    peltzerTrackedObj.rotationInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/pointerRotation");
+                    peltzerTrackedObj.trackingStateInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/trackingState");
+
+                    paletteTrackedObj.positionInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/pointerPosition");
+                    paletteTrackedObj.rotationInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/pointerRotation");
+                    paletteTrackedObj.trackingStateInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/trackingState");
+                }
+                (peltzerController.controller, paletteController.controller) = (paletteController.controller, peltzerController.controller);
+
             }
             else if (Config.Instance.sdkMode == SdkMode.Oculus)
             {
