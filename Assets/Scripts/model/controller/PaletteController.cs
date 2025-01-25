@@ -194,6 +194,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject publishSignInPrompt;
         public GameObject tutorialExitPrompt;
         public GameObject saveLocallyPrompt;
+        public GameObject saveOnlinePrompt;
         public GameObject keyboardGameobject;
 
         /// <summary>
@@ -305,6 +306,7 @@ namespace com.google.apps.peltzer.client.model.controller
             publishAfterSavePrompt = m_Popups.transform.Find($"PublishAfterSavePrompt").gameObject;
             publishSignInPrompt = m_Popups.transform.Find($"PublishSignInPrompt").gameObject;
             saveLocallyPrompt = m_Popups.transform.Find($"SaveLocallyPrompt").gameObject;
+            saveOnlinePrompt = m_Popups.transform.Find($"SaveOnlinePrompt").gameObject;
 
             var panels = GetComponentsInChildren<ToolOptionsPanel>(true);
             SetupToolOptionsPanels(panels);

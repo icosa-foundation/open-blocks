@@ -1023,7 +1023,8 @@ namespace com.google.apps.peltzer.client.model.controller
         private bool IsHoveredButtonThatShouldChangeColour(MenuActionItem menuActionItem)
         {
             return menuActionItem.action == MenuAction.CLEAR
-            || menuActionItem.action == MenuAction.SAVE
+            || menuActionItem.action == MenuAction.SAVE_ONLINE
+            || menuActionItem.action == MenuAction.SAVE_PROMPT
             || menuActionItem.action == MenuAction.CANCEL_SAVE
             || menuActionItem.action == MenuAction.NOTHING
             || menuActionItem.action == MenuAction.SHOW_SAVE_CONFIRM

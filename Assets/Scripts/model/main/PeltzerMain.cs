@@ -40,14 +40,15 @@ namespace com.google.apps.peltzer.client.model.main
 {
     public enum MenuAction
     {
-        SAVE, LOAD, SHOWCASE, TAKE_PHOTO, SHARE, CLEAR, BLOCKMODE, NOTHING,
-        SHOW_SAVE_CONFIRM, CANCEL_SAVE, NEW_WITH_SAVE, SIGN_IN, SIGN_OUT, ADD_REFERENCE,
-        TOGGLE_SOUND, TOGGLE_PERMISSIONS, SAVE_COPY, PUBLISH, PUBLISHED_TAKE_OFF_HEADSET_DISMISS,
-        TUTORIAL_START, TUTORIAL_DISMISS, TUTORIAL_PROMPT, TUTORIAL_CONFIRM_DISMISS,
-        TUTORIAL_SAVE_AND_CONFIRM, TUTORIAL_DONT_SAVE_AND_CONFIRM, PUBLISH_AFTER_SAVE_DISMISS,
-        PUBLISH_SIGN_IN_DISMISS, PUBLISH_AFTER_SAVE_CONFIRM, TUTORIAL_EXIT_YES, TUTORIAL_EXIT_NO,
-        SAVE_LOCALLY, SAVE_LOCAL_SIGN_IN_INSTEAD, TOGGLE_LEFT_HANDED, TOGGLE_TOOLTIPS, PLAY_VIDEO,
-        SAVE_SELECTED, TOGGLE_FEATURE, TOGGLE_EXPAND_WIREFRAME_FEATURE,
+        SAVE_ONLINE = 0, LOAD = 1, SHOWCASE = 2, TAKE_PHOTO = 3, SHARE = 4, CLEAR = 5, BLOCKMODE = 6, NOTHING = 7,
+        SHOW_SAVE_CONFIRM = 8, CANCEL_SAVE = 9, NEW_WITH_SAVE = 10, SIGN_IN = 11, SIGN_OUT = 12, ADD_REFERENCE = 13,
+        TOGGLE_SOUND = 14, TOGGLE_PERMISSIONS = 15, SAVE_COPY = 16, PUBLISH = 17, PUBLISHED_TAKE_OFF_HEADSET_DISMISS = 18,
+        TUTORIAL_START = 19, TUTORIAL_DISMISS = 20, TUTORIAL_PROMPT = 21, TUTORIAL_CONFIRM_DISMISS = 22,
+        TUTORIAL_SAVE_AND_CONFIRM = 23, TUTORIAL_DONT_SAVE_AND_CONFIRM = 24, PUBLISH_AFTER_SAVE_DISMISS = 25,
+        PUBLISH_SIGN_IN_DISMISS = 26, PUBLISH_AFTER_SAVE_CONFIRM = 27, TUTORIAL_EXIT_YES = 28, TUTORIAL_EXIT_NO = 29,
+        SAVE_LOCALLY = 30, SAVE_LOCAL_SIGN_IN_INSTEAD = 31, TOGGLE_LEFT_HANDED = 32, TOGGLE_TOOLTIPS = 33, PLAY_VIDEO = 34,
+        SAVE_SELECTED = 35, TOGGLE_FEATURE = 36, TOGGLE_EXPAND_WIREFRAME_FEATURE = 37,
+        SAVE_PROMPT = 100
     }
 
     public enum Handedness { NONE, LEFT, RIGHT }
@@ -1048,16 +1049,20 @@ namespace com.google.apps.peltzer.client.model.main
                 case MenuAction.CANCEL_SAVE:
                     SetAllPromptsInactive();
                     break;
-                case MenuAction.SAVE:
+                case MenuAction.SAVE_PROMPT:
                     SetAllPromptsInactive();
                     if (OAuth2Identity.Instance.LoggedIn)
                     {
-                        SaveCurrentModel(publish: false, saveSelected: false);
+                        paletteController.saveOnlinePrompt.SetActive(true);
                     }
                     else
                     {
                         paletteController.saveLocallyPrompt.SetActive(true);
                     }
+                    break;
+                case MenuAction.SAVE_ONLINE:
+                    SetAllPromptsInactive();
+                    SaveCurrentModel(publish: false, saveSelected: false, forceLocal: false);
                     break;
                 case MenuAction.SAVE_COPY:
                     SetAllPromptsInactive();
@@ -1075,7 +1080,7 @@ namespace com.google.apps.peltzer.client.model.main
                     }
                     else
                     {
-                        SaveCurrentModel(publish: true, saveSelected: false);
+                        SaveCurrentModel(publish: true, saveSelected: false, forceLocal: false);
                         paletteController.SetPublishDialogActive();
                     }
                     break;
@@ -1089,7 +1094,7 @@ namespace com.google.apps.peltzer.client.model.main
                         InvokeMenuAction(MenuAction.CLEAR);
                     };
                     // After the model is serialized and we're free to clear it:
-                    SaveCurrentModel(publish: false, saveSelected: false);
+                    SaveCurrentModel(publish: false, saveSelected: false, forceLocal: false);
                     break;
                 case MenuAction.SHARE:
                     break;
@@ -1172,7 +1177,7 @@ namespace com.google.apps.peltzer.client.model.main
                         StartTutorial();
                     };
                     // After the model is serialized and we're free to clear it:
-                    SaveCurrentModel(publish: false, saveSelected: false);
+                    SaveCurrentModel(publish: false, saveSelected: false, forceLocal: false);
                     break;
                 case MenuAction.TUTORIAL_DONT_SAVE_AND_CONFIRM:
                     SetAllPromptsInactive();
@@ -1198,7 +1203,7 @@ namespace com.google.apps.peltzer.client.model.main
                     break;
                 case MenuAction.SAVE_LOCALLY:
                     SetAllPromptsInactive();
-                    SaveCurrentModel(publish: false, saveSelected: false);
+                    SaveCurrentModel(publish: false, saveSelected: false, forceLocal: true);
                     break;
                 case MenuAction.SAVE_LOCAL_SIGN_IN_INSTEAD:
                     SetAllPromptsInactive();
@@ -1272,6 +1277,7 @@ namespace com.google.apps.peltzer.client.model.main
             paletteController.publishSignInPrompt.SetActive(false);
             paletteController.publishAfterSavePrompt.SetActive(false);
             paletteController.saveLocallyPrompt.SetActive(false);
+            paletteController.saveOnlinePrompt.SetActive(false);
             paletteController.tutorialButton.GetComponent<Renderer>().material.color = PeltzerController.MENU_BUTTON_DARK;
             applicationButtonToolTips.TurnOff();
         }
@@ -1340,7 +1346,7 @@ namespace com.google.apps.peltzer.client.model.main
         private void SignInSuccessWithModelSave()
         {
             SignInSuccess();
-            SaveCurrentModel(publish: false, saveSelected: false);
+            SaveCurrentModel(publish: false, saveSelected: false, forceLocal: false);
         }
 
         private void SignInFailure()
@@ -1376,7 +1382,7 @@ namespace com.google.apps.peltzer.client.model.main
         /// <param name="publish">If true, also opens the url to publish the content.</param>
         /// <param name="saveSelected">If true, only saves the current selected content rather than
         /// the whole model.</param>
-        public void SaveCurrentModel(bool publish, bool saveSelected)
+        public void SaveCurrentModel(bool publish, bool saveSelected, bool forceLocal)
         {
             // Don't save empty scenes (the button will already be disabled).
             if (model.GetNumberOfMeshes() == 0)
@@ -1423,7 +1429,7 @@ namespace com.google.apps.peltzer.client.model.main
                     model.writeable = true;
                     saveData.remixIds = model.GetAllRemixIds(meshes);
                     // Now let's save the serialized data. This will be done asynchronously.
-                    SaveSerializedData(saveData, publish, saveSelected);
+                    SaveSerializedData(saveData, publish, saveSelected, forceLocal);
                 }, serializerForManualSave, saveSelected));
 
                 // serWork.BackgroundWork();
@@ -1439,7 +1445,7 @@ namespace com.google.apps.peltzer.client.model.main
         /// </summary>
         public void SaveCurrentModelAsCopy()
         {
-            SaveCurrentModel(publish: false, saveSelected: false);
+            SaveCurrentModel(publish: false, saveSelected: false, forceLocal: false);
             LocalId = null;
             AssetId = null;
             ModelChangedSinceLastSave = true;
@@ -1455,14 +1461,14 @@ namespace com.google.apps.peltzer.client.model.main
         {
             if (selector.selectedMeshes.Count > 0)
             {
-                SaveCurrentModel(publish: false, saveSelected: true);
+                SaveCurrentModel(publish: false, saveSelected: true, forceLocal: false);
             }
         }
 
         /// <summary>
         /// Called (on UI thread) when the model data has been serialized and is ready to save.
         /// </summary>
-        public void SaveSerializedData(SaveData saveData, bool publish, bool saveSelected)
+        public void SaveSerializedData(SaveData saveData, bool publish, bool saveSelected, bool localOnly)
         {
             // Generate an ID if needed. A new id will be needed if the LocalId is null or we are currently
             // only saving the selected content, otherwise we are just overwriting existing save data and
@@ -1474,7 +1480,7 @@ namespace com.google.apps.peltzer.client.model.main
             string directory = Path.Combine(modelsPath, modelIdForSaving);
             DoPolyMenuBackgroundWork(
               new SaveToDiskWork(saveData, directory, /* isOfflineModelsFolder */ false, isOverwrite));
-            if (OAuth2Identity.Instance.LoggedIn)
+            if (!localOnly && OAuth2Identity.Instance.LoggedIn)
             {
                 // If the user is authenticated, save to the assets service.
                 // This is asynchronous, and will ultimately call HandleSaveComplete to report the result of the
