@@ -11520,7 +11520,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Sign in to save and \nview your model online"
+  m_text: 'Save to your device.
+
+    Online sharing coming soon!'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
   m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
@@ -62865,7 +62867,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hoverName: 
-  isActive: 1
+  isActive: 0
   isHovered: 0
   action: 31
 --- !u!1 &1838725623965948
