@@ -1017,13 +1017,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1012231440556298}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c03e7400c41ee844695411b3eb677fb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   hoverName: Liked
-  isActive: 0
+  isActive: 1
   isHovered: 0
   polyMenuIndex: 3
 --- !u!1 &1013830123380054
@@ -16889,13 +16889,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1231180063383606}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c03e7400c41ee844695411b3eb677fb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   hoverName: Featured
-  isActive: 0
+  isActive: 1
   isHovered: 0
   polyMenuIndex: 2
 --- !u!1 &1231365117285426
@@ -55323,7 +55323,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4613369786893882
 Transform:
   m_ObjectHideFlags: 0
@@ -65548,7 +65548,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4358712911337290
 Transform:
   m_ObjectHideFlags: 0
@@ -78254,7 +78254,7 @@ PrefabInstance:
     - target: {fileID: 2167097947753145144, guid: 5dac744749868004ab4365c89ca2fab6,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.125
+      value: 0.15
       objectReference: {fileID: 0}
     - target: {fileID: 2167109709986285866, guid: 5dac744749868004ab4365c89ca2fab6,
         type: 3}
