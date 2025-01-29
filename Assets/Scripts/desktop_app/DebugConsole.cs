@@ -104,6 +104,7 @@ namespace com.google.apps.peltzer.client.desktop_app
 
             if (!consoleObject.activeSelf) return;
 
+            // Check for enter key using the new input system
             if (Keyboard.current.enterKey.wasPressedThisFrame)
             {
                 // Run command.
