@@ -248,7 +248,7 @@ public class MemoryInfoText : MonoBehaviour
                     
                     if (MAX_VERTICES == 0)
                     {
-                        MAX_VERTICES = totalMemAndroid > 6000 ? 250000 : 80000;
+                        MAX_VERTICES = totalMemAndroid > 6000 ? 150000 : 50000;
                     }
                 }
             }
