@@ -26,16 +26,19 @@ public class MaterialLibrary : MonoBehaviour
     public float paperCraftNoiseIntensity = 0.2f;
 
     public Material baseMaterial;
+    public Material transparentMaterial;
     public Material highlightMaterial;
     public Material highlightMaterial2;
     public Material highlightSilhouetteMaterial;
     public Material gemMaterial;
     public Material glassMaterial;
-    public Material glassSpecMaterial;
+    public Material glassMaterialPalette;
+    // public Material glassSpecMaterial;
     public Material subtractMaterial;
     public Material copyMaterial;
     public Material snapEffectMaterial;
-    public Material meshInsertEffectMaterial;
+    public Material meshInsertEffectMaterialFront;
+    public Material meshInsertEffectMaterialBack;
     public Material meshSelectMaterial;
     public Material gridMaterial;
     public Material pointHighlightMaterial;

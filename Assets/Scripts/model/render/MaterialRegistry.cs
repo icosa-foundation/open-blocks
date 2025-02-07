@@ -79,8 +79,7 @@ namespace com.google.apps.peltzer.client.model.render
         public static readonly int WHITE_ID = 21;
         public static readonly int BLACK_ID = 23;
 
-        private static readonly string BASE_SHADER = "Mogwai/DirectionalPaperUniform";
-        private static readonly string PREVIEW_SHADER = "Mogwai/DirectionalTransparent";
+        private static readonly string BASE_SHADER = "Universal Render Pipeline/Lit";
 
         /// <summary>
         ///   Must be called before used.  Creates the materials for the given color codes.
@@ -88,7 +87,9 @@ namespace com.google.apps.peltzer.client.model.render
         public static void init(MaterialLibrary materialLibrary)
         {
             Material baseMaterial = materialLibrary.baseMaterial;
+            Material transparentMaterial = materialLibrary.transparentMaterial; // preview material
             Material glassMaterial = materialLibrary.glassMaterial;
+            Material glassMaterialPalette = materialLibrary.glassMaterialPalette;
             Material gemMaterial = materialLibrary.gemMaterial;
             Material subtractMaterial = materialLibrary.subtractMaterial;
             Material copyMaterial = materialLibrary.copyMaterial;
@@ -105,13 +106,14 @@ namespace com.google.apps.peltzer.client.model.render
                 color32s[i] = materials[i].color;
                 materialsWithAlbedo[i] = new Material(Shader.Find(BASE_SHADER));
                 materialsWithAlbedo[i].color = new Color(r(rawColors[i]), g(rawColors[i]), b(rawColors[i]));
-                previewMaterials[i] = new MaterialAndColor(new Material(Shader.Find(PREVIEW_SHADER)), i);
+                previewMaterials[i] = new MaterialAndColor(new Material(transparentMaterial), i);
                 previewMaterials[i].color = new Color(r(rawColors[i]), g(rawColors[i]), b(rawColors[i]), /* alpha */ 1.0f);
                 previewMaterials[i].material.SetFloat("_MultiplicitiveAlpha", 0.3f);
             }
             // "Special" materials.
-            materials[GLASS_ID] = new MaterialAndColor(glassMaterial, materialLibrary.glassSpecMaterial, glassMaterial.color, GLASS_ID);
-            materialsWithAlbedo[GLASS_ID] = glassMaterial;
+            materials[GLASS_ID] = new MaterialAndColor(glassMaterial, glassMaterial.color, GLASS_ID);
+            //new MaterialAndColor(glassMaterial, materialLibrary.glassSpecMaterial, glassMaterial.color, GLASS_ID);
+            materialsWithAlbedo[GLASS_ID] = new Material(glassMaterialPalette);
             materials[GEM_ID] = new MaterialAndColor(gemMaterial, GEM_ID);
             materialsWithAlbedo[GEM_ID] = gemMaterial;
             materials[PINK_WIREFRAME_ID] = new MaterialAndColor(subtractMaterial, PINK_WIREFRAME_ID);
@@ -163,9 +165,9 @@ namespace com.google.apps.peltzer.client.model.render
             if (materials == null)
             {
                 MaterialLibrary matLib = new MaterialLibrary();
-                matLib.glassMaterial = new Material(Shader.Find(PREVIEW_SHADER));
-                matLib.glassSpecMaterial = new Material(Shader.Find(PREVIEW_SHADER));
-                matLib.gemMaterial = new Material(Shader.Find(PREVIEW_SHADER));
+                matLib.glassMaterial = new Material(matLib.glassMaterial);
+                // matLib.glassSpecMaterial = new Material(matLib.transparentMaterial);
+                matLib.gemMaterial = new Material(matLib.transparentMaterial);
                 matLib.copyMaterial = new Material(Shader.Find(BASE_SHADER));
                 matLib.subtractMaterial = new Material(Shader.Find(BASE_SHADER));
                 Debug.Log("initializing mats in wrong place - this is an error if a test isn't running.");
@@ -229,9 +231,9 @@ namespace com.google.apps.peltzer.client.model.render
             if (materials == null)
             {
                 MaterialLibrary matLib = new MaterialLibrary();
-                matLib.glassMaterial = new Material(Shader.Find(PREVIEW_SHADER));
-                matLib.glassSpecMaterial = new Material(Shader.Find(PREVIEW_SHADER));
-                matLib.gemMaterial = new Material(Shader.Find(PREVIEW_SHADER));
+                matLib.glassMaterial = new Material(matLib.glassMaterial);
+                // matLib.glassSpecMaterial = new Material(matLib.transparentMaterial);
+                matLib.gemMaterial = new Material(matLib.transparentMaterial);
                 matLib.copyMaterial = new Material(Shader.Find(BASE_SHADER));
                 matLib.subtractMaterial = new Material(Shader.Find(BASE_SHADER));
                 Debug.Log("initializing mats in wrong place - this is an error if a test isn't running.");
@@ -260,9 +262,9 @@ namespace com.google.apps.peltzer.client.model.render
             if (highlightMaterials == null)
             {
                 MaterialLibrary matLib = new MaterialLibrary();
-                matLib.glassMaterial = new Material(Shader.Find(PREVIEW_SHADER));
-                matLib.glassSpecMaterial = new Material(Shader.Find(PREVIEW_SHADER));
-                matLib.gemMaterial = new Material(Shader.Find(PREVIEW_SHADER));
+                matLib.glassMaterial = new Material(matLib.glassMaterial);
+                // matLib.glassSpecMaterial = new Material(matLib.transparentMaterial);
+                matLib.gemMaterial = new Material(matLib.transparentMaterial);
                 matLib.copyMaterial = new Material(Shader.Find(BASE_SHADER));
                 matLib.subtractMaterial = new Material(Shader.Find(BASE_SHADER));
                 Debug.Log("initializing mats in wrong place - this is an error if a test isn't running.");

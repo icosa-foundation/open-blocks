@@ -29,11 +29,13 @@ namespace com.google.apps.peltzer.client.model.render
         // How long the animation will play for.
         private float duration = DURATION_BASE;
 
-        private static MaterialCycler insertCycler;
+        private static MaterialCycler insertCyclerFront;
+        private static MaterialCycler insertCyclerBack;
 
         public static void Setup(MaterialLibrary library)
         {
-            insertCycler = new MaterialCycler(library.meshInsertEffectMaterial, 10);
+            insertCyclerFront = new MaterialCycler(library.meshInsertEffectMaterialFront, 10);
+            insertCyclerBack = new MaterialCycler(library.meshInsertEffectMaterialBack, 10);
         }
 
 
@@ -45,6 +47,8 @@ namespace com.google.apps.peltzer.client.model.render
         private bool inSnapThreshhold = false;
         private Model model;
         private float pctDone = 0f;
+
+        private Material effectMaterialBack;
 
         /// <summary>
         /// Constructs the effect, Initialize must still be called before the effect starts to take place.
@@ -60,8 +64,8 @@ namespace com.google.apps.peltzer.client.model.render
         public override void Initialize(MeshRepresentationCache cache, MaterialLibrary materialLibrary,
           WorldSpace worldSpace)
         {
-
-            base.Initialize(cache, insertCycler.GetInstanceOfMaterial(), worldSpace);
+            base.Initialize(cache, insertCyclerFront.GetInstanceOfMaterial(), worldSpace);
+            effectMaterialBack = insertCyclerBack.GetInstanceOfMaterial();
             if (insertionMesh != null)
             {
                 previewMeshes =
@@ -77,6 +81,7 @@ namespace com.google.apps.peltzer.client.model.render
             Vector3 minBoundsWorld = worldSpace.ModelToWorld(insertionMesh.bounds.min);
             Vector3 maxBoundsWorld = worldSpace.ModelToWorld(insertionMesh.bounds.max);
             effectMaterial.SetVector("_MeshShaderBounds", new Vector4(minBoundsWorld.y, maxBoundsWorld.y, 0f, 0f));
+            effectMaterialBack.SetVector("_MeshShaderBounds", new Vector4(minBoundsWorld.y, maxBoundsWorld.y, 0f, 0f));
             // Adjust for constant velocity so that effect works for big and small meshes.
             duration = DURATION_BASE * Mathf.Sqrt(maxBoundsWorld.y - minBoundsWorld.y);
         }
@@ -89,6 +94,7 @@ namespace com.google.apps.peltzer.client.model.render
                   worldSpace.modelToWorld,
                   effectMaterial,
                   0); // Layer
+                Graphics.DrawMesh(subMesh, worldSpace.modelToWorld, effectMaterialBack, 0);
             }
         }
 
@@ -110,6 +116,7 @@ namespace com.google.apps.peltzer.client.model.render
             Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
             Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
             effectMaterial.SetFloat("_AnimPct", pctDone);
+            effectMaterialBack.SetFloat("_AnimPct", pctDone);
             if (pctDone >= 1f)
             {
                 Finish();
