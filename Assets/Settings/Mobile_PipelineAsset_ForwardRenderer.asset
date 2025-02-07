@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f62c9c65cf3354c93be831c8bc075510, type: 3}
   m_Name: ScreenSpaceAmbientOcclusion
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   m_Settings:
     AOMethod: 1
-    Downsample: 0
-    AfterOpaque: 0
+    Downsample: 1
+    AfterOpaque: 1
     Source: 1
-    NormalSamples: 1
+    NormalSamples: 0
     Intensity: 1.5
-    DirectLightingStrength: 0.25
+    DirectLightingStrength: 0.201
     Radius: 0.02
     Samples: 0
     BlurQuality: 0
@@ -55,7 +55,7 @@ MonoBehaviour:
   - {fileID: -1023887939489724375}
   m_RendererFeatureMap: 2988e804586bcaf1
   m_UseNativeRenderPass: 0
-  postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
+  postProcessData: {fileID: 0}
   xrSystemData: {fileID: 11400000, guid: 60e1133243b97e347b653163a8c01b64, type: 2}
   shaders:
     blitPS: {fileID: 4800000, guid: c17132b1f77d20942aa75f8429c0f8bc, type: 3}
@@ -91,7 +91,7 @@ MonoBehaviour:
     failOperation: 0
     zFailOperation: 0
   m_ShadowTransparentReceive: 1
-  m_RenderingMode: 0
+  m_RenderingMode: 2
   m_DepthPrimingMode: 0
   m_CopyDepthMode: 1
   m_AccurateGbufferNormals: 0
