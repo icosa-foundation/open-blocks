@@ -55,7 +55,7 @@ namespace com.google.apps.peltzer.client.model.util
         /// expensive and will happen in the UI thread, so we need to start out with a reasonably large
         /// size to handle the data we will download.
         /// </summary>
-        private const int DATA_BUFFER_INIT_SIZE = 128 * 1024 * 1024;  // 128MB
+        private const int DATA_BUFFER_INIT_SIZE = 0;//128 * 1024 * 1024;  // 128MB
 
         /// <summary>
         /// Size of the temporary buffer used to receive data. This is for a temporary buffer used

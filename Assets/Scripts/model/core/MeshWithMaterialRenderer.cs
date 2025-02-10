@@ -29,6 +29,7 @@ namespace com.google.apps.peltzer.client.model.core
 
         public List<MeshWithMaterial> meshes;
         public WorldSpace worldSpace;
+        public bool isPreview = false;
 
         protected bool overrideWithPreviewShader = false;
 
@@ -50,6 +51,17 @@ namespace com.google.apps.peltzer.client.model.core
 
         // Which Layer this mesh will be drawn to.
         public int Layer = DEFAULT_LAYER;
+
+        public void OnDestroy()
+        {
+            if (!isPreview)
+            {
+                foreach (MeshWithMaterial meshWithMaterial in meshes)
+                {
+                    Destroy(meshWithMaterial.mesh);
+                }
+            }
+        }
 
         public void Init(WorldSpace worldSpace)
         {

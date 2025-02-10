@@ -21,6 +21,7 @@ using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.util;
+using Object = System.Object;
 
 namespace com.google.apps.peltzer.client.model.render
 {
@@ -165,6 +166,11 @@ namespace com.google.apps.peltzer.client.model.render
                     newPos.Count != uMesh.mesh.vertices.Count())
                 {
                     // If materials changed, easiest action is to remesh everything.
+                    foreach (var mm in existing)
+                    {
+                        UnityEngine.Object.Destroy(mm.mesh);
+                        UnityEngine.Object.Destroy(mm.materialAndColor.material);
+                    }
                     existing.Clear();
                     // This method is used to update a GameObject, and as such we do not want the vert positions in model space,
                     // it is the gameObject that will be placed and rotated in the world.

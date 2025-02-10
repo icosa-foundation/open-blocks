@@ -56,6 +56,7 @@ namespace com.google.apps.peltzer.client.model.core
         public event Action<Command> OnUndo;
         public event Action<Command> OnRedo;
         public event Action<Command> OnCommandApplied;
+        public event Action OnModelCleared;
 
         /// <summary>
         /// Delegate that approves or rejects a proposed command before it gets applied to the model.
@@ -145,6 +146,11 @@ namespace com.google.apps.peltzer.client.model.core
             undoBatchStartTime = 0.0f;
             hiddenMeshes.Clear();
             meshRepresentationCache.Clear();
+
+            if (OnModelCleared != null)
+            {
+                OnModelCleared();
+            }
         }
 
         /// <summary>

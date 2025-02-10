@@ -19,6 +19,8 @@ using UnityEngine;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.main;
+using UnityEditor;
+using Object = UnityEngine.Object;
 
 namespace com.google.apps.peltzer.client.model.render
 {
@@ -342,8 +344,14 @@ namespace com.google.apps.peltzer.client.model.render
 
         public void Clear()
         {
-            meshInfosByMaterial.Clear();
+            foreach (var meshInfo in allMeshInfos)
+            {
+                Object.Destroy(meshInfo.mesh);
+                Object.Destroy(meshInfo.materialAndColor.material);
+            }
             allMeshInfos.Clear();
+            meshInfosByMaterial.Clear();
+            meshInfosByMesh.Clear();
             meshesPendingAdd.Clear();
             meshesPendingRemove.Clear();
             meshInfosPendingRegeneration.Clear();

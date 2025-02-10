@@ -99,6 +99,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public GameObject tutorialButton;
         public GameObject UIPanels;
+        public GameObject addReferenceImageButton;
         public float speed;
 
         /// <summary>
@@ -137,11 +138,11 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <summary>
         ///   Position reference for the menu panel when in the right hand.
         /// </summary>
-        private readonly Vector3 menuPanelRightPos = new Vector3(-0.29f, 0f, 0f);
+        private readonly Vector3 menuPanelRightPos = new Vector3(-0.29f, 0.025f, 0.025f);
         /// <summary>
         ///   Position reference for the menu panel when in the right hand.
         /// </summary>
-        private readonly Vector3 menuPanelZandriaRightPos = new Vector3(-0.34f, 0f, 0f);
+        private readonly Vector3 menuPanelZandriaRightPos = new Vector3(-0.34f, 0.025f, 0.025f);
         /// <summary>
         ///   Position reference for the details panel when in the left hand.
         /// </summary>
@@ -273,6 +274,11 @@ namespace com.google.apps.peltzer.client.model.controller
             polyMenuPanel = transform.Find("Panel-Menu").gameObject;
             detailsMenuPanel = transform.Find("Model-Details").gameObject;
             tutorialButton = transform.Find("ID_PanelTools/ToolSide/Actions/Tutorial").gameObject;
+            // TODO Android file picker
+            if (Application.isMobilePlatform)
+            {
+                addReferenceImageButton.GetComponentInChildren<MenuActionItem>().isActive = false;
+            }
 
             if (Config.Instance.sdkMode == SdkMode.Oculus)
             {

@@ -284,7 +284,7 @@ namespace com.google.apps.peltzer.client.model.main
         /// Initial size of serializer buffers.
         /// This must be reasonably big in order to avoid reallocation when saving models.
         /// </summary>
-        private const int SERIALIZER_BUFFER_INITIAL_SIZE = 128 * 1024 * 1024;  // 128 MB
+        private const int SERIALIZER_BUFFER_INITIAL_SIZE = 64 * 1024 * 1024;  // 128 MB
 
         /// <summary>
         /// The (singleton) instance. Lazily cached when the Instance property is read for the first time.
@@ -1550,6 +1550,8 @@ namespace com.google.apps.peltzer.client.model.main
             zoomer.ClearState();
             model.Clear(worldSpace);
             volumeInserter.ClearState();
+            MeshCycler.DestroyMeshes();
+
             spatialIndex.Reset(DEFAULT_BOUNDS);
             if (resetAttentionCaller)
             {

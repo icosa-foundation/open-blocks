@@ -4301,6 +4301,176 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &2852041496631331238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1978468392366664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b241ed5e61f44392ad859b0c3cd6978, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultRotation: {x: 45, y: 0, z: 0}
+  defaultDistance: 5
+  farFocusFactor: 2
+  moveSpeed: 1
+  moveFasterFactor: 5
+  rotateSpeed: 100
+  zoomStep: 0.2
+  inputMoveAxis:
+    m_Name: Input Move Axis
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: c7745c43-8ef1-4709-8b07-bdce177dea70
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 2D Vector
+      m_Id: d3f4b410-f6ca-43c0-b311-a44770d3dde9
+      m_Path: 2DVector
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Move Axis
+      m_Flags: 4
+    - m_Name: up
+      m_Id: 572c34d7-dd7e-4583-8860-4de427838b7c
+      m_Path: <Keyboard>/w
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Move Axis
+      m_Flags: 8
+    - m_Name: down
+      m_Id: f8b0f368-17ff-4c04-b0c5-bd43e5df3bd2
+      m_Path: <Keyboard>/s
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Move Axis
+      m_Flags: 8
+    - m_Name: left
+      m_Id: d36c97e8-ed44-4989-90ff-de4f8516d363
+      m_Path: <Keyboard>/a
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Move Axis
+      m_Flags: 8
+    - m_Name: right
+      m_Id: 3289afe0-6cbb-4d37-bdc1-5e94ff19a2be
+      m_Path: <Keyboard>/d
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Move Axis
+      m_Flags: 8
+    m_Flags: 0
+  inputLookAxis:
+    m_Name: Input Look Axis
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 41e23f55-e73f-45d0-9542-fd8c35b72f10
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 286aa7d5-526d-4c68-8fdb-dcd77ae628e8
+      m_Path: <Mouse>/delta
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Look Axis
+      m_Flags: 0
+    m_Flags: 0
+  inputZoomAxis:
+    m_Name: Input Zoom Axis
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: bea225ba-da51-4a69-930b-157d9c382fd6
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 33db1157-448d-4efe-a250-c07b83519866
+      m_Path: <Mouse>/scroll/y
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Zoom Axis
+      m_Flags: 0
+    m_Flags: 0
+  inputMoveButton:
+    m_Name: Input Move Button
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 223ec0a7-55b3-4acd-a698-97815e2ee51b
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: ec12a89b-9722-45f4-bc7c-777ce7636a9c
+      m_Path: <Keyboard>/anyKey
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Move Button
+      m_Flags: 0
+    m_Flags: 0
+  inputPanningButton:
+    m_Name: Input Panning Button
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 1d8dcc0f-7a6b-46d2-b428-dd22bac60836
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 1ef5278b-2b9d-49c4-aab2-02c55954ec5e
+      m_Path: <Keyboard>/alt
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Panning Button
+      m_Flags: 0
+    m_Flags: 0
+  inputRotateButton:
+    m_Name: Input Rotate Button
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: b9af496d-e983-4d3c-8bf0-9b3f6238d289
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: b8262031-cea2-4750-9bed-fddc1cc7a22e
+      m_Path: <Mouse>/leftButton
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Rotate Button
+      m_Flags: 0
+    m_Flags: 0
+  inputMoveFasterButton:
+    m_Name: Input Move Faster Button
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 5e7fbfa8-78cb-4a09-b6ae-111c307b026f
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 23311564-2299-4dbe-bfe0-bf33c191015e
+      m_Path: <Keyboard>/shift
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Input Move Faster Button
+      m_Flags: 0
+    m_Flags: 0
 --- !u!1 &1991332521448076
 GameObject:
   m_ObjectHideFlags: 0
