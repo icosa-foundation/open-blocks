@@ -300,6 +300,8 @@ namespace com.google.apps.peltzer.client.menu
             var mainCamera = Camera.main;
             mainCamera.cullingMask |= 1 << LayerMask.NameToLayer("Background");
             Destroy(mainCamera.transform.Find("LogoCamera").gameObject);
+            // disable logo light too
+            GameObject.FindWithTag("LogoLight")?.gameObject.SetActive(false);
             yield return null;
         }
 
