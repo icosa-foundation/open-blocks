@@ -30346,7 +30346,7 @@ GameObject:
   - component: {fileID: 20010936846075698}
   - component: {fileID: 124158705867986396}
   - component: {fileID: 2055044497}
-  - component: {fileID: 2486047669118019970}
+  - component: {fileID: 905784776662675014}
   m_Layer: 10
   m_Name: ID_Camera (eye)
   m_TagString: MainCamera
@@ -30362,8 +30362,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1389873695960628}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0.10873991, y: -0.11792295, z: 0.013610581, w: -0.98695725}
+  m_LocalPosition: {x: -0.6905185, y: 1.4803005, z: -4.14498}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -30450,7 +30450,7 @@ MonoBehaviour:
   m_TrackingType: 0
   m_UpdateType: 0
   m_UseRelativeTransform: 0
---- !u!114 &2486047669118019970
+--- !u!114 &905784776662675014
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -35023,8 +35023,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 2a120be907c2b54458e0e17bbff04771, type: 2}
-  - {fileID: 2100000, guid: 7065649ba9240444d83fc01724ae8d82, type: 2}
+  - {fileID: 2100000, guid: 92d668d9026e0db45b801c0a0037f8a0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -55626,7 +55625,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4202973441146720}
   - component: {fileID: 20005277408038684}
-  - component: {fileID: 2821073173100236034}
+  - component: {fileID: 4754663309924317381}
   m_Layer: 10
   m_Name: Camera (head)
   m_TagString: MainCamera
@@ -55700,7 +55699,7 @@ Camera:
   m_OcclusionCulling: 0
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &2821073173100236034
+--- !u!114 &4754663309924317381
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -75283,7 +75282,7 @@ GameObject:
   m_Component:
   - component: {fileID: 540288151859514835}
   - component: {fileID: 8741169918122679189}
-  - component: {fileID: 5684905863476329728}
+  - component: {fileID: 2835815287032679364}
   m_Layer: 10
   m_Name: SkyCamera
   m_TagString: Untagged
@@ -75357,7 +75356,7 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &5684905863476329728
+--- !u!114 &2835815287032679364
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -76280,7 +76279,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2399053491883409915}
   - component: {fileID: 4785639889306859413}
-  - component: {fileID: 1413115894849004835}
+  - component: {fileID: 5583932734626584459}
   m_Layer: 10
   m_Name: LogoCamera
   m_TagString: Untagged
@@ -76354,7 +76353,7 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &1413115894849004835
+--- !u!114 &5583932734626584459
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -76374,7 +76373,7 @@ MonoBehaviour:
   m_RendererIndex: -1
   m_VolumeLayerMask:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 4097
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 0

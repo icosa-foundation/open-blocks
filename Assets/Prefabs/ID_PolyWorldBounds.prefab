@@ -156,7 +156,6 @@ GameObject:
   - component: {fileID: 224370541268269928}
   - component: {fileID: 33297548367580078}
   - component: {fileID: 23225283960546930}
-  - component: {fileID: 222546997924132356}
   - component: {fileID: 114416216491546730}
   m_Layer: 9
   m_Name: Label
@@ -234,14 +233,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &222546997924132356
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1118835112765910}
-  m_CullTransparentMesh: 0
 --- !u!114 &114416216491546730
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -299,9 +290,9 @@ MonoBehaviour:
   m_fontSizeMin: 0
   m_fontSizeMax: 72
   m_fontStyle: 33
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
-  m_textAlignment: 514
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
   m_lineSpacing: 0
@@ -348,7 +339,6 @@ GameObject:
   - component: {fileID: 224679832294818134}
   - component: {fileID: 33505837807523066}
   - component: {fileID: 23111317234835046}
-  - component: {fileID: 222022350511019686}
   - component: {fileID: 114205424221727910}
   m_Layer: 9
   m_Name: Label
@@ -426,14 +416,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &222022350511019686
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1254416361541390}
-  m_CullTransparentMesh: 0
 --- !u!114 &114205424221727910
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -489,9 +471,9 @@ MonoBehaviour:
   m_fontSizeMin: 0
   m_fontSizeMax: 72
   m_fontStyle: 33
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
-  m_textAlignment: 514
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
   m_lineSpacing: 0
@@ -1575,7 +1557,6 @@ GameObject:
   - component: {fileID: 224858089146430600}
   - component: {fileID: 33011872541518444}
   - component: {fileID: 23401528563515852}
-  - component: {fileID: 222104731703119102}
   - component: {fileID: 114365332817670322}
   m_Layer: 9
   m_Name: Label
@@ -1653,14 +1634,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &222104731703119102
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1569193294323802}
-  m_CullTransparentMesh: 0
 --- !u!114 &114365332817670322
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1716,9 +1689,9 @@ MonoBehaviour:
   m_fontSizeMin: 0
   m_fontSizeMax: 72
   m_fontStyle: 33
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
-  m_textAlignment: 514
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
   m_lineSpacing: 0
@@ -1765,7 +1738,6 @@ GameObject:
   - component: {fileID: 224670727148669084}
   - component: {fileID: 33017301669168354}
   - component: {fileID: 23768846595832374}
-  - component: {fileID: 222008506848126242}
   - component: {fileID: 114786599491051510}
   m_Layer: 9
   m_Name: Label
@@ -1843,14 +1815,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &222008506848126242
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1604575811794314}
-  m_CullTransparentMesh: 0
 --- !u!114 &114786599491051510
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1908,9 +1872,9 @@ MonoBehaviour:
   m_fontSizeMin: 0
   m_fontSizeMax: 72
   m_fontStyle: 33
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
-  m_textAlignment: 514
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
   m_lineSpacing: 0
@@ -2594,7 +2558,6 @@ GameObject:
   - component: {fileID: 224581467656014618}
   - component: {fileID: 33617867487090626}
   - component: {fileID: 23596559822158946}
-  - component: {fileID: 222261062313911212}
   - component: {fileID: 114230634138241884}
   m_Layer: 9
   m_Name: Label
@@ -2672,14 +2635,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &222261062313911212
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1795982646056234}
-  m_CullTransparentMesh: 0
 --- !u!114 &114230634138241884
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2737,9 +2692,9 @@ MonoBehaviour:
   m_fontSizeMin: 0
   m_fontSizeMax: 72
   m_fontStyle: 33
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
-  m_textAlignment: 514
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
   m_lineSpacing: 0
@@ -3014,7 +2969,6 @@ GameObject:
   - component: {fileID: 224715971706275366}
   - component: {fileID: 33485288128700956}
   - component: {fileID: 23428995960998338}
-  - component: {fileID: 222880183898402822}
   - component: {fileID: 114449239239781262}
   m_Layer: 9
   m_Name: Label
@@ -3092,14 +3046,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &222880183898402822
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1853868545644542}
-  m_CullTransparentMesh: 0
 --- !u!114 &114449239239781262
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3157,9 +3103,9 @@ MonoBehaviour:
   m_fontSizeMin: 0
   m_fontSizeMax: 72
   m_fontStyle: 33
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
-  m_textAlignment: 514
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
   m_lineSpacing: 0
