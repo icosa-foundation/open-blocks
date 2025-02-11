@@ -450,7 +450,7 @@ namespace com.google.apps.peltzer.client.model.main
         /// We try it from Start() and retry it from Update() until we succeed.
         /// </summary>
         private bool setupDone;
-        private DesktopMain desktopMain;
+        // private DesktopMain desktopMain;
 
         public PolyMenuMain polyMenuMain;
 
@@ -734,7 +734,7 @@ namespace com.google.apps.peltzer.client.model.main
             previewController = FindObjectOfType<PreviewController>();
 
             // Get the desktop UI Main
-            desktopMain = FindObjectOfType<DesktopMain>();
+            // desktopMain = FindObjectOfType<DesktopMain>();
 
             // Get the ZandriaCreationsManager.
             zandriaCreationsManager = FindObjectOfType<ZandriaCreationsManager>();
@@ -851,12 +851,12 @@ namespace com.google.apps.peltzer.client.model.main
             // Register cross controller handlers.
             paletteController.RegisterCrossControllerHandlers(peltzerController);
 
-            desktopMain.Setup();
+            // desktopMain.Setup();
 
             // Model.
             exporter = gameObject.AddComponent<Exporter>();
             // Setup FBX exporter.
-            FbxExporter.Setup();
+            // FbxExporter.Setup();
 
             // Starts the call to authenticate.
             zandriaCreationsManager.Setup();
@@ -1332,7 +1332,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
             // They logged in, change the "Sign In" button to sign out.
-            GetDesktopMain().SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
+            // GetDesktopMain().SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
 
             paletteController.publishSignInPrompt.SetActive(false);
         }
@@ -1348,7 +1348,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignOut();
             // Update the desktop menu.
-            desktopMain.SignOut();
+            // desktopMain.SignOut();
         }
 
         public void SignOut()
@@ -1365,7 +1365,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignOut();
             // Update the desktop menu.
-            desktopMain.SignOut();
+            // desktopMain.SignOut();
         }
 
         /// <summary>
@@ -1832,10 +1832,10 @@ namespace com.google.apps.peltzer.client.model.main
             return subdivider;
         }
 
-        public DesktopMain GetDesktopMain()
-        {
-            return desktopMain;
-        }
+        // public DesktopMain GetDesktopMain()
+        // {
+        //     // return desktopMain;
+        // }
 
         public PolyMenuMain GetPolyMenuMain()
         {
