@@ -197,7 +197,7 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
                 return sRGB * (sRGB * (sRGB * 0.305306011h + 0.682171111h) + 0.012522878h);
 
                 // Precise version, useful for debugging.
-                //return half3(GammaToLinearSpaceExact(sRGB.r), GammaToLinearSpaceExact(sRGB.g), GammaToLinearSpaceExact(sRGB.b));
+                // return half3(GammaToLinearSpaceExact(sRGB.r), GammaToLinearSpaceExact(sRGB.g), GammaToLinearSpaceExact(sRGB.b));
             }
 
             inline void OpenBlocksInitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfaceData)
@@ -245,8 +245,8 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
                 input.attributes.positionOS = mul(_RemesherMeshTransforms[input.attributes.dynamicLightmapUV.x], input.attributes.positionOS);
                 input.attributes.normalOS = mul(_RemesherMeshTransforms[input.attributes.dynamicLightmapUV.x], input.attributes.normalOS);
                 output.varyings = LitPassVertex(input.attributes);
-                // output.color = half4(GammaToLinearSpace(input.color.rgb), input.color.a);
-                output.color = half4(input.color.rgb, input.color.a);
+                output.color = half4(GammaToLinearSpace(input.color.rgb), input.color.a);
+                // output.color = half4(input.color.rgb, input.color.a);
                 return output;
                 
             }
