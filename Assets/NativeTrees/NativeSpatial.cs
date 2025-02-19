@@ -27,29 +27,29 @@ using UnityEngine;
 /// </summary>
 public static class NativeSpatialFunction
 {
-    [DllImport("libNativeOctree", EntryPoint = "AllocSpatialPartitioner")]
+    [DllImport("libNativeSpatial", EntryPoint = "AllocSpatialPartitioner")]
     public static extern int AllocSpatialPartitioner(Vector3 center, Vector3 size);
 
-    [DllImport("libNativeOctree")]
+    [DllImport("libNativeSpatial")]
     public static extern void SpatialPartitionerAddItem(int SpatialPartitionerHandle, int itemId,
       Vector3 center, Vector3 extents);
 
-    [DllImport("libNativeOctree")]
+    [DllImport("libNativeSpatial")]
     public static extern void SpatialPartitionerUpdateItem(int SpatialPartitionerHandle, int itemId,
       Vector3 center, Vector3 extents);
 
-    [DllImport("libNativeOctree")]
+    [DllImport("libNativeSpatial")]
     public static extern void SpatialPartitionerRemoveItem(int SpatialPartitionerHandle, int itemId);
 
-    [DllImport("libNativeOctree")]
+    [DllImport("libNativeSpatial")]
     public static extern int SpatialPartitionerContainedBy(int SpatialPartitionerHandle, Vector3 testCenter,
       Vector3 testExtents, int[] returnArray, int returnArrayMaxSize);
 
-    [DllImport("libNativeOctree")]
+    [DllImport("libNativeSpatial")]
     public static extern int SpatialPartitionerIntersectedBy(int SpatialPartitionerHandle, Vector3 testCenter,
       Vector3 testExtents, int[] returnArray, int returnArrayMaxSize);
 
-    [DllImport("libNativeOctree")]
+    [DllImport("libNativeSpatial")]
     public static extern int SpatialPartitionerHasItem(int SpatialPartitionerHandle, int itemHandle);
 }
 

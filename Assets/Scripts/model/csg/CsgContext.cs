@@ -33,11 +33,7 @@ namespace com.google.apps.peltzer.client.model.csg
 
         public CsgContext(Bounds bounds)
         {
-#if UNITY_ANDROID && !UNITY_EDITOR
             tree = new NativeSpatial<CsgVertex>();
-#else
-            tree = new OctreeImpl<CsgVertex>(bounds);
-#endif
         }
 
         public CsgVertex CreateOrGetVertexAt(Vector3 loc)
