@@ -104,7 +104,8 @@ namespace com.google.apps.peltzer.client.desktop_app
 
             if (!consoleObject.activeSelf) return;
 
-            if (Input.GetKeyDown(KeyCode.Return))
+            // Check for enter key using the new input system
+            if (Keyboard.current.enterKey.wasPressedThisFrame)
             {
                 // Run command.
                 RunCommand(consoleInput.text);
@@ -112,7 +113,7 @@ namespace com.google.apps.peltzer.client.desktop_app
                 consoleInput.ActivateInputField();
                 consoleInput.Select();
             }
-            else if (Input.GetKeyDown(KeyCode.UpArrow))
+            else if (Keyboard.current.upArrowKey.wasPressedThisFrame)
             {
                 // Recover last command and put it in the input text.
                 consoleInput.text = lastCommand;
