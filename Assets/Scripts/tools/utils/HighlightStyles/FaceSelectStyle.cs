@@ -67,7 +67,9 @@ namespace com.google.apps.peltzer.client.tools.utils
                     for (int i = 0; i < tris.Count; i++)
                     {
                         // For each triangle in the face, add a vertex to the Mesh
-                        vertices.Add(mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId0]));
+                        var v = mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId0]);
+                        v += curFace.normal * 0.0001f; // Offset slightly to avoid z-fighting
+                        vertices.Add(v);
                         normals.Add(curFace.normal);
                         selectData.Add(new Vector2(animPct, 0f));
                         indices.Add(curIndex);
@@ -75,7 +77,9 @@ namespace com.google.apps.peltzer.client.tools.utils
                         selectPositions.Add(selectPosition);
                         curIndex++;
 
-                        vertices.Add(mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId1]));
+                        v = mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId1]);
+                        v += curFace.normal * 0.0001f; // Offset slightly to avoid z-fighting
+                        vertices.Add(v);
                         normals.Add(curFace.normal);
                         selectData.Add(new Vector2(animPct, 0f));
                         indices.Add(curIndex);
@@ -83,7 +87,9 @@ namespace com.google.apps.peltzer.client.tools.utils
                         selectPositions.Add(selectPosition);
                         curIndex++;
 
-                        vertices.Add(mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId2]));
+                        v = mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId2]);
+                        v += curFace.normal * 0.0001f; // Offset slightly to avoid z-fighting
+                        vertices.Add(v);
                         normals.Add(curFace.normal);
                         selectData.Add(new Vector2(animPct, 0f));
                         indices.Add(curIndex);

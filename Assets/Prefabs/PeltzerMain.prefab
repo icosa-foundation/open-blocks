@@ -145,8 +145,6 @@ MonoBehaviour:
   paperCraftNoiseIntensity: 1
   baseMaterial: {fileID: 2100000, guid: 0f79d4ce1aba22f4294df2a16ca5465e, type: 2}
   transparentMaterial: {fileID: 2100000, guid: 672ba6f8726123a4098460641f9f2fe3, type: 2}
-  highlightMaterial: {fileID: 2100000, guid: 39a7d257347562e40aa0902710361e84, type: 2}
-  highlightMaterial2: {fileID: 2100000, guid: 3900b62c51c3e5840902a5d96d73c216, type: 2}
   highlightSilhouetteMaterial: {fileID: 2100000, guid: 67ab1a035849e4249836f31881bf03c9,
     type: 2}
   gemMaterial: {fileID: 2100000, guid: fc077f0d30f0a4ccea1d2c28fa3cf93b, type: 2}
@@ -162,15 +160,11 @@ MonoBehaviour:
     type: 2}
   meshSelectMaterial: {fileID: 2100000, guid: 5661b44ff6cb3914bbfcc1fb80e203ca, type: 2}
   gridMaterial: {fileID: 2100000, guid: c9d85c2af109a7e4f8a1549f47e7178e, type: 2}
-  pointHighlightMaterial: {fileID: 2100000, guid: b5280e2b525826e459b7b86b9940fb96,
+  pointEdgeFaceHighlightMaterial: {fileID: 2100000, guid: 6cad5b83c13bdc9419767ec6e0a6b377,
     type: 2}
   pointInactiveMaterial: {fileID: 2100000, guid: 4cbe6d6e693ad6044a0b0624147a1702,
     type: 2}
-  edgeHighlightMaterial: {fileID: 2100000, guid: e9946a6f1381fde41a3cd06134ad16ee,
-    type: 2}
   edgeInactiveMaterial: {fileID: 2100000, guid: e8ef146ca97f37c4dbaeae72f761f4ee,
-    type: 2}
-  faceHighlightMaterial: {fileID: 2100000, guid: a023a08d6e37cb949a25e9373e58f121,
     type: 2}
   facePaintMaterial: {fileID: 2100000, guid: d4194faafba0acf469d1c2167a732dc6, type: 2}
   faceExtrudeMaterial: {fileID: 2100000, guid: 4fbe852b345fb814baae8b268d93f5f3, type: 2}

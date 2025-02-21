@@ -22,13 +22,15 @@ using UnityEngine;
 /// </summary>
 public class MaterialLibrary : MonoBehaviour
 {
+    private static readonly int MultiplicitiveAlpha = Shader.PropertyToID("_MultiplicitiveAlpha");
+    private static readonly int ZTest = Shader.PropertyToID("_ZTest");
     public float paperCraftNoiseScale = 500f;
     public float paperCraftNoiseIntensity = 0.2f;
 
     public Material baseMaterial;
     public Material transparentMaterial;
-    public Material highlightMaterial;
-    public Material highlightMaterial2;
+    // public Material highlightMaterial;
+    // public Material highlightMaterial2;
     public Material highlightSilhouetteMaterial;
     public Material gemMaterial;
     public Material glassMaterial;
@@ -41,14 +43,24 @@ public class MaterialLibrary : MonoBehaviour
     public Material meshInsertEffectMaterialBack;
     public Material meshSelectMaterial;
     public Material gridMaterial;
-    public Material pointHighlightMaterial;
+    public Material pointEdgeFaceHighlightMaterial;
     public Material pointInactiveMaterial;
-    public Material edgeHighlightMaterial;
     public Material edgeInactiveMaterial;
-    public Material faceHighlightMaterial;
     public Material facePaintMaterial;
     public Material faceExtrudeMaterial;
     public Material selectMaterial;
+
+    private void OnEnable()
+    {
+        // for rendering MMeshes the shader needs additional information about the positions of the mesh
+        // but for rendering non MMesh things, we don't want that because it messes with geometry
+        baseMaterial.EnableKeyword("_REMESHER");
+        transparentMaterial.EnableKeyword("_REMESHER");
+        glassMaterial.EnableKeyword("_REMESHER");
+        pointEdgeFaceHighlightMaterial.DisableKeyword("_REMESHER");
+        pointEdgeFaceHighlightMaterial.SetFloat(MultiplicitiveAlpha, 0.5f);
+        pointEdgeFaceHighlightMaterial.SetFloat(ZTest, 8.0f); // always (no depth test)
+    }
 
     public void Start()
     {

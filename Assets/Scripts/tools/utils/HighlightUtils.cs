@@ -331,23 +331,29 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// <summary>
         /// Sets up materials and data structures for managing highlights.
         /// </summary>
+
         public void Setup(WorldSpace worldSpace, Model model, MaterialLibrary materialLibrary)
         {
             this.worldSpace = worldSpace;
             this.model = model;
-            EdgeSelectStyle.material = new Material(materialLibrary.edgeHighlightMaterial);
+            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            VertexSelectStyle.vertexMesh = sphere.GetComponent<MeshFilter>().mesh;
+            EdgeSelectStyle.edgeMesh = cube.GetComponent<MeshFilter>().mesh;
+            Destroy(cube); // only need the mesh for showing the vertex highlights
+            Destroy(sphere);
+            EdgeSelectStyle.material = new Material(materialLibrary.pointEdgeFaceHighlightMaterial);
             EdgeInactiveStyle.material = new Material(materialLibrary.edgeInactiveMaterial);
-            EdgeTemporaryStyle.material = new Material(materialLibrary.edgeHighlightMaterial);
-            FaceSelectStyle.material = new Material(materialLibrary.faceHighlightMaterial);
+            EdgeTemporaryStyle.material = new Material(materialLibrary.pointEdgeFaceHighlightMaterial);
+            FaceSelectStyle.material = new Material(materialLibrary.pointEdgeFaceHighlightMaterial);
             FacePaintStyle.material = new Material(materialLibrary.facePaintMaterial);
             FaceExtrudeStyle.material = new Material(materialLibrary.faceExtrudeMaterial);
             MeshSelectStyle.material = new Material(materialLibrary.meshSelectMaterial);
             MeshSelectStyle.silhouetteMaterial = new Material(materialLibrary.highlightSilhouetteMaterial);
             MeshPaintStyle.material = new Material(materialLibrary.meshSelectMaterial);
-            VertexSelectStyle.material = new Material(materialLibrary.pointHighlightMaterial);
+            VertexSelectStyle.material = new Material(materialLibrary.pointEdgeFaceHighlightMaterial);
             VertexInactiveStyle.material = new Material(materialLibrary.pointInactiveMaterial);
             TutorialHighlightStyle.material = materialLibrary.meshSelectMaterial;
-
 
             MeshSelectStyle.Setup();
             MeshPaintStyle.Setup();
