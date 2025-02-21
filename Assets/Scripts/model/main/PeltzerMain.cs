@@ -586,7 +586,7 @@ namespace com.google.apps.peltzer.client.model.main
 
             // Create and set up the web request manager.
             webRequestManager = gameObject.AddComponent<WebRequestManager>();
-            webRequestManager.Setup(new WebRequestManager.WebRequestManagerConfig());
+            webRequestManager.Setup(new WebRequestManager.WebRequestManagerConfig(AssetsServiceClient.POLY_KEY));
 
             // Add Oculus SDK stuff.
             if (Config.Instance.sdkMode == SdkMode.Oculus)
