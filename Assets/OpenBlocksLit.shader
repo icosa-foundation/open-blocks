@@ -2,6 +2,12 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
 {
     Properties
     {
+        // Open Blocks specific properties
+        _MultiplicitiveAlpha("Multiplicitive Alpha", Float) = 1.0
+        _OverrideAmount("Override Amount", Float) = 0.0
+        _OverrideColor("Override Color", Color) = (1, 1, 1, 1)
+        _ZTest ("ZTest", Float) = 4.0 // LEqual default
+        
         // Specular vs Metallic workflow
         _WorkflowMode("WorkflowMode", Float) = 1.0
 
@@ -39,11 +45,6 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
         _DetailAlbedoMap("Detail Albedo x2", 2D) = "linearGrey" {}
         _DetailNormalMapScale("Scale", Range(0.0, 2.0)) = 1.0
         [Normal] _DetailNormalMap("Normal Map", 2D) = "bump" {}
-        
-        // Open Blocks specific properties
-        _MultiplicitiveAlpha("Multiplicitive Alpha", Float) = 1.0
-        _OverrideAmount("Override Amount", Float) = 0.0
-        _OverrideColor("Override Color", Color) = (1, 1, 1, 1)
         
         // SRP batching compatibility for Clear Coat (Not used in Lit)
         [HideInInspector] _ClearCoatMask("_ClearCoatMask", Float) = 0.0
@@ -108,6 +109,7 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
             // Render State Commands
             Blend[_SrcBlend][_DstBlend], [_SrcBlendAlpha][_DstBlendAlpha]
             ZWrite[_ZWrite]
+            ZTest [_ZTest]
             Cull[_Cull]
             AlphaToMask[_AlphaToMask]
 
@@ -119,6 +121,11 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
             #pragma vertex OpenBlocksLitPassVertex
             #pragma fragment OpenBlocksLitPassFragment
 
+            // -------------------------------------
+            // Open Blocks Keywords
+            #pragma multi_compile _ _REMESHER
+            #pragma multi_compile _ _NO_DEPTH_TEST
+            
             // -------------------------------------
             // Material Keywords
             #pragma shader_feature_local _NORMALMAP
@@ -152,8 +159,7 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
             #pragma multi_compile _ _FORWARD_PLUS
             #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
-
-
+            
             // -------------------------------------
             // Unity defined keywords
             #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING
@@ -173,141 +179,7 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
 
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
-
-            float4x4 _RemesherMeshTransforms[128];
-            float _MultiplicitiveAlpha;
-            float _OverrideAmount;
-            float4 _OverrideColor;
-
-            struct OpenBlocksAttributes
-            {
-                Attributes attributes;
-                half4 color : COLOR;
-            };
-
-            struct OpenBlocksVaryings
-            {
-                Varyings varyings;
-                half4 color : COLOR;
-            };
-
-            inline half3 GammaToLinearSpace (half3 sRGB)
-            {
-                // Approximate version from http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
-                return sRGB * (sRGB * (sRGB * 0.305306011h + 0.682171111h) + 0.012522878h);
-
-                // Precise version, useful for debugging.
-                // return half3(GammaToLinearSpaceExact(sRGB.r), GammaToLinearSpaceExact(sRGB.g), GammaToLinearSpaceExact(sRGB.b));
-            }
-
-            inline void OpenBlocksInitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfaceData)
-            {
-                half4 albedoAlpha = SampleAlbedoAlpha(uv, TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap));
-                outSurfaceData.alpha = Alpha(albedoAlpha.a, _BaseColor, _Cutoff);
-
-                half4 specGloss = SampleMetallicSpecGloss(uv, albedoAlpha.a);
-                outSurfaceData.albedo = albedoAlpha.rgb * _BaseColor.rgb;
-                outSurfaceData.albedo = AlphaModulate(outSurfaceData.albedo, outSurfaceData.alpha);
-
-            #if _SPECULAR_SETUP
-                outSurfaceData.metallic = half(1.0);
-                outSurfaceData.specular = specGloss.rgb;
-            #else
-                outSurfaceData.metallic = specGloss.r;
-                outSurfaceData.specular = half3(0.0, 0.0, 0.0);
-            #endif
-
-                outSurfaceData.smoothness = specGloss.a;
-                outSurfaceData.normalTS = SampleNormal(uv, TEXTURE2D_ARGS(_BumpMap, sampler_BumpMap), _BumpScale);
-                outSurfaceData.occlusion = SampleOcclusion(uv);
-                outSurfaceData.emission = SampleEmission(uv, _EmissionColor.rgb, TEXTURE2D_ARGS(_EmissionMap, sampler_EmissionMap));
-
-            #if defined(_CLEARCOAT) || defined(_CLEARCOATMAP)
-                half2 clearCoat = SampleClearCoat(uv);
-                outSurfaceData.clearCoatMask       = clearCoat.r;
-                outSurfaceData.clearCoatSmoothness = clearCoat.g;
-            #else
-                outSurfaceData.clearCoatMask       = half(0.0);
-                outSurfaceData.clearCoatSmoothness = half(0.0);
-            #endif
-
-            #if defined(_DETAIL)
-                half detailMask = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, uv).a;
-                float2 detailUv = uv * _DetailAlbedoMap_ST.xy + _DetailAlbedoMap_ST.zw;
-                outSurfaceData.albedo = ApplyDetailAlbedo(detailUv, outSurfaceData.albedo, detailMask);
-                outSurfaceData.normalTS = ApplyDetailNormal(detailUv, outSurfaceData.normalTS, detailMask);
-            #endif
-            }
-            
-            OpenBlocksVaryings OpenBlocksLitPassVertex(OpenBlocksAttributes input)
-            {
-                OpenBlocksVaryings output;
-                input.attributes.positionOS = mul(_RemesherMeshTransforms[input.attributes.dynamicLightmapUV.x], input.attributes.positionOS);
-                input.attributes.normalOS = mul(_RemesherMeshTransforms[input.attributes.dynamicLightmapUV.x], input.attributes.normalOS);
-                output.varyings = LitPassVertex(input.attributes);
-                output.color = half4(GammaToLinearSpace(input.color.rgb), input.color.a);
-                // output.color = half4(input.color.rgb, input.color.a);
-                return output;
-                
-            }
-
-            void OpenBlocksLitPassFragment(OpenBlocksVaryings input, out half4 outColor : SV_Target0
-#ifdef _WRITE_RENDERING_LAYERS
-                , out float4 outRenderingLayers : SV_Target1
-#endif
-                )
-            {
-                Varyings v = input.varyings;
-                _BaseColor = input.color;
-                
-            //     UNITY_SETUP_INSTANCE_ID(v);
-            //     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(v);
-            //
-            // #if defined(_PARALLAXMAP)
-            // #if defined(REQUIRES_TANGENT_SPACE_VIEW_DIR_INTERPOLATOR)
-            //     half3 viewDirTS = v.viewDirTS;
-            // #else
-            //     half3 viewDirWS = GetWorldSpaceNormalizeViewDir(v.positionWS);
-            //     half3 viewDirTS = GetViewDirectionTangentSpace(v.tangentWS, v.normalWS, viewDirWS);
-            // #endif
-            //     ApplyPerPixelDisplacement(viewDirTS, v.uv);
-            // #endif
-            //
-            //     SurfaceData surfaceData;
-            //     OpenBlocksInitializeStandardLitSurfaceData(v.uv, surfaceData);
-            //
-            // #ifdef LOD_FADE_CROSSFADE
-            //     LODFadeCrossFade(v.positionCS);
-            // #endif
-            //
-            //     InputData inputData;
-            //     InitializeInputData(v, surfaceData.normalTS, inputData);
-            //     SETUP_DEBUG_TEXTURE_DATA(inputData, v.uv, _BaseMap);
-            //
-            // #ifdef _DBUFFER
-            //     ApplyDecalToSurfaceData(v.positionCS, surfaceData, inputData);
-            // #endif
-            //
-            //     half4 color = UniversalFragmentPBR(inputData, surfaceData);
-            //     color.rgb = MixFog(color.rgb, inputData.fogCoord);
-            //     color.a = OutputAlpha(color.a, IsSurfaceTypeTransparent(_Surface));
-            //
-            //     outColor = color;
-            //
-            // #ifdef _WRITE_RENDERING_LAYERS
-            //     uint renderingLayers = GetMeshRenderingLayer();
-            //     outRenderingLayers = float4(EncodeMeshRenderingLayer(renderingLayers), 0, 0, 0);
-            // #endif
-                
-                LitPassFragment(v, outColor
-                #ifdef  _WRITE_RENDERING_LAYERS
-                , out
-                #endif
-                );
-                
-                outColor = half4(outColor.rgb, outColor.a * _MultiplicitiveAlpha);
-                outColor = lerp(outColor, _OverrideColor, _OverrideAmount);
-            }
+            #include "OpenBlocksLitForwardPass.hlsl"
             
             ENDHLSL
         }
@@ -334,7 +206,11 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
             // Shader Stages
             #pragma vertex OpenBlocksShadowPassVertex
             #pragma fragment ShadowPassFragment
-
+            
+            // -------------------------------------
+            // Open Blocks Keywords
+            #pragma multi_compile _ _REMESHER
+            
             // -------------------------------------
             // Material Keywords
             #pragma shader_feature_local _ALPHATEST_ON
@@ -359,43 +235,8 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
             // Includes
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
-
-            float4x4 _RemesherMeshTransforms[128];
-            float _MultiplicitiveAlpha;
-            float _OverrideAmount;
-            float4 _OverrideColor;
-
-            struct ShadowAttributes
-            {
-                Attributes attributes;
-                float2 dynamicLightmapUV  : TEXCOORD2;
-            };
+            #include "OpenBlocksShadowCasterPass.hlsl"
             
-            Varyings OpenBlocksShadowPassVertex(ShadowAttributes input)
-            {
-                input.attributes.positionOS = mul(_RemesherMeshTransforms[input.dynamicLightmapUV.x], input.attributes.positionOS);
-                input.attributes.normalOS = mul(_RemesherMeshTransforms[input.dynamicLightmapUV.x], input.attributes.normalOS);
-
-                return ShadowPassVertex(input.attributes);
-                
-            }
-
-            // half4 OpenBlocksShadowPassFragment(Varyings input) : SV_TARGET
-            // {
-            //     UNITY_SETUP_INSTANCE_ID(input);
-            //
-            //     #if defined(_ALPHATEST_ON)
-            //         Alpha(SampleAlbedoAlpha(input.uv, TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap)).a, _BaseColor, _Cutoff);
-            //     #endif
-            //
-            //     #if defined(LOD_FADE_CROSSFADE)
-            //         LODFadeCrossFade(input.positionCS);
-            //     #endif
-            //
-            //     return 0;
-            // }
-
-
             ENDHLSL
         }
 
