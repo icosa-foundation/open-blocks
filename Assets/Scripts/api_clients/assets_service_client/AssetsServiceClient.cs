@@ -280,8 +280,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
             string url = $"format={q.Format}&";
             url += $"pageSize={pageSize}&";
-            url += $"triangleCountMax={q.TriangleCountMax}&";
             url += $"orderBy={q.OrderBy}&";
+            if (q.TriangleCountMax > 0) url += $"triangleCountMax={q.TriangleCountMax}&";
             if (!string.IsNullOrEmpty(q.SearchText)) url += $"name={q.SearchText}&";
             if (!string.IsNullOrEmpty(q.License)) url += $"license={q.License}&";
             if (!string.IsNullOrEmpty(q.Curated)) url += $"curated={q.Curated}&";
