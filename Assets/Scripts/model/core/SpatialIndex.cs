@@ -110,12 +110,20 @@ namespace com.google.apps.peltzer.client.model.core
 
         private void Setup(Bounds bounds)
         {
+// Platforms with no native spatial index implementation
+#if UNITY_STANDALONE_OSX || UNITY_IOS
+            meshes = new OctreeImpl<int>(bounds);
+            faces = new OctreeImpl<FaceKey>(bounds);
+            edges = new OctreeImpl<EdgeKey>(bounds);
+            vertices = new OctreeImpl<VertexKey>(bounds);
+            meshBounds = new OctreeImpl<int>(bounds);
+#else
             meshes = new NativeSpatial<int>();
             faces = new NativeSpatial<FaceKey>();
             edges = new NativeSpatial<EdgeKey>();
             vertices = new NativeSpatial<VertexKey>();
             meshBounds = new NativeSpatial<int>();
-
+#endif
             faceInfo = new Dictionary<FaceKey, FaceInfo>();
             edgeInfo = new Dictionary<EdgeKey, EdgeInfo>();
 
