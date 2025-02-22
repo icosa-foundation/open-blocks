@@ -186,6 +186,50 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public static string DEFAULT_WEB_BASE_URL = "https://icosa.gallery";
         private static string DEFAULT_API_BASE_URL = "https://api.icosa.gallery/v1";
 
+        public struct QueryParameters
+        {
+            public string SearchText;
+            public int TriangleCountMax;
+            public string License;
+            public string OrderBy;
+            public string Format;
+            public string Curated;
+            public string Category;
+        }
+
+        public static QueryParameters QueryParamsUser = new()
+        {
+            SearchText = "",
+            TriangleCountMax = maxPolyModelTriangles,
+            License = LicenseChoices.ANY,
+            OrderBy = OrderByChoices.NEWEST,
+            Format = FormatChoices.BLOCKS,
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
+
+        public static QueryParameters QueryParamsLiked = new()
+        {
+            SearchText = "",
+            TriangleCountMax = maxPolyModelTriangles,
+            License = LicenseChoices.CREATIVE_COMMONS_BY,
+            OrderBy = OrderByChoices.LIKED_TIME,
+            Format = FormatChoices.BLOCKS,
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
+
+        public static QueryParameters QueryParamsFeatured = new()
+        {
+            SearchText = "",
+            TriangleCountMax = maxPolyModelTriangles,
+            License = LicenseChoices.CREATIVE_COMMONS_BY,
+            OrderBy = OrderByChoices.BEST,
+            Format = FormatChoices.BLOCKS,
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
+
         private static int maxPolyModelTriangles
         {
             get
@@ -230,23 +274,37 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         // Also used as the target for the "Your models" desktop menu
         public static string DEFAULT_SAVE_URL = WebBaseUrl + "/uploads";
 
-        private static string commonQueryParams
+        private static string CommonQueryParams(QueryParameters q)
         {
-            get
-            {
-                int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-                return $"&license=CREATIVE_COMMONS_BY&format=BLOCKS&pageSize={pageSize}";
-            }
+            int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
+            string url = $"format={q.Format}&";
+            url += $"pageSize={pageSize}&";
+            url += $"triangleCountMax={q.TriangleCountMax}&";
+            url += $"orderBy={q.OrderBy}&";
+            if (!string.IsNullOrEmpty(q.SearchText)) url += $"name={q.SearchText}&";
+            if (!string.IsNullOrEmpty(q.License)) url += $"license={q.License}&";
+            if (!string.IsNullOrEmpty(q.Curated)) url += $"curated={q.Curated}&";
+            if (!string.IsNullOrEmpty(q.Category)) url += $"category={q.Category}&";
+            return url;
         }
-
-        public static string maxPolyModelTrianglesParam => maxPolyModelTriangles == -1 ? "" : $"triangleCountMax={maxPolyModelTriangles}";
 
         // Old way
         // private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&curated=true&{commonQueryParams}";
         // New way
-        private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&orderBy=BEST&{commonQueryParams}&{maxPolyModelTrianglesParam}";
-        private static string LikedModelsSearchUrl() => $"{ApiBaseUrl}/users/me/likedassets?{commonQueryParams}&{maxPolyModelTrianglesParam}";
-        private static string YourModelsSearchUrl() => $"{ApiBaseUrl}/users/me/assets?{commonQueryParams}";
+        private static string FeaturedModelsSearchUrl()
+        {
+            return $"{ApiBaseUrl}/assets?{CommonQueryParams(QueryParamsFeatured)}";
+        }
+
+        private static string LikedModelsSearchUrl()
+        {
+            return $"{ApiBaseUrl}/users/me/likedassets?{CommonQueryParams(QueryParamsLiked)}";
+        }
+
+        private static string YourModelsSearchUrl()
+        {
+            return $"{ApiBaseUrl}/users/me/assets?{CommonQueryParams(QueryParamsUser)}";
+        }
 
         // Some regex.
         private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";

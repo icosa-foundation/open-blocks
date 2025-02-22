@@ -776,6 +776,36 @@ namespace com.google.apps.peltzer.client.zandria
             }
         }
 
+        public AssetsServiceClient.QueryParameters GetQueryParams(PolyMenuMain.CreationType type)
+        {
+            switch (type)
+            {
+                case PolyMenuMain.CreationType.FEATURED:
+                    return AssetsServiceClient.QueryParamsFeatured;
+                case PolyMenuMain.CreationType.YOUR:
+                    return AssetsServiceClient.QueryParamsUser;
+                case PolyMenuMain.CreationType.LIKED:
+                    return AssetsServiceClient.QueryParamsLiked;
+            }
+            throw new InvalidOperationException();
+        }
+
+        public void SetQueryParams(PolyMenuMain.CreationType type, AssetsServiceClient.QueryParameters q)
+        {
+            switch (type)
+            {
+                case PolyMenuMain.CreationType.FEATURED:
+                    AssetsServiceClient.QueryParamsFeatured = q;
+                    break;
+                case PolyMenuMain.CreationType.YOUR:
+                    AssetsServiceClient.QueryParamsUser = q;
+                    break;
+                case PolyMenuMain.CreationType.LIKED:
+                    AssetsServiceClient.QueryParamsLiked = q;
+                    break;
+            }
+        }
+
         /// <summary>
         ///   Makes a query to get creations metadata for the given asset.
         /// </summary>
