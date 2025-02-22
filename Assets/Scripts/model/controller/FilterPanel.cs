@@ -40,5 +40,14 @@ namespace com.google.apps.peltzer.client.model.controller
             m_IsOpen = false;
             gameObject.SetActive(false);
         }
+
+        public void HandleOk()
+        {
+        }
+
+        public void HandleCancel()
+        {
+            Disable();
+        }
     }
 }

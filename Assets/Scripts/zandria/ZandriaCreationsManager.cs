@@ -776,7 +776,7 @@ namespace com.google.apps.peltzer.client.zandria
             }
         }
 
-        public AssetsServiceClient.QueryParameters GetQueryParams(PolyMenuMain.CreationType type)
+        public ApiQueryParameters GetQueryParams(PolyMenuMain.CreationType type)
         {
             switch (type)
             {
@@ -790,7 +790,7 @@ namespace com.google.apps.peltzer.client.zandria
             throw new InvalidOperationException();
         }
 
-        public void SetQueryParams(PolyMenuMain.CreationType type, AssetsServiceClient.QueryParameters q)
+        public void SetQueryParams(PolyMenuMain.CreationType type, ApiQueryParameters q)
         {
             switch (type)
             {

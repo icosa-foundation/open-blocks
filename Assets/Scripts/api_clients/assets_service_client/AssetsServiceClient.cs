@@ -180,24 +180,24 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
     }
 
+    public class ApiQueryParameters
+    {
+        public string SearchText;
+        public int TriangleCountMax;
+        public string License;
+        public string OrderBy;
+        public string Format;
+        public string Curated;
+        public string Category;
+    }
+
     public class AssetsServiceClient : MonoBehaviour
     {
         // Defaults
         public static string DEFAULT_WEB_BASE_URL = "https://icosa.gallery";
         private static string DEFAULT_API_BASE_URL = "https://api.icosa.gallery/v1";
 
-        public struct QueryParameters
-        {
-            public string SearchText;
-            public int TriangleCountMax;
-            public string License;
-            public string OrderBy;
-            public string Format;
-            public string Curated;
-            public string Category;
-        }
-
-        public static QueryParameters QueryParamsUser = new()
+        public static ApiQueryParameters QueryParamsUser = new()
         {
             SearchText = "",
             TriangleCountMax = maxPolyModelTriangles,
@@ -208,7 +208,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             Category = CategoryChoices.ANY
         };
 
-        public static QueryParameters QueryParamsLiked = new()
+        public static ApiQueryParameters QueryParamsLiked = new()
         {
             SearchText = "",
             TriangleCountMax = maxPolyModelTriangles,
@@ -219,7 +219,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             Category = CategoryChoices.ANY
         };
 
-        public static QueryParameters QueryParamsFeatured = new()
+        public static ApiQueryParameters QueryParamsFeatured = new()
         {
             SearchText = "",
             TriangleCountMax = maxPolyModelTriangles,
@@ -274,7 +274,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         // Also used as the target for the "Your models" desktop menu
         public static string DEFAULT_SAVE_URL = WebBaseUrl + "/uploads";
 
-        private static string CommonQueryParams(QueryParameters q)
+        private static string CommonQueryParams(ApiQueryParameters q)
         {
             int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
             string url = $"format={q.Format}&";
