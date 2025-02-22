@@ -276,6 +276,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         private static string CommonQueryParams(ApiQueryParameters q)
         {
+            // This might exceed the limit imposed by the server (currently 100)
             int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
             string url = $"format={q.Format}&";
             url += $"pageSize={pageSize}&";

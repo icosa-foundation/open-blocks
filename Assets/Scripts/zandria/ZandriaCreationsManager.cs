@@ -330,7 +330,9 @@ namespace com.google.apps.peltzer.client.zandria
 
         // We implement polling for the "Featured" and "Liked" sections in order to show any
         // new models that get featured or liked by the user while Blocks is running.
-        private const float POLLING_INTERVAL_SECONDS = 8;
+        // TODO Can we ask the server for a timestamp of the last update and only poll if it's changed?
+        // Could the timestamp be specific to each API call?
+        private const float POLLING_INTERVAL_SECONDS = 60;
 
         // WARNING: All dictionaries in ZandriaCreationsManager are private because they are not threadsafe. They must be
         // accessed from within ZandriaCreationsManager and they must be locked before access.
@@ -404,6 +406,7 @@ namespace com.google.apps.peltzer.client.zandria
                         // Update the progress of the load.
                         creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
                         // Execute the load.
+                        // TODO defer until the user interacts with the thumbnail?
                         LoadModelForCreation(creation, pair.Key);
                     }
 
@@ -834,6 +837,10 @@ namespace com.google.apps.peltzer.client.zandria
 
             // Setup the handler script from the prefab which is able to load the actual model.
             creation.handler.Setup(entry);
+
+            // TODO cache to the filesystem?
+            // How will we decide when to refresh a cached model?
+            // Can we rely on an updated timestamp from the server?
 
             // Get the raw file data for the entry.
             ObjectStoreClient.GetRawFileData(entry, delegate (byte[] rawFileData)

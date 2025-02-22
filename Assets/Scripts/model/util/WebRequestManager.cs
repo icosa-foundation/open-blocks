@@ -314,6 +314,7 @@ namespace com.google.apps.peltzer.client.model.util
               "Couldn't set download handler. It's either disposed of, or the creation callback mistakenly called Send().");
 
             // Start the web request. This will suspend this coroutine until the request is done.
+            Debug.Log("Sending request to " + webRequest.url);
             yield return webRequest.Send();
 
             // Request is finished. Call user-supplied callback.
