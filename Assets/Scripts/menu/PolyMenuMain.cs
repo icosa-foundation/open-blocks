@@ -61,8 +61,8 @@ namespace com.google.apps.peltzer.client.menu
         // Set in editor.
         public Sprite signedOutIcon;
 
-        private static Color UNSELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 0.117f);
-        private static Color SELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 1f);
+        public static Color UNSELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 0.117f);
+        public static Color SELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 1f);
         private static Color UNSELECTED_AVATAR_COLOR = new Color(1f, 1f, 1f, 150f / 255f);
         private static Color SELECTED_AVATAR_COLOR = new Color(1f, 1f, 1f, 1f);
         private static Vector3 DEFAULT_AVATAR_SCALE = new Vector3(0.1875f, 0.25f, 0.75f);

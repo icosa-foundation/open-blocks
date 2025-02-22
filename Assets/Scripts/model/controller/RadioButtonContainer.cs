@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.model.main;
 using UnityEngine;
 using UnityEngine.Events;
@@ -41,12 +42,14 @@ namespace com.google.apps.peltzer.client.model.controller
         public void ActivateOption(PeltzerMain main, RadioButtonOption activatedOption)
         {
             if (!ActionIsAllowed()) return;
-            if (activatedOption.isActive) return;
+            if (!activatedOption.isActive) return;
             foreach (var option in m_Options)
             {
-                option.isActive = false;
+                option.isCurrentOption = false;
+                option.sprite.color = PolyMenuMain.UNSELECTED_ICON_COLOR;
             }
-            activatedOption.isActive = false;
+            activatedOption.isCurrentOption = true;
+            activatedOption.sprite.color = PolyMenuMain.SELECTED_ICON_COLOR;
             main.audioLibrary.PlayClip(main.audioLibrary.menuSelectSound);
             m_Action.Invoke(activatedOption);
         }

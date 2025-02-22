@@ -61,6 +61,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject oculusRiftHolder;
 
         private Dictionary<ControllerMode, ToolOptionsPanel> m_ToolOptionsPanels;
+        private FilterPanel m_FilterPanel;
         public GameObject m_InitialPopupAnchor;
         public GameObject m_Popups;
         public ActionButton m_PanelOptionsButton;
@@ -308,6 +309,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
             var panels = GetComponentsInChildren<ToolOptionsPanel>(true);
             SetupToolOptionsPanels(panels);
+            m_FilterPanel = GetComponentInChildren<FilterPanel>(includeInactive: true);
             keyboardGameobject = transform.GetComponentInChildren<KeyboardUI>(includeInactive: true).gameObject;
 
             bool shouldNagForTutorial = !PlayerPrefs.HasKey(TutorialManager.HAS_EVER_STARTED_TUTORIAL_KEY);
@@ -1364,6 +1366,34 @@ namespace com.google.apps.peltzer.client.model.controller
         public void ToggleToolOptionPanels()
         {
             EnableToolOptionPanels(!m_ToolOptionsPanelsEnabled);
+        }
+
+        public void EnableFilterPanel(bool enable)
+        {
+            if (enable)
+            {
+                m_FilterPanel.Enable();
+            }
+            else
+            {
+                m_FilterPanel.Disable();
+            }
+        }
+
+        public void ToggleFilterPanel()
+        {
+            EnableFilterPanel(!m_FilterPanel.IsOpen);
+        }
+
+        public void ToggleSearchKeyboard()
+        {
+            EnableKeyboard(onSubmit);
+
+            void onSubmit(object sender, string text)
+            {
+                Debug.Log("Search: " + text);
+                ToggleSearchKeyboard();
+            }
         }
 
         public void EnableKeyboard(EventHandler<string> onSubmit, bool preservePreviousContent = false)
