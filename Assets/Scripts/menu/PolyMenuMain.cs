@@ -893,6 +893,8 @@ namespace com.google.apps.peltzer.client.menu
             // First close and remove the information for an already open Details panel.
             // The user is able to click on a new creation by clicking under the Details panel before closing.
 
+            // TODO Load the model at this point (at least on Quest)?
+
             if (creation != null)
             {
                 currentCreationHandler = creation.handler;
