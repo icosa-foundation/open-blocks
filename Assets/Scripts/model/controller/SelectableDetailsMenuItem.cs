@@ -28,6 +28,11 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public override void ApplyMenuOptions(PeltzerMain main)
         {
+            var polyMenuMain = PeltzerMain.Instance.GetPolyMenuMain();
+            var creationsManager = polyMenuMain.creationsManager;
+            var type = polyMenuMain.CurrentCreationType();
+            creationsManager.LoadModelForCreation(creation, type);
+
             PeltzerMain.Instance.GetPolyMenuMain().OpenDetailsSection(creation);
             main.audioLibrary.PlayClip(main.audioLibrary.menuSelectSound);
         }

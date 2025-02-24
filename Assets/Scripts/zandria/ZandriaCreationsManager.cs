@@ -407,7 +407,7 @@ namespace com.google.apps.peltzer.client.zandria
                         creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
                         // Execute the load.
                         // TODO defer until the user interacts with the thumbnail?
-                        LoadModelForCreation(creation, pair.Key);
+                        //LoadModelForCreation(creation, pair.Key);
                     }
 
                     // Clear pendingModelLoadRequestIndices. We have made a load request for every pending request.

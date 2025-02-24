@@ -94,7 +94,7 @@ namespace com.google.apps.peltzer.client.menu
 
         private PaletteController paletteController;
         private ControllerMain controllerMain;
-        private ZandriaCreationsManager creationsManager;
+        public ZandriaCreationsManager creationsManager;
         private ZandriaCreationHandler currentCreationHandler;
 
         // The possible menuModes in the order they can be moved through using the palette touchpad.
@@ -1017,7 +1017,7 @@ namespace com.google.apps.peltzer.client.menu
             return menuModes[menuIndex].menuSection;
         }
 
-        private CreationType CurrentCreationType()
+        public CreationType CurrentCreationType()
         {
             return menuModes[menuIndex].creationType;
         }
@@ -1141,8 +1141,7 @@ namespace com.google.apps.peltzer.client.menu
 
         private void _SetModelParam(Action<ApiQueryParameters> modifyQuery)
         {
-            // This assumes that CreationType as an int always stays in sync with menuModes
-            var type = (CreationType)menuIndex;
+            var type = CurrentCreationType();
             var q = creationsManager.GetQueryParams(type);
             modifyQuery(q);
             creationsManager.SetQueryParams(type, q);
