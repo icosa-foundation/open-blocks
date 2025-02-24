@@ -1147,7 +1147,10 @@ namespace com.google.apps.peltzer.client.menu
             creationsManager.SetQueryParams(type, q);
             // TODO - can we avoid losing work we've already done here?
             creationsManager.ClearLoad(type);
-            PopulateZandriaMenu(type);
+            creationsManager.StartLoad(type);
+            ApplyMenuChange(menuIndex, true);
+            offlineModelsMenu.SetActive(false);
+            modelsMenu.SetActive(true);
         }
 
         public void SetApiSearchText(string text)
