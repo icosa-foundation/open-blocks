@@ -1145,6 +1145,8 @@ namespace com.google.apps.peltzer.client.menu
             var q = creationsManager.GetQueryParams(type);
             modifyQuery(q);
             creationsManager.SetQueryParams(type, q);
+            // TODO - can we avoid losing work we've already done here?
+            creationsManager.ClearLoad(type);
             PopulateZandriaMenu(type);
         }
 
