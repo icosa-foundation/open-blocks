@@ -1174,14 +1174,5 @@ namespace com.google.apps.peltzer.client.menu
         {
             _SetModelParam(q => q.TriangleCountMax = max);
         }
-
-        // public void SetModelSearchParam(string text)
-        // {
-        //     // This assumes that CreationType as an int always stays in sync with menuModes
-        //     var type = (CreationType)menuIndex;
-        //     var q = creationsManager.GetQueryParams(type);
-        //     q.SearchText = text;
-        //     creationsManager.SetQueryParams(type, q);
-        // }
     }
 }
