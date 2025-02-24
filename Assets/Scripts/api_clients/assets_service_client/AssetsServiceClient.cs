@@ -377,10 +377,12 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             if (type == PolyMenuMain.CreationType.FEATURED)
             {
+                // TODO This assumption may not hold if user changes orderBy
                 mostRecentFeaturedAssetId = firstAssetId;
             }
             else if (type == PolyMenuMain.CreationType.LIKED)
             {
+                // TODO This assumption may not hold if user changes orderBy
                 mostRecentLikedAssetId = firstAssetId;
             }
             objectStoreSearchResult.results = objectStoreEntries.ToArray();

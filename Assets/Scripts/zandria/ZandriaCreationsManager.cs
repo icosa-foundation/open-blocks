@@ -491,6 +491,11 @@ namespace com.google.apps.peltzer.client.zandria
 
         public void Poll(PolyMenuMain.CreationType type)
         {
+
+            // TODO this presumes Featured and Liked will only add new items at the front
+            // This assumption will sometimes break when orderBy is changes
+            // Also - new featured items might be added that don't appear at the front even when ordered by "BEST"
+
             lock (mutex)
             {
                 if (pendingLoadsByType.Contains(type)) { return; }
@@ -837,10 +842,6 @@ namespace com.google.apps.peltzer.client.zandria
 
             // Setup the handler script from the prefab which is able to load the actual model.
             creation.handler.Setup(entry);
-
-            // TODO cache to the filesystem?
-            // How will we decide when to refresh a cached model?
-            // Can we rely on an updated timestamp from the server?
 
             // Get the raw file data for the entry.
             ObjectStoreClient.GetRawFileData(entry, delegate (byte[] rawFileData)
