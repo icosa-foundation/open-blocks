@@ -48,7 +48,7 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             var category = m_CategoryContainer.Value;
             var orderBy = m_OrderByContainer.Value;
-            var triangleCount = (int) m_TriangleCountSlider.m_Value;
+            var triangleCount = (int) m_TriangleCountSlider.Value;
             PeltzerMain.Instance.GetPolyMenuMain().SetApiOrderBy(orderBy);
             PeltzerMain.Instance.GetPolyMenuMain().SetApiCategoryFilter(category);
             PeltzerMain.Instance.GetPolyMenuMain().SetApiTriangleCountMax(triangleCount);

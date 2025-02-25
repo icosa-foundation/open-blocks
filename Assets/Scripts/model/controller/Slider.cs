@@ -14,7 +14,6 @@
 
 using System;
 using com.google.apps.peltzer.client.model.main;
-using com.google.apps.peltzer.client.model.util;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -31,8 +30,18 @@ namespace com.google.apps.peltzer.client.model.controller
         public int m_UpdateInterval = 1;
         public bool m_UpdateOnlyOnRelease;
 
-        [NonSerialized] public float m_Value;
-        [NonSerialized] public float m_NormalizedValue;
+        public float Value
+        {
+            get
+            {
+                float val = Mathf.Lerp(m_Minimum, m_Maximum, m_NormalizedValue);
+                val = Mathf.Round(val / m_Step) * m_Step;
+                hoverName = val.ToString();
+                return val;
+            }
+        }
+
+        [NonSerialized] private float m_NormalizedValue;
 
         private bool m_IsDragging;
         private Material m_SliderMaterial;
@@ -52,7 +61,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 if (Time.frameCount - m_LastUpdateFrame > m_UpdateInterval)
                 {
                     m_LastUpdateFrame = Time.frameCount;
-                    m_Action.Invoke(m_Value);
+                    m_Action.Invoke(Value);
                 }
             }
         }
@@ -68,8 +77,19 @@ namespace com.google.apps.peltzer.client.model.controller
             Vector3 localMin = hitTransform.InverseTransformPoint(localBounds.min);
             Vector3 localMax = hitTransform.InverseTransformPoint(localBounds.max);
 
+            float xPos = localHitPoint.x;
+
+            // Correct the direction of x
+            if (localMin.x < localMax.x)
+            {
+                xPos = -xPos;
+            }
+
             // Calculate the normalized positions (0 to 1)
-            var normalized = Mathf.InverseLerp(localMin.x, localMax.x, localHitPoint.x);
+            var normalized = Mathf.InverseLerp(localMin.x, localMax.x, xPos);
+
+
+
             // Fudge factor because my maths is off somewhere
             float fudge = 0.1f;
             normalized = Mathf.InverseLerp(0 + fudge, 1 - fudge, normalized);
@@ -81,9 +101,9 @@ namespace com.google.apps.peltzer.client.model.controller
             if (m_IsDragging)
             {
                 float normalizedLocalPosition = GetNormalizedLocalPosition(hit);
-                m_Value = Mathf.Lerp(m_Minimum, m_Maximum, normalizedLocalPosition);
-                m_Value = Mathf.Round(m_Value / m_Step) * m_Step;
-                m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, m_Value);
+                float val = Mathf.Lerp(m_Minimum, m_Maximum, normalizedLocalPosition);
+                val = Mathf.Round(val / m_Step) * m_Step;
+                m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, val);
                 m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
             }
         }
@@ -102,7 +122,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     m_IsDragging = false;
                     if (m_UpdateOnlyOnRelease)
                     {
-                        m_Action.Invoke(m_Value);
+                        m_Action.Invoke(Value);
                     }
                     break;
                 case ButtonAction.NONE:

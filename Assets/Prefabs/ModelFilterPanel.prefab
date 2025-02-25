@@ -2811,10 +2811,35 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7949933859663638067}
     m_Modifications:
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Step
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: hoverName
+      value: Max number of faces
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Maximum
+      value: 10000
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Minimum
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 1102641234472584921, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_Name
       value: Complexity Slider
+      objectReference: {fileID: 0}
+    - target: {fileID: 3281331942210031505, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.03
       objectReference: {fileID: 0}
     - target: {fileID: 5501061831439391173, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
@@ -2829,7 +2854,7 @@ PrefabInstance:
     - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.004600067
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
@@ -2839,7 +2864,7 @@ PrefabInstance:
     - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.12890083
+      value: -0.123
       objectReference: {fileID: 0}
     - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
