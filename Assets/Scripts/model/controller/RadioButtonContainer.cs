@@ -22,6 +22,8 @@ namespace com.google.apps.peltzer.client.model.controller
     public class RadioButtonContainer : MonoBehaviour
     {
         public UnityEvent<RadioButtonOption> m_Action;
+        private string m_Value;
+        public string Value => m_Value;
 
         private RadioButtonOption[] m_Options;
 
@@ -51,6 +53,7 @@ namespace com.google.apps.peltzer.client.model.controller
             activatedOption.isCurrentOption = true;
             activatedOption.sprite.color = PolyMenuMain.SELECTED_ICON_COLOR;
             main.audioLibrary.PlayClip(main.audioLibrary.menuSelectSound);
+            m_Value = activatedOption.m_Value;
             m_Action.Invoke(activatedOption);
         }
     }

@@ -23,6 +23,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject m_Background;
         public bool isCurrentOption;
         public SpriteRenderer sprite;
+        public string m_Value;
 
         public override void Start()
         {

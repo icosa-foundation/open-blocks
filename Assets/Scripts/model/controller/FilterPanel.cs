@@ -26,6 +26,9 @@ namespace com.google.apps.peltzer.client.model.controller
 
         private bool m_IsOpen;
         public bool IsOpen => m_IsOpen;
+        public RadioButtonContainer m_OrderByContainer;
+        public RadioButtonContainer m_CategoryContainer;
+        public Slider m_TriangleCountSlider;
 
         public virtual void Enable()
         {
@@ -43,6 +46,14 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void HandleOk()
         {
+            var category = m_CategoryContainer.Value;
+            var orderBy = m_OrderByContainer.Value;
+            var triangleCount = (int) m_TriangleCountSlider.m_Value;
+            PeltzerMain.Instance.GetPolyMenuMain().SetApiOrderBy(orderBy);
+            PeltzerMain.Instance.GetPolyMenuMain().SetApiCategoryFilter(category);
+            PeltzerMain.Instance.GetPolyMenuMain().SetApiTriangleCountMax(triangleCount);
+            PeltzerMain.Instance.GetPolyMenuMain().ApplyQueryParams();
+            Disable();
         }
 
         public void HandleCancel()

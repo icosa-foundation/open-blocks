@@ -1145,6 +1145,11 @@ namespace com.google.apps.peltzer.client.menu
             var q = creationsManager.GetQueryParams(type);
             modifyQuery(q);
             creationsManager.SetQueryParams(type, q);
+        }
+
+        public void ApplyQueryParams()
+        {
+            var type = CurrentCreationType();
             // TODO - can we avoid losing work we've already done here?
             creationsManager.ClearLoad(type);
             creationsManager.StartLoad(type);

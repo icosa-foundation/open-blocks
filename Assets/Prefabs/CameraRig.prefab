@@ -77968,6 +77968,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: ModelFilterPanel
       objectReference: {fileID: 0}
+    - target: {fileID: 8351586752698410853, guid: 13987e04437dc6b4a91aa84df937b3bc,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
