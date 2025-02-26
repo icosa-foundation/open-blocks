@@ -187,6 +187,13 @@ namespace TiltBrush
             CurrentLine       = string.Empty;
         }
 
+        public void SetInitialText(string initialText)
+        {
+            _currentLineCount = 1;
+            ConsoleContent    = initialText;
+            CurrentLine       = initialText;
+        }
+
         public void Hide()
         {
             gameObject.SetActive(false);

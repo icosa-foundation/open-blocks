@@ -1389,17 +1389,19 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void ToggleSearchKeyboard()
         {
-            EnableKeyboard(onSubmit);
+            var mainMenu = PeltzerMain.Instance.GetPolyMenuMain();
+            EnableKeyboard(onSubmit, mainMenu.CurrentQueryParams.SearchText);
+            var keyboardUI = keyboardGameobject.GetComponent<KeyboardUI>();
 
             void onSubmit(object sender, string text)
             {
-                PeltzerMain.Instance.GetPolyMenuMain().SetApiSearchText(text);
-                PeltzerMain.Instance.GetPolyMenuMain().RefreshResults();
+                mainMenu.SetApiSearchText(text);
+                mainMenu.RefreshResults();
                 ToggleSearchKeyboard();
             }
         }
 
-        public void EnableKeyboard(EventHandler<string> onSubmit, bool preservePreviousContent = false)
+        public void EnableKeyboard(EventHandler<string> onSubmit, string initialText = "")
         {
             var keyboardUI = keyboardGameobject.GetComponent<KeyboardUI>();
             void OnKeyPressed(object sender, KeyboardKeyEventArgs args)
@@ -1410,7 +1412,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     keyboardGameobject.SetActive(false);
                 }
             }
-            if (!preservePreviousContent) keyboardUI.Clear();
+            keyboardUI.SetInitialText(initialText);
             keyboardGameobject.SetActive(true);
             keyboardUI.KeyPressed += OnKeyPressed;
         }
