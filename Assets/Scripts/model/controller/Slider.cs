@@ -22,7 +22,8 @@ namespace com.google.apps.peltzer.client.model.controller
     public class Slider : PolyMenuButton
     {
         private static readonly int SHADER_SLIDE_VALUE_PROP = Shader.PropertyToID("_SlideValue");
-        public UnityEvent<float> m_Action;
+        public UnityEvent<float> m_ActionOnFullUpdate;
+        public UnityEvent<float> m_ActionEveryUpdate;
         public MeshRenderer m_SliderRenderer;
         public float m_Minimum = 0;
         public float m_Maximum = 1;
@@ -36,7 +37,6 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 float val = Mathf.Lerp(m_Minimum, m_Maximum, m_NormalizedValue);
                 val = Mathf.Round(val / m_Step) * m_Step;
-                hoverName = val.ToString();
                 return val;
             }
         }
@@ -51,48 +51,42 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             base.Start();
             PeltzerMain.Instance.peltzerController.PeltzerControllerActionHandler += ControllerEventHandler;
-            m_SliderMaterial = m_SliderRenderer.material;
         }
 
         public override void Update()
         {
+            m_ActionEveryUpdate.Invoke(Value);
             if (m_IsDragging && !m_UpdateOnlyOnRelease)
             {
                 if (Time.frameCount - m_LastUpdateFrame > m_UpdateInterval)
                 {
                     m_LastUpdateFrame = Time.frameCount;
-                    m_Action.Invoke(Value);
+                    m_ActionOnFullUpdate.Invoke(Value);
                 }
             }
         }
 
         private static float GetNormalizedLocalPosition(RaycastHit hit)
         {
-            // Convert world hit point to local space of the hit object
+            // Convert the hit point to the local space of the hit object.
             Transform hitTransform = hit.transform;
             Vector3 localHitPoint = hitTransform.InverseTransformPoint(hit.point);
 
-            Collider collider = hit.collider;
-            Bounds localBounds = collider.bounds;
-            Vector3 localMin = hitTransform.InverseTransformPoint(localBounds.min);
-            Vector3 localMax = hitTransform.InverseTransformPoint(localBounds.max);
+            // Get the collider component.
+            Collider collider = hitTransform.GetComponent<Collider>();
 
-            float xPos = localHitPoint.x;
+            // Convert the collider's bounds center and size into local space.
+            Vector3 localCenter = hitTransform.InverseTransformPoint(collider.bounds.center);
+            Vector3 localSize = hitTransform.InverseTransformVector(collider.bounds.size);
+            localSize.x *= 0.8f;
+            float halfWidth = Mathf.Abs(localSize.x) / 2f;
 
-            // Correct the direction of x
-            if (localMin.x < localMax.x)
-            {
-                xPos = -xPos;
-            }
+            // Compute the minimum and maximum x values based on the local center and half width.
+            float minX = localCenter.x - halfWidth;
+            float maxX = localCenter.x + halfWidth;
 
-            // Calculate the normalized positions (0 to 1)
-            var normalized = Mathf.InverseLerp(localMin.x, localMax.x, xPos);
-
-
-
-            // Fudge factor because my maths is off somewhere
-            float fudge = 0.1f;
-            normalized = Mathf.InverseLerp(0 + fudge, 1 - fudge, normalized);
+            // Calculate and return the normalized value.
+            float normalized = Mathf.InverseLerp(minX, maxX, localHitPoint.x);
             return normalized;
         }
 
@@ -102,10 +96,19 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 float normalizedLocalPosition = GetNormalizedLocalPosition(hit);
                 float val = Mathf.Lerp(m_Minimum, m_Maximum, normalizedLocalPosition);
-                val = Mathf.Round(val / m_Step) * m_Step;
-                m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, val);
-                m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
+                SetInitialValue(val);
             }
+        }
+
+        public void SetInitialValue(float val)
+        {
+            val = Mathf.Round(val / m_Step) * m_Step;
+            m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, val);
+            if (m_SliderMaterial == null)
+            {
+                m_SliderMaterial = m_SliderRenderer.material;
+            };
+            m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
         }
 
         private void ControllerEventHandler(object sender, ControllerEventArgs args)
@@ -122,7 +125,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     m_IsDragging = false;
                     if (m_UpdateOnlyOnRelease)
                     {
-                        m_Action.Invoke(Value);
+                        m_ActionOnFullUpdate.Invoke(Value);
                     }
                     break;
                 case ButtonAction.NONE:

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using com.google.apps.peltzer.client.api_clients.assets_service_client;
+using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.tools;
 using TMPro;
@@ -30,11 +32,14 @@ namespace com.google.apps.peltzer.client.model.controller
         public RadioButtonContainer m_CategoryContainer;
         public Slider m_TriangleCountSlider;
 
+        private PolyMenuMain m_MainMenu;
+
         public virtual void Enable()
         {
             if (m_IsOpen || !m_Allowed) return; // No change or we've disabled this panel
             m_IsOpen = true;
             gameObject.SetActive(true);
+            m_MainMenu = PeltzerMain.Instance.GetPolyMenuMain();
         }
 
         public virtual void Disable()
@@ -49,16 +54,28 @@ namespace com.google.apps.peltzer.client.model.controller
             var category = m_CategoryContainer.Value;
             var orderBy = m_OrderByContainer.Value;
             var triangleCount = (int) m_TriangleCountSlider.Value;
-            PeltzerMain.Instance.GetPolyMenuMain().SetApiOrderBy(orderBy);
-            PeltzerMain.Instance.GetPolyMenuMain().SetApiCategoryFilter(category);
-            PeltzerMain.Instance.GetPolyMenuMain().SetApiTriangleCountMax(triangleCount);
-            PeltzerMain.Instance.GetPolyMenuMain().RefreshResults();
+            m_MainMenu.SetApiOrderBy(orderBy);
+            m_MainMenu.SetApiCategoryFilter(category);
+            m_MainMenu.SetApiTriangleCountMax(triangleCount);
+            m_MainMenu.RefreshResults();
             Disable();
         }
 
         public void HandleCancel()
         {
             Disable();
+        }
+
+        public void InitControls(ApiQueryParameters currentQueryParams)
+        {
+            m_CategoryContainer.SetInitialOption(currentQueryParams.Category);
+            m_OrderByContainer.SetInitialOption(currentQueryParams.OrderBy);
+            m_TriangleCountSlider.SetInitialValue(currentQueryParams.TriangleCountMax);
+        }
+
+        public void UpdateSliderLabel(float value)
+        {
+            m_TriangleCountSlider.hoverName = $"Max {(int)value} faces";
         }
     }
 }

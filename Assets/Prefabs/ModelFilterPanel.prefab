@@ -2831,6 +2831,41 @@ PrefabInstance:
       propertyPath: m_Minimum
       value: 100
       objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 7346393608762227899}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: UpdateSliderLabel
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: com.google.apps.peltzer.client.model.controller.FilterPanel, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 1102641234472584921, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_Name

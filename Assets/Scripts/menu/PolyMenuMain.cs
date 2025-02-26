@@ -1141,11 +1141,12 @@ namespace com.google.apps.peltzer.client.menu
 
         private void _SetModelParam(Action<ApiQueryParameters> modifyQuery)
         {
-            var type = CurrentCreationType();
-            var q = creationsManager.GetQueryParams(type);
+            var q = CurrentQueryParams;
             modifyQuery(q);
-            creationsManager.SetQueryParams(type, q);
+            creationsManager.SetQueryParams(CurrentCreationType(), q);
         }
+
+        public ApiQueryParameters CurrentQueryParams => creationsManager.GetQueryParams(CurrentCreationType());
 
         public void RefreshResults()
         {
