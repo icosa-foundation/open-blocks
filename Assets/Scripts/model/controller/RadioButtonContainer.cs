@@ -32,6 +32,11 @@ namespace com.google.apps.peltzer.client.model.controller
             m_Options = gameObject.GetComponentsInChildren<RadioButtonOption>();
         }
 
+        public void ShowOptionByIndex(int index, bool show)
+        {
+            m_Options[index].gameObject.SetActive(show);
+        }
+
         /// <summary>
         /// Returns whether or not action is currently allowed.
         /// </summary>

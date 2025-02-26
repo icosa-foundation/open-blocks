@@ -1374,7 +1374,7 @@ namespace com.google.apps.peltzer.client.model.controller
             if (enable)
             {
                 m_FilterPanel.Enable();
-                m_FilterPanel.InitControls(PeltzerMain.Instance.GetPolyMenuMain().CurrentQueryParams);
+                m_FilterPanel.InitControls();
             }
             else
             {
