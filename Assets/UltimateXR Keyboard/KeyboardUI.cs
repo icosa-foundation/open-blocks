@@ -187,6 +187,11 @@ namespace TiltBrush
             CurrentLine       = string.Empty;
         }
 
+        public void Hide()
+        {
+            gameObject.SetActive(false);
+        }
+
         /// <summary>
         ///     If different symbols are present (through a ToggleSymbols keyboard key), sets the default symbols
         ///     as the currently enabled. Usually the default symbols are the regular alphabet letters.
