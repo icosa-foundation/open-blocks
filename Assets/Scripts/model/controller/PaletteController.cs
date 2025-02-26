@@ -1393,7 +1393,7 @@ namespace com.google.apps.peltzer.client.model.controller
             void onSubmit(object sender, string text)
             {
                 PeltzerMain.Instance.GetPolyMenuMain().SetApiSearchText(text);
-                PeltzerMain.Instance.GetPolyMenuMain().ApplyQueryParams();
+                PeltzerMain.Instance.GetPolyMenuMain().RefreshResults();
                 ToggleSearchKeyboard();
             }
         }

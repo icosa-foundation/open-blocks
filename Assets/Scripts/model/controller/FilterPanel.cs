@@ -52,7 +52,7 @@ namespace com.google.apps.peltzer.client.model.controller
             PeltzerMain.Instance.GetPolyMenuMain().SetApiOrderBy(orderBy);
             PeltzerMain.Instance.GetPolyMenuMain().SetApiCategoryFilter(category);
             PeltzerMain.Instance.GetPolyMenuMain().SetApiTriangleCountMax(triangleCount);
-            PeltzerMain.Instance.GetPolyMenuMain().ApplyQueryParams();
+            PeltzerMain.Instance.GetPolyMenuMain().RefreshResults();
             Disable();
         }
 

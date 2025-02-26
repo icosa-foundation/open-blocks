@@ -1147,7 +1147,7 @@ namespace com.google.apps.peltzer.client.menu
             creationsManager.SetQueryParams(type, q);
         }
 
-        public void ApplyQueryParams()
+        public void RefreshResults()
         {
             var type = CurrentCreationType();
             // TODO - can we avoid losing work we've already done here?
