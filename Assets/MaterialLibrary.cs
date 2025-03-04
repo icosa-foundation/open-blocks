@@ -16,6 +16,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 /// <summary>
 /// This class primarily exists to provide an editor level interface for assigning materials for various effects
 /// other than adding them directly to PeltzerMain.
@@ -24,8 +25,8 @@ public class MaterialLibrary : MonoBehaviour
 {
     private static readonly int MultiplicitiveAlpha = Shader.PropertyToID("_MultiplicitiveAlpha");
     private static readonly int ZTest = Shader.PropertyToID("_ZTest");
-    public float paperCraftNoiseScale = 500f;
-    public float paperCraftNoiseIntensity = 0.2f;
+    private static readonly int OverrideColor = Shader.PropertyToID("_OverrideColor");
+    private static readonly int OverrideAmount = Shader.PropertyToID("_OverrideAmount");
 
     public Material baseMaterial;
     public Material transparentMaterial;
@@ -41,14 +42,14 @@ public class MaterialLibrary : MonoBehaviour
     public Material snapEffectMaterial;
     public Material meshInsertEffectMaterialFront;
     public Material meshInsertEffectMaterialBack;
-    public Material meshSelectMaterial;
+    // public Material meshSelectMaterial;
     public Material gridMaterial;
-    public Material pointEdgeFaceHighlightMaterial;
-    public Material pointInactiveMaterial;
-    public Material edgeInactiveMaterial;
+    public Material pointEdgeHighlightMaterial;
+    public Material faceHighlightMaterial;
+    public Material pointEdgeInactiveMaterial;
     public Material facePaintMaterial;
     public Material faceExtrudeMaterial;
-    public Material selectMaterial;
+    public Material selectMaterial; // material for yellow selection dot on tool
 
     private void OnEnable()
     {
@@ -57,14 +58,25 @@ public class MaterialLibrary : MonoBehaviour
         baseMaterial.EnableKeyword("_REMESHER");
         transparentMaterial.EnableKeyword("_REMESHER");
         glassMaterial.EnableKeyword("_REMESHER");
-        pointEdgeFaceHighlightMaterial.DisableKeyword("_REMESHER");
-        pointEdgeFaceHighlightMaterial.SetFloat(MultiplicitiveAlpha, 0.5f);
-        pointEdgeFaceHighlightMaterial.SetFloat(ZTest, 8.0f); // always (no depth test)
-    }
 
-    public void Start()
-    {
-        Shader.SetGlobalFloat("_NoiseScale", paperCraftNoiseScale);
-        Shader.SetGlobalFloat("_NoiseIntensity", paperCraftNoiseIntensity);
+        meshInsertEffectMaterialBack.EnableKeyword("_REMESHER");
+        meshInsertEffectMaterialBack.EnableKeyword("_INSERT_MESH");
+        meshInsertEffectMaterialFront.EnableKeyword("_REMESHER");
+        meshInsertEffectMaterialFront.EnableKeyword("_INSERT_MESH");
+
+        pointEdgeHighlightMaterial.DisableKeyword("_REMESHER");
+        pointEdgeHighlightMaterial.SetFloat(OverrideAmount, 0.0f);
+        pointEdgeHighlightMaterial.SetFloat(ZTest, 8.0f); // always (no depth test)
+
+        faceHighlightMaterial.DisableKeyword("_REMESHER");
+        faceHighlightMaterial.EnableKeyword("_FACE_SELECT_STYLE");
+        faceHighlightMaterial.SetFloat(ZTest, 8.0f);
+
+        pointEdgeInactiveMaterial.DisableKeyword("_REMESHER");
+        pointEdgeInactiveMaterial.EnableKeyword("_BLEND_TRANSPARENCY");
+        pointEdgeInactiveMaterial.SetFloat(ZTest, 4.0f); // (less than equal)
+
+        facePaintMaterial.DisableKeyword("_REMESHER");
+        facePaintMaterial.EnableKeyword("_FACE_SELECT_STYLE");
     }
 }
