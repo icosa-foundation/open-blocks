@@ -34,11 +34,7 @@ namespace com.google.apps.peltzer.client.model.render
         private bool inSnapThreshhold = false;
 
         public Vector3[] snapLines = new Vector3[0];
-        public Vector3[] snapNormals = new Vector3[0];
-        public Vector2[] snapSelectData = new Vector2[0];
-        private int[] snapLineIndices = new int[0];
 
-        private Mesh pointMesh;
         private Mesh lineMesh;
         private List<Matrix4x4> matrices = new List<Matrix4x4>();
 
@@ -48,11 +44,7 @@ namespace com.google.apps.peltzer.client.model.render
         /// <param name="snapTarget">The MMesh id of the target mesh to play the shader on.</param>
         public ContinuousFaceSnapEffect()
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            pointMesh = go.GetComponent<MeshFilter>().mesh;
-            GameObject.Destroy(go);
-
-            go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
             lineMesh = go.GetComponent<MeshFilter>().mesh;
             GameObject.Destroy(go);
         }
@@ -60,7 +52,7 @@ namespace com.google.apps.peltzer.client.model.render
         public override void Initialize(MeshRepresentationCache cache, MaterialLibrary materialLibrary,
           WorldSpace worldSpace)
         {
-            base.Initialize(cache, materialLibrary.pointEdgeFaceHighlightMaterial, worldSpace);
+            base.Initialize(cache, materialLibrary.pointEdgeHighlightMaterial, worldSpace);
         }
 
         public override void Render()
@@ -87,15 +79,6 @@ namespace com.google.apps.peltzer.client.model.render
             if (snapLines.Length != sizeNeeded)
             {
                 Array.Resize(ref snapLines, sizeNeeded);
-                Array.Resize(ref snapLineIndices, sizeNeeded);
-                Array.Resize(ref snapNormals, sizeNeeded);
-                Array.Resize(ref snapSelectData, sizeNeeded);
-                for (int i = 0; i < sizeNeeded; i++)
-                {
-                    snapLineIndices[i] = i;
-                    snapNormals[i] = Vector3.up;
-                    snapSelectData[i] = Vector2.one;
-                }
             }
             float scaleFactor = InactiveRenderer.GetEdgeScaleFactor(worldSpace);
             matrices.Clear();

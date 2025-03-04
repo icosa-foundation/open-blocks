@@ -52,7 +52,7 @@ namespace com.google.apps.peltzer.client.model.render
         public override void Initialize(MeshRepresentationCache cache, MaterialLibrary materialLibrary,
           WorldSpace worldSpace)
         {
-            base.Initialize(cache, materialLibrary.pointEdgeFaceHighlightMaterial, worldSpace);
+            base.Initialize(cache, materialLibrary.pointEdgeHighlightMaterial, worldSpace);
         }
 
         public override void Render()
