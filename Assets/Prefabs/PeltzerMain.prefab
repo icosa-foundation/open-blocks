@@ -141,8 +141,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3906864a6a21b543bf69eeaf58d6972, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paperCraftNoiseScale: 100
-  paperCraftNoiseIntensity: 1
   baseMaterial: {fileID: 2100000, guid: 0f79d4ce1aba22f4294df2a16ca5465e, type: 2}
   transparentMaterial: {fileID: 2100000, guid: 672ba6f8726123a4098460641f9f2fe3, type: 2}
   highlightSilhouetteMaterial: {fileID: 2100000, guid: 67ab1a035849e4249836f31881bf03c9,
@@ -158,13 +156,12 @@ MonoBehaviour:
     type: 2}
   meshInsertEffectMaterialBack: {fileID: 2100000, guid: 1c31b048c15af5140bae8667a35a7480,
     type: 2}
-  meshSelectMaterial: {fileID: 2100000, guid: 5661b44ff6cb3914bbfcc1fb80e203ca, type: 2}
   gridMaterial: {fileID: 2100000, guid: c9d85c2af109a7e4f8a1549f47e7178e, type: 2}
-  pointEdgeFaceHighlightMaterial: {fileID: 2100000, guid: 6cad5b83c13bdc9419767ec6e0a6b377,
+  pointEdgeHighlightMaterial: {fileID: 2100000, guid: 6cad5b83c13bdc9419767ec6e0a6b377,
     type: 2}
-  pointInactiveMaterial: {fileID: 2100000, guid: 4cbe6d6e693ad6044a0b0624147a1702,
+  faceHighlightMaterial: {fileID: 2100000, guid: ade2e0046f8f65042bed391c08bca393,
     type: 2}
-  edgeInactiveMaterial: {fileID: 2100000, guid: e8ef146ca97f37c4dbaeae72f761f4ee,
+  pointEdgeInactiveMaterial: {fileID: 2100000, guid: a79bef7b63223524da9e1545d0840fbf,
     type: 2}
   facePaintMaterial: {fileID: 2100000, guid: d4194faafba0acf469d1c2167a732dc6, type: 2}
   faceExtrudeMaterial: {fileID: 2100000, guid: 4fbe852b345fb814baae8b268d93f5f3, type: 2}
