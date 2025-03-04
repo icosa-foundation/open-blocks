@@ -25,10 +25,10 @@ MonoBehaviour:
   lightLayerName6: 
   lightLayerName7: 
   m_StripDebugVariants: 1
-  m_StripUnusedPostProcessingVariants: 0
+  m_StripUnusedPostProcessingVariants: 1
   m_StripUnusedVariants: 1
   m_StripUnusedLODCrossFadeVariants: 1
   m_StripScreenCoordOverrideVariants: 1
   supportRuntimeDebugDisplay: 0
-  m_ShaderVariantLogLevel: 0
+  m_ShaderVariantLogLevel: 2
   m_ExportShaderVariants: 1
