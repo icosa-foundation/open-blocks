@@ -100,8 +100,8 @@ namespace com.google.apps.peltzer.client.model.render
 
         public override void Finish()
         {
-            Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
-            Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
+            // Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
+            // Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
             UXEffectManager.GetEffectManager().EndEffect(this);
             model.AddToRemesher(insertionMesh.id);
         }
@@ -113,8 +113,8 @@ namespace com.google.apps.peltzer.client.model.render
         {
             pctDone = Mathf.Min(1f, (Time.time - startTime) / duration);
             // Insertion doesn't get an effect light, so turn it off.
-            Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
-            Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
+            // Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
+            // Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
             effectMaterial.SetFloat("_AnimPct", pctDone);
             effectMaterialBack.SetFloat("_AnimPct", pctDone);
             if (pctDone >= 1f)
