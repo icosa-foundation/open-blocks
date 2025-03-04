@@ -29,7 +29,7 @@ namespace com.google.apps.peltzer.client.tools.utils
     {
         private static readonly float HIGHLIGHT_EMISSIVE_AMOUNT = 0.7f;
         private static readonly float HIGHLIGHT_ALPHA = 0.75f;
-        public static Material material;
+        // public static Material material;
         private static Dictionary<MaterialRegistry.MaterialType, MaterialCycler> matDict;
 
         public static void Setup()
@@ -71,7 +71,7 @@ namespace com.google.apps.peltzer.client.tools.utils
 
                 float emissiveAmount = HIGHLIGHT_EMISSIVE_AMOUNT * animPct;
                 float transparentMult = currentMaterial.GetFloat("_MultiplicitiveAlpha") * (1 - animPct) + HIGHLIGHT_ALPHA * animPct;
-                currentMaterial.SetFloat("_EmissiveAmount", emissiveAmount);
+                // currentMaterial.SetFloat("_EmissiveAmount", emissiveAmount);
                 currentMaterial.SetFloat("_MultiplicitiveAlpha", transparentMult);
                 currentMaterial.renderQueue = 3000;
 

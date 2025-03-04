@@ -53,8 +53,9 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// </summary>
         private static readonly Color GLOW_COLOR = new Color(0.2f, 1.0f, 0.2f);
 
-        public static Material material;
+        // public static Material material;
         private static Dictionary<MaterialRegistry.MaterialType, MaterialCycler> matDict;
+        private static readonly int MultiplicitiveAlpha = Shader.PropertyToID("_MultiplicitiveAlpha");
 
         public static void Setup()
         {
@@ -91,10 +92,10 @@ namespace com.google.apps.peltzer.client.tools.utils
                     Mesh curMesh = MeshCycler.GetTempMeshForMeshMatId(key, matId, out needToPopulateMesh);
                     Material curMaterial = matDict[MaterialRegistry.GetMaterialType(matId)].GetInstanceOfMaterial();
                     float emissiveAmount = factor;
-                    curMaterial.SetFloat("_EmissiveAmount", factor);
+                    // curMaterial.SetFloat("_EmissiveAmount", factor);
                     float transparentMult =
-                      curMaterial.GetFloat("_MultiplicitiveAlpha") * (1 - factor) + HIGHLIGHT_ALPHA * factor;
-                    curMaterial.SetFloat("_MultiplicitiveAlpha", transparentMult);
+                      curMaterial.GetFloat(MultiplicitiveAlpha) * (1 - factor) + HIGHLIGHT_ALPHA * factor;
+                    curMaterial.SetFloat(MultiplicitiveAlpha, transparentMult);
 
                     curMaterial.renderQueue = 3000;
                     if (needToPopulateMesh)

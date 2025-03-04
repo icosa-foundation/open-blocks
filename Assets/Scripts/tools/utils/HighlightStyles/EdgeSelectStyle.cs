@@ -29,7 +29,6 @@ namespace com.google.apps.peltzer.client.tools.utils
     {
         public static Material material;
         public static Mesh edgeMesh;
-        private static Mesh edgeRenderMesh = new Mesh();
         private static List<Matrix4x4> matrices = new List<Matrix4x4>();
         public static void RenderEdges(Model model,
           HighlightUtils.TrackedHighlightSet<EdgeKey> edgeHighlights,
@@ -37,11 +36,9 @@ namespace com.google.apps.peltzer.client.tools.utils
         {
             HashSet<EdgeKey> keys = edgeHighlights.getKeysForStyle((int)EdgeStyles.EDGE_SELECT);
             if (keys.Count == 0) { return; }
-            edgeRenderMesh.Clear();
             Vector3[] vertices = new Vector3[edgeHighlights.RenderableCount() * 2];
             float scaleFactor = InactiveRenderer.GetEdgeScaleFactor(worldSpace);
-            //TODO(bug): setup connectivity info so that we can use correct normals from adjacent faces
-            // Vector3 normal = new Vector3(0f, 1f, 0f);
+            var sphereRadii = InactiveRenderer.GetVertScaleFactor(worldSpace) * 2;
             int i = 0;
             matrices.Clear();
             foreach (EdgeKey key in keys)
@@ -55,19 +52,18 @@ namespace com.google.apps.peltzer.client.tools.utils
                 vertices[i] = mesh.VertexPositionInModelCoords(key.vertexId2);
 
                 // compute distance between vertices
-                float distance = Vector3.Distance(vertices[i], vertices[i - 1]);
+                float distance = Vector3.Distance(vertices[i], vertices[i - 1]) - sphereRadii;
                 // compute the midpoint between the two vertices
                 Vector3 midpoint = (vertices[i] + vertices[i - 1]) / 2;
+
                 // compute the direction vector between the two vertices
                 Vector3 direction = vertices[i] - vertices[i - 1];
                 // compute the rotation to align the direction vector with the z-axis
                 Quaternion rotation = Quaternion.FromToRotation(Vector3.forward, direction);
                 // compute the scale to stretch the edge to the correct length
                 Vector3 scale = new Vector3(scaleFactor * animPct, scaleFactor * animPct, distance);
-                // compute the translation to move the edge to the midpoint
-                Vector3 translation = midpoint;
                 // compute the transformation matrix
-                Matrix4x4 matrix = Matrix4x4.TRS(translation, rotation, scale);
+                Matrix4x4 matrix = Matrix4x4.TRS(midpoint, rotation, scale);
                 matrices.Add(worldSpace.modelToWorld * matrix);
 
                 i++;
