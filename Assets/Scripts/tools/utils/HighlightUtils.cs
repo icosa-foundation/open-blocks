@@ -338,22 +338,27 @@ namespace com.google.apps.peltzer.client.tools.utils
             this.model = model;
             var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            VertexSelectStyle.vertexMesh = sphere.GetComponent<MeshFilter>().mesh;
-            EdgeSelectStyle.edgeMesh = cube.GetComponent<MeshFilter>().mesh;
-            Destroy(cube); // only need the mesh for showing the vertex highlights
-            Destroy(sphere);
-            EdgeSelectStyle.material = new Material(materialLibrary.pointEdgeFaceHighlightMaterial);
-            EdgeInactiveStyle.material = new Material(materialLibrary.edgeInactiveMaterial);
-            EdgeTemporaryStyle.material = new Material(materialLibrary.pointEdgeFaceHighlightMaterial);
-            FaceSelectStyle.material = new Material(materialLibrary.pointEdgeFaceHighlightMaterial);
+            Destroy(cube);// only need the mesh for showing the edge highlights
+            Destroy(sphere);// only need the mesh for showing the vertex highlights
+            var sphereMesh = sphere.GetComponent<MeshFilter>().mesh;
+            var cubeMesh = cube.GetComponent<MeshFilter>().mesh;
+            VertexSelectStyle.vertexMesh = sphereMesh;
+            VertexInactiveStyle.vertexMesh = sphereMesh;
+            EdgeSelectStyle.edgeMesh = cubeMesh;
+            EdgeInactiveStyle.edgeMesh = cubeMesh;
+            EdgeTemporaryStyle.edgeMesh = cubeMesh;
+
+            EdgeSelectStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
+            EdgeInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
+            EdgeTemporaryStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
+            FaceSelectStyle.material = new Material(materialLibrary.faceHighlightMaterial);
             FacePaintStyle.material = new Material(materialLibrary.facePaintMaterial);
             FaceExtrudeStyle.material = new Material(materialLibrary.faceExtrudeMaterial);
-            MeshSelectStyle.material = new Material(materialLibrary.meshSelectMaterial);
             MeshSelectStyle.silhouetteMaterial = new Material(materialLibrary.highlightSilhouetteMaterial);
-            MeshPaintStyle.material = new Material(materialLibrary.meshSelectMaterial);
-            VertexSelectStyle.material = new Material(materialLibrary.pointEdgeFaceHighlightMaterial);
-            VertexInactiveStyle.material = new Material(materialLibrary.pointInactiveMaterial);
-            TutorialHighlightStyle.material = materialLibrary.meshSelectMaterial;
+            // MeshPaintStyle.material = new Material(materialLibrary.meshSelectMaterial);
+            VertexSelectStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
+            VertexInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
+            // TutorialHighlightStyle.material = materialLibrary.meshSelectMaterial;
 
             MeshSelectStyle.Setup();
             MeshPaintStyle.Setup();
@@ -361,6 +366,8 @@ namespace com.google.apps.peltzer.client.tools.utils
             TutorialHighlightStyle.Setup();
 
             inactiveRenderer = new InactiveRenderer(model, worldSpace, materialLibrary);
+            inactiveRenderer.edgeMesh = cubeMesh;
+            inactiveRenderer.vertexMesh = sphereMesh;
             vertexHighlights = new TrackedHighlightSet<VertexKey>(VERT_EDGE_ANIMATION_DURATION_IN,
               VERT_EDGE_ANIMATION_DURATION_OUT,
               new[] { (int)VertexStyles.VERTEX_SELECT, (int)VertexStyles.VERTEX_INACTIVE });
