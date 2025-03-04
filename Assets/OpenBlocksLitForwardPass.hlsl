@@ -2,6 +2,15 @@ float4x4 _RemesherMeshTransforms[128];
 float _MultiplicitiveAlpha;
 float _OverrideAmount;
 float4 _OverrideColor;
+float4 _SelectPositionWorld;
+float _SelectRadius;
+float4 _EffectColor;
+float4 _MeshShaderBounds;
+float _AnimPct;
+float _MaxEffectEmissive;
+float _AnimNoiseScale;
+float _AnimNoiseAmplitude;
+
 
 struct OpenBlocksAttributes
 {
@@ -19,45 +28,6 @@ inline half3 GammaToLinearSpace (half3 sRGB)
 {
     // Approximate version from http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
     return sRGB * (sRGB * (sRGB * 0.305306011h + 0.682171111h) + 0.012522878h);
-}
-
-inline void OpenBlocksInitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfaceData)
-{
-    half4 albedoAlpha = SampleAlbedoAlpha(uv, TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap));
-    outSurfaceData.alpha = Alpha(albedoAlpha.a, _BaseColor, _Cutoff);
-
-    half4 specGloss = SampleMetallicSpecGloss(uv, albedoAlpha.a);
-    outSurfaceData.albedo = albedoAlpha.rgb * _BaseColor.rgb;
-    outSurfaceData.albedo = AlphaModulate(outSurfaceData.albedo, outSurfaceData.alpha);
-
-#if _SPECULAR_SETUP
-    outSurfaceData.metallic = half(1.0);
-    outSurfaceData.specular = specGloss.rgb;
-#else
-    outSurfaceData.metallic = specGloss.r;
-    outSurfaceData.specular = half3(0.0, 0.0, 0.0);
-#endif
-
-    outSurfaceData.smoothness = specGloss.a;
-    outSurfaceData.normalTS = SampleNormal(uv, TEXTURE2D_ARGS(_BumpMap, sampler_BumpMap), _BumpScale);
-    outSurfaceData.occlusion = SampleOcclusion(uv);
-    outSurfaceData.emission = SampleEmission(uv, _EmissionColor.rgb, TEXTURE2D_ARGS(_EmissionMap, sampler_EmissionMap));
-
-#if defined(_CLEARCOAT) || defined(_CLEARCOATMAP)
-    half2 clearCoat = SampleClearCoat(uv);
-    outSurfaceData.clearCoatMask       = clearCoat.r;
-    outSurfaceData.clearCoatSmoothness = clearCoat.g;
-#else
-    outSurfaceData.clearCoatMask       = half(0.0);
-    outSurfaceData.clearCoatSmoothness = half(0.0);
-#endif
-
-#if defined(_DETAIL)
-    half detailMask = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, uv).a;
-    float2 detailUv = uv * _DetailAlbedoMap_ST.xy + _DetailAlbedoMap_ST.zw;
-    outSurfaceData.albedo = ApplyDetailAlbedo(detailUv, outSurfaceData.albedo, detailMask);
-    outSurfaceData.normalTS = ApplyDetailNormal(detailUv, outSurfaceData.normalTS, detailMask);
-#endif
 }
 
 OpenBlocksVaryings OpenBlocksLitPassVertex(OpenBlocksAttributes input)
@@ -83,14 +53,54 @@ void OpenBlocksLitPassFragment(OpenBlocksVaryings input, out half4 outColor : SV
     )
 {
     Varyings v = input.varyings;
-    _BaseColor = input.color;
+    _BaseColor = input.color * _BaseColor;
+
+    #if defined(_INSERT_MESH)
+    float boundsHeight = (_MeshShaderBounds.y - _MeshShaderBounds.x);
+    // Do cheap, fake noise for animated wave.  It's good enough.
+    float animNoiseShift = 10 * _AnimPct;
+    float noise = sin(v.positionWS.x * _AnimNoiseScale + animNoiseShift)
+        + sin(v.positionWS.z * _AnimNoiseScale + animNoiseShift);
+    noise = noise * 0.24 * boundsHeight;
+    
+    float4 effectColor = (_EffectColor.rgba + input.color.rgba) * 0.5;
+
+    float yPivot = _MeshShaderBounds.x + _AnimPct * (boundsHeight * 1.4) + noise * _AnimNoiseAmplitude;
+    float distanceIn = max( 0, yPivot - v.positionWS.y);
+    float effectPct = saturate(v.positionWS.y <= yPivot ? 1 - (distanceIn / (0.4 * boundsHeight)) : 0);
+
+    float matAlpha = v.positionWS.y <= yPivot ? 1 * input.color.a : 0.3 * input.color.a;
+                
+    #endif
     
     LitPassFragment(v, outColor
     #ifdef  _WRITE_RENDERING_LAYERS
     , out
     #endif
     );
-    
+
+    #if defined(_INSERT_MESH)
+    outColor = outColor + effectColor * effectPct * _MaxEffectEmissive;
+    outColor.a = matAlpha;
+    #else
     outColor = half4(outColor.rgb, outColor.a * _MultiplicitiveAlpha);
     outColor = lerp(outColor, _OverrideColor, _OverrideAmount);
+    #endif
+    
+    #if defined(_BLEND_TRANSPARENCY)
+    float3 to = v.positionWS - _SelectPositionWorld.xyz;
+    float distSqr = dot(to, to);
+    // float alpha = saturate(dist / _SelectRadius);
+    float ratio = distSqr / (_SelectRadius * _SelectRadius);
+    float alpha = smoothstep(1.0, 0.0, ratio * ratio);
+    outColor.a = alpha;
+    #endif
+
+    #if defined(_FACE_SELECT_STYLE) // send _AnimPct already as squared
+    float3 dirToProjected = _SelectPositionWorld.xyz - v.positionWS;
+    float radiusThreshold = 0.2;
+    float animDoneOverride = smoothstep(1.0, 0.98, _AnimPct);
+    radiusThreshold = radiusThreshold * _AnimPct;
+    outColor = step(animDoneOverride * length(dirToProjected),radiusThreshold) * outColor;
+    #endif
 }

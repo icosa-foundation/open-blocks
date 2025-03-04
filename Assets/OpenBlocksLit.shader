@@ -7,6 +7,15 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
         _OverrideAmount("Override Amount", Float) = 0.0
         _OverrideColor("Override Color", Color) = (1, 1, 1, 1)
         _ZTest ("ZTest", Float) = 4.0 // LEqual default
+        _SelectPositionWorld("Select Position World", Vector) = (0.0, 0.0, 0.0, 0.0)
+        _SelectRadius("Select Radius", Float) = 0.0
+        _AnimPct ("Animation percent", Range(0.0, 1.0)) = 0.0
+        // for mesh insert effect
+        _EffectColor ("Effect Color", Color) = (1.0, 1.0, 1.0, 1.0)
+		_MeshShaderBounds ("Min/Max Y Coord", Vector) = (0.0, 1.0, 0.0, 0.0)
+		_MaxEffectEmissive("Effect Emissive", Float) = 0.4
+		_AnimNoiseScale("Animation Noise Scale", Float) = 20.0
+  	    _AnimNoiseAmplitude("Animation Noise Amplitude", Float) = 0.125
         
         // Specular vs Metallic workflow
         _WorkflowMode("WorkflowMode", Float) = 1.0
@@ -124,7 +133,13 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
             // -------------------------------------
             // Open Blocks Keywords
             #pragma multi_compile _ _REMESHER
-            #pragma multi_compile _ _NO_DEPTH_TEST
+            // for the inactive edge and vertex highlights
+            // we make edges and vertices more transparent the further away they are from the selection point
+            #pragma multi_compile _ _BLEND_TRANSPARENCY
+            // when selecting faces (during modify or paint) the selection is spreading out from the selection point
+            #pragma multi_compile _ _FACE_SELECT_STYLE
+            // when inserting a new mesh, there is a build-up effect of the mesh
+            #pragma multi_compile _ _INSERT_MESH
             
             // -------------------------------------
             // Material Keywords

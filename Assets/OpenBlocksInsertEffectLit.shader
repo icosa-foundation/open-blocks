@@ -2,6 +2,14 @@ Shader "Universal Render Pipeline/OpenBlocksInsertEffectLit"
 {
     Properties
     {
+        // Open Blocks specific properties
+        _EffectColor ("Effect Color", Color) = (1.0, 1.0, 1.0, 1.0)
+        _AnimPct ("Animation percent", Range(0.0, 1.0)) = 0.0
+		_MeshShaderBounds ("Min/Max Y Coord", Vector) = (0.0, 1.0, 0.0, 0.0)
+		_MaxEffectEmissive("Effect Emissive", Float) = 0.4
+		_AnimNoiseScale("Animation Noise Scale", Float) = 20.0
+  	    _AnimNoiseAmplitude("Animation Noise Amplitude", Float) = 0.125
+        
         // Specular vs Metallic workflow
         _WorkflowMode("WorkflowMode", Float) = 1.0
 
@@ -39,14 +47,6 @@ Shader "Universal Render Pipeline/OpenBlocksInsertEffectLit"
         _DetailAlbedoMap("Detail Albedo x2", 2D) = "linearGrey" {}
         _DetailNormalMapScale("Scale", Range(0.0, 2.0)) = 1.0
         [Normal] _DetailNormalMap("Normal Map", 2D) = "bump" {}
-        
-        // Open Blocks specific properties
-        _EffectColor ("Effect Color", Color) = (1.0, 1.0, 1.0, 1.0)
-        _AnimPct ("Animation percent", Range(0.0, 1.0)) = 0.0
-		_MeshShaderBounds ("Min/Max Y Coord", Vector) = (0.0, 1.0, 0.0, 0.0)
-		_MaxEffectEmissive("Effect Emissive", Float) = 0.4
-		_AnimNoiseScale("Animation Noise Scale", Float) = 20.0
-  	    _AnimNoiseAmplitude("Animation Noise Amplitude", Float) = 0.125
         
         // SRP batching compatibility for Clear Coat (Not used in Lit)
         [HideInInspector] _ClearCoatMask("_ClearCoatMask", Float) = 0.0
@@ -268,8 +268,7 @@ Shader "Universal Render Pipeline/OpenBlocksInsertEffectLit"
                 Varyings v = input.varyings;
 
                 float boundsHeight = (_MeshShaderBounds.y - _MeshShaderBounds.x);
-                float3 lightOut;
-
+                
                 // Do cheap, fake noise for animated wave.  It's good enough.
                 
                 // float yScale = v.positionWS.y/boundsHeight;
