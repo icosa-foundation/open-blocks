@@ -343,13 +343,13 @@ namespace com.google.apps.peltzer.client.tools.utils
             var sphereMesh = sphere.GetComponent<MeshFilter>().mesh;
             var cubeMesh = cube.GetComponent<MeshFilter>().mesh;
             VertexSelectStyle.vertexMesh = sphereMesh;
-            VertexInactiveStyle.vertexMesh = sphereMesh;
+            // VertexInactiveStyle.vertexMesh = sphereMesh;
             EdgeSelectStyle.edgeMesh = cubeMesh;
-            EdgeInactiveStyle.edgeMesh = cubeMesh;
+            // EdgeInactiveStyle.edgeMesh = cubeMesh;
             EdgeTemporaryStyle.edgeMesh = cubeMesh;
 
             EdgeSelectStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
-            EdgeInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
+            // EdgeInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
             EdgeTemporaryStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
             FaceSelectStyle.material = new Material(materialLibrary.faceHighlightMaterial);
             FacePaintStyle.material = new Material(materialLibrary.facePaintMaterial);
@@ -357,7 +357,7 @@ namespace com.google.apps.peltzer.client.tools.utils
             MeshSelectStyle.silhouetteMaterial = new Material(materialLibrary.highlightSilhouetteMaterial);
             // MeshPaintStyle.material = new Material(materialLibrary.meshSelectMaterial);
             VertexSelectStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
-            VertexInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
+            // VertexInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
             // TutorialHighlightStyle.material = materialLibrary.meshSelectMaterial;
 
             MeshSelectStyle.Setup();
