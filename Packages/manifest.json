@@ -48,8 +48,8 @@
   },
   "scopedRegistries": [
     {
-      "name": "Unity NuGet",
-      "url": "https://unitynuget-registry.azurewebsites.net",
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
       "scopes": [
         "org.nuget.sharpziplib",
         "org.nuget.system"
