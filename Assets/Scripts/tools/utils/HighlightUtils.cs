@@ -354,7 +354,7 @@ namespace com.google.apps.peltzer.client.tools.utils
             FaceSelectStyle.material = new Material(materialLibrary.faceHighlightMaterial);
             FacePaintStyle.material = new Material(materialLibrary.facePaintMaterial);
             FaceExtrudeStyle.material = new Material(materialLibrary.faceExtrudeMaterial);
-            MeshSelectStyle.silhouetteMaterial = new Material(materialLibrary.highlightSilhouetteMaterial);
+            MeshSelectStyle.silhouetteMaterial = new Material(materialLibrary.meshSelectMaterial);
             // MeshPaintStyle.material = new Material(materialLibrary.meshSelectMaterial);
             VertexSelectStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
             // VertexInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
@@ -632,6 +632,7 @@ namespace com.google.apps.peltzer.client.tools.utils
             EdgeInactiveStyle.RenderEdges(model, edgeHighlights, worldSpace);
             EdgeTemporaryStyle.RenderEdges(model, temporaryEdgeHighlights, worldSpace);
             edgeHighlights.ClearExpired();
+            temporaryEdgeHighlights.ClearExpired();
         }
 
         // Renders face highlights.

@@ -672,7 +672,7 @@ namespace com.google.apps.peltzer.client.model.main
             MaterialRegistry.init(materialLibrary);
 
             // Pass the highlight material to the MeshHelper.
-            MeshHelper.highlightSilhouetteMaterial = MaterialRegistry.getHighlightSilhouetteMaterial();
+            MeshHelper.highlightSilhouetteMaterial = MaterialRegistry.GetHighlightSilhouetteMaterial();
 
             // Pre-allocate the serializer buffers to avoid having to do that when saving the model.
             serializerForAutoSave = new PolySerializer();
