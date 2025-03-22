@@ -76,25 +76,25 @@ public class MaterialLibrary : MonoBehaviour
 
         // pointEdgeHighlightMaterial.DisableKeyword("_REMESHER");
         // pointEdgeHighlightMaterial.SetFloat(OverrideAmount, 0.0f);
-        pointEdgeHighlightMaterial.SetFloat(ZTest, 8.0f); // always (no depth test)
+        // pointEdgeHighlightMaterial.SetFloat(ZTest, 8.0f); // always (no depth test)
 
         // faceHighlightMaterial.DisableKeyword("_REMESHER");
         // faceHighlightMaterial.EnableKeyword("_FACE_SELECT_STYLE");
-        faceHighlightMaterial.SetFloat(ZTest, 8.0f);
+        // faceHighlightMaterial.SetFloat(ZTest, 4.0f);
 
         // pointEdgeInactiveMaterial.DisableKeyword("_REMESHER");
         // pointEdgeInactiveMaterial.EnableKeyword("_BLEND_TRANSPARENCY");
-        pointEdgeInactiveMaterial.SetFloat(ZTest, 4.0f); // (less than equal)
-        //
+        // pointEdgeInactiveMaterial.SetFloat(ZTest, 4.0f); // (less than equal)
+
         // facePaintMaterial.DisableKeyword("_REMESHER");
         // facePaintMaterial.EnableKeyword("_FACE_SELECT_STYLE");
-        //
+
         // faceExtrudeMaterial.DisableKeyword("_REMESHER");
         // faceExtrudeMaterial.EnableKeyword("_FACE_SELECT_STYLE");
         // use face highlight style for face extrude for the time being
         // since original face extrude style didn't work properly anyway
         // faceExtrudeMaterial.DisableKeyword("_FACE_EXTRUDE");
-        faceExtrudeMaterial.SetFloat(ZTest, 8.0f);
+        // faceExtrudeMaterial.SetFloat(ZTest, 4.0f);
 
         // gemMaterialFront.EnableKeyword("_REMESHER");
         // gemMaterialFront.EnableKeyword("_GEM_EFFECT");

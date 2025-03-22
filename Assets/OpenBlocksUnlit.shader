@@ -73,14 +73,14 @@ Shader "Universal Render Pipeline/OpenBlocksUnlit"
             
             // -------------------------------------
             // Open Blocks Keywords
-            #pragma multi_compile _ _REMESHER
+            #pragma shader_feature_local _ _REMESHER
             // for the inactive edge and vertex highlights
             // we make edges and vertices more transparent the further away they are from the selection point
-            #pragma multi_compile _ _BLEND_TRANSPARENCY
+            #pragma shader_feature_local _ _BLEND_TRANSPARENCY
             // when selecting faces (during modify or paint) the selection is spreading out from the selection point
-            #pragma multi_compile _ _FACE_SELECT_STYLE
+            #pragma shader_feature_local _ _FACE_SELECT_STYLE
             // when inserting a new mesh, there is a build-up effect of the mesh
-            #pragma multi_compile _ _INSERT_MESH
+            #pragma shader_feature_local _ _INSERT_MESH
 
             // Material Keywords
             #pragma shader_feature_local_fragment _SURFACE_TYPE_TRANSPARENT

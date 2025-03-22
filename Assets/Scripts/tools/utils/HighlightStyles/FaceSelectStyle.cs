@@ -29,13 +29,10 @@ namespace com.google.apps.peltzer.client.tools.utils
     {
 
         public static Material material;
-        private static Mesh faceRenderMesh = new Mesh();
+        private static Mesh faceRenderMesh = new();
+        public static float offset;
 
-        private static Vector4 selectPosition;
-        private static float animPct;
         // use the properties instead of setting it per vertex, doesn't seem to look any different!
-        private static readonly int SelectPositionWorld = Shader.PropertyToID("_SelectPositionWorld");
-        private static readonly int AnimPct = Shader.PropertyToID("_AnimPct");
         // Renders vertex highlights.
         // There are some obvious optimization opportunities here if profiling shows them to be necessary (mostly reusing
         // face geometry frame to frame) - 37281287
@@ -51,9 +48,9 @@ namespace com.google.apps.peltzer.client.tools.utils
             List<Vector3> vertices = new List<Vector3>();
             // Because Unity does not make a "arbitrary data" vertex channel available to us, we're going to abuse the UV
             // channel to pass per-vertex animation state into the shader.
-            // List<Vector2> selectData = new List<Vector2>();
+            List<Vector2> selectData = new List<Vector2>();
             // List<Vector3> normals = new List<Vector3>();
-            // List<Vector4> selectPositions = new List<Vector4>();
+            List<Vector4> selectPositions = new List<Vector4>();
             // List<Color> colors = new List<Color>();
 
             int curIndex = 0;
@@ -65,8 +62,9 @@ namespace com.google.apps.peltzer.client.tools.utils
                 if (mesh.TryGetFace(key.faceId, out curFace))
                 {
                     // For each face, add all triangles to the mesh with all per-face data set appropriately.
-                    selectPosition = faceHighlights.GetCustomChannel0(key);
-                    animPct = faceHighlights.GetAnimPct(key);
+                    var selectPosition = faceHighlights.GetCustomChannel0(key);
+                    var animPct = faceHighlights.GetAnimPct(key);
+                    animPct *= animPct;
                     // Vector4 colorV4 = faceHighlights.GetCustomChannel1(key);
                     // Color faceColor = new Color(colorV4.x, colorV4.y, colorV4.z, colorV4.w);
                     List<Triangle> tris = MeshHelper.TriangulateFace(mesh, curFace);
@@ -74,30 +72,30 @@ namespace com.google.apps.peltzer.client.tools.utils
                     {
                         // For each triangle in the face, add a vertex to the Mesh
                         var v = mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId0]);
-                        vertices.Add(v);
+                        vertices.Add(v + curFace.normal * offset);
                         // normals.Add(curFace.normal);
-                        // selectData.Add(new Vector2(animPct, 0f));
+                        selectData.Add(new Vector2(animPct, 0f));
                         indices.Add(curIndex);
                         // colors.Add(faceColor);
-                        // selectPositions.Add(selectPosition);
+                        selectPositions.Add(selectPosition);
                         curIndex++;
 
                         v = mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId1]);
-                        vertices.Add(v);
+                        vertices.Add(v + curFace.normal * offset);
                         // normals.Add(curFace.normal);
-                        // selectData.Add(new Vector2(animPct, 0f));
+                        selectData.Add(new Vector2(animPct, 0f));
                         indices.Add(curIndex);
                         // colors.Add(faceColor);
-                        // selectPositions.Add(selectPosition);
+                        selectPositions.Add(selectPosition);
                         curIndex++;
 
                         v = mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId2]);
-                        vertices.Add(v);
+                        vertices.Add(v + curFace.normal * offset);
                         // normals.Add(curFace.normal);
-                        // selectData.Add(new Vector2(animPct, 0f));
+                        selectData.Add(new Vector2(animPct, 0f));
                         indices.Add(curIndex);
                         // colors.Add(faceColor);
-                        // selectPositions.Add(selectPosition);
+                        selectPositions.Add(selectPosition);
                         curIndex++;
                     }
                 }
@@ -105,14 +103,11 @@ namespace com.google.apps.peltzer.client.tools.utils
             faceRenderMesh.SetVertices(vertices);
             // These are not actually UVs - we're using the UV channel to pass per-primitive animation data so that edges
             // animate independently.
-            // faceRenderMesh.SetUVs(/* channel */ 0, selectData);
+            faceRenderMesh.SetUVs(/* channel */ 0, selectData);
             // faceRenderMesh.SetNormals(normals);
             faceRenderMesh.SetTriangles(indices, /* subMesh */ 0);
             // faceRenderMesh.SetColors(colors);
-            // faceRenderMesh.SetTangents(selectPositions);
-
-            material.SetVector(SelectPositionWorld, selectPosition);
-            material.SetFloat(AnimPct, animPct * animPct);
+            faceRenderMesh.SetTangents(selectPositions);
 
             Graphics.DrawMesh(faceRenderMesh, worldSpace.modelToWorld, material, 0);
         }

@@ -10,10 +10,10 @@ struct OpenBlocksAttributes
 {
     Attributes attributes;
     half4 color : COLOR;
-    // #if defined(_FACE_SELECT_STYLE)
-    // // uvs (TEXCOORD0) is used for animation percentage (based on original shader)
-    // float3 selectPositionWorld : TANGENT; // use this if there are multiple select positions
-    // #endif
+    #if defined(_FACE_SELECT_STYLE)
+    // uvs (TEXCOORD0) is used for animation percentage (based on original shader)
+    float3 selectPositionWorld : TANGENT; // use this if there are multiple select positions
+    #endif
 
 };
 
@@ -22,10 +22,10 @@ struct OpenBlocksVaryings
     Varyings varyings;
     half4 color : COLOR;
     float3 positionWS : TEXCOORD2; // need this for selection radius calculations
-    // #if defined(_FACE_SELECT_STYLE)
-    // // uv (TEXCOORD0) is used for animation percentage (based on original shader)
-    // float3 selectPositionWorld : TANGENT; // use this if there are multiple select positions
-    // #endif
+    #if defined(_FACE_SELECT_STYLE)
+    // uv (TEXCOORD0) is used for animation percentage (based on original shader)
+    float3 selectPositionWorld : TANGENT; // use this if there are multiple select positions
+    #endif
 
 };
 
@@ -78,9 +78,9 @@ OpenBlocksVaryings OpenBlocksUnlitPassVertex(OpenBlocksAttributes input)
     #endif
     // end from UnlitPassVertex
 
-    // #if defined(_FACE_SELECT_STYLE)
-    // output.selectPositionWorld = input.selectPositionWorld;
-    // #endif
+    #if defined(_FACE_SELECT_STYLE)
+    output.selectPositionWorld = input.selectPositionWorld;
+    #endif
     
     output.color = half4(GammaToLinearSpace(input.color.rgb), input.color.a);
     return output;    
@@ -112,13 +112,11 @@ void OpenBlocksUnlitPassFragment(
     float alpha = smoothstep(1.0,0.0,ratio * ratio) * 0.5; 
     outColor.a = alpha;
     #endif
-    #if defined(_FACE_SELECT_STYLE) // send _AnimPct already as squared
-    float3 dirToProjected = _SelectPositionWorld.xyz - input.positionWS;
+    #if defined(_FACE_SELECT_STYLE) // send animPct already as squared
+    float3 dirToProjected = input.selectPositionWorld - input.positionWS;
     float radiusThreshold = 0.2;
-    // float animDoneOverride = smoothstep(1.0, 0.98, v.uv.r); // per vertex animation percentage
-    // radiusThreshold = radiusThreshold * v.uv.r;
-    float animDoneOverride = smoothstep(1.0, 0.98, _AnimPct);
-    radiusThreshold = radiusThreshold * _AnimPct;
+    float animDoneOverride = smoothstep(1.0, 0.98, v.uv.r); // per vertex animation percentage
+    radiusThreshold = radiusThreshold * v.uv.r;
     outColor = step(animDoneOverride * length(dirToProjected),radiusThreshold) * outColor;
     #endif
 }

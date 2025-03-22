@@ -328,6 +328,9 @@ namespace com.google.apps.peltzer.client.tools.utils
         // Mesh highlight animation durations are (inversely) correlated with face size.
         // This is the base for that calculation.
         private const float MESH_FACE_HIGHLIGHT_DURATION = 0.225f;
+        // offset for face highlight faces 
+        private static float offset = 0.0001f;
+
         /// <summary>
         /// Sets up materials and data structures for managing highlights.
         /// </summary>
@@ -352,8 +355,11 @@ namespace com.google.apps.peltzer.client.tools.utils
             // EdgeInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
             EdgeTemporaryStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
             FaceSelectStyle.material = new Material(materialLibrary.faceHighlightMaterial);
+            FaceSelectStyle.offset = offset;
             FacePaintStyle.material = new Material(materialLibrary.facePaintMaterial);
+            FacePaintStyle.offset = offset;
             FaceExtrudeStyle.material = new Material(materialLibrary.faceExtrudeMaterial);
+            FaceExtrudeStyle.offset = offset;
             MeshSelectStyle.silhouetteMaterial = new Material(materialLibrary.meshSelectMaterial);
             // MeshPaintStyle.material = new Material(materialLibrary.meshSelectMaterial);
             VertexSelectStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
@@ -494,9 +500,10 @@ namespace com.google.apps.peltzer.client.tools.utils
         // effect, and the color as the paint color. (Extrude effect is WIP, so these args may change)
         public void SetFaceStyleToExtrude(FaceKey key, Vector3 positionModel, Color color)
         {
+            Vector3 worldSelectPosition = worldSpace.ModelToWorld(positionModel);
             faceHighlights.SetStyle(key,
               (int)FaceStyles.EXTRUDE,
-              new Vector4(positionModel.x, positionModel.y, positionModel.z, 1f),
+              new Vector4(worldSelectPosition.x, worldSelectPosition.y, worldSelectPosition.z, 1f),
               new Vector4(color.r, color.g, color.b, color.a));
         }
 
