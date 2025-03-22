@@ -17,6 +17,11 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
 		_AnimNoiseScale("Animation Noise Scale", Float) = 20.0
   	    _AnimNoiseAmplitude("Animation Noise Amplitude", Float) = 0.125
         
+        // for gem effect
+        _RefractTex("Refraction Texture", Cube) = "" {}
+        _Roughness("Roughness", Range(0.0, 1.0)) = 0.001
+        _FacetSize("Facet Size", Range(0.0, 1.0)) = 0.06
+        
         // Specular vs Metallic workflow
         _WorkflowMode("WorkflowMode", Float) = 1.0
 
@@ -132,14 +137,15 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
 
             // -------------------------------------
             // Open Blocks Keywords
-            #pragma multi_compile _ _REMESHER
+            #pragma shader_feature_local _ _REMESHER
             // for the inactive edge and vertex highlights
             // we make edges and vertices more transparent the further away they are from the selection point
-            #pragma multi_compile _ _BLEND_TRANSPARENCY
+            #pragma shader_feature_local _ _BLEND_TRANSPARENCY
             // when selecting faces (during modify or paint) the selection is spreading out from the selection point
-            #pragma multi_compile _ _FACE_SELECT_STYLE
+            #pragma shader_feature_local _ _FACE_SELECT_STYLE
             // when inserting a new mesh, there is a build-up effect of the mesh
-            #pragma multi_compile _ _INSERT_MESH
+            #pragma shader_feature_local _ _INSERT_MESH
+            #pragma shader_feature_local _ _GEM_EFFECT
             
             // -------------------------------------
             // Material Keywords
@@ -192,10 +198,10 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
             #pragma instancing_options renderinglayer
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
 
+            // #include "UnityImageBasedLighting.cginc"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
             #include "OpenBlocksLitForwardPass.hlsl"
-            
             ENDHLSL
         }
 

@@ -549,10 +549,18 @@ namespace com.google.apps.peltzer.client.model.render
                 meshInfo.UpdateTransforms(model);
                 meshInfo.SetTransforms(meshInfo.materialAndColor.material);
                 Graphics.DrawMesh(meshInfo.mesh, worldSpace.modelToWorld, meshInfo.materialAndColor.material, /* Layer */ 0);
-                if (meshInfo.materialAndColor.material2 != null)
+                if (meshInfo.materialAndColor.material2)
                 {
+                    Matrix4x4 matrix = worldSpace.modelToWorld;
+                    // when rendering the gem material we render the backfaces at a tiny offset away from the camera
+                    // so they render correctly
+                    if (meshInfo.materialAndColor.material2.IsKeywordEnabled("_GEM_EFFECT_BACKFACE_FIX"))
+                    {
+                        matrix = Matrix4x4.Translate(PeltzerMain.Instance.eyeCamera.transform.forward * 0.01f) * matrix;
+                    }
+
                     meshInfo.SetTransforms(meshInfo.materialAndColor.material2);
-                    Graphics.DrawMesh(meshInfo.mesh, worldSpace.modelToWorld, meshInfo.materialAndColor.material2, /* Layer */ 0);
+                    Graphics.DrawMesh(meshInfo.mesh, matrix, meshInfo.materialAndColor.material2, /* Layer */ 0);
                 }
             }
         }
