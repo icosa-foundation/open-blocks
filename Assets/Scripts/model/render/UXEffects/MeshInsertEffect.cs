@@ -31,6 +31,8 @@ namespace com.google.apps.peltzer.client.model.render
 
         private static MaterialCycler insertCyclerFront;
         private static MaterialCycler insertCyclerBack;
+        private static readonly int AnimPct = Shader.PropertyToID("_AnimPct");
+        private static readonly int MeshShaderBounds = Shader.PropertyToID("_MeshShaderBounds");
 
         public static void Setup(MaterialLibrary library)
         {
@@ -80,8 +82,8 @@ namespace com.google.apps.peltzer.client.model.render
 
             Vector3 minBoundsWorld = worldSpace.ModelToWorld(insertionMesh.bounds.min);
             Vector3 maxBoundsWorld = worldSpace.ModelToWorld(insertionMesh.bounds.max);
-            effectMaterial.SetVector("_MeshShaderBounds", new Vector4(minBoundsWorld.y, maxBoundsWorld.y, 0f, 0f));
-            effectMaterialBack.SetVector("_MeshShaderBounds", new Vector4(minBoundsWorld.y, maxBoundsWorld.y, 0f, 0f));
+            effectMaterial.SetVector(MeshShaderBounds, new Vector4(minBoundsWorld.y, maxBoundsWorld.y, 0f, 0f));
+            effectMaterialBack.SetVector(MeshShaderBounds, new Vector4(minBoundsWorld.y, maxBoundsWorld.y, 0f, 0f));
             // Adjust for constant velocity so that effect works for big and small meshes.
             duration = DURATION_BASE * Mathf.Sqrt(maxBoundsWorld.y - minBoundsWorld.y);
         }
@@ -115,8 +117,8 @@ namespace com.google.apps.peltzer.client.model.render
             // Insertion doesn't get an effect light, so turn it off.
             // Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
             // Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
-            effectMaterial.SetFloat("_AnimPct", pctDone);
-            effectMaterialBack.SetFloat("_AnimPct", pctDone);
+            effectMaterial.SetFloat(AnimPct, pctDone);
+            effectMaterialBack.SetFloat(AnimPct, pctDone);
             if (pctDone >= 1f)
             {
                 Finish();
