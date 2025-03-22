@@ -60,50 +60,53 @@ public class MaterialLibrary : MonoBehaviour
     public Cubemap gemRefractionMap;
     private void OnEnable()
     {
+        // NOTE: we only need to enable keywpords once when we want to change the shader
+        // otherwise keep things commented out!!!
+
         // for rendering MMeshes the shader needs additional information about the positions of the mesh
         // but for rendering non MMesh things, we don't want that because it messes with geometry
-        baseMaterial.EnableKeyword("_REMESHER");
-        transparentMaterial.EnableKeyword("_REMESHER");
-        glassMaterial.EnableKeyword("_REMESHER");
+        // baseMaterial.EnableKeyword("_REMESHER");
+        // transparentMaterial.EnableKeyword("_REMESHER");
+        // glassMaterial.EnableKeyword("_REMESHER");
 
-        meshInsertEffectMaterialBack.EnableKeyword("_REMESHER");
-        meshInsertEffectMaterialBack.EnableKeyword("_INSERT_MESH");
-        meshInsertEffectMaterialFront.EnableKeyword("_REMESHER");
-        meshInsertEffectMaterialFront.EnableKeyword("_INSERT_MESH");
+        // meshInsertEffectMaterialBack.EnableKeyword("_REMESHER");
+        // meshInsertEffectMaterialBack.EnableKeyword("_INSERT_MESH");
+        // meshInsertEffectMaterialFront.EnableKeyword("_REMESHER");
+        // meshInsertEffectMaterialFront.EnableKeyword("_INSERT_MESH");
 
-        pointEdgeHighlightMaterial.DisableKeyword("_REMESHER");
-        pointEdgeHighlightMaterial.SetFloat(OverrideAmount, 0.0f);
+        // pointEdgeHighlightMaterial.DisableKeyword("_REMESHER");
+        // pointEdgeHighlightMaterial.SetFloat(OverrideAmount, 0.0f);
         pointEdgeHighlightMaterial.SetFloat(ZTest, 8.0f); // always (no depth test)
 
-        faceHighlightMaterial.DisableKeyword("_REMESHER");
-        faceHighlightMaterial.EnableKeyword("_FACE_SELECT_STYLE");
-        // faceHighlightMaterial.SetFloat(ZTest, 8.0f);
+        // faceHighlightMaterial.DisableKeyword("_REMESHER");
+        // faceHighlightMaterial.EnableKeyword("_FACE_SELECT_STYLE");
+        faceHighlightMaterial.SetFloat(ZTest, 8.0f);
 
-        pointEdgeInactiveMaterial.DisableKeyword("_REMESHER");
-        pointEdgeInactiveMaterial.EnableKeyword("_BLEND_TRANSPARENCY");
+        // pointEdgeInactiveMaterial.DisableKeyword("_REMESHER");
+        // pointEdgeInactiveMaterial.EnableKeyword("_BLEND_TRANSPARENCY");
         pointEdgeInactiveMaterial.SetFloat(ZTest, 4.0f); // (less than equal)
-
-        facePaintMaterial.DisableKeyword("_REMESHER");
-        facePaintMaterial.EnableKeyword("_FACE_SELECT_STYLE");
-
-        faceExtrudeMaterial.DisableKeyword("_REMESHER");
-        faceExtrudeMaterial.EnableKeyword("_FACE_SELECT_STYLE");
+        //
+        // facePaintMaterial.DisableKeyword("_REMESHER");
+        // facePaintMaterial.EnableKeyword("_FACE_SELECT_STYLE");
+        //
+        // faceExtrudeMaterial.DisableKeyword("_REMESHER");
+        // faceExtrudeMaterial.EnableKeyword("_FACE_SELECT_STYLE");
         // use face highlight style for face extrude for the time being
         // since original face extrude style didn't work properly anyway
-        faceExtrudeMaterial.DisableKeyword("_FACE_EXTRUDE");
-        // faceExtrudeMaterial.SetFloat(ZTest, 8.0f);
+        // faceExtrudeMaterial.DisableKeyword("_FACE_EXTRUDE");
+        faceExtrudeMaterial.SetFloat(ZTest, 8.0f);
 
-        gemMaterialFront.EnableKeyword("_REMESHER");
-        gemMaterialFront.EnableKeyword("_GEM_EFFECT");
+        // gemMaterialFront.EnableKeyword("_REMESHER");
+        // gemMaterialFront.EnableKeyword("_GEM_EFFECT");
         gemMaterialFront.SetTexture(RefractionTexture, gemRefractionMap);
         gemMaterialFront.SetFloat(FacetSize, 0.06f);
         gemMaterialFront.SetFloat(Roughness, 0.001f);
 
         // when rendering the gem material we render the backfaces at a tiny offset away from the camera
         // so they render correctly
-        gemMaterialBack.EnableKeyword("_REMESHER");
-        gemMaterialBack.EnableKeyword("_GEM_EFFECT");
-        gemMaterialBack.EnableKeyword("_GEM_EFFECT_BACKFACE_FIX");
+        // gemMaterialBack.EnableKeyword("_REMESHER");
+        // gemMaterialBack.EnableKeyword("_GEM_EFFECT");
+        // gemMaterialBack.EnableKeyword("_GEM_EFFECT_BACKFACE_FIX");
         gemMaterialBack.SetTexture(RefractionTexture, gemRefractionMap);
         gemMaterialBack.SetFloat(FacetSize, 0.06f);
         gemMaterialBack.SetFloat(Roughness, 0.001f);
@@ -111,14 +114,14 @@ public class MaterialLibrary : MonoBehaviour
         // because of the way the remesher changes vertex positions in the shader
         // we don't want to use the remesher for meshes that are not MMeshes (e.g. normal Unity meshes)
         // otherwise there are holes in the geometry
-        gemMaterialPaletteFront.DisableKeyword("_REMESHER");
-        gemMaterialPaletteFront.EnableKeyword("_GEM_EFFECT");
+        // gemMaterialPaletteFront.DisableKeyword("_REMESHER");
+        // gemMaterialPaletteFront.EnableKeyword("_GEM_EFFECT");
         gemMaterialPaletteFront.SetTexture(RefractionTexture, gemRefractionMap);
         gemMaterialPaletteFront.SetFloat(FacetSize, 0.6f);
         gemMaterialPaletteFront.SetFloat(Roughness, 0.01f);
 
-        gemMaterialPaletteBack.DisableKeyword("_REMESHER");
-        gemMaterialPaletteBack.EnableKeyword("_GEM_EFFECT");
+        // gemMaterialPaletteBack.DisableKeyword("_REMESHER");
+        // gemMaterialPaletteBack.EnableKeyword("_GEM_EFFECT");
         gemMaterialPaletteBack.SetTexture(RefractionTexture, gemRefractionMap);
         gemMaterialPaletteBack.SetFloat(FacetSize, 0.6f);
         gemMaterialPaletteBack.SetFloat(Roughness, 0.01f);
