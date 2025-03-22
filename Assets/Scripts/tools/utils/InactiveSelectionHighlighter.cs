@@ -22,8 +22,8 @@ namespace com.google.apps.peltzer.client.tools.utils
 {
     public class InactiveSelectionHighlighter
     {
-        public static float INACTIVE_HIGHLIGHT_RADIUS = .1f;
-        public static float OLD_INACTIVE_HIGHLIGHT_RADIUS = .1f;
+        public static float INACTIVE_HIGHLIGHT_RADIUS = .15f;
+        public static float OLD_INACTIVE_HIGHLIGHT_RADIUS = .15f;
         public static float NEW_INACTIVE_HIGHLIGHT_RADIUS = 10f;
         public static readonly int MAX_VERTS_IN_WIREFRAME = 500;
         private SpatialIndex spatialIndex;
