@@ -143,9 +143,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseMaterial: {fileID: 2100000, guid: 0f79d4ce1aba22f4294df2a16ca5465e, type: 2}
   transparentMaterial: {fileID: 2100000, guid: 672ba6f8726123a4098460641f9f2fe3, type: 2}
-  highlightSilhouetteMaterial: {fileID: 2100000, guid: 67ab1a035849e4249836f31881bf03c9,
+  meshSelectMaterial: {fileID: 2100000, guid: 67ab1a035849e4249836f31881bf03c9, type: 2}
+  gemMaterialFront: {fileID: 2100000, guid: 2fc408224ab06a64a84a07353e776f18, type: 2}
+  gemMaterialBack: {fileID: 2100000, guid: 5577a787f10c0c0479415300dcd8544c, type: 2}
+  gemMaterialPaletteFront: {fileID: 2100000, guid: b0749f8ebcee9af47bc2bd93fe1a7bb6,
     type: 2}
-  gemMaterial: {fileID: 2100000, guid: fc077f0d30f0a4ccea1d2c28fa3cf93b, type: 2}
+  gemMaterialPaletteBack: {fileID: 2100000, guid: bef6d176c809dbd45ad597a643eff331,
+    type: 2}
   glassMaterial: {fileID: 2100000, guid: eb80cddad2a268b46a34bd7e81ad3f01, type: 2}
   glassMaterialPalette: {fileID: 2100000, guid: 92d668d9026e0db45b801c0a0037f8a0,
     type: 2}
@@ -166,3 +170,4 @@ MonoBehaviour:
   facePaintMaterial: {fileID: 2100000, guid: d4194faafba0acf469d1c2167a732dc6, type: 2}
   faceExtrudeMaterial: {fileID: 2100000, guid: 4fbe852b345fb814baae8b268d93f5f3, type: 2}
   selectMaterial: {fileID: 2100000, guid: e5e99df7d36669c4693bbbb75dc2a9cc, type: 2}
+  gemRefractionMap: {fileID: 8900000, guid: 03bdd0fc36f05a84695acda9d26c995a, type: 3}
