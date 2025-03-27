@@ -328,8 +328,8 @@ namespace com.google.apps.peltzer.client.tools.utils
         // Mesh highlight animation durations are (inversely) correlated with face size.
         // This is the base for that calculation.
         private const float MESH_FACE_HIGHLIGHT_DURATION = 0.225f;
-        // offset for face highlight faces 
-        private static float offset = 0.0001f;
+        // offset for additional face highlight/paint faces 
+        private static float offset = 0.0009f;
 
         /// <summary>
         /// Sets up materials and data structures for managing highlights.
