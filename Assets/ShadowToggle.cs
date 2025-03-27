@@ -1,12 +1,18 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class ShadowToggle : MonoBehaviour
 {
-    public Light lightSource;
+    private Light lightSource;
     public GameObject disabled;
     public GameObject enabled;
+
+    public void Start()
+    {
+        lightSource = GameObject.Find("ID_Lighting").GetComponent<Light>();
+    }
 
     // on by default
     public void ToggleShadows()
