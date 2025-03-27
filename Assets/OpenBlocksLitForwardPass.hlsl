@@ -67,7 +67,8 @@ inline float2x3 InsertMeshEffect(OpenBlocksVaryings input, Varyings v)
     float distanceIn = max( 0, yPivot - v.positionWS.y);
     float effectPct = saturate(v.positionWS.y <= yPivot ? 1 - (distanceIn / (0.4 * boundsHeight)) : 0);
 
-    float matAlpha = v.positionWS.y <= yPivot ? 1 * input.color.a : 0.3 * input.color.a;
+    // float matAlpha = v.positionWS.y <= yPivot ? 1 * input.color.a : 0.3 * input.color.a;
+    float matAlpha = step(v.positionWS.y, yPivot) * (1 * input.color.a) + (1 - step(v.positionWS.y, yPivot)) * (0.3 * input.color.a);
     
     return float2x3(effectPct, matAlpha, effectColor.x, effectColor.y, effectColor.z, effectColor.w);
 
@@ -155,19 +156,32 @@ inline float4 voronoiCell(float2 uv, float3 normal, float cellSize, out float3 c
     int j;
     for(i = 0; i <7; i++) {
              
-      nearbyPoints[i] = float4(vUv + float2(cellSize, cellSize) * pointOffsets[i], 0, 0);
-      nearbyPoints[i] = nearbyPoints[i] + float4(randomOffset(nearbyPoints[i] + normalFactor, cellSize), 0, 0);
-      nearbyPoints[i].z = length(nearbyPoints[i].xy - uv);
-      
-      int a = nearbyPoints[i].z < nearbyPoints[closest].z;
-      int b = nearbyPoints[i].z < nearbyPoints[second].z;
-      int c = nearbyPoints[i].z < nearbyPoints[third].z;
-      int d = nearbyPoints[i].z < nearbyPoints[fourth].z;
-      
-      fourth = d ? (!c ? i : third) : fourth;
-      third = c ? (!b ? i : second) : third;
-      second = b ? (!a ? i : closest) : second;
-      closest = a ? i : closest;
+        nearbyPoints[i] = float4(vUv + float2(cellSize, cellSize) * pointOffsets[i], 0, 0);
+        nearbyPoints[i] = nearbyPoints[i] + float4(randomOffset(nearbyPoints[i] + normalFactor, cellSize), 0, 0);
+        nearbyPoints[i].z = length(nearbyPoints[i].xy - uv);
+        
+        int a = nearbyPoints[i].z < nearbyPoints[closest].z;
+        int b = nearbyPoints[i].z < nearbyPoints[second].z;
+        int c = nearbyPoints[i].z < nearbyPoints[third].z;
+        int d = nearbyPoints[i].z < nearbyPoints[fourth].z;
+
+        // b ? c : d; => step(0.5, b) * c + (1.0 - step(0.5, b)) * d;
+        float sc = step(0.5, c);
+        float sb = step(0.5, b);
+        float sa = step(0.5, a);
+        int temp1 = sc * third + (1.0 - sc) * i;
+        int temp2 = sb * second + (1.0 - sb) * i;
+        int temp3 = sa * closest + (1.0 - sa) * i;
+
+        fourth = step(0.5, d) * temp1 + (1.0 - sb) * fourth;
+        third = sc * temp2 + (1.0 - sc) * third;
+        second = sb * temp3 + (1.0 - sb) * second;
+        closest = sa * i + (1.0 - sa) * closest;
+        
+        // fourth = d ? (!c ? i : third) : fourth;
+        // third = c ? (!b ? i : second) : third;
+        // second = b ? (!a ? i : closest) : second;
+        // closest = a ? i : closest;
     }
             
     closestPoint = nearbyPoints[closest];
@@ -187,14 +201,14 @@ inline float3x3 ObjectToTangentMat(float3 tangent, float3 binormal, float3 norma
     return float3x3(tangent.x, tangent.y, tangent.z, binormal.x, binormal.y, binormal.z, normal.x, normal.y, normal.z);
 }
 
-inline float3 RefractionVector(float fromIOR, float toIOR, float3 inVec, float3 N)
-{
-    float ratio = fromIOR / toIOR;
-    float cos0 = dot(inVec, N);
-    float checkVal = 1 - ratio * ratio * (1 - cos0 * cos0);
-    float3 outVec = checkVal < 0 ? float3(0, 0, 0) : (ratio * inVec + (ratio * cos0 - sqrt(checkVal))) * N;
-    return outVec;
-}
+// inline float3 RefractionVector(float fromIOR, float toIOR, float3 inVec, float3 N)
+// {
+//     float ratio = fromIOR / toIOR;
+//     float cos0 = dot(inVec, N);
+//     float checkVal = 1 - ratio * ratio * (1 - cos0 * cos0);
+//     float3 outVec = checkVal < 0 ? float3(0, 0, 0) : (ratio * inVec + (ratio * cos0 - sqrt(checkVal))) * N;
+//     return outVec;
+// }
 
 inline half perceptualRoughnessToMipmapLevel(half perceptualRoughness)
 {
@@ -241,23 +255,29 @@ inline float3x4 GemEffect(OpenBlocksVaryings input, bool isFrontFace)
     float2 uv = float2(dot(input.tangent, input.positionOS), dot(input.binormal, input.positionOS));
     float3 a, b, c, d;
 
-    cellSize = isFrontFace ? _FacetSize : cellSize;
+    // cellSize = isFrontFace ? _FacetSize : cellSize;
+    float sf = step(1.0, isFrontFace);
+    cellSize = sf * _FacetSize + (1.0 - sf) * cellSize;
     float4 cell = voronoiCell(uv, normalize(input.normal), cellSize, a, b, c, d);
     
     float3 ba = borderInfo(uv, a, b); // used for front and back faces
     float3 cb = borderInfo(uv, b, c); // back faces only
 
     float border = pow(smoothstep(0, 0.005, ba.z), .01); // front faces
-    float border2 = pow(ba.z, 0.1) < 0.01 ? 0.0 : 1.0; // back faces
-    float border3 = pow(cb.z, 0.1) < 0.01 ? 0.0 : 1.0; // back faces
+    // float border2 = pow(ba.z, 0.1) < 0.01 ? 0.0 : 1.0; // back faces
+    // float border3 = pow(cb.z, 0.1) < 0.01 ? 0.0 : 1.0; // back faces
+    float border2 = step(0.01, pow(ba.z, 0.1));
+    float border3 = step(0.01, pow(cb.z, 0.1));
 
-    float deflectionMul = isFrontFace ? max (0.000000001, border) : max (0.000000001, border2 * border3);
-
+    // float deflectionMul = isFrontFace ? max (0.000000001, border) : max (0.000000001, border2 * border3);
+    float deflectionMul = max(0.000000001, border) * sf + max(0.000000001, border2 * border3) * (1.0 - sf);
+    
     float2 towardsEdge = normalize(b - a);
     float2 towardsEdge2 = normalize(c - a);
     float2 towardsEdge3 = normalize(c - b);
-    towardsEdge = isFrontFace ? normalize(towardsEdge + towardsEdge2) : normalize(towardsEdge + towardsEdge2 + towardsEdge3);
-
+    // towardsEdge = isFrontFace ? normalize(towardsEdge + towardsEdge2) : normalize(towardsEdge + towardsEdge2 + towardsEdge3);
+    towardsEdge = normalize(towardsEdge + towardsEdge2) * sf + normalize(towardsEdge + towardsEdge2 + towardsEdge3) * (1.0 - sf);
+    
     float3x3 objectToTangent = ObjectToTangentMat(input.tangent, input.binormal, input.normal);
     float3x3 tangentToObject = transpose(objectToTangent);
     float3 tangentSpaceNormal = normalize(float3(towardsEdge * facetDeflection * deflectionMul, 1 / (facetDeflection * deflectionMul)));
@@ -268,16 +288,20 @@ inline float3x4 GemEffect(OpenBlocksVaryings input, bool isFrontFace)
     float3 H = normalize(V + N);
     float3 reflectDir = reflect(V, N);
 
-    float fresnel = isFrontFace ? getFresnel(2.4, dot(H, N)) : 0;
-    float alpha = isFrontFace ? max(_BaseColor.a, 0.8 * (1 - fresnel)) : 1;
-
+    // float fresnel = isFrontFace ? getFresnel(2.4, dot(H, N)) : 0;
+    // float alpha = isFrontFace ? max(_BaseColor.a, 0.8 * (1 - fresnel)) : 1;
+    // float fresnel = getFresnel(2.4, dot(H, N)) * sf;
+    // float alpha = max(_BaseColor.a, 0.8 * (1 - fresnel)) * sf + 1 * (1.0 - sf);
+    float alpha = 1; // for backfaces only
+    
     half perceptualRoughness = _Roughness * (1.7 - 0.7 * _Roughness);
     half mip = perceptualRoughnessToMipmapLevel(perceptualRoughness);
     
     // float NDotH = saturate(dot(N, H));
     float4 diffraction = texCUBElod(_RefractTex, float4(reflectDir, mip));
-    float diffractionAmount = isFrontFace ? saturate(0.25 * dot(N, H)) : 0.9;
-
+    // float diffractionAmount = isFrontFace ? saturate(0.25 * dot(N, H)) : 0.9;
+    float diffractionAmount = saturate(0.25 * dot(N, H)) * sf + 0.9 * (1.0 - sf);
+        
     return float3x4(diffraction.x, diffraction.y, diffraction.z, diffraction.w,
         diffractionAmount, alpha, 1, 1,
         N.x, N.y, N.z, 1);
@@ -346,8 +370,11 @@ void OpenBlocksLitPassFragment(OpenBlocksVaryings input, bool facing : SV_IsFron
     #if defined(_GEM_EFFECT)
     float3x4 output = GemEffect(input, facing);
     float3 ennoisenedNormal = float3(output._m20, output._m21, output._m22);
-    v.normalWS = facing ? ennoisenedNormal : -ennoisenedNormal;
-    _BaseColor = facing ? _BaseColor : float4(0.4432, 0.3382, 1, 1);
+    // v.normalWS = facing ? ennoisenedNormal : -ennoisenedNormal;
+    // _BaseColor = facing ? _BaseColor : float4(0.4432, 0.3382, 1, 1);
+    float stp = step(1.0, facing);
+    v.normalWS = stp * ennoisenedNormal + (1.0 - stp) * -ennoisenedNormal;
+    _BaseColor = stp * _BaseColor + (1.0 - stp) * float4(0.4432, 0.3382, 1, 1);
     #endif
     
     LitPassFragment(v, outColor
@@ -365,7 +392,11 @@ void OpenBlocksLitPassFragment(OpenBlocksVaryings input, bool facing : SV_IsFron
     // outColor.a = 1.0;
     float3 colorOut = outColor.rgb * (1.0 - diffractionAmount) + outColor.rgb * diffraction.rgb * (diffractionAmount) * diffraction.rgb;
     // float3 colorOut = outColor.rgb * (1.0 - diffractionAmount) + (diffractionAmount) * diffraction.rgb;
-    outColor = facing ? float4(colorOut + _BaseColor.rgb * 0.25, alpha) : float4(outColor.rgb * (1.0 - diffractionAmount) + diffraction.rgb * diffractionAmount, alpha);
+
+    // outColor = facing ? float4(colorOut + _BaseColor.rgb * 0.25, alpha) : float4(outColor.rgb * (1.0 - diffractionAmount) + diffraction.rgb * diffractionAmount, alpha);
+    // take _BaseColor alpha instead of fresnel alpha calculated in gem shader (looks very similar)
+    outColor = stp * float4(colorOut + _BaseColor.rgb * 0.25, _BaseColor.a)
+        + (1.0 - stp) * float4(outColor.rgb * (1.0 - diffractionAmount) + diffraction.rgb * diffractionAmount, alpha);
     
     // outColor = outColor * (1.0 - diffractionAmount) + outColor * diffraction * (diffractionAmount);
     // outColor = float4(outColor.rgb + _BaseColor.rbg * 0.01, alpha);

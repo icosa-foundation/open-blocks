@@ -135,8 +135,8 @@ Material:
     - _ZTest: 4
     - _ZWrite: 0
     m_Colors:
-    - _BaseColor: {r: 0.922, g: 0.9806344, b: 1, a: 0.09803922}
-    - _Color: {r: 0.922, g: 0.9806344, b: 1, a: 0.09803922}
+    - _BaseColor: {r: 0.922, g: 0.9806344, b: 1, a: 0.4}
+    - _Color: {r: 0.922, g: 0.9806344, b: 1, a: 0.4}
     - _EffectColor: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0.1792453, g: 0.1792453, b: 0.1792453, a: 1}
     - _MeshShaderBounds: {r: 0, g: 1, b: 0, a: 0}
