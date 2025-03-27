@@ -79,7 +79,7 @@ namespace com.google.apps.peltzer.client.model.render
         public static readonly int WHITE_ID = 21;
         public static readonly int BLACK_ID = 23;
 
-        private static readonly string BASE_SHADER = "Universal Render Pipeline/Lit";
+        private static readonly string BASE_SHADER = "Universal Render Pipeline/Simple Lit";
         private static readonly int MultiplicitiveAlpha = Shader.PropertyToID("_MultiplicitiveAlpha");
 
         /// <summary>
