@@ -91,7 +91,6 @@ jobs:
           else
             # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
             STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
-            PATCH_VERSION=$(git log ${CLOSEST_TAG}..${{ github.event.pull_request.head.sha }} --oneline --first-parent | wc -l)
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
@@ -644,7 +643,7 @@ jobs:
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-blocks' &&
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/pull/37/merge' || contains(github.ref, 'refs/tags/v'))
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/openxr' || contains(github.ref, 'refs/tags/v'))
 
     steps:
       - name: Download Build Artifacts (Oculus Quest 2+)
