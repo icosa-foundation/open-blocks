@@ -642,7 +642,7 @@ jobs:
     needs: [configuration, build]
     runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
-      (github.event_name == 'push' || github.event_name == 'pull_request') &&
+      github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-blocks' &&
       (github.ref == 'refs/heads/main' || github.ref == 'refs/pull/37/merge' || contains(github.ref, 'refs/tags/v'))
 
