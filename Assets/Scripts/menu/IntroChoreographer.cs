@@ -230,7 +230,7 @@ namespace com.google.apps.peltzer.client.menu
                     foreach (var animator in introAnim.GetComponentsInChildren<Animator>(includeInactive: true))
                     {
                         animator.speed = INTRO_ANIMATION_SPEED_SCALE;
-                    };
+                    }
                     audioLibrary.PlayClip(audioLibrary.startupSound);
                     countdown = INTRO_ANIMATION_DURATION;
                     SetSkyboxLightFactor(0f);
