@@ -81,5 +81,5 @@ Material:
     - _HorizonColor: {r: 0.066176444, g: 0.5468207, b: 1, a: 1}
     - _SkyColor: {r: 1, g: 1, b: 1, a: 1}
     - _SkyTint: {r: 0.90588236, g: 0.9843137, b: 1, a: 1}
-    - _Tint: {r: 1, g: 1, b: 1, a: 1}
+    - _Tint: {r: 0.64901555, g: 0.6505219, b: 0.66558564, a: 1}
   m_BuildTextureStacks: []

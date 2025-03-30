@@ -1626,7 +1626,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   loop: 1
-  currentTheme: 3
+  currentTheme: 0
   transitionLength: 1
   nightEnvironment: {fileID: 178552382}
   dayEnvironment: {fileID: 1574380179}
