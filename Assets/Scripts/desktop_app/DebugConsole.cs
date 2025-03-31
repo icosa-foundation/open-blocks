@@ -29,6 +29,7 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.app;
+using UnityEngine.InputSystem;
 
 namespace com.google.apps.peltzer.client.desktop_app
 {
@@ -82,8 +83,8 @@ namespace com.google.apps.peltzer.client.desktop_app
         private void Update()
         {
             // Key combination: Ctrl + D
-            bool keyComboPressed = Input.GetKeyDown(KeyCode.D) && Input.GetKey(KeyCode.LeftControl);
-            bool escPressed = Input.GetKeyDown(KeyCode.Escape);
+            bool keyComboPressed = Keyboard.current.dKey.wasPressedThisFrame && Keyboard.current.leftCtrlKey.isPressed;
+            bool escPressed = Keyboard.current.escapeKey.wasPressedThisFrame;
 
             // To open the console, the user has to press the key combo.
             // To close it, either ESC or the key combo are accepted.
@@ -103,7 +104,8 @@ namespace com.google.apps.peltzer.client.desktop_app
 
             if (!consoleObject.activeSelf) return;
 
-            if (Input.GetKeyDown(KeyCode.Return))
+            // Check for enter key using the new input system
+            if (Keyboard.current.enterKey.wasPressedThisFrame)
             {
                 // Run command.
                 RunCommand(consoleInput.text);
@@ -111,7 +113,7 @@ namespace com.google.apps.peltzer.client.desktop_app
                 consoleInput.ActivateInputField();
                 consoleInput.Select();
             }
-            else if (Input.GetKeyDown(KeyCode.UpArrow))
+            else if (Keyboard.current.upArrowKey.wasPressedThisFrame)
             {
                 // Recover last command and put it in the input text.
                 consoleInput.text = lastCommand;

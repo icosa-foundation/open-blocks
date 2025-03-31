@@ -28,7 +28,7 @@ namespace com.google.apps.peltzer.client.tools
     /// Tool for subdividing faces. User sees a line across a face, and is able to subdivide the face
     /// into two faces based on the line.
     /// </summary>
-    public class Subdivider : MonoBehaviour
+    public class Subdivider : MonoBehaviour, IBaseTool
     {
 
         /// <summary>
@@ -238,11 +238,14 @@ namespace com.google.apps.peltzer.client.tools
                 }
                 selector.UpdateInactive(Selector.EDGES_ONLY);
 
+                // clear temp edges without using a fade out effect because it looks laggy
+                PeltzerMain.Instance.highlightUtils.ClearTemporaryEdges();
+
                 // Clean up all temp edges.
-                foreach (EdgeTemporaryStyle.TemporaryEdge tempEdge in currentTemporaryEdges)
-                {
-                    PeltzerMain.Instance.highlightUtils.TurnOff(tempEdge);
-                }
+                // foreach (EdgeTemporaryStyle.TemporaryEdge tempEdge in currentTemporaryEdges)
+                // {
+                //     PeltzerMain.Instance.highlightUtils.TurnOff(tempEdge);
+                // }
                 currentTemporaryEdges.Clear();
 
                 UpdateHighlights(isNewMode);

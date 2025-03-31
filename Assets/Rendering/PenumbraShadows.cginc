@@ -1,7 +1,7 @@
 ﻿float4x4 _ShadowMatrix;
-sampler2D _ShadowTexture;
+sampler2D_float _ShadowTexture;
 sampler2D _ShadowPointTexture;
-sampler2D _ShadowBlurTexture;
+sampler2D_float _ShadowBlurTexture;
 float3 _LightColor;
 float4 _LightDirection;
 float4 _LightPosition;

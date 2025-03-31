@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
 using UnityEngine;
@@ -21,8 +22,8 @@ namespace com.google.apps.peltzer.client.tools.utils
 {
     public class InactiveSelectionHighlighter
     {
-        public static float INACTIVE_HIGHLIGHT_RADIUS = .5f;
-        public static float OLD_INACTIVE_HIGHLIGHT_RADIUS = .5f;
+        public static float INACTIVE_HIGHLIGHT_RADIUS = .15f;
+        public static float OLD_INACTIVE_HIGHLIGHT_RADIUS = .15f;
         public static float NEW_INACTIVE_HIGHLIGHT_RADIUS = 10f;
         public static readonly int MAX_VERTS_IN_WIREFRAME = 500;
         private SpatialIndex spatialIndex;
@@ -130,37 +131,22 @@ namespace com.google.apps.peltzer.client.tools.utils
             highlightUtils.inactiveRenderer.SetSelectPosition(selectPositionModel);
         }
 
-        /// This should be treated as a local variable for SelectFromMeshes - it's being declared outside of the method in
-        /// order to preallocate the hash set.
-        private HashSet<int> newlyInactiveMeshes = new HashSet<int>();
         /// <summary>
         /// Given a set of meshids which should render wireframes, manage the rendering of the wireframes.
         /// </summary>
         private void SelectFromMeshes(HashSet<int> selectableMeshIds, bool showVerts, bool showEdges,
             HashSet<VertexKey> selectedVerts, HashSet<EdgeKey> selectedEdges, VertexKey hoveredVert, EdgeKey hoveredEdge)
         {
-            newlyInactiveMeshes.Clear();
-            newlyInactiveMeshes.UnionWith(meshesInRange);
-            newlyInactiveMeshes.ExceptWith(selectableMeshIds);
-            highlightUtils.inactiveRenderer.TurnOnEdgeWireframe(newlyInactiveMeshes);
-
-            // And turn them off
-            // Remove the inactive ones from the set we'll render
-            meshesInRange.ExceptWith(newlyInactiveMeshes);
-            // Remove ones that are actually selected
-            selectableMeshIds.ExceptWith(meshesInRange);
             highlightUtils.inactiveRenderer.showEdges = showEdges;
             highlightUtils.inactiveRenderer.showPoints = showVerts;
             if (showEdges)
             {
-                highlightUtils.inactiveRenderer.TurnOnEdgeWireframe(selectableMeshIds);
+                highlightUtils.inactiveRenderer.TurnOnEdgeWireframe(selectableMeshIds, selectedEdges, hoveredEdge);
             }
             if (showVerts)
             {
-                highlightUtils.inactiveRenderer.TurnOnPointWireframe(selectableMeshIds);
+                highlightUtils.inactiveRenderer.TurnOnPointWireframe(selectableMeshIds, selectedVerts, hoveredVert);
             }
-            // And add any new ones we found
-            meshesInRange.UnionWith(selectableMeshIds);
         }
 
         /// This should be treated as a local variable for ShowSelectableVertsNearInternal - it's being declared outside of

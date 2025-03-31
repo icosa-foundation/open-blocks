@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using ICSharpCode.SharpZipLibUnityPort.Zip.Compression;
 using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Text;
@@ -30,6 +29,7 @@ using com.google.apps.peltzer.client.api_clients.objectstore_client;
 using com.google.apps.peltzer.client.entitlement;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.menu;
+using ICSharpCode.SharpZipLib.Zip.Compression;
 
 namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 {

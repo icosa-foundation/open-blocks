@@ -26,12 +26,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1062313303619946}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114947750195704150
 MonoBehaviour:
@@ -140,33 +141,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3906864a6a21b543bf69eeaf58d6972, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  paperCraftNoiseScale: 750
-  paperCraftNoiseIntensity: 0.1
   baseMaterial: {fileID: 2100000, guid: 0f79d4ce1aba22f4294df2a16ca5465e, type: 2}
-  highlightMaterial: {fileID: 2100000, guid: 39a7d257347562e40aa0902710361e84, type: 2}
-  highlightMaterial2: {fileID: 2100000, guid: 3900b62c51c3e5840902a5d96d73c216, type: 2}
-  highlightSilhouetteMaterial: {fileID: 2100000, guid: 67ab1a035849e4249836f31881bf03c9,
+  transparentMaterial: {fileID: 2100000, guid: 672ba6f8726123a4098460641f9f2fe3, type: 2}
+  meshSelectMaterial: {fileID: 2100000, guid: 67ab1a035849e4249836f31881bf03c9, type: 2}
+  gemMaterialFront: {fileID: 2100000, guid: 2fc408224ab06a64a84a07353e776f18, type: 2}
+  gemMaterialBack: {fileID: 2100000, guid: 5577a787f10c0c0479415300dcd8544c, type: 2}
+  gemMaterialPaletteFront: {fileID: 2100000, guid: b0749f8ebcee9af47bc2bd93fe1a7bb6,
     type: 2}
-  gemMaterial: {fileID: 2100000, guid: fc077f0d30f0a4ccea1d2c28fa3cf93b, type: 2}
-  glassMaterial: {fileID: 2100000, guid: 2a120be907c2b54458e0e17bbff04771, type: 2}
-  glassSpecMaterial: {fileID: 2100000, guid: 7065649ba9240444d83fc01724ae8d82, type: 2}
+  gemMaterialPaletteBack: {fileID: 2100000, guid: bef6d176c809dbd45ad597a643eff331,
+    type: 2}
+  glassMaterial: {fileID: 2100000, guid: eb80cddad2a268b46a34bd7e81ad3f01, type: 2}
+  glassMaterialPalette: {fileID: 2100000, guid: 92d668d9026e0db45b801c0a0037f8a0,
+    type: 2}
   subtractMaterial: {fileID: 2100000, guid: 0a5748c460d589746a25d885404bace2, type: 2}
   copyMaterial: {fileID: 2100000, guid: b23e4ca96af9acf4694afad1de7c0818, type: 2}
   snapEffectMaterial: {fileID: 2100000, guid: aba0c6b0d431a3242ae929604d0a6876, type: 2}
-  meshInsertEffectMaterial: {fileID: 2100000, guid: 1c31b048c15af5140bae8667a35a7480,
+  meshInsertEffectMaterialFront: {fileID: 2100000, guid: b1f26417c3f7a8442b23e3f18fca5fc8,
     type: 2}
-  meshSelectMaterial: {fileID: 2100000, guid: 5661b44ff6cb3914bbfcc1fb80e203ca, type: 2}
+  meshInsertEffectMaterialBack: {fileID: 2100000, guid: 1c31b048c15af5140bae8667a35a7480,
+    type: 2}
   gridMaterial: {fileID: 2100000, guid: c9d85c2af109a7e4f8a1549f47e7178e, type: 2}
-  pointHighlightMaterial: {fileID: 2100000, guid: b5280e2b525826e459b7b86b9940fb96,
+  pointEdgeHighlightMaterial: {fileID: 2100000, guid: 6cad5b83c13bdc9419767ec6e0a6b377,
     type: 2}
-  pointInactiveMaterial: {fileID: 2100000, guid: 4cbe6d6e693ad6044a0b0624147a1702,
+  faceHighlightMaterial: {fileID: 2100000, guid: ade2e0046f8f65042bed391c08bca393,
     type: 2}
-  edgeHighlightMaterial: {fileID: 2100000, guid: e9946a6f1381fde41a3cd06134ad16ee,
-    type: 2}
-  edgeInactiveMaterial: {fileID: 2100000, guid: e8ef146ca97f37c4dbaeae72f761f4ee,
-    type: 2}
-  faceHighlightMaterial: {fileID: 2100000, guid: a023a08d6e37cb949a25e9373e58f121,
+  pointEdgeInactiveMaterial: {fileID: 2100000, guid: a79bef7b63223524da9e1545d0840fbf,
     type: 2}
   facePaintMaterial: {fileID: 2100000, guid: d4194faafba0acf469d1c2167a732dc6, type: 2}
   faceExtrudeMaterial: {fileID: 2100000, guid: 4fbe852b345fb814baae8b268d93f5f3, type: 2}
   selectMaterial: {fileID: 2100000, guid: e5e99df7d36669c4693bbbb75dc2a9cc, type: 2}
+  gemRefractionMap: {fileID: 8900000, guid: 03bdd0fc36f05a84695acda9d26c995a, type: 3}

@@ -26,9 +26,11 @@ namespace com.google.apps.peltzer.client.model.core
         // Layer settings, for cameras.
         public static readonly int DEFAULT_LAYER = 10; // PolyAssets -- won't show up in thumbnails
         public static readonly int NO_SHADOWS_LAYER = 9; // NoShadowsLayer -- won't cast a shadow
+        private static readonly int MultiplicitiveAlpha = Shader.PropertyToID("_MultiplicitiveAlpha");
 
         public List<MeshWithMaterial> meshes;
         public WorldSpace worldSpace;
+        public bool isPreview = false;
 
         protected bool overrideWithPreviewShader = false;
 
@@ -50,6 +52,17 @@ namespace com.google.apps.peltzer.client.model.core
 
         // Which Layer this mesh will be drawn to.
         public int Layer = DEFAULT_LAYER;
+
+        public void OnDestroy()
+        {
+            if (!isPreview)
+            {
+                foreach (MeshWithMaterial meshWithMaterial in meshes)
+                {
+                    Destroy(meshWithMaterial.mesh);
+                }
+            }
+        }
 
         public void Init(WorldSpace worldSpace)
         {
@@ -99,13 +112,25 @@ namespace com.google.apps.peltzer.client.model.core
                 if (overrideWithPreviewShader && meshWithMaterial.materialAndColor.matId != MaterialRegistry.GLASS_ID)
                 {
                     renderMat = MaterialRegistry.GetPreviewOfMaterialById(meshWithMaterial.materialAndColor.matId).material;
-                    renderMat.SetFloat("_MultiplicitiveAlpha", fade);
+                    renderMat.SetFloat(MultiplicitiveAlpha, fade);
                     Graphics.DrawMesh(meshWithMaterial.mesh, transformMatrix, renderMat, Layer);
+
+                    if (meshWithMaterial.materialAndColor.material2)
+                    {
+                        Matrix4x4 matrix = transformMatrix;
+                        // when rendering the gem material we render the backfaces at a tiny offset away from the camera
+                        // so they render correctly
+                        if (meshWithMaterial.materialAndColor.material2.IsKeywordEnabled("_GEM_EFFECT_BACKFACE_FIX"))
+                        {
+                            matrix = Matrix4x4.Translate(PeltzerMain.Instance.eyeCamera.transform.forward * 0.01f) * matrix;
+                        }
+                        Graphics.DrawMesh(meshWithMaterial.mesh, matrix, meshWithMaterial.materialAndColor.material2, Layer);
+                    }
                 }
                 else
                 {
                     Graphics.DrawMesh(meshWithMaterial.mesh, transformMatrix, renderMat, Layer);
-                    if (meshWithMaterial.materialAndColor.material2 != null)
+                    if (meshWithMaterial.materialAndColor.material2)
                     {
                         Graphics.DrawMesh(meshWithMaterial.mesh, transformMatrix, meshWithMaterial.materialAndColor.material2, Layer);
                     }

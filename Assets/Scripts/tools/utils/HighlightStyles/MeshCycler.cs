@@ -70,7 +70,7 @@ namespace com.google.apps.peltzer.client.tools.utils
                 mesh = new Mesh();
             }
 
-            matDict[meshId] = mesh;
+            matDict[materialId] = mesh;
             return mesh;
         }
 
@@ -85,6 +85,16 @@ namespace com.google.apps.peltzer.client.tools.utils
                 }
             }
             meshDict.Clear();
+        }
+
+        public static void DestroyMeshes()
+        {
+            ResetCycler();
+            foreach (Mesh mesh in meshPool)
+            {
+                Object.Destroy(mesh);
+            }
+            meshPool.Clear();
         }
     }
 }

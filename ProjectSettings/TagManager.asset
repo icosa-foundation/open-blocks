@@ -6,6 +6,7 @@ TagManager:
   tags:
   - FxTemporaire
   - projectile
+  - LogoLight
   layers:
   - Default
   - TransparentFX
@@ -18,8 +19,8 @@ TagManager:
   - PreviewLayer
   - NoShadowsLayer
   - PolyAssets
-  - 
-  - 
+  - Logo
+  - Background
   - 
   - 
   - 
