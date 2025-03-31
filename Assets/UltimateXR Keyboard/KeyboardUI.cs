@@ -20,22 +20,22 @@ namespace TiltBrush
     {
         #region Inspector Properties/Serialized Fields
 
-        [SerializeField] private bool       _multiline = true;
-        [SerializeField] private int        _maxLineLength;
-        [SerializeField] private int        _maxLineCount;
-        [SerializeField] private Text       _consoleDisplay;
-        [SerializeField] private Text       _currentLineDisplay;
-        [SerializeField] private bool       _consoleDisplayUsesCursor = true;
-        [SerializeField] private bool       _lineDisplayUsesCursor    = true;
+        [SerializeField] private bool _multiline = true;
+        [SerializeField] private int _maxLineLength;
+        [SerializeField] private int _maxLineCount;
+        [SerializeField] private Text _consoleDisplay;
+        [SerializeField] private Text _currentLineDisplay;
+        [SerializeField] private bool _consoleDisplayUsesCursor = true;
+        [SerializeField] private bool _lineDisplayUsesCursor = true;
         [SerializeField] private GameObject _capsLockEnabledObject;
-        [SerializeField] private bool       _capsLockEnabled;
+        [SerializeField] private bool _capsLockEnabled;
         [SerializeField] private GameObject _shiftEnabledObject;
         [SerializeField] private GameObject _controlEnabledObject;
-        [SerializeField] private bool       _previewCaps;
+        [SerializeField] private bool _previewCaps;
         [SerializeField] private GameObject _passwordPreviewRootObject;
         [SerializeField] private GameObject _passwordPreviewEnabledObject;
-        [SerializeField] private bool       _isPassword;
-        [SerializeField] private bool       _hidePassword = true;
+        [SerializeField] private bool _isPassword;
+        [SerializeField] private bool _hidePassword = true;
 
         #endregion
 
@@ -183,15 +183,15 @@ namespace TiltBrush
         public void Clear()
         {
             _currentLineCount = 1;
-            ConsoleContent    = string.Empty;
-            CurrentLine       = string.Empty;
+            ConsoleContent = string.Empty;
+            CurrentLine = string.Empty;
         }
 
         public void SetInitialText(string initialText)
         {
             _currentLineCount = 1;
-            ConsoleContent    = initialText;
-            CurrentLine       = initialText;
+            ConsoleContent = initialText;
+            CurrentLine = initialText;
         }
 
         public void Hide()
@@ -225,7 +225,7 @@ namespace TiltBrush
 
             // Count the number of lines we are adding:
             int newLineCount = GetOccurrenceCount(newContent, "\n", false);
-            ConsoleContent    += newContent;
+            ConsoleContent += newContent;
             CurrentLine = ConsoleContent.Split('\n').Last();
             _currentLineCount += newLineCount;
 
@@ -254,7 +254,7 @@ namespace TiltBrush
         /// <param name="key">Key to register</param>
         public void RegisterKey(KeyboardKeyUI key)
         {
-            Debug.Assert(key != null,              "Keyboard key is null");
+            Debug.Assert(key != null, "Keyboard key is null");
             // Debug.Assert(key.ControlInput != null, "Keyboard key's ControlInput is null");
 
             if (!_keys.ContainsKey(key))
@@ -384,7 +384,7 @@ namespace TiltBrush
                         if (!string.IsNullOrEmpty(key.ForceLabel))
                         {
                             ConsoleContent += key.GetSingleLayoutValueNoForceLabel(_capsLockEnabled || _shiftEnabled, AltGrEnabled);
-                            CurrentLine    += key.GetSingleLayoutValueNoForceLabel(_capsLockEnabled || _shiftEnabled, AltGrEnabled);
+                            CurrentLine += key.GetSingleLayoutValueNoForceLabel(_capsLockEnabled || _shiftEnabled, AltGrEnabled);
                         }
                         else
                         {
@@ -393,13 +393,13 @@ namespace TiltBrush
                                 char newCar = _capsLockEnabled || _shiftEnabled ? char.ToUpper(key.SingleLayoutValue) : char.ToLower(key.SingleLayoutValue);
 
                                 ConsoleContent += newCar;
-                                CurrentLine    += newCar;
+                                CurrentLine += newCar;
                             }
                             else
                             {
                                 char newCar = key.GetSingleLayoutValueNoForceLabel(_shiftEnabled || _capsLockEnabled, AltGrEnabled);
                                 ConsoleContent += newCar;
-                                CurrentLine    += newCar;
+                                CurrentLine += newCar;
                             }
                         }
                     }
@@ -408,31 +408,31 @@ namespace TiltBrush
                         if (_shiftEnabled)
                         {
                             ConsoleContent += key.MultipleLayoutValueTopLeft;
-                            CurrentLine    += key.MultipleLayoutValueTopLeft;
+                            CurrentLine += key.MultipleLayoutValueTopLeft;
                         }
                         else if (AltGrEnabled)
                         {
                             if (key.HasMultipleLayoutValueBottomRight)
                             {
                                 ConsoleContent += key.MultipleLayoutValueBottomRight;
-                                CurrentLine    += key.MultipleLayoutValueBottomRight;
+                                CurrentLine += key.MultipleLayoutValueBottomRight;
                             }
                         }
                         else
                         {
                             ConsoleContent += key.MultipleLayoutValueBottomLeft;
-                            CurrentLine    += key.MultipleLayoutValueBottomLeft;
+                            CurrentLine += key.MultipleLayoutValueBottomLeft;
                         }
                     }
                 }
             }
             else if (key.KeyType == KeyboardKeyType.Tab)
             {
-                string tab             = "    ";
-                int    charsAddedCount = _maxLineLength > 0 ? CurrentLine.Length + tab.Length > _maxLineLength ? _maxLineLength - CurrentLine.Length : tab.Length : tab.Length;
+                string tab = "    ";
+                int charsAddedCount = _maxLineLength > 0 ? CurrentLine.Length + tab.Length > _maxLineLength ? _maxLineLength - CurrentLine.Length : tab.Length : tab.Length;
 
                 ConsoleContent += tab.Substring(0, charsAddedCount);
-                CurrentLine    += tab.Substring(0, charsAddedCount);
+                CurrentLine += tab.Substring(0, charsAddedCount);
             }
             else if (key.KeyType == KeyboardKeyType.Shift)
             {
@@ -474,7 +474,7 @@ namespace TiltBrush
                 if (_multiline)
                 {
                     ConsoleContent += "\n";
-                    CurrentLine    =  string.Empty;
+                    CurrentLine = string.Empty;
                     _currentLineCount++;
                     CheckMaxLines();
                 }
@@ -484,7 +484,7 @@ namespace TiltBrush
                 if (CurrentLine.Length > 0)
                 {
                     ConsoleContent = ConsoleContent.Substring(0, ConsoleContent.Length - 1);
-                    CurrentLine    = CurrentLine.Substring(0, CurrentLine.Length - 1);
+                    CurrentLine = CurrentLine.Substring(0, CurrentLine.Length - 1);
                 }
             }
             else if (key.KeyType == KeyboardKeyType.Del)
@@ -613,7 +613,7 @@ namespace TiltBrush
 
                         if (linesCounted == _currentLineCount - _maxLineCount)
                         {
-                            ConsoleContent    =  ConsoleContent.Remove(0, i + 1);
+                            ConsoleContent = ConsoleContent.Remove(0, i + 1);
                             _currentLineCount -= linesCounted;
                             break;
                         }

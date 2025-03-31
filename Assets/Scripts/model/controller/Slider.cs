@@ -107,7 +107,8 @@ namespace com.google.apps.peltzer.client.model.controller
             if (m_SliderMaterial == null)
             {
                 m_SliderMaterial = m_SliderRenderer.material;
-            };
+            }
+            ;
             m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
         }
 

@@ -17,7 +17,7 @@ namespace TiltBrush
         #region Inspector Properties/Serialized Fields
 
         [SerializeField] private GameObject _keysRoot;
-        [SerializeField] private string     _label;
+        [SerializeField] private string _label;
 
         #endregion
 
@@ -45,7 +45,7 @@ namespace TiltBrush
         public KeyboardToggleSymbolsPage(GameObject keysRoot, string label)
         {
             _keysRoot = keysRoot;
-            _label    = label;
+            _label = label;
         }
 
         #endregion
