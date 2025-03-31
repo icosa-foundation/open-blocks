@@ -62,8 +62,8 @@ namespace com.google.apps.peltzer.client.model.render
 
         public override void Finish()
         {
-            Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
-            Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
+            // Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
+            // Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
             UXEffectManager.GetEffectManager().EndEffect(this);
         }
 
@@ -76,9 +76,9 @@ namespace com.google.apps.peltzer.client.model.render
             effectMaterial.SetVector("_ImpactPointWorld", worldSpace.ModelToWorld(snapInfo.snapPoint));
             effectMaterial.SetVector("_ImpactNormalWorld", worldSpace.ModelVectorToWorld(snapInfo.snapNormal));
             effectMaterial.SetVector("_ImpactObjectPosWorld", snapFaceWorld);
-            Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0.8f, .4f, 1f));
-            Shader.SetGlobalVector("_FXPointLightPosition",
-              new Vector4(snapFaceWorld.x, snapFaceWorld.y, snapFaceWorld.z, 1f));
+            // Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0.8f, .4f, 1f));
+            // Shader.SetGlobalVector("_FXPointLightPosition",
+            // new Vector4(snapFaceWorld.x, snapFaceWorld.y, snapFaceWorld.z, 1f));
             if (!inSnapThreshhold && snapInfo.inSurfaceThreshhold)
             {
                 inSnapThreshhold = true;

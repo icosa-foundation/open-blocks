@@ -30,7 +30,10 @@ namespace com.google.apps.peltzer.client.tools.utils
 
         public static Material material;
         public static Vector3 selectPositionModel;
-        private static Mesh vertexRenderMesh = new Mesh();
+
+        public static Mesh vertexMesh;
+        private static List<Matrix4x4> matrices = new List<Matrix4x4>();
+
         // Renders vertex highlights.
         // There are some obvious optimization opportunities here if profiling shows them to be necessary (mostly reusing
         // vertex geometry frame to frame) - 37281287
@@ -41,7 +44,6 @@ namespace com.google.apps.peltzer.client.tools.utils
             // Renders vertex highlights.
             HashSet<VertexKey> keys = vertexHighlights.getKeysForStyle((int)VertexStyles.VERTEX_INACTIVE);
             if (keys.Count == 0) { return; }
-            vertexRenderMesh.Clear();
             int[] indices = new int[vertexHighlights.RenderableCount()];
             Vector3[] vertices = new Vector3[vertexHighlights.RenderableCount()];
             // Because Unity does not make a "arbitrary data" vertex channel available to us, we're going to abuse the UV
@@ -50,6 +52,8 @@ namespace com.google.apps.peltzer.client.tools.utils
             float radius2 = InactiveSelectionHighlighter.INACTIVE_HIGHLIGHT_RADIUS *
                             InactiveSelectionHighlighter.INACTIVE_HIGHLIGHT_RADIUS;
             int i = 0;
+            float scaleFactor = InactiveRenderer.GetVertScaleFactor(worldSpace);
+            matrices.Clear();
             foreach (VertexKey key in keys)
             {
                 if (!model.HasMesh(key.meshId)) { continue; }
@@ -62,20 +66,24 @@ namespace com.google.apps.peltzer.client.tools.utils
                 Vector3 diff = vertices[i] - selectPositionModel;
                 float dist2 = Vector3.Dot(diff, diff);
                 float alpha = Mathf.Clamp((radius2 - dist2) / radius2, 0f, 1f);
-                indices[i] = i;
-                float animPct = vertexHighlights.GetAnimPct(key);
+                // if (alpha < 0.01f) continue; 
+                // indices[i] = i;
+                float animPct = 1;//vertexHighlights.GetAnimPct(key);
 
-                selectData[i] = new Vector2(animPct, alpha);
+                matrices.Add(worldSpace.modelToWorld * Matrix4x4.TRS(vertices[i], Quaternion.identity, Vector3.one * (scaleFactor * animPct)));
+
+                // selectData[i] = new Vector2(animPct, alpha);
                 i++;
             }
-            vertexRenderMesh.vertices = vertices;
+            // vertexRenderMesh.vertices = vertices;
             // These are not actually UVs - we're using the UV channel to pass per-primitive animation data so that edges
             // animate independently.
-            vertexRenderMesh.uv = selectData;
+            // vertexRenderMesh.uv = selectData;
             // Since we're using a point geometry shader we need to set the mesh up to supply data as points.
-            vertexRenderMesh.SetIndices(indices, MeshTopology.Points, 0 /* submesh id */, false /* recalculate bounds */);
+            // vertexRenderMesh.SetIndices(indices, MeshTopology.Points, 0 /* submesh id */, false /* recalculate bounds */);
 
-            Graphics.DrawMesh(vertexRenderMesh, worldSpace.modelToWorld, material, 0);
+            // Graphics.DrawMesh(vertexRenderMesh, worldSpace.modelToWorld, material, 0);
+            Graphics.DrawMeshInstanced(vertexMesh, 0, material, matrices);
         }
     }
 }

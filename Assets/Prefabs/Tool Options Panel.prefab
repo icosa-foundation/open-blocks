@@ -595,7 +595,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -995,6 +995,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4747367671274227321}
     m_Modifications:
+    - target: {fileID: 363599183389418753, guid: 0910dc1dc6d17ab4ca159fad3bebc638,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 3611184552196604702, guid: 0910dc1dc6d17ab4ca159fad3bebc638,
         type: 3}
       propertyPath: m_Name
@@ -1050,6 +1055,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4775957016874213812, guid: 0910dc1dc6d17ab4ca159fad3bebc638,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1124,6 +1134,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: Checkbox
       objectReference: {fileID: 0}
+    - target: {fileID: 1176091476968771724, guid: 1b921ae996048f34cafe082a0f87bb20,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+    - target: {fileID: 2566057020133892654, guid: 1b921ae996048f34cafe082a0f87bb20,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -8,10 +8,11 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MI_BarrenSky
-  m_Shader: {fileID: 4800000, guid: c5f37c23ea6cce647af18762f495c67f, type: 3}
+  m_Shader: {fileID: 106, guid: 0000000000000000f000000000000000, type: 0}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _SUNDISK_HIGH_QUALITY
   m_InvalidKeywords:
   - _EMISSION
   m_LightmapFlags: 1
@@ -24,25 +25,61 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BackTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _Clouds:
         m_Texture: {fileID: 2800000, guid: 6f9b7172e35debe46ae91d4d2e134997, type: 3}
         m_Scale: {x: 2, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DownTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FrontTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LeftTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RightTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Sky:
         m_Texture: {fileID: 2800000, guid: 8c5bf1fde457c844e943a6997d3616ff, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Tex:
+        m_Texture: {fileID: 8900000, guid: 2d7d1108a50c82441bacb6792f5e614c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _UpTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AtmosphereThickness: 0.72
     - _CloudStrength: 0.273
+    - _Exposure: 1
     - _HorizonStrength: 1
+    - _Rotation: 0
     - _SkyIntensity: 1
     - _SkyStrength: 1
+    - _SunDisk: 2
     - _SunIntensity: 2
     - _SunRadiusA: 0
     - _SunRadiusB: 0.0463
+    - _SunSize: 0.0463
+    - _SunSizeConvergence: 1
     m_Colors:
+    - _GroundColor: {r: 1, g: 1, b: 1, a: 1}
     - _HorizonColor: {r: 0.066176444, g: 0.5468207, b: 1, a: 1}
     - _SkyColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Tint: {r: 0.08627451, g: 0.09019608, b: 0.12941177, a: 1}
+    - _SkyTint: {r: 0.90588236, g: 0.9843137, b: 1, a: 1}
+    - _Tint: {r: 0.64901555, g: 0.6505219, b: 0.66558564, a: 1}
   m_BuildTextureStacks: []

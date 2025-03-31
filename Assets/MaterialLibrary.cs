@@ -16,40 +16,114 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 /// <summary>
 /// This class primarily exists to provide an editor level interface for assigning materials for various effects
 /// other than adding them directly to PeltzerMain.
 /// </summary>
 public class MaterialLibrary : MonoBehaviour
 {
-    public float paperCraftNoiseScale = 500f;
-    public float paperCraftNoiseIntensity = 0.2f;
+    private static readonly int MultiplicitiveAlpha = Shader.PropertyToID("_MultiplicitiveAlpha");
+    private static readonly int ZTest = Shader.PropertyToID("_ZTest");
+    private static readonly int OverrideColor = Shader.PropertyToID("_OverrideColor");
+    private static readonly int OverrideAmount = Shader.PropertyToID("_OverrideAmount");
+    // gem shader
+    private static readonly int RefractionTexture = Shader.PropertyToID("_RefractTex");
+    private static readonly int FacetSize = Shader.PropertyToID("_FacetSize");
+    private static readonly int Roughness = Shader.PropertyToID("_Roughness");
 
     public Material baseMaterial;
-    public Material highlightMaterial;
-    public Material highlightMaterial2;
-    public Material highlightSilhouetteMaterial;
-    public Material gemMaterial;
+    public Material transparentMaterial;
+    // public Material highlightMaterial;
+    // public Material highlightMaterial2;
+    [FormerlySerializedAs("highlightSilhouetteMaterial")] public Material meshSelectMaterial;
+    public Material gemMaterialFront;
+    public Material gemMaterialBack;
+    public Material gemMaterialPaletteFront;
+    public Material gemMaterialPaletteBack;
     public Material glassMaterial;
-    public Material glassSpecMaterial;
-    public Material subtractMaterial;
-    public Material copyMaterial;
-    public Material snapEffectMaterial;
-    public Material meshInsertEffectMaterial;
-    public Material meshSelectMaterial;
+    public Material glassMaterialPalette;
+    // public Material glassSpecMaterial;
+    public Material subtractMaterial; // TODO
+    public Material copyMaterial; // TODO
+    public Material snapEffectMaterial; // not sure if ever used!
+    public Material meshInsertEffectMaterialFront;
+    public Material meshInsertEffectMaterialBack;
     public Material gridMaterial;
-    public Material pointHighlightMaterial;
-    public Material pointInactiveMaterial;
-    public Material edgeHighlightMaterial;
-    public Material edgeInactiveMaterial;
+    public Material pointEdgeHighlightMaterial;
     public Material faceHighlightMaterial;
+    public Material pointEdgeInactiveMaterial;
     public Material facePaintMaterial;
     public Material faceExtrudeMaterial;
-    public Material selectMaterial;
+    public Material selectMaterial; // material for yellow selection dot on tool
 
-    public void Start()
+    public Cubemap gemRefractionMap;
+    private void OnEnable()
     {
-        Shader.SetGlobalFloat("_NoiseScale", paperCraftNoiseScale);
-        Shader.SetGlobalFloat("_NoiseIntensity", paperCraftNoiseIntensity);
+        // NOTE: we only need to enable keywpords once when we want to change the shader
+        // otherwise keep things commented out!!!
+
+        // for rendering MMeshes the shader needs additional information about the positions of the mesh
+        // but for rendering non MMesh things, we don't want that because it messes with geometry
+        // baseMaterial.EnableKeyword("_REMESHER");
+        // transparentMaterial.EnableKeyword("_REMESHER");
+        // glassMaterial.EnableKeyword("_REMESHER");
+
+        // meshInsertEffectMaterialBack.EnableKeyword("_REMESHER");
+        // meshInsertEffectMaterialBack.EnableKeyword("_INSERT_MESH");
+        // meshInsertEffectMaterialFront.EnableKeyword("_REMESHER");
+        // meshInsertEffectMaterialFront.EnableKeyword("_INSERT_MESH");
+
+        // pointEdgeHighlightMaterial.DisableKeyword("_REMESHER");
+        // pointEdgeHighlightMaterial.SetFloat(OverrideAmount, 0.0f);
+        // pointEdgeHighlightMaterial.SetFloat(ZTest, 8.0f); // always (no depth test)
+
+        // faceHighlightMaterial.DisableKeyword("_REMESHER");
+        // faceHighlightMaterial.EnableKeyword("_FACE_SELECT_STYLE");
+        // faceHighlightMaterial.SetFloat(ZTest, 4.0f);
+
+        // pointEdgeInactiveMaterial.DisableKeyword("_REMESHER");
+        // pointEdgeInactiveMaterial.EnableKeyword("_BLEND_TRANSPARENCY");
+        // pointEdgeInactiveMaterial.SetFloat(ZTest, 4.0f); // (less than equal)
+
+        // facePaintMaterial.DisableKeyword("_REMESHER");
+        // facePaintMaterial.EnableKeyword("_FACE_SELECT_STYLE");
+
+        // faceExtrudeMaterial.DisableKeyword("_REMESHER");
+        // faceExtrudeMaterial.EnableKeyword("_FACE_SELECT_STYLE");
+        // use face highlight style for face extrude for the time being
+        // since original face extrude style didn't work properly anyway
+        // faceExtrudeMaterial.DisableKeyword("_FACE_EXTRUDE");
+        // faceExtrudeMaterial.SetFloat(ZTest, 4.0f);
+
+        // gemMaterialFront.EnableKeyword("_REMESHER");
+        // gemMaterialFront.EnableKeyword("_GEM_EFFECT");
+        gemMaterialFront.SetTexture(RefractionTexture, gemRefractionMap);
+        gemMaterialFront.SetFloat(FacetSize, 0.06f);
+        gemMaterialFront.SetFloat(Roughness, 0.001f);
+
+        // when rendering the gem material we render the backfaces at a tiny offset away from the camera
+        // so they render correctly
+        // gemMaterialBack.EnableKeyword("_REMESHER");
+        // gemMaterialBack.EnableKeyword("_GEM_EFFECT");
+        // gemMaterialBack.EnableKeyword("_GEM_EFFECT_BACKFACE_FIX");
+        gemMaterialBack.SetTexture(RefractionTexture, gemRefractionMap);
+        gemMaterialBack.SetFloat(FacetSize, 0.06f);
+        gemMaterialBack.SetFloat(Roughness, 0.001f);
+
+        // because of the way the remesher changes vertex positions in the shader
+        // we don't want to use the remesher for meshes that are not MMeshes (e.g. normal Unity meshes)
+        // otherwise there are holes in the geometry
+        // gemMaterialPaletteFront.DisableKeyword("_REMESHER");
+        // gemMaterialPaletteFront.EnableKeyword("_GEM_EFFECT");
+        gemMaterialPaletteFront.SetTexture(RefractionTexture, gemRefractionMap);
+        gemMaterialPaletteFront.SetFloat(FacetSize, 0.6f);
+        gemMaterialPaletteFront.SetFloat(Roughness, 0.01f);
+
+        // gemMaterialPaletteBack.DisableKeyword("_REMESHER");
+        // gemMaterialPaletteBack.EnableKeyword("_GEM_EFFECT");
+        gemMaterialPaletteBack.SetTexture(RefractionTexture, gemRefractionMap);
+        gemMaterialPaletteBack.SetFloat(FacetSize, 0.6f);
+        gemMaterialPaletteBack.SetFloat(Roughness, 0.01f);
     }
 }

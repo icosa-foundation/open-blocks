@@ -328,26 +328,43 @@ namespace com.google.apps.peltzer.client.tools.utils
         // Mesh highlight animation durations are (inversely) correlated with face size.
         // This is the base for that calculation.
         private const float MESH_FACE_HIGHLIGHT_DURATION = 0.225f;
+        // offset for additional face highlight/paint faces 
+        private static float offset = 0.0009f;
+
         /// <summary>
         /// Sets up materials and data structures for managing highlights.
         /// </summary>
+
         public void Setup(WorldSpace worldSpace, Model model, MaterialLibrary materialLibrary)
         {
             this.worldSpace = worldSpace;
             this.model = model;
-            EdgeSelectStyle.material = new Material(materialLibrary.edgeHighlightMaterial);
-            EdgeInactiveStyle.material = new Material(materialLibrary.edgeInactiveMaterial);
-            EdgeTemporaryStyle.material = new Material(materialLibrary.edgeHighlightMaterial);
-            FaceSelectStyle.material = new Material(materialLibrary.faceHighlightMaterial);
-            FacePaintStyle.material = new Material(materialLibrary.facePaintMaterial);
-            FaceExtrudeStyle.material = new Material(materialLibrary.faceExtrudeMaterial);
-            MeshSelectStyle.material = new Material(materialLibrary.meshSelectMaterial);
-            MeshSelectStyle.silhouetteMaterial = new Material(materialLibrary.highlightSilhouetteMaterial);
-            MeshPaintStyle.material = new Material(materialLibrary.meshSelectMaterial);
-            VertexSelectStyle.material = new Material(materialLibrary.pointHighlightMaterial);
-            VertexInactiveStyle.material = new Material(materialLibrary.pointInactiveMaterial);
-            TutorialHighlightStyle.material = materialLibrary.meshSelectMaterial;
+            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Destroy(cube);// only need the mesh for showing the edge highlights
+            Destroy(sphere);// only need the mesh for showing the vertex highlights
+            var sphereMesh = sphere.GetComponent<MeshFilter>().mesh;
+            var cubeMesh = cube.GetComponent<MeshFilter>().mesh;
+            VertexSelectStyle.vertexMesh = sphereMesh;
+            // VertexInactiveStyle.vertexMesh = sphereMesh;
+            EdgeSelectStyle.edgeMesh = cubeMesh;
+            // EdgeInactiveStyle.edgeMesh = cubeMesh;
+            EdgeTemporaryStyle.edgeMesh = cubeMesh;
 
+            EdgeSelectStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
+            // EdgeInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
+            EdgeTemporaryStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
+            FaceSelectStyle.material = new Material(materialLibrary.faceHighlightMaterial);
+            FaceSelectStyle.offset = offset;
+            FacePaintStyle.material = new Material(materialLibrary.facePaintMaterial);
+            FacePaintStyle.offset = offset;
+            FaceExtrudeStyle.material = new Material(materialLibrary.faceExtrudeMaterial);
+            FaceExtrudeStyle.offset = offset;
+            MeshSelectStyle.silhouetteMaterial = new Material(materialLibrary.meshSelectMaterial);
+            // MeshPaintStyle.material = new Material(materialLibrary.meshSelectMaterial);
+            VertexSelectStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
+            // VertexInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
+            // TutorialHighlightStyle.material = materialLibrary.meshSelectMaterial;
 
             MeshSelectStyle.Setup();
             MeshPaintStyle.Setup();
@@ -355,6 +372,8 @@ namespace com.google.apps.peltzer.client.tools.utils
             TutorialHighlightStyle.Setup();
 
             inactiveRenderer = new InactiveRenderer(model, worldSpace, materialLibrary);
+            inactiveRenderer.edgeMesh = cubeMesh;
+            inactiveRenderer.vertexMesh = sphereMesh;
             vertexHighlights = new TrackedHighlightSet<VertexKey>(VERT_EDGE_ANIMATION_DURATION_IN,
               VERT_EDGE_ANIMATION_DURATION_OUT,
               new[] { (int)VertexStyles.VERTEX_SELECT, (int)VertexStyles.VERTEX_INACTIVE });
@@ -481,9 +500,10 @@ namespace com.google.apps.peltzer.client.tools.utils
         // effect, and the color as the paint color. (Extrude effect is WIP, so these args may change)
         public void SetFaceStyleToExtrude(FaceKey key, Vector3 positionModel, Color color)
         {
+            Vector3 worldSelectPosition = worldSpace.ModelToWorld(positionModel);
             faceHighlights.SetStyle(key,
               (int)FaceStyles.EXTRUDE,
-              new Vector4(positionModel.x, positionModel.y, positionModel.z, 1f),
+              new Vector4(worldSelectPosition.x, worldSelectPosition.y, worldSelectPosition.z, 1f),
               new Vector4(color.r, color.g, color.b, color.a));
         }
 
@@ -619,6 +639,7 @@ namespace com.google.apps.peltzer.client.tools.utils
             EdgeInactiveStyle.RenderEdges(model, edgeHighlights, worldSpace);
             EdgeTemporaryStyle.RenderEdges(model, temporaryEdgeHighlights, worldSpace);
             edgeHighlights.ClearExpired();
+            temporaryEdgeHighlights.ClearExpired();
         }
 
         // Renders face highlights.

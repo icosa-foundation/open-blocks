@@ -44,7 +44,8 @@ public class EnvironmentThemeManager : MonoBehaviour
     /// </summary>
     private readonly Color DAY = new Color(231f / 255f, 251f / 255f, 255f / 255f);
     private readonly Color NIGHT = new Color(77f / 255f, 69f / 255f, 103f / 255f);
-    private readonly Color PURPLE = new Color(206f / 255f, 178f / 255f, 255f / 255f);
+    // private readonly Color PURPLE = new Color(206f / 255f, 178f / 255f, 255f / 255f);
+    private readonly Color PURPLE = new Color(0.51f, 0.0f, 0.60f, 1.0f);
     private readonly Color BLACK = new Color(0F / 255f, 0F / 255f, 0F / 255f);
     private readonly Color WHITE = new Color(229f / 255f, 229f / 255f, 229f / 255f);
 
@@ -116,25 +117,30 @@ public class EnvironmentThemeManager : MonoBehaviour
     public float transitionLength = 7.50f;
     private float transitionStartTime;
 
-    private GameObject sky;
+    // private GameObject sky;
+    // using unity's procedural skybox instead
     private Material skyMaterial;
     private Material groundMaterial;
-    private Texture skyTexture;
-    private Texture daySkyTexture;
+    // private Texture skyTexture;
+    // private Texture daySkyTexture;
 
     private Color currentSkyColor;
     private Color currentGroundColor;
     private Color currentFogColor;
     private Color currentAmbientColor;
-    private Color currentHorizonColor;
+    // private Color currentHorizonColor;
 
     private float currentSkyStrength;
     private float currentSunRadiusB;
-    private float currentCloudStrength;
+    // private float currentCloudStrength;
     private float currentFogDensity;
     private float tempFogDensity = -1f;
 
-    private Texture currentSkyTexture;
+    private float atmosphereThicknessBlack = 8;
+    private float atmosphereThicknessWhite = 0.84f;
+    private float currentAtmosphereThickness;
+
+    // private Texture currentSkyTexture;
 
     private RaycastHit menuHit;
     private bool isHoldingSky = false;
@@ -153,33 +159,40 @@ public class EnvironmentThemeManager : MonoBehaviour
     private void ResolveReferences()
     {
         // Purple environment.
-        sky = transform.Find("Sky").gameObject;
-        skyMaterial = sky.GetComponent<Renderer>().material;
-        skyTexture = skyMaterial.GetTexture("_Sky");
+        // sky = transform.Find("Sky").gameObject;
+        // skyMaterial = sky.GetComponent<Renderer>().material;
+        skyMaterial = RenderSettings.skybox;
+        // skyTexture = skyMaterial.GetTexture("_Sky");
         purpleGroundAndPlane = ObjectFinder.ObjectById("ID_PurpleGroundAndPlane");
         groundMaterial = purpleGroundAndPlane.transform.Find("Ground").GetComponent<Renderer>().material;
 
         // Day environment.
-        GameObject daySky = transform.Find("Environment/S_SkySphere").gameObject;
-        daySkyTexture = daySky.GetComponent<Renderer>().material.GetTexture("_Sky");
+        // GameObject daySky = transform.Find("Environment/S_SkySphere").gameObject;
+        // daySkyTexture = daySky.GetComponent<Renderer>().material.GetTexture("_Sky");
 
-        currentSkyColor = skyMaterial.GetColor("_SkyColor");
-        currentSkyStrength = skyMaterial.GetFloat("_SkyStrength");
-        currentHorizonColor = skyMaterial.GetColor("_HorizonColor");
-        currentSunRadiusB = skyMaterial.GetFloat("_SunRadiusB");
-        currentCloudStrength = skyMaterial.GetFloat("_CloudStrength");
+        // currentSkyColor = skyMaterial.GetColor("_SkyColor");
+        // currentSkyStrength = skyMaterial.GetFloat("_SkyStrength");
+        currentSkyColor = skyMaterial.GetColor("_SkyTint");
+        currentSkyStrength = skyMaterial.GetFloat("_Exposure");
+        currentAtmosphereThickness = skyMaterial.GetFloat("_AtmosphereThickness");
+
+        // currentHorizonColor = skyMaterial.GetColor("_HorizonColor");
+        // currentSunRadiusB = skyMaterial.GetFloat("_SunRadiusB");
+        currentSunRadiusB = skyMaterial.GetFloat("_SunSize");
+
+        // currentCloudStrength = skyMaterial.GetFloat("_CloudStrength");
         currentFogDensity = RenderSettings.fogDensity;
-        currentSkyTexture = skyMaterial.GetTexture("_Sky");
+        // currentSkyTexture = skyMaterial.GetTexture("_Sky");
         currentFogColor = RenderSettings.fogColor;
         currentAmbientColor = RenderSettings.ambientLight;
-        currentGroundColor = groundMaterial.GetColor("_Color");
+        currentGroundColor = groundMaterial.GetColor("_BaseColor");
     }
 
     void Update()
     {
         // Animate
         float pctDone = (Time.time - transitionStartTime) / transitionLength;
-        if (pctDone <= 1.0f)
+        if (pctDone <= 1.1f)
         {
             // Set color transtion
             UpdateSkyColor(pctDone);
@@ -197,17 +210,18 @@ public class EnvironmentThemeManager : MonoBehaviour
         if (EnvironmentThemeActionHandler != null) EnvironmentThemeActionHandler(null, theme);
         if (skyMaterial != null)
         {
-            currentSkyColor = skyMaterial.GetColor("_SkyColor");
-            currentSkyStrength = skyMaterial.GetFloat("_SkyStrength");
-            currentHorizonColor = skyMaterial.GetColor("_HorizonColor");
-            currentSunRadiusB = skyMaterial.GetFloat("_SunRadiusB");
-            currentCloudStrength = skyMaterial.GetFloat("_CloudStrength");
-            currentSkyTexture = skyMaterial.GetTexture("_Sky");
+            currentSkyColor = skyMaterial.GetColor("_SkyTint");
+            currentSkyStrength = skyMaterial.GetFloat("_Exposure");
+            currentAtmosphereThickness = skyMaterial.GetFloat("_AtmosphereThickness");
+            // currentHorizonColor = skyMaterial.GetColor("_HorizonColor");
+            currentSunRadiusB = skyMaterial.GetFloat("_SunSize");
+            // currentCloudStrength = skyMaterial.GetFloat("_CloudStrength");
+            // currentSkyTexture = skyMaterial.GetTexture("_Sky");
         }
         currentFogColor = RenderSettings.fogColor;
         currentFogDensity = RenderSettings.fogDensity;
         currentAmbientColor = RenderSettings.ambientLight;
-        if (groundMaterial != null) currentGroundColor = groundMaterial.GetColor("_Color");
+        if (groundMaterial != null) currentGroundColor = groundMaterial.GetColor("_BaseColor");
         currentTheme = theme;
         transitionStartTime = Time.time;
         switch (theme)
@@ -245,14 +259,15 @@ public class EnvironmentThemeManager : MonoBehaviour
         {
             case EnvironmentTheme.DAY:
                 // Sky
-                skyMaterial.SetColor("_HorizonColor", Color.Lerp(currentHorizonColor, DAY_HORIZON, pctDone));
-                skyMaterial.SetFloat("_SunRadiusB", Mathf.Lerp(currentSunRadiusB, DAY_SUN_RADIUS_B, pctDone));
-                skyMaterial.SetFloat("_CloudStrength", Mathf.Lerp(currentCloudStrength, DAY_CLOUD_STRENGTH, pctDone));
-                skyMaterial.SetTexture("_Sky", daySkyTexture);
+                // skyMaterial.SetColor("_HorizonColor", Color.Lerp(currentHorizonColor, DAY_HORIZON, pctDone));
+                skyMaterial.SetFloat("_SunSize", Mathf.Lerp(currentSunRadiusB, DAY_SUN_RADIUS_B, pctDone));
+                // skyMaterial.SetFloat("_CloudStrength", Mathf.Lerp(currentCloudStrength, DAY_CLOUD_STRENGTH, pctDone));
+                // skyMaterial.SetTexture("_Sky", daySkyTexture);
 
-                skyMaterial.SetColor("_SkyColor", Color.Lerp(currentSkyColor, DAY, pctDone));
-                skyMaterial.SetFloat("_SkyStrength", Mathf.Lerp(currentSkyStrength, 1.00f, pctDone));
-                groundMaterial.SetColor("_Color", Color.Lerp(currentGroundColor, DAY_GROUND, pctDone));
+                skyMaterial.SetColor("_SkyTint", Color.Lerp(currentSkyColor, DAY, pctDone));
+                skyMaterial.SetFloat("_Exposure", Mathf.Lerp(currentSkyStrength, 1.00f, pctDone));
+                skyMaterial.SetFloat("_AtmosphereThickness", Mathf.Lerp(currentAtmosphereThickness, 0.72f, pctDone));
+                groundMaterial.SetColor("_BaseColor", Color.Lerp(currentGroundColor, DAY_GROUND, pctDone));
                 RenderSettings.fogColor = Color.Lerp(currentFogColor, DAY_FOG, pctDone);
                 if (pctDone < 0.5f)
                 {
@@ -266,14 +281,14 @@ public class EnvironmentThemeManager : MonoBehaviour
                 RenderSettings.ambientLight = Color.Lerp(currentAmbientColor, DAY_AMBIENT, pctDone);
                 break;
             case EnvironmentTheme.NIGHT:
-                skyMaterial.SetColor("_HorizonColor", Color.Lerp(currentHorizonColor, NIGHT_HORIZON, pctDone));
-                skyMaterial.SetFloat("_SunRadiusB", Mathf.Lerp(currentSunRadiusB, NIGHT_SUN_RADIUS_B, pctDone));
-                skyMaterial.SetFloat("_CloudStrength", Mathf.Lerp(currentCloudStrength, NIGHT_CLOUD_STRENGTH, pctDone));
-                skyMaterial.SetTexture("_Sky", skyTexture);
+                // skyMaterial.SetColor("_HorizonColor", Color.Lerp(currentHorizonColor, NIGHT_HORIZON, pctDone));
+                skyMaterial.SetFloat("_SunSize", Mathf.Lerp(currentSunRadiusB, NIGHT_SUN_RADIUS_B, pctDone));
+                // skyMaterial.SetFloat("_CloudStrength", Mathf.Lerp(currentCloudStrength, NIGHT_CLOUD_STRENGTH, pctDone));
+                // skyMaterial.SetTexture("_Sky", skyTexture);
 
-                skyMaterial.SetColor("_SkyColor", Color.Lerp(currentSkyColor, NIGHT, pctDone));
-                skyMaterial.SetFloat("_SkyStrength", Mathf.Lerp(currentSkyStrength, 1.00f, pctDone));
-                groundMaterial.SetColor("_Color", Color.Lerp(currentGroundColor, NIGHT_GROUND, pctDone));
+                skyMaterial.SetColor("_SkyTint", Color.Lerp(currentSkyColor, NIGHT, pctDone));
+                skyMaterial.SetFloat("_Exposure", Mathf.Lerp(currentSkyStrength, 1.00f, pctDone));
+                groundMaterial.SetColor("_BaseColor", Color.Lerp(currentGroundColor, NIGHT_GROUND, pctDone));
                 RenderSettings.fogColor = Color.Lerp(currentFogColor, NIGHT_FOG, pctDone);
                 if (pctDone < 0.5f)
                 {
@@ -286,16 +301,18 @@ public class EnvironmentThemeManager : MonoBehaviour
                 }
                 RenderSettings.fog = true;
                 RenderSettings.ambientLight = Color.Lerp(currentAmbientColor, NIGHT_AMBIENT, pctDone);
+
                 break;
             case EnvironmentTheme.PURPLE:
-                skyMaterial.SetColor("_HorizonColor", Color.Lerp(currentHorizonColor, PURPLE_HORIZON, pctDone));
-                skyMaterial.SetFloat("_SunRadiusB", Mathf.Lerp(currentSunRadiusB, PURPLE_SUN_RADIUS_B, pctDone));
-                skyMaterial.SetFloat("_CloudStrength", Mathf.Lerp(currentCloudStrength, PURPLE_CLOUD_STRENGTH, pctDone));
-                skyMaterial.SetTexture("_Sky", skyTexture);
+                // skyMaterial.SetColor("_HorizonColor", Color.Lerp(currentHorizonColor, PURPLE_HORIZON, pctDone));
+                skyMaterial.SetFloat("_SunSize", Mathf.Lerp(currentSunRadiusB, PURPLE_SUN_RADIUS_B, pctDone));
+                // skyMaterial.SetFloat("_CloudStrength", Mathf.Lerp(currentCloudStrength, PURPLE_CLOUD_STRENGTH, pctDone));
+                // skyMaterial.SetTexture("_Sky", skyTexture);
 
-                skyMaterial.SetColor("_SkyColor", Color.Lerp(currentSkyColor, PURPLE, pctDone));
-                skyMaterial.SetFloat("_SkyStrength", Mathf.Lerp(currentSkyStrength, 1.00f, pctDone));
-                groundMaterial.SetColor("_Color", Color.Lerp(currentGroundColor, PURPLE_GROUND, pctDone));
+                skyMaterial.SetColor("_SkyTint", Color.Lerp(currentSkyColor, PURPLE, pctDone));
+                skyMaterial.SetFloat("_Exposure", Mathf.Lerp(currentSkyStrength, 1.00f, pctDone));
+                skyMaterial.SetFloat("_AtmosphereThickness", Mathf.Lerp(currentAtmosphereThickness, 0.92f, pctDone));
+                groundMaterial.SetColor("_BaseColor", Color.Lerp(currentGroundColor, PURPLE_GROUND, pctDone));
                 RenderSettings.fogColor = Color.Lerp(currentFogColor, PURPLE_FOG, pctDone);
                 if (pctDone < 0.5f)
                 {
@@ -310,14 +327,16 @@ public class EnvironmentThemeManager : MonoBehaviour
                 RenderSettings.ambientLight = Color.Lerp(currentAmbientColor, PURPLE_AMBIENT, pctDone);
                 break;
             case EnvironmentTheme.BLACK:
-                skyMaterial.SetColor("_HorizonColor", Color.Lerp(currentHorizonColor, BLACK_HORIZON, pctDone));
-                skyMaterial.SetFloat("_SunRadiusB", Mathf.Lerp(currentSunRadiusB, BLACK_SUN_RADIUS_B, pctDone));
-                skyMaterial.SetFloat("_CloudStrength", Mathf.Lerp(currentCloudStrength, BLACK_CLOUD_STRENGTH, pctDone));
-                skyMaterial.SetTexture("_Sky", skyTexture);
+                // skyMaterial.SetColor("_HorizonColor", Color.Lerp(currentHorizonColor, BLACK_HORIZON, pctDone));
+                skyMaterial.SetFloat("_SunSize", Mathf.Lerp(currentSunRadiusB, BLACK_SUN_RADIUS_B, pctDone));
+                // skyMaterial.SetFloat("_CloudStrength", Mathf.Lerp(currentCloudStrength, BLACK_CLOUD_STRENGTH, pctDone));
+                // skyMaterial.SetTexture("_Sky", skyTexture);
 
-                skyMaterial.SetColor("_SkyColor", Color.Lerp(currentSkyColor, BLACK, pctDone));
-                skyMaterial.SetFloat("_SkyStrength", Mathf.Lerp(currentSkyStrength, 0.00f, pctDone));
-                groundMaterial.SetColor("_Color", Color.Lerp(currentGroundColor, BLACK_GROUND, pctDone));
+                skyMaterial.SetColor("_SkyTint", Color.Lerp(currentSkyColor, BLACK, pctDone));
+                skyMaterial.SetFloat("_Exposure", Mathf.Lerp(currentSkyStrength, 0.00f, pctDone));
+                skyMaterial.SetFloat("_AtmosphereThickness", Mathf.Lerp(currentAtmosphereThickness, atmosphereThicknessBlack, pctDone));
+                groundMaterial.SetColor("_BaseColor", Color.Lerp(currentGroundColor, BLACK_GROUND, pctDone));
+
                 RenderSettings.fogColor = Color.Lerp(currentFogColor, BLACK_FOG, pctDone);
                 if (pctDone < 0.5f)
                 {
@@ -332,14 +351,15 @@ public class EnvironmentThemeManager : MonoBehaviour
                 RenderSettings.ambientLight = Color.Lerp(currentAmbientColor, BLACK_AMBIENT, pctDone);
                 break;
             case EnvironmentTheme.WHITE:
-                skyMaterial.SetColor("_HorizonColor", Color.Lerp(currentHorizonColor, WHITE_HORIZON, pctDone));
-                skyMaterial.SetFloat("_SunRadiusB", Mathf.Lerp(currentSunRadiusB, WHITE_SUN_RADIUS_B, pctDone));
-                skyMaterial.SetFloat("_CloudStrength", Mathf.Lerp(currentCloudStrength, WHITE_CLOUD_STRENGTH, pctDone));
-                skyMaterial.SetTexture("_Sky", skyTexture);
+                // skyMaterial.SetColor("_HorizonColor", Color.Lerp(currentHorizonColor, WHITE_HORIZON, pctDone));
+                skyMaterial.SetFloat("_SunSize", Mathf.Lerp(currentSunRadiusB, WHITE_SUN_RADIUS_B, pctDone));
+                // skyMaterial.SetFloat("_CloudStrength", Mathf.Lerp(currentCloudStrength, WHITE_CLOUD_STRENGTH, pctDone));
+                // skyMaterial.SetTexture("_Sky", skyTexture);
 
-                skyMaterial.SetColor("_SkyColor", Color.Lerp(currentSkyColor, WHITE, pctDone));
-                skyMaterial.SetFloat("_SkyStrength", Mathf.Lerp(currentSkyStrength, 0.00f, pctDone));
-                groundMaterial.SetColor("_Color", Color.Lerp(currentGroundColor, WHITE_GROUND, pctDone));
+                skyMaterial.SetColor("_SkyTint", Color.Lerp(currentSkyColor, WHITE, pctDone));
+                skyMaterial.SetFloat("_Exposure", Mathf.Lerp(currentSkyStrength, 8.00f, pctDone));
+                skyMaterial.SetFloat("_AtmosphereThickness", Mathf.Lerp(currentAtmosphereThickness, atmosphereThicknessWhite, pctDone));
+                groundMaterial.SetColor("_BaseColor", Color.Lerp(currentGroundColor, WHITE_GROUND, pctDone));
                 RenderSettings.fogColor = Color.Lerp(currentFogColor, WHITE_FOG, pctDone);
                 if (pctDone < 0.5f)
                 {
