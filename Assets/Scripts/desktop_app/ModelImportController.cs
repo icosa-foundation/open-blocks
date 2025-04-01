@@ -114,11 +114,11 @@ namespace com.google.apps.peltzer.client.desktop_app
                     {
                         DoGltfImport(filenames);
                     }
-                    else if (filenames.Length == 2 && (filenames[0].EndsWith(".gltf") || filenames[1].EndsWith(".gltf")))
+                    else if (filenames.Any(f => f.EndsWith(".gltf")))
                     {
                         DoGltfImport(filenames);
                     }
-                    else if (filenames.Length == 2 && (filenames[0].EndsWith(".obj") || filenames[1].EndsWith(".obj")))
+                    else if (filenames.Any(f => f.EndsWith(".obj")))
                     {
                         DoObjImport(filenames);
                     }
@@ -168,10 +168,10 @@ namespace com.google.apps.peltzer.client.desktop_app
                 fileType = FileType.OBJ;
                 string objFile = null;
                 string mtlFile = null;
-
+                objFile = filenames.FirstOrDefault(f => f.EndsWith(".obj"));
                 if (filenames.Length == 1 && filenames[0].EndsWith(".obj"))
                 {
-                    objFile = filenames[0];
+                    objFile = filenames.FirstOrDefault(f => f.EndsWith(".obj"));
                     mtlFile = filenames[0].Replace(".obj", ".mtl");
                     if (!File.Exists(mtlFile))
                     {
@@ -180,7 +180,6 @@ namespace com.google.apps.peltzer.client.desktop_app
                 }
                 else if (filenames.Length == 2)
                 {
-                    objFile = filenames.FirstOrDefault(f => f.EndsWith(".obj"));
                     mtlFile = filenames.FirstOrDefault(f => f.EndsWith(".mtl"));
                 }
 

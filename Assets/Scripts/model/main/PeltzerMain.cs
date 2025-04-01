@@ -255,6 +255,9 @@ namespace com.google.apps.peltzer.client.model.main
         /// </summary>
         public static string ENVIRONMENT_THEME_KEY = "blocks_environment_theme";
 
+        // TODO - make this configurable
+        // We're only using this currently for a dummy age check to meet Meta's requirements
+        private const string META_APP_ID = "8043509915705378";
         /// <summary>
         /// Message displayed to the user when saving the model.
         /// </summary>
@@ -622,6 +625,12 @@ namespace com.google.apps.peltzer.client.model.main
                 {
                     // TODO
                     controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightRiftPrefab, peltzerController.openXRHolder.transform, false);
+#if OCULUS_SUPPORTED
+                    Oculus.Platform.Core.Initialize(META_APP_ID);
+                    Oculus.Platform.UserAgeCategory.Get().OnComplete((msg) => {
+                        var unused = msg.Data.AgeCategory;
+                    });
+#endif
                 }
                 peltzerController.controllerGeometry = controllerGeometryRight?.GetComponent<ControllerGeometry>();
 
@@ -856,7 +865,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Model.
             exporter = gameObject.AddComponent<Exporter>();
             // Setup FBX exporter.
-            FbxExporter.Setup();
+            //FbxExporter.Setup();
 
             // Starts the call to authenticate.
             zandriaCreationsManager.Setup();
