@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Materials/ButtonIcon.mat.meta
-guid: 97dad77bc0c43a641a1e2896f822f126
-========
 guid: b1f26417c3f7a8442b23e3f18fca5fc8
->>>>>>>> origin/main:Assets/Rendering/MeshInsertEffectMaterialFront.mat.meta
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 2100000

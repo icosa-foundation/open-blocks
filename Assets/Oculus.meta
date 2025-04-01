@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Scripts/ThirdParty/FreeMoveCamera.meta
-guid: 911238377ba924af49ce8301975d44d4
-========
 guid: 1aff372a83ffb6f4291d8a3862af32c8
->>>>>>>> origin/main:Assets/Oculus.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
