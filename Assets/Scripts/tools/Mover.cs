@@ -30,7 +30,7 @@ namespace com.google.apps.peltzer.client.tools
     ///   Tool which handles moving an entire mesh.  Since "cloning" is a very similar operation
     ///   to moving, we also support "insertVolume" commands where the ShapeType is COPY.
     /// </summary>
-    public class Mover : MonoBehaviour, IMeshRenderOwner
+    public class Mover : MonoBehaviour, IBaseTool, IMeshRenderOwner
     {
         // Enums for Type of move.
         // MOVE = hide and then move.
@@ -243,7 +243,7 @@ namespace com.google.apps.peltzer.client.tools
                   spatialIndex.FindNearestMeshTo(peltzerController.LastPositionModel, 0.1f / worldSpace.scale, out nearestMesh))
                 {
                     // Check for a nearest mesh in the case that the user is clicking from the inside of a mesh's bounding box.
-                    // 0.1f is the threshold above which a mesh is considered too far away to select. This is in Unity units, 
+                    // 0.1f is the threshold above which a mesh is considered too far away to select. This is in Unity units,
                     // where 1.0f = 1 meter by default.
                     selector.SelectMeshAtPosition(peltzerController.LastPositionModel, Selector.MESHES_ONLY, /* forceSelection = */ true);
                 }
@@ -1083,7 +1083,7 @@ namespace com.google.apps.peltzer.client.tools
 
             if (currentMoveType == MoveType.CREATE)
             {
-                // Close the details menu after a user imports. 
+                // Close the details menu after a user imports.
                 // This is a potentially useful UX action for the user, but more importantly it allows
                 // us to avoid making a copy of all meshes here, as we're actually grabbing the meshes from the details panel
                 // to import into the scene. If the user (for some reason) wants to import the same mesh again, they'll have to

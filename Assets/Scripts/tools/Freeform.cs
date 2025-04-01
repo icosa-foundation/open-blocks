@@ -30,7 +30,7 @@ namespace com.google.apps.peltzer.client.tools
     /// <summary>
     ///   A tool for inserting freeform 'strokes'.
     /// </summary>
-    public class Freeform : MonoBehaviour
+    public class Freeform : MonoBehaviour, IBaseTool
     {
         /// <summary>
         /// The threshold for reversing the direction of the stroke at start.
@@ -38,7 +38,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private const float REVERSE_FACE_ANGLE_THRESHOLD = 90f;
         /// <summary>
-        /// The angle from the normal of a spine that we consider to be "backwards". 
+        /// The angle from the normal of a spine that we consider to be "backwards".
         /// </summary>
         private const float BACKWARDS_ANGLE_THRESHOLD = 90f;
         /// <summary>
@@ -219,7 +219,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private bool recordedSnapThisStroke = false;
 
-        // Detection for trigger down & straight back up, vs trigger down and hold -- either of which 
+        // Detection for trigger down & straight back up, vs trigger down and hold -- either of which
         // begins a stroke.
         private bool triggerUpToEnd;
         private bool waitingToDetermineReleaseType;
@@ -267,7 +267,7 @@ namespace com.google.apps.peltzer.client.tools
                 previousHighlight = currentHighlight;
             }
 
-            // The vertices and faces of the MMesh we're creating. 
+            // The vertices and faces of the MMesh we're creating.
             // Go in a circle and add the currently-selected number of vertices for the front and back faces.
             float scale = (GridUtils.GRID_SIZE / 2f) * insertScaleIndex;
 
@@ -315,7 +315,7 @@ namespace com.google.apps.peltzer.client.tools
             meshConstructionOperation.Commit();
             currentVolume.RecalcBounds();
 
-            // We generate the highlight directly and don't go via the cache as this isn't a permanent mesh for which 
+            // We generate the highlight directly and don't go via the cache as this isn't a permanent mesh for which
             // we want a cached highlight.
             currentHighlight = MeshHelper.GameObjectFromMMesh(worldSpace, currentVolume);
 
@@ -397,7 +397,7 @@ namespace com.google.apps.peltzer.client.tools
 
             currentVolume = newVolume;
 
-            // We generate the highlight directly and don't go via the cache as this isn't a permanent mesh for which 
+            // We generate the highlight directly and don't go via the cache as this isn't a permanent mesh for which
             // we want a cached highlight.
             currentHighlight = MeshHelper.GameObjectFromMMesh(worldSpace, currentVolume);
 
@@ -453,7 +453,7 @@ namespace com.google.apps.peltzer.client.tools
 
                 MeshWithMaterialRenderer renderer = currentHighlight.GetComponent<MeshWithMaterialRenderer>();
 
-                // The user isn't in the middle of making a freeform stroke, 
+                // The user isn't in the middle of making a freeform stroke,
                 // place/rotate the preview based on the current controller position/rotation.
                 renderer.SetPositionModelSpace(peltzerController.LastPositionModel + GetFreeformPreviewOffSetModelSpace());
 
@@ -878,7 +878,7 @@ namespace com.google.apps.peltzer.client.tools
             UpdateOriginalPositions();
         }
 
-        // Adding a checkpoint means adding a new front face; removing the prior front face (but keeping its verts); 
+        // Adding a checkpoint means adding a new front face; removing the prior front face (but keeping its verts);
         // and adding a whole new set of sides between the prior and new front face.
         private void AddCheckpoint()
         {

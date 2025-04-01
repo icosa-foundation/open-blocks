@@ -22,6 +22,7 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.tutorial;
+using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -53,8 +54,16 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject modifyToolhead;
         public GameObject eraseToolhead;
 
-        public GameObject steamRiftHolder;
+        [Header("Other")]
+        public GameObject openXRHolder;
         public GameObject oculusRiftHolder;
+
+        private Dictionary<ControllerMode, ToolOptionsPanel> m_ToolOptionsPanels;
+        public GameObject m_InitialPopupAnchor;
+        public GameObject m_Popups;
+        public ActionButton m_PanelOptionsButton;
+
+        private bool m_ToolOptionsPanelsEnabled;
 
         /// <summary>
         /// Occasionally, the controller is not set when our app starts. This method
@@ -126,11 +135,11 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <summary>
         ///   Position reference for the menu panel when in the right hand.
         /// </summary>
-        private readonly Vector3 menuPanelRightPos = new Vector3(-0.29f, 0f, 0f);
+        private readonly Vector3 menuPanelRightPos = new Vector3(-0.29f, 0.025f, 0.025f);
         /// <summary>
         ///   Position reference for the menu panel when in the right hand.
         /// </summary>
-        private readonly Vector3 menuPanelZandriaRightPos = new Vector3(-0.34f, 0f, 0f);
+        private readonly Vector3 menuPanelZandriaRightPos = new Vector3(-0.34f, 0.025f, 0.025f);
         /// <summary>
         ///   Position reference for the details panel when in the left hand.
         /// </summary>
@@ -240,17 +249,17 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void Setup()
         {
-            if (Config.Instance.sdkMode == SdkMode.SteamVR)
+            if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
-#if STEAMVRBUILD
-                controller = new ControllerDeviceSteam(transform);
-#endif
+                var openXRController = new ControllerDeviceOpenXR(transform);
+                openXRController.InitAsWand();
+                controller = openXRController;
             }
             else
             {
-                ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
-                oculusController.controllerType = OVRInput.Controller.LTouch;
-                controller = oculusController;
+                // ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
+                // oculusController.controllerType = OVRInput.Controller.LTouch;
+                // controller = oculusController;
             }
             controllerGeometry.baseControllerAnimation.SetControllerDevice(controller);
 
@@ -269,17 +278,27 @@ namespace com.google.apps.peltzer.client.model.controller
                 polyMenuPanel.transform.localRotation = menuRotationOculus;
                 detailsMenuPanel.transform.localRotation = menuRotationOculus;
             }
+            else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+            {
+                // TODO
+                menuPanel.transform.localPosition = menuPanelLeftPosOculus;
+                menuPanel.transform.localRotation = menuRotationOculus;
+                polyMenuPanel.transform.localRotation = menuRotationOculus;
+                detailsMenuPanel.transform.localRotation = menuRotationOculus;
+            }
 
             HideTooltips();
+            newModelPrompt = m_Popups.transform.Find($"NewModelPrompt").gameObject;
+            publishedTakeOffHeadsetPrompt = m_Popups.transform.Find($"TakeOffHeadsetPrompt").gameObject;
+            tutorialSavePrompt = m_Popups.transform.Find($"TutorialSavePrompt").gameObject;
+            tutorialBeginPrompt = m_Popups.transform.Find($"TutorialPrompt").gameObject;
+            tutorialExitPrompt = m_Popups.transform.Find($"TutorialExitPrompt").gameObject;
+            publishAfterSavePrompt = m_Popups.transform.Find($"PublishAfterSavePrompt").gameObject;
+            publishSignInPrompt = m_Popups.transform.Find($"PublishSignInPrompt").gameObject;
+            saveLocallyPrompt = m_Popups.transform.Find($"SaveLocallyPrompt").gameObject;
 
-            newModelPrompt = transform.Find("ID_PanelTools/ToolSide/NewModelPrompt").gameObject;
-            publishedTakeOffHeadsetPrompt = transform.Find("ID_PanelTools/ToolSide/TakeOffHeadsetPrompt").gameObject;
-            tutorialSavePrompt = transform.Find("ID_PanelTools/ToolSide/TutorialSavePrompt").gameObject;
-            tutorialBeginPrompt = transform.Find("ID_PanelTools/ToolSide/TutorialPrompt").gameObject;
-            tutorialExitPrompt = transform.Find("ID_PanelTools/ToolSide/TutorialExitPrompt").gameObject;
-            publishAfterSavePrompt = transform.Find("ID_PanelTools/ToolSide/PublishAfterSavePrompt").gameObject;
-            publishSignInPrompt = transform.Find("ID_PanelTools/ToolSide/PublishSignInPrompt").gameObject;
-            saveLocallyPrompt = transform.Find("ID_PanelTools/ToolSide/SaveLocallyPrompt").gameObject;
+            var panels = GetComponentsInChildren<ToolOptionsPanel>(true);
+            SetupToolOptionsPanels(panels);
 
             bool shouldNagForTutorial = !PlayerPrefs.HasKey(TutorialManager.HAS_EVER_STARTED_TUTORIAL_KEY);
             if (shouldNagForTutorial)
@@ -709,6 +728,13 @@ namespace com.google.apps.peltzer.client.model.controller
                     polyMenuPanel.transform.localPosition = menuPanelZandriaLeftPosOculus;
                     detailsMenuPanel.transform.localPosition = detailsPanelZandriaLeftPosOculus;
                 }
+                else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+                {
+                    // TODO
+                    menuPanel.transform.localPosition = menuPanelLeftPosOculus;
+                    polyMenuPanel.transform.localPosition = menuPanelZandriaLeftPosOculus;
+                    detailsMenuPanel.transform.localPosition = detailsPanelZandriaLeftPosOculus;
+                }
                 else
                 {
                     menuPanel.transform.localPosition = Vector3.zero;
@@ -739,6 +765,14 @@ namespace com.google.apps.peltzer.client.model.controller
                     polyMenuPanel.transform.localPosition = menuPanelZandriaRightPosOculus;
                     detailsMenuPanel.transform.localPosition = detailsPanelZandriaRightPosOculus;
                 }
+                else if (Config.Instance.sdkMode == SdkMode.Oculus)
+                {
+                    // TODO
+                    menuPanel.transform.localPosition = menuPanelRightPosOculus;
+                    polyMenuPanel.transform.localPosition = menuPanelZandriaRightPosOculus;
+                    detailsMenuPanel.transform.localPosition = detailsPanelZandriaRightPosOculus;
+                }
+
                 else
                 {
                     menuPanel.transform.localPosition = menuPanelRightPos;
@@ -1278,6 +1312,48 @@ namespace com.google.apps.peltzer.client.model.controller
                     lastTouchpadHoverState = state;
                 }
             }
+        }
+
+        public void SetupToolOptionsPanels(ToolOptionsPanel[] panels)
+        {
+            m_ToolOptionsPanels = new Dictionary<ControllerMode, ToolOptionsPanel>();
+            foreach (var panel in panels)
+            {
+                m_ToolOptionsPanels.Add(panel.m_Mode, panel);
+            }
+        }
+
+        public void RefreshOptionPanelVisibility(ControllerMode mode)
+        {
+            if (m_ToolOptionsPanels != null)
+            {
+                // Disable all panels
+                foreach (var kv in m_ToolOptionsPanels)
+                {
+                    kv.Value.Disable();
+                }
+
+                // Enable the chosen panel
+                var panel = m_ToolOptionsPanels.GetValueOrDefault(mode);
+                if (panel != null)
+                {
+                    m_PanelOptionsButton.Enable(panel.m_Allowed);
+                    if (!m_ToolOptionsPanelsEnabled) return;
+                    panel.Enable(mode);
+                }
+            }
+        }
+
+        public void EnableToolOptionPanels(bool enable)
+        {
+            m_ToolOptionsPanelsEnabled = enable;
+            var mode = PeltzerMain.Instance.peltzerController.mode;
+            RefreshOptionPanelVisibility(mode);
+        }
+
+        public void ToggleToolOptionPanels()
+        {
+            EnableToolOptionPanels(!m_ToolOptionsPanelsEnabled);
         }
     }
 }

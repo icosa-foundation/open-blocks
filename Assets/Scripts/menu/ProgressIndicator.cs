@@ -161,6 +161,11 @@ namespace com.google.apps.peltzer.client.menu
             {
                 rootObject.transform.localPosition = ROOT_POSITION_OCULUS;
             }
+            else if (Config.Instance.sdkMode == SdkMode.OpenXR)
+            {
+                // TODO
+                rootObject.transform.localPosition = ROOT_POSITION_OCULUS;
+            }
         }
 
         /// <summary>

@@ -30,16 +30,9 @@ namespace com.google.apps.peltzer.client.model.render
     {
         private const float DEFAULT_DURATION = 1.0f;
 
-        Vector3 basePreviewPosition;
-        private Mesh previewMesh;
-
         private bool inSnapThreshhold = false;
-
-        public Vector3[] snapLines = new Vector3[0];
-        public Vector3[] snapNormals = new Vector3[0];
-        public Vector2[] snapSelectData = new Vector2[0];
-        private int[] snapLineIndices = new int[0];
-
+        private Mesh lineMesh;
+        private Matrix4x4 matrix;
 
         /// <summary>
         /// Constructs the effect, Initialize must still be called before the effect starts to take place.
@@ -47,29 +40,24 @@ namespace com.google.apps.peltzer.client.model.render
         /// <param name="snapTarget">The MMesh id of the target mesh to play the shader on.</param>
         public ContinuousEdgeStickEffect()
         {
-            previewMesh = new Mesh();
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            lineMesh = go.GetComponent<MeshFilter>().mesh;
+            GameObject.Destroy(go); // only need the mesh
         }
 
         public override void Initialize(MeshRepresentationCache cache, MaterialLibrary materialLibrary,
           WorldSpace worldSpace)
         {
-            base.Initialize(cache, materialLibrary.edgeHighlightMaterial, worldSpace);
+            base.Initialize(cache, materialLibrary.pointEdgeHighlightMaterial, worldSpace);
         }
 
         public override void Render()
         {
-            float scaleFactor = InactiveRenderer.GetEdgeScaleFactor(worldSpace);
-            effectMaterial.SetFloat("_PointSphereRadius", scaleFactor);
-            Graphics.DrawMesh(previewMesh,
-              worldSpace.modelToWorld,
-              effectMaterial,
-              0); // Layer
+            Graphics.DrawMesh(lineMesh, matrix, effectMaterial, 0);
         }
 
         public override void Finish()
         {
-            Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
-            Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
             UXEffectManager.GetEffectManager().EndEffect(this);
         }
 
@@ -78,29 +66,14 @@ namespace com.google.apps.peltzer.client.model.render
         /// </summary>
         public void UpdateFromEdge(EdgeInfo edge)
         {
-            int sizeNeeded = 2;
-            if (snapLines.Length != sizeNeeded)
-            {
-                Array.Resize(ref snapLines, sizeNeeded);
-                Array.Resize(ref snapLineIndices, sizeNeeded);
-                Array.Resize(ref snapNormals, sizeNeeded);
-                Array.Resize(ref snapSelectData, sizeNeeded);
-                for (int i = 0; i < sizeNeeded; i++)
-                {
-                    snapLineIndices[i] = i;
-                    snapNormals[i] = Vector3.up;
-                    snapSelectData[i] = Vector2.one;
-                }
-            }
-            // Snap Line
-            snapLines[0] = edge.edgeStart;
-            snapLines[1] = edge.edgeStart + edge.edgeVector;
+            float scaleFactor = InactiveRenderer.GetEdgeScaleFactor(worldSpace);
 
-            previewMesh.Clear();
-            previewMesh.vertices = snapLines;
-            previewMesh.normals = snapNormals;
-            previewMesh.uv = snapSelectData;
-            previewMesh.SetIndices(snapLineIndices, MeshTopology.Lines, 0 /* submesh id */, false /* recalculate bounds */);
+            float distance = Vector3.Distance(edge.edgeStart + edge.edgeVector, edge.edgeStart);
+            Vector3 midPoint = (edge.edgeStart + edge.edgeStart + edge.edgeVector) / 2;
+            Vector3 direction = edge.edgeVector;
+            Quaternion rotation = Quaternion.LookRotation(direction);
+            Vector3 scale = new Vector3(scaleFactor, scaleFactor, distance);
+            matrix = worldSpace.modelToWorld * Matrix4x4.TRS(midPoint, rotation, scale);
         }
     }
 }

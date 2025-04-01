@@ -144,8 +144,8 @@ namespace com.google.apps.peltzer.client.model.render
           WorldSpace worldSpace)
         {
             instance = new UXEffectManager(meshRepresentationCache, materialLibrary, worldSpace);
-            Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
-            Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
+            // Shader.SetGlobalVector("_FXPointLightColorStrength", new Vector4(0f, 0f, 0f, 0f));
+            // Shader.SetGlobalVector("_FXPointLightPosition", new Vector4(0f, 0f, 0f, 1f));
         }
 
         // Gets the singleton UXEffectManager

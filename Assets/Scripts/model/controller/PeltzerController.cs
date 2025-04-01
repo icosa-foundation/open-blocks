@@ -14,6 +14,7 @@
 
 #define STEAMVRBUILD
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -25,6 +26,7 @@ using com.google.apps.peltzer.client.tools.utils;
 using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.app;
+using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -73,7 +75,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public ControllerDevice controller;
         public ControllerGeometry controllerGeometry;
 
-        public GameObject steamRiftHolder;
+        public GameObject openXRHolder;
         public GameObject oculusRiftHolder;
 
         // Some tools intelligently choose between a 'click and hold' operation and a 'click to begin, click to end'
@@ -185,6 +187,13 @@ namespace com.google.apps.peltzer.client.model.controller
         public static readonly Color MENU_BUTTON_GREEN = new Color(76f / 255f, 175f / 255f, 80f / 255f);
         public static readonly Color MENU_BUTTON_RED = new Color(244f / 255f, 67f / 255f, 54f / 255f);
         private bool menuIsInDefaultState;
+
+        /// <summary>
+        ///   Local position of the wand tip / selector when using Quest with OpenXR.
+        /// </summary>
+        Vector3 WAND_TIP_POSITION_QUEST = new Vector3(0, 0, .0339f);
+        Vector3 WAND_TIP_ROTATION_OFFSET_QUEST = new Vector3(0, 0, 0);
+
 
         /// <summary>
         ///   Local position of the wand tip / selector when using RIFT.
@@ -313,23 +322,26 @@ namespace com.google.apps.peltzer.client.model.controller
 
         private bool setupDone;
         private bool triggerIsDown;
+        private bool m_isDraggingSlider;
 
         /// <summary>
         /// Performs one-time setup. This must be called before anything else.
         /// </summary>
         public void Setup(VolumeInserter volumeInserter, Freeform freeform)
         {
-            if (Config.Instance.sdkMode == SdkMode.SteamVR)
+            if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
-#if STEAMVRBUILD
-                controller = new ControllerDeviceSteam(transform);
-#endif
+                var openXRController = new ControllerDeviceOpenXR(transform);
+                openXRController.InitAsBrush();
+                // TODO
+                // openXRController.controllerType = OVRInput.Controller.RTouch;
+                controller = openXRController;
             }
             else
             {
-                ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
-                oculusController.controllerType = OVRInput.Controller.RTouch;
-                controller = oculusController;
+                // ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
+                // oculusController.controllerType = OVRInput.Controller.RTouch;
+                // controller = oculusController;
             }
             controllerGeometry.baseControllerAnimation.SetControllerDevice(controller);
 
@@ -343,9 +355,9 @@ namespace com.google.apps.peltzer.client.model.controller
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
                 // Adjust the placement of the selector position for Rift.
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    wandTip.transform.parent.transform.localPosition = WAND_TIP_POSITION_RIFT;
+                    wandTip.transform.parent.transform.localPosition = WAND_TIP_POSITION_QUEST;
                 }
                 else // Oculus SDK
                 {
@@ -449,9 +461,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 }
                 else
                 {
-                    if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                    if (Config.Instance.sdkMode == SdkMode.OpenXR)
                     {
-                        wandTip.transform.localRotation = Quaternion.Euler(WAND_TIP_ROTATION_OFFSET_RIFT);
+                        wandTip.transform.localRotation = Quaternion.Euler(WAND_TIP_ROTATION_OFFSET_QUEST);
                     }
                     else
                     {
@@ -478,6 +490,7 @@ namespace com.google.apps.peltzer.client.model.controller
         private void UpdateMenuItemPoint()
         {
             bool isTriggerDown = controller.IsPressed(ButtonId.Trigger);
+
             bool isOperationInProgress = freeformInstance.IsStroking() ||
               PeltzerMain.Instance.GetMover().IsMoving() ||
               PeltzerMain.Instance.GetReshaper().IsReshaping() ||
@@ -495,7 +508,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
             // Only update the hover state if the trigger is NOT down (if the trigger is down, don't change states because
             // the user is currently in the process of trying to click something that's already hovered).
-            if (!isTriggerDown)
+            if (!isTriggerDown || m_isDraggingSlider)
             {
                 HandleMenuItemPoint();
             }
@@ -506,10 +519,22 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             TouchpadLocation location = controller.GetTouchpadLocation();
 
+            m_isDraggingSlider = false;
+
             foreach (ButtonId buttonId in buttons)
             {
                 if (buttonId == ButtonId.Trigger && currentSelectableMenuItem != null)
                 {
+                    // Sliders need all trigger events
+                    var slider = currentSelectableMenuItem as Slider;
+                    if (slider != null)
+                    {
+                        m_isDraggingSlider = controller.IsPressed(ButtonId.Trigger);
+                        DetectTrigger(controller);
+                        // Swallow this event, so the other tools don't fire.
+                        continue;
+                    }
+
                     // If the user has pulled the trigger while pointing at a palette menu item, invoke the action handler.
                     if (controller.WasJustPressed(buttonId))
                     {
@@ -518,6 +543,7 @@ namespace com.google.apps.peltzer.client.model.controller
                         // Swallow this event, so the other tools don't fire.
                         continue;
                     }
+
                 }
                 else if (buttonId == ButtonId.Trigger)
                 {
@@ -669,10 +695,12 @@ namespace com.google.apps.peltzer.client.model.controller
             Vector3 controllerRayOrigin;
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    controllerRayVector = Quaternion.Euler(45, 0, 0) * Vector3.forward;
-                    controllerRayOrigin = transform.position + new Vector3(0, -0.045f, 0);
+                    // controllerRayVector = Quaternion.Euler(45, 0, 0) * Vector3.forward;
+                    // controllerRayOrigin = transform.position + new Vector3(0, -0.045f, 0);
+                    controllerRayVector = Vector3.forward;
+                    controllerRayOrigin = transform.position;
                 }
                 else
                 {
@@ -778,6 +806,12 @@ namespace com.google.apps.peltzer.client.model.controller
             else
             {
                 wandTipLabel.text = "";
+            }
+
+            Slider slider = menuHit.transform.GetComponent<Slider>();
+            if (slider != null && slider.isActive)
+            {
+                slider.SetHitPoint(menuHit);
             }
 
             // Reset the hover animation and start time if this is a new item or not a save submenu.
@@ -1421,47 +1455,48 @@ namespace com.google.apps.peltzer.client.model.controller
                     added.SetActive(false);
                     StartToolHeadAnimation();
                 }
+
+                PeltzerMain.Instance.paletteController.RefreshOptionPanelVisibility(mode);
             }
 
             // modify the registration point based on the tool.
-            switch (newMode)
-            {
-                case ControllerMode.reshape:
-                    defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.055f);
-                    break;
-                case ControllerMode.insertStroke:
-                case ControllerMode.insertVolume:
-                case ControllerMode.csg:
-                    if (Config.Instance.VrHardware == VrHardware.Vive)
-                    {
-                        defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.015f);
-                    }
-                    else
-                    {
-                        defaultTipPointerDefaultLocation = new Vector3(0f, 0, -0.045f);
-                    }
-                    break;
-                case ControllerMode.delete:
-                case ControllerMode.deletePart:
-                    defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.035f);
-                    break;
-                default:
-                    defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.045f);
-                    break;
-            }
-
-            if (Config.Instance.VrHardware == VrHardware.Rift)
-            {
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
-                {
-                    defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_RIFT - new Vector3(0f, 0f, -0.045f);
-                }
-                else
-                {
-                    defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_OCULUS - new Vector3(0f, 0f, -0.045f);
-                }
-
-            }
+            // switch (newMode)
+            // {
+            //     case ControllerMode.reshape:
+            //         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.055f);
+            //         break;
+            //     case ControllerMode.insertStroke:
+            //     case ControllerMode.insertVolume:
+            //         if (Config.Instance.VrHardware == VrHardware.Vive)
+            //         {
+            //             defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.015f);
+            //         }
+            //         else
+            //         {
+            //             defaultTipPointerDefaultLocation = new Vector3(0f, 0, -0.045f);
+            //         }
+            //         break;
+            //     case ControllerMode.delete:
+            //     case ControllerMode.deletePart:
+            //         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.035f);
+            //         break;
+            //     default:
+            //         defaultTipPointerDefaultLocation = new Vector3(0f, 0f, -0.045f);
+            //         break;
+            // }
+            //
+            // if (Config.Instance.VrHardware == VrHardware.Rift)
+            // {
+            //     if (Config.Instance.sdkMode == SdkMode.OpenXR)
+            //     {
+            //         defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_QUEST - new Vector3(0f, 0f, -0.045f);
+            //     }
+            //     else
+            //     {
+            //         defaultTipPointerDefaultLocation = defaultTipPointerDefaultLocation + WAND_TIP_POSITION_OCULUS - new Vector3(0f, 0f, -0.045f);
+            //     }
+            //
+            // }
 
         }
 

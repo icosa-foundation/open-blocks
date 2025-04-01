@@ -16,6 +16,8 @@
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.model.main;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.XR;
 using UnityEngine.UI;
 
 namespace com.google.apps.peltzer.client.model.controller
@@ -253,44 +255,63 @@ namespace com.google.apps.peltzer.client.model.controller
               grabTool.transform.localScale.y,
               grabTool.transform.localScale.z);
 
-            if (Config.Instance.sdkMode == SdkMode.SteamVR)
+            if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
-#if STEAMVRBUILD
-                SteamVR_TrackedObject peltzerTrackedObj = peltzerController.GetComponent<SteamVR_TrackedObject>();
-                SteamVR_TrackedObject paletteTrackedObj = paletteController.GetComponent<SteamVR_TrackedObject>();
-                SteamVR_TrackedObject.EIndex tmp = peltzerTrackedObj.index;
-                peltzerTrackedObj.index = paletteTrackedObj.index;
-                paletteTrackedObj.index = tmp;
-#endif
-            }
-            else if (Config.Instance.sdkMode == SdkMode.Oculus)
-            {
-                ControllerDeviceOculus peltzerControllerDeviceOculus = (ControllerDeviceOculus)peltzerController.controller;
-                ControllerDeviceOculus paletteControllerDeviceOculus = (ControllerDeviceOculus)paletteController.controller;
-                if (peltzerControllerDeviceOculus.controllerType == OVRInput.Controller.LTouch)
+                // Debug.Log("OpenXR controller swap!");
+                var peltzerTrackedObj = peltzerController.GetComponent<TrackedPoseDriver>();
+                var paletteTrackedObj = paletteController.GetComponent<TrackedPoseDriver>();
+
+                if (!userIsNowRightHanded)
                 {
-                    peltzerControllerDeviceOculus.controllerType = OVRInput.Controller.RTouch;
-                    paletteControllerDeviceOculus.controllerType = OVRInput.Controller.LTouch;
+                    peltzerTrackedObj.positionInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/pointerPosition");
+                    peltzerTrackedObj.rotationInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/pointerRotation");
+                    peltzerTrackedObj.trackingStateInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/trackingState");
+
+                    paletteTrackedObj.positionInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/pointerPosition");
+                    paletteTrackedObj.rotationInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/pointerRotation");
+                    paletteTrackedObj.trackingStateInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/trackingState");
                 }
                 else
                 {
-                    peltzerControllerDeviceOculus.controllerType = OVRInput.Controller.LTouch;
-                    paletteControllerDeviceOculus.controllerType = OVRInput.Controller.RTouch;
-                }
+                    peltzerTrackedObj.positionInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/pointerPosition");
+                    peltzerTrackedObj.rotationInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/pointerRotation");
+                    peltzerTrackedObj.trackingStateInput.action.ApplyBindingOverride(0, "<XRController>{RightHand}/trackingState");
 
-                Transform temp = Config.Instance.oculusHandTrackingManager.leftTransform;
-                Config.Instance.oculusHandTrackingManager.leftTransform = Config.Instance.oculusHandTrackingManager.rightTransform;
-                Config.Instance.oculusHandTrackingManager.rightTransform = temp;
+                    paletteTrackedObj.positionInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/pointerPosition");
+                    paletteTrackedObj.rotationInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/pointerRotation");
+                    paletteTrackedObj.trackingStateInput.action.ApplyBindingOverride(0, "<XRController>{LeftHand}/trackingState");
+                }
+                (peltzerController.controller, paletteController.controller) = (paletteController.controller, peltzerController.controller);
+
+            }
+            else if (Config.Instance.sdkMode == SdkMode.Oculus)
+            {
+                // ControllerDeviceOculus peltzerControllerDeviceOculus = (ControllerDeviceOculus)peltzerController.controller;
+                // ControllerDeviceOculus paletteControllerDeviceOculus = (ControllerDeviceOculus)paletteController.controller;
+                // if (peltzerControllerDeviceOculus.controllerType == OVRInput.Controller.LTouch)
+                // {
+                //     peltzerControllerDeviceOculus.controllerType = OVRInput.Controller.RTouch;
+                //     paletteControllerDeviceOculus.controllerType = OVRInput.Controller.LTouch;
+                // }
+                // else
+                // {
+                //     peltzerControllerDeviceOculus.controllerType = OVRInput.Controller.LTouch;
+                //     paletteControllerDeviceOculus.controllerType = OVRInput.Controller.RTouch;
+                // }
+                //
+                // Transform temp = Config.Instance.oculusHandTrackingManager.leftTransform;
+                // Config.Instance.oculusHandTrackingManager.leftTransform = Config.Instance.oculusHandTrackingManager.rightTransform;
+                // Config.Instance.oculusHandTrackingManager.rightTransform = temp;
             }
 
-            // For the Rift, we need to swap-back the controller geometry, such that the physical appearance of the 
+            // For the Rift, we need to swap-back the controller geometry, such that the physical appearance of the
             // controllers doesn't change.
             if (Config.Instance.VrHardware == VrHardware.Rift)
             {
-                if (Config.Instance.sdkMode == SdkMode.SteamVR)
+                if (Config.Instance.sdkMode == SdkMode.OpenXR)
                 {
-                    paletteController.controllerGeometry.gameObject.transform.SetParent(peltzerController.steamRiftHolder.transform, /* worldPositionStays */ false);
-                    peltzerController.controllerGeometry.gameObject.transform.SetParent(paletteController.steamRiftHolder.transform, /* worldPositionStays */ false);
+                    paletteController.controllerGeometry.gameObject.transform.SetParent(peltzerController.openXRHolder.transform, /* worldPositionStays */ false);
+                    peltzerController.controllerGeometry.gameObject.transform.SetParent(paletteController.openXRHolder.transform, /* worldPositionStays */ false);
                 }
                 else
                 {

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using com.google.apps.peltzer.client.model.main;
@@ -229,7 +230,7 @@ namespace com.google.apps.peltzer.client.menu
                     foreach (var animator in introAnim.GetComponentsInChildren<Animator>(includeInactive: true))
                     {
                         animator.speed = INTRO_ANIMATION_SPEED_SCALE;
-                    };
+                    }
                     audioLibrary.PlayClip(audioLibrary.startupSound);
                     countdown = INTRO_ANIMATION_DURATION;
                     SetSkyboxLightFactor(0f);
@@ -268,6 +269,8 @@ namespace com.google.apps.peltzer.client.menu
                         PeltzerMain.Instance.CreateNewModel(/* clearReferenceImages */ false);
                     }
 
+                    StartCoroutine(RemoveIntroCameras());
+
                     introIsComplete = true;
                     // Prompt the user to take a tutorial.
                     PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.TAKE_A_TUTORIAL_BUTTON);
@@ -289,6 +292,17 @@ namespace com.google.apps.peltzer.client.menu
 
                     break;
             }
+        }
+
+        private System.Collections.IEnumerator RemoveIntroCameras()
+        {
+            // once intro is done put background layer on main camera culling mask
+            var mainCamera = Camera.main;
+            mainCamera.cullingMask |= 1 << LayerMask.NameToLayer("Background");
+            Destroy(mainCamera.transform.Find("LogoCamera").gameObject);
+            // disable logo light too
+            GameObject.FindWithTag("LogoLight")?.gameObject.SetActive(false);
+            yield return null;
         }
 
         private void SetSkyboxLightFactor(float factor)

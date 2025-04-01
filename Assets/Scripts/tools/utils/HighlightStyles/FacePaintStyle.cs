@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using com.google.apps.peltzer.client.model.controller;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
@@ -28,7 +29,10 @@ namespace com.google.apps.peltzer.client.tools.utils
     public class FacePaintStyle
     {
         public static Material material;
-        private static Mesh faceRenderMesh = new Mesh();
+        private static Mesh faceRenderMesh = new();
+
+        // set animPct and selectPositionWorld globally rather than per-vertex (looks the same?)
+        public static float offset;
         // Renders vertex highlights.
         // There are some obvious optimization opportunities here if profiling shows them to be necessary (mostly reusing
         // face geometry frame to frame) - 37281287
@@ -57,15 +61,20 @@ namespace com.google.apps.peltzer.client.tools.utils
                 if (mesh.TryGetFace(key.faceId, out curFace))
                 {
                     // For each face, add all triangles to the mesh with all per-face data set appropriately.
-                    Vector4 selectPosition = faceHighlights.GetCustomChannel0(key);
-                    float animPct = faceHighlights.GetAnimPct(key);
+                    var selectPosition = faceHighlights.GetCustomChannel0(key);
+                    var animPct = faceHighlights.GetAnimPct(key);
+                    animPct *= animPct;
+
                     Vector4 colorV4 = faceHighlights.GetCustomChannel1(key);
                     Color faceColor = new Color(colorV4.x, colorV4.y, colorV4.z, colorV4.w);
+
                     List<Triangle> tris = MeshHelper.TriangulateFace(mesh, curFace);
                     for (int i = 0; i < tris.Count; i++)
                     {
                         // For each triangle in the face, add a vertex to the Mesh
-                        vertices.Add(mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId0]));
+                        vertices.Add(mesh.VertexPositionInModelCoords(
+                            curFace.vertexIds[tris[i].vertId0]) + curFace.normal * offset);
+                        // add tiny offset to normal 
                         normals.Add(curFace.normal);
                         selectData.Add(new Vector2(animPct, 0f));
                         indices.Add(curIndex);
@@ -73,7 +82,8 @@ namespace com.google.apps.peltzer.client.tools.utils
                         selectPositions.Add(selectPosition);
                         curIndex++;
 
-                        vertices.Add(mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId1]));
+                        vertices.Add(mesh.VertexPositionInModelCoords(
+                            curFace.vertexIds[tris[i].vertId1]) + curFace.normal * offset);
                         normals.Add(curFace.normal);
                         selectData.Add(new Vector2(animPct, 0f));
                         indices.Add(curIndex);
@@ -81,7 +91,8 @@ namespace com.google.apps.peltzer.client.tools.utils
                         selectPositions.Add(selectPosition);
                         curIndex++;
 
-                        vertices.Add(mesh.VertexPositionInModelCoords(curFace.vertexIds[tris[i].vertId2]));
+                        vertices.Add(mesh.VertexPositionInModelCoords(
+                            curFace.vertexIds[tris[i].vertId2]) + curFace.normal * offset);
                         normals.Add(curFace.normal);
                         selectData.Add(new Vector2(animPct, 0f));
                         indices.Add(curIndex);

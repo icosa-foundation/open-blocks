@@ -123,7 +123,7 @@ namespace com.google.apps.peltzer.client.tutorial
 
             PeltzerMain.Instance.GetFloatingMessage().ResetProgressBar();
             PeltzerMain.Instance.GetFloatingMessage().PositionBillboard();
-            PeltzerMain.Instance.GetFloatingMessage().Show("Let's learn the basics!", TextPosition.CENTER);
+            PeltzerMain.Instance.GetFloatingMessage().Show("Let's learn the basics!", TextPosition.CENTER_NO_TITLE);
             PeltzerMain.Instance.GetFloatingMessage().ShowHeader("");
             PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
 
@@ -167,7 +167,7 @@ namespace com.google.apps.peltzer.client.tutorial
 
                 if (startMessageTime != 0f && Time.time > startMessageTime)
                 {
-                    PeltzerMain.Instance.GetFloatingMessage().Show("Who doesn't like\nice cream?", TextPosition.CENTER);
+                    PeltzerMain.Instance.GetFloatingMessage().Show("Who doesn't like\nice cream?", TextPosition.CENTER_NO_TITLE);
                     // Load the broken ice cream scene (one ice cream with missing scoop & cherry).
                     PeltzerMain.Instance.tutorialManager.LoadAndAlignTutorialModel(
                       POLY_MODEL_RESOURCE_PATH,
@@ -236,7 +236,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 // Show instructions.
                 // TODO This instruction should be rewritten.
                 PeltzerMain.Instance.GetFloatingMessage().ShowHeader("Moving");
-                PeltzerMain.Instance.GetFloatingMessage().Show("Move the cone closer to you", TextPosition.FULL_SIDE);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Move the cone closer to you!", TextPosition.FULL_SIDE);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("MOVE");
                 PeltzerMain.Instance.GetFloatingMessage().ShowProgressBar(/*show*/ true);
                 PeltzerMain.Instance.attentionCaller.Recolor(AttentionCaller.Element.PELTZER_GRIP_LEFT);
@@ -264,7 +264,7 @@ namespace com.google.apps.peltzer.client.tutorial
                   || (timeFirstStartedMoving != 0 && Time.time - timeFirstStartedMoving > 3f))
                 {
                     PeltzerMain.Instance.GetFloatingMessage().ShowHeader("");
-                    PeltzerMain.Instance.GetFloatingMessage().Show("Looking good", TextPosition.CENTER_NO_TITLE, /*play confetti*/ true);
+                    PeltzerMain.Instance.GetFloatingMessage().Show("Looking good!", TextPosition.CENTER_NO_TITLE, /*play confetti*/ true);
                     PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                     return true;
                 }
@@ -365,7 +365,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 // Disallow scaling.
                 main.restrictionManager.scaleOnVolumeInsertionAllowed = false;
                 // Show instructions.
-                PeltzerMain.Instance.GetFloatingMessage().Show("Switch to a sphere shape", TextPosition.FULL_SIDE);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Switch to a sphere shape!", TextPosition.FULL_SIDE);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("SELECT_SPHERE");
             }
 
@@ -407,7 +407,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.PELTZER_THUMBSTICK);
                 PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.PELTZER_TOUCHPAD_LEFT);
                 // Congratulate the user on this outstanding victory.
-                PeltzerMain.Instance.GetFloatingMessage().Show("Nice\nThat's the one", TextPosition.CENTER, true);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Nice!\nThat's the one.", TextPosition.CENTER, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 tutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -444,7 +444,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.attentionCaller.Recolor(AttentionCaller.Element.PELTZER_TRIGGER);
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
                 // Show instructions.
-                PeltzerMain.Instance.GetFloatingMessage().Show("Pile it on top", TextPosition.FULL_SIDE);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Pile it on top!", TextPosition.FULL_SIDE);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("INSERT_SPHERE");
             }
 
@@ -467,11 +467,11 @@ namespace com.google.apps.peltzer.client.tutorial
                 if (dist > DISTANCE_TOLERANCE)
                 {
                     PeltzerMain.Instance.GetFloatingMessage()
-                      .Show("Place it in the right spot", TextPosition.FULL_SIDE);
+                      .Show("Place it in the right spot!", TextPosition.FULL_SIDE);
                     return false;
                 }
                 spherePlaced = true;
-                PeltzerMain.Instance.GetFloatingMessage().Show("That's better", TextPosition.FULL_SIDE, true);
+                PeltzerMain.Instance.GetFloatingMessage().Show("That's better.", TextPosition.FULL_SIDE, true);
                 return true;
             }
 
@@ -498,7 +498,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.model.HideMeshForTestOrTutorial(SCOOP_PLACEHOLDER_MESH_ID);
                 completed = true;
                 PeltzerMain.Instance.model.ApplyCommand(new DeleteMeshCommand(SCOOP_PLACEHOLDER_MESH_ID));
-                PeltzerMain.Instance.GetFloatingMessage().Show("Now for the cherry\non top", TextPosition.CENTER, true);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Now for the cherry\non top...", TextPosition.CENTER, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 tutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -532,7 +532,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 // Allow primitive scaling, but nothing else.
                 main.restrictionManager.scaleOnVolumeInsertionAllowed = true;
                 // Show instructions.
-                PeltzerMain.Instance.GetFloatingMessage().Show("That's too big\nSize it down", TextPosition.FULL_SIDE);
+                PeltzerMain.Instance.GetFloatingMessage().Show("That's too big.\nSize it down!", TextPosition.FULL_SIDE);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("SMALLER_SPHERE");
                 // Allow the touchpad's down button.
                 main.restrictionManager.touchpadDownAllowed = true;
@@ -566,7 +566,7 @@ namespace com.google.apps.peltzer.client.tutorial
 
                 if (!encouragementShown && PeltzerMain.Instance.GetVolumeInserter().scaleDelta < SCOOP_SCALE_DELTA)
                 {
-                    PeltzerMain.Instance.GetFloatingMessage().Show("Keep on going", TextPosition.FULL_SIDE);
+                    PeltzerMain.Instance.GetFloatingMessage().Show("Keep on going...", TextPosition.FULL_SIDE);
                     encouragementShown = true;
                 }
                 // TODO add : You're almost there!
@@ -595,7 +595,7 @@ namespace com.google.apps.peltzer.client.tutorial
                   PeltzerMain.Instance.peltzerController.controllerGeometry.volumeInserterOverlay.GetComponent<Overlay>().downIcon);
                 PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.PELTZER_THUMBSTICK);
                 PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.PELTZER_TOUCHPAD_DOWN);
-                PeltzerMain.Instance.GetFloatingMessage().Show("Perfect", TextPosition.CENTER, true);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Perfect!", TextPosition.CENTER, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 iceCreamTutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -633,7 +633,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.attentionCaller.Recolor(AttentionCaller.Element.PELTZER_TRIGGER);
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
                 // Show instructions.
-                PeltzerMain.Instance.GetFloatingMessage().Show("Place the cherry on top", TextPosition.FULL_SIDE);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Place the cherry on top!", TextPosition.FULL_SIDE);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("INSERT_ANOTHER_SPHERE");
             }
 
@@ -655,7 +655,7 @@ namespace com.google.apps.peltzer.client.tutorial
                   tutorial.cherryPlaceHolder.offset);
                 if (dist > DISTANCE_TOLERANCE)
                 {
-                    PeltzerMain.Instance.GetFloatingMessage().Show("Try again", TextPosition.FULL_SIDE);
+                    PeltzerMain.Instance.GetFloatingMessage().Show("Try again!", TextPosition.FULL_SIDE);
                     return false;
                 }
                 cherryPlaced = true;
@@ -690,7 +690,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.model.ApplyCommand(new DeleteMeshCommand(CHERRY_PLACEHOLDER_MESH_ID));
                 PeltzerMain.Instance.GetFloatingMessage().ShowHeader("");
                 PeltzerMain.Instance.GetFloatingMessage()
-                  .Show("Let's paint it <color=#CD0000>RED</color>", TextPosition.CENTER_NO_TITLE);
+                  .Show("Let's paint it <color=#CD0000>RED</color>!", TextPosition.CENTER_NO_TITLE);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 tutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -728,7 +728,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
                 // Show instructions.
                 PeltzerMain.Instance.GetFloatingMessage().ShowHeader("Painting");
-                PeltzerMain.Instance.GetFloatingMessage().Show("Pick up the paint brush", TextPosition.BOTTOM);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Pick up the paint brush!", TextPosition.BOTTOM);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("CHOOSE_PAINTBRUSH");
                 // Set all the colors to be allowed so that they aren't greyed out. However changingColors is still disabled
                 // so the user can't select them. We just want them to be colorful for the ripple animation.
@@ -818,7 +818,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 startRippleTime = Time.time + rippleDuration;
 
                 // Show instructions, and play confetti effect this step.
-                PeltzerMain.Instance.GetFloatingMessage().Show("Flip the palette to select <color=#CD0000><b>RED</b></color>", TextPosition.BOTTOM);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Flip the palette to select <color=#CD0000><b>RED</b></color>!", TextPosition.BOTTOM);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("CHOOSE_COLOR");
             }
 
@@ -841,7 +841,7 @@ namespace com.google.apps.peltzer.client.tutorial
                   PeltzerMain.Instance.peltzerController.currentMaterial != MaterialRegistry.DEEP_ORANGE_ID &&
                   PeltzerMain.Instance.peltzerController.currentMaterial != previousMaterial)
                 {
-                    PeltzerMain.Instance.GetFloatingMessage().Show("That's not <color=#CD0000><b>RED</b></color>", TextPosition.BOTTOM);
+                    PeltzerMain.Instance.GetFloatingMessage().Show("That's not <color=#CD0000><b>RED</b></color>.", TextPosition.BOTTOM);
                     return false;
                 }
 
@@ -868,7 +868,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.restrictionManager.SetOnlyAllowedColor(-2);
                 PeltzerMain.Instance.attentionCaller.GreyOutAllColorSwatches();
                 PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.RED_PAINT_SWATCH);
-                PeltzerMain.Instance.GetFloatingMessage().Show("Nice", TextPosition.CENTER, true);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Nice!", TextPosition.CENTER, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 iceCreamTutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -894,7 +894,7 @@ namespace com.google.apps.peltzer.client.tutorial
             public void OnPrepare()
             {
                 // Show instructions.
-                PeltzerMain.Instance.GetFloatingMessage().Show("Paint the cherry <color=#CD0000><b>RED</b></color>", TextPosition.HALF_SIDE);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Paint the cherry <color=#CD0000><b>RED</b></color>!", TextPosition.HALF_SIDE);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("PAINT_COLOR");
                 PeltzerMain.Instance.attentionCaller.Recolor(AttentionCaller.Element.PELTZER_TRIGGER);
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
@@ -969,7 +969,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.attentionCaller.StopMeshGlowing(tutorial.newCherryMeshId);
                 PeltzerMain.Instance.GetFloatingMessage().ShowHeader("");
                 PeltzerMain.Instance.GetFloatingMessage()
-                  .Show("Your friend wants one\nLet's make a copy", TextPosition.CENTER_NO_TITLE, true);
+                  .Show("Your friend wants one.\nLet's make a copy!", TextPosition.CENTER_NO_TITLE, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 tutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -1007,7 +1007,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
                 // Show instructions.
                 PeltzerMain.Instance.GetFloatingMessage().ShowHeader("Copying");
-                PeltzerMain.Instance.GetFloatingMessage().Show("Choose the grab tool", TextPosition.BOTTOM);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Choose the grab tool!", TextPosition.BOTTOM);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("CHOOSE_GRAB");
 
                 // Look at me.
@@ -1044,7 +1044,7 @@ namespace com.google.apps.peltzer.client.tutorial
 
                 // Only the move tool is allowed from now on (so the user can't switch to a different one).
                 PeltzerMain.Instance.restrictionManager.SetOnlyAllowedControllerMode(ControllerMode.move);
-                PeltzerMain.Instance.GetFloatingMessage().Show("First select everything", TextPosition.CENTER, true);
+                PeltzerMain.Instance.GetFloatingMessage().Show("First select everything!", TextPosition.CENTER, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 iceCreamTutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -1063,7 +1063,7 @@ namespace com.google.apps.peltzer.client.tutorial
         private class MultiSelectEverythingStep : ITutorialStep
         {
             private static string DEFAULT_INSTRUCTION =
-              "Click then drag through shapes";
+              "Click then drag through shapes!";
             bool triggerDown;
             int numMeshes;
             bool userTriedAndFailed;
@@ -1138,13 +1138,13 @@ namespace com.google.apps.peltzer.client.tutorial
                     selector.ClearState();
                     // Play error sound.
                     // Play error haptics.
-                    PeltzerMain.Instance.GetFloatingMessage().Show("Missed some\nTry again", TextPosition.HALF_SIDE);
+                    PeltzerMain.Instance.GetFloatingMessage().Show("Missed some.\nTry again!", TextPosition.HALF_SIDE);
                     userTriedAndFailed = true;
                 }
 
                 if (triggerDown)
                 {
-                    PeltzerMain.Instance.GetFloatingMessage().Show("Wave through everything", TextPosition.HALF_SIDE);
+                    PeltzerMain.Instance.GetFloatingMessage().Show("Wave through everything.", TextPosition.HALF_SIDE);
                     userTriedAndFailed = false;
                 }
                 else if (!userTriedAndFailed)
@@ -1171,7 +1171,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 // Disallow undo/redo.
                 PeltzerMain.Instance.restrictionManager.undoRedoAllowed = false;
                 // Congratulate the user on this outstanding victory.
-                PeltzerMain.Instance.GetFloatingMessage().Show("Now that everything is selected let's copy it", TextPosition.CENTER, true);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Now that everything is selected let's copy it!", TextPosition.CENTER, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 iceCreamTutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -1216,7 +1216,7 @@ namespace com.google.apps.peltzer.client.tutorial
             public void OnPrepare()
             {
                 // Show instructions.
-                PeltzerMain.Instance.GetFloatingMessage().Show("Copy the cone", TextPosition.FULL_SIDE);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Copy the cone!", TextPosition.FULL_SIDE);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("COPY");
 
                 PeltzerMain.Instance.restrictionManager.copyingAllowed = true;
@@ -1288,7 +1288,7 @@ namespace com.google.apps.peltzer.client.tutorial
                     PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.PELTZER_THUMBSTICK);
                     PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.PELTZER_TOUCHPAD_LEFT);
 
-                    PeltzerMain.Instance.GetFloatingMessage().Show("Place it next to the original", TextPosition.FULL_SIDE);
+                    PeltzerMain.Instance.GetFloatingMessage().Show("Place it next to the original!", TextPosition.FULL_SIDE);
                     PeltzerMain.Instance.GetFloatingMessage().ShowGIF("INSERT_SPHERE");
                     // Call attention to trigger.
                     PeltzerMain.Instance.attentionCaller.Recolor(AttentionCaller.Element.PELTZER_TRIGGER);
@@ -1313,7 +1313,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.restrictionManager.copyingAllowed = false;
                 PeltzerMain.Instance.restrictionManager.movingMeshesAllowed = false;
                 PeltzerMain.Instance.GetFloatingMessage().ShowHeader("");
-                PeltzerMain.Instance.GetFloatingMessage().Show("Your friend doesn't want a cherry", TextPosition.CENTER_NO_TITLE, true);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Your friend doesn't want a cherry.", TextPosition.CENTER_NO_TITLE, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 tutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -1357,7 +1357,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
                 // Show instructions.
                 PeltzerMain.Instance.GetFloatingMessage().ShowHeader("Erasing");
-                PeltzerMain.Instance.GetFloatingMessage().Show("Grab the eraser", TextPosition.BOTTOM);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Grab the eraser!", TextPosition.BOTTOM);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("CHOOSE_ERASER");
 
                 // Look at me.
@@ -1397,7 +1397,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.attentionCaller.StopGlowing(ControllerMode.delete);
                 PeltzerMain.Instance.attentionCaller.GreyOut(AttentionCaller.Element.PELTZER_TRIGGER);
                 PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
-                PeltzerMain.Instance.GetFloatingMessage().Show("Let's get rid of it", TextPosition.CENTER, true);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Let's get rid of it!", TextPosition.CENTER, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 iceCreamTutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -1423,7 +1423,7 @@ namespace com.google.apps.peltzer.client.tutorial
             public void OnPrepare()
             {
                 // Show instructions.
-                PeltzerMain.Instance.GetFloatingMessage().Show("Erase the\nnew cherry", TextPosition.HALF_SIDE);
+                PeltzerMain.Instance.GetFloatingMessage().Show("Erase the\nnew cherry!", TextPosition.HALF_SIDE);
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("ERASE");
                 PeltzerMain.Instance.attentionCaller.Recolor(AttentionCaller.Element.PELTZER_TRIGGER);
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
@@ -1493,7 +1493,7 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
                 PeltzerMain.Instance.attentionCaller.StopMeshGlowing(tutorial.clonedCherryMeshId);
                 PeltzerMain.Instance.GetFloatingMessage().ShowHeader("");
-                PeltzerMain.Instance.GetFloatingMessage().Show("That's better", TextPosition.CENTER_NO_TITLE, true);
+                PeltzerMain.Instance.GetFloatingMessage().Show("That's better.", TextPosition.CENTER_NO_TITLE, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
                 tutorial.PlaySuccessSound();
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.SIREN,
@@ -1554,7 +1554,7 @@ namespace com.google.apps.peltzer.client.tutorial
 
                 if (congratsTime != 0f && Time.time > congratsTime)
                 {
-                    PeltzerMain.Instance.GetFloatingMessage().Show("Congrats!\nYou've got the basics", TextPosition.CENTER_NO_TITLE);
+                    PeltzerMain.Instance.GetFloatingMessage().Show("Congrats!\nYou've got the basics. :)", TextPosition.CENTER_NO_TITLE);
                     PeltzerMain.Instance.GetFloatingMessage().ShowProgressBar(/*show*/ false);
                     PeltzerMain.Instance.GetFloatingMessage().PlayFinalConfetti();
                     PeltzerMain.Instance.audioLibrary.PlayClip(PeltzerMain.Instance.audioLibrary.tutorialCompletionSound);

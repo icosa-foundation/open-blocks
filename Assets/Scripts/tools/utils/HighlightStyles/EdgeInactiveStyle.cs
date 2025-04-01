@@ -30,8 +30,8 @@ namespace com.google.apps.peltzer.client.tools.utils
 
         public static Material material;
         public static Vector3 selectPositionModel;
-        private static Mesh edgeRenderMesh = new Mesh();
-
+        public static Mesh edgeMesh;
+        private static List<Matrix4x4> matrices = new List<Matrix4x4>();
 
         // Renders edge highlights.
         // There are some obvious optimization opportunities here if profiling shows them to be necessary (mostly reusing
@@ -42,19 +42,13 @@ namespace com.google.apps.peltzer.client.tools.utils
         {
             HashSet<EdgeKey> keys = edgeHighlights.getKeysForStyle((int)EdgeStyles.EDGE_INACTIVE);
             if (keys.Count == 0) { return; }
-            edgeRenderMesh.Clear();
-            int[] indices = new int[edgeHighlights.RenderableCount() * 2];
             Vector3[] vertices = new Vector3[edgeHighlights.RenderableCount() * 2];
-            // Because Unity does not make a "arbitrary data" vertex channel available to us, we're going to abuse the UV
-            // channel to pass per-vertex animation state into the shader.
-            Vector2[] selectData = new Vector2[edgeHighlights.RenderableCount() * 2];
-            Vector3[] normals = new Vector3[edgeHighlights.RenderableCount() * 2];
-            //TODO(bug): setup connectivity info so that we can use correct normals from adjacent faces
-            Vector3 normal = new Vector3(0f, 1f, 0f);
             int i = 0;
-
             float radius2 = InactiveSelectionHighlighter.INACTIVE_HIGHLIGHT_RADIUS *
                             InactiveSelectionHighlighter.INACTIVE_HIGHLIGHT_RADIUS;
+            float scaleFactor = 2;// InactiveRenderer.GetEdgeScaleFactor(worldSpace);
+            matrices.Clear();
+            material.color = new Color(1, 0, 0, 1.0f);
             foreach (EdgeKey key in keys)
             {
                 if (!model.HasMesh(key.meshId)) { continue; }
@@ -64,30 +58,43 @@ namespace com.google.apps.peltzer.client.tools.utils
                 Vector3 diff = vertices[i] - selectPositionModel;
                 float dist2 = Vector3.Dot(diff, diff);
                 float alpha = Mathf.Clamp((radius2 - dist2) / radius2, 0f, 1f);
-
-                indices[i] = i;
                 float animPct = edgeHighlights.GetAnimPct(key);
-                selectData[i] = new Vector2(animPct, alpha);
-                normals[i] = normal;
+
+                // indices[i] = i;
+                // selectData[i] = new Vector2(animPct, alpha);
+                // normals[i] = normal;
                 i++;
                 vertices[i] = mesh.VertexPositionInModelCoords(key.vertexId2);
                 diff = vertices[i] - selectPositionModel;
                 dist2 = Vector3.Dot(diff, diff);
                 alpha = Mathf.Clamp((radius2 - dist2) / radius2, 0f, 1f);
-                indices[i] = i;
-                selectData[i] = new Vector2(animPct, alpha);
-                normals[i] = normal;
+                // if (alpha <= 0.01f) continue;
+
+                // indices[i] = i;
+                // selectData[i] = new Vector2(animPct, alpha);
+                // normals[i] = normal;
+
+                float distance = Vector3.Distance(vertices[i], vertices[i - 1]);
+                Vector3 midpoint = (vertices[i] + vertices[i - 1]) / 2;
+                Vector3 direction = vertices[i] - vertices[i - 1];
+                Quaternion rotation = Quaternion.FromToRotation(Vector3.forward, direction);
+                Vector3 scale = new Vector3(scaleFactor, scaleFactor, distance);
+                Matrix4x4 matrix = Matrix4x4.TRS(midpoint, rotation, scale);
+                matrices.Add(worldSpace.modelToWorld * matrix);
+
                 i++;
             }
-            edgeRenderMesh.vertices = vertices;
+            // edgeRenderMesh.vertices = vertices;
             // These are not actually UVs - we're using the UV channel to pass per-primitive animation data so that edges
             // animate independently.
-            edgeRenderMesh.uv = selectData;
+            // edgeRenderMesh.uv = selectData;
             // Since we're using a line geometry shader we need to set the mesh up to supply data as lines.
-            edgeRenderMesh.SetIndices(indices, MeshTopology.Lines, 0 /* submesh id */, false /* recalculate bounds */);
+            // edgeRenderMesh.SetIndices(indices, MeshTopology.Lines, 0 /* submesh id */, false /* recalculate bounds */);
             if (edgeHighlights.RenderableCount() > 0)
             {
-                Graphics.DrawMesh(edgeRenderMesh, worldSpace.modelToWorld, material, 0);
+                // Graphics.DrawMesh(edgeRenderMesh, worldSpace.modelToWorld, material, 0);
+                Graphics.DrawMeshInstanced(edgeMesh, 0, material, matrices);
+
             }
         }
     }

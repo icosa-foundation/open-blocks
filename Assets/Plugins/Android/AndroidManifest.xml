@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:installLocation="auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-feature android:name="android.hardware.vr.headtracking" android:required="true" android:version="1"/>
+    <application
+        android:allowBackup="false"
+        tools:replace="android:allowBackup"
+        android:requestLegacyExternalStorage="true">
+        <activity
+            android:launchMode="singleTask"
+            android:name="com.unity3d.player.UnityPlayerActivity"
+            android:screenOrientation="landscape">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="com.oculus.intent.category.VR"/>
+            </intent-filter>
+            <meta-data android:name="com.oculus.vr.focusaware" android:value="true"/>
+        </activity>
+        <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
+        <meta-data android:name="pvr.app.type" android:value="vr" />
+    </application>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="com.oculus.permission.USE_SCENE" />
+</manifest>

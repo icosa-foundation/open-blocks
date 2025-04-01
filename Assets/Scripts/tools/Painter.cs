@@ -27,7 +27,7 @@ namespace com.google.apps.peltzer.client.tools
     /// <summary>
     ///   Tool for painting meshes and faces.
     /// </summary>
-    public class Painter : MonoBehaviour
+    public class Painter : MonoBehaviour, IBaseTool
     {
         public ControllerMain controllerMain;
         /// <summary>
@@ -67,7 +67,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private Dictionary<int, HashSet<int>> seenMeshesAndFaces = new Dictionary<int, HashSet<int>>();
         /// <summary>
-        ///   A pre-allocated dictionary of properties by face, used to avoid constructor overhead, initialized to a 
+        ///   A pre-allocated dictionary of properties by face, used to avoid constructor overhead, initialized to a
         /// </summary>
         private Dictionary<int, FaceProperties> propsByFace = new Dictionary<int, FaceProperties>(MMesh.MAX_FACES);
         /// <summary>

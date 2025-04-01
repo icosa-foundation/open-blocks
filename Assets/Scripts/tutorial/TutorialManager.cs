@@ -123,7 +123,7 @@ namespace com.google.apps.peltzer.client.tutorial
         private const float RADIUS_MAX = 0.3f;
         private const float STAGGER_TIME = 0.0008f;
 
-        private Lighting polyLighting;
+        // private Lighting polyLighting;
         private bool animatingIn;
         private bool animatingOut;
         private float timeStartedAnimating;
@@ -141,7 +141,7 @@ namespace com.google.apps.peltzer.client.tutorial
 
         public void Start()
         {
-            polyLighting = ObjectFinder.ComponentById<Lighting>("ID_Lighting");
+            // polyLighting = ObjectFinder.ComponentById<Lighting>("ID_Lighting");
             finishEffectPrefab = Resources.Load<ParticleSystem>("Tutorial/FinishEffect");
         }
 
