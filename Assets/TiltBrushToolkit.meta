@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/TiltBrushToolkit.meta
 guid: 33a1e3ab4f3b2074a917603213c18416
+========
+guid: 74d8eac92e3ca04468ad71a5e3645286
+>>>>>>>> origin/main:Assets/Rendering/deleteme.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}

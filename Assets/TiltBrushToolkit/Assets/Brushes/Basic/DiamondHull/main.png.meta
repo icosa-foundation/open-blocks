@@ -1,15 +1,23 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/TiltBrushToolkit/Assets/Brushes/Basic/DiamondHull/main.png.meta
 guid: 2a6e5a1bbfe8dd240ba16ff658d95cd3
 timeCreated: 1525713743
 licenseType: Pro
+========
+guid: c1dc23d4bd257b24abc3aaa2e3ffb17c
+>>>>>>>> origin/main:Assets/FG.png.meta
 TextureImporter:
   fileIDToRecycleName: {}
   externalObjects: {}
+<<<<<<<< HEAD:Assets/TiltBrushToolkit/Assets/Brushes/Basic/DiamondHull/main.png.meta
   serializedVersion: 4
+========
+  serializedVersion: 13
+>>>>>>>> origin/main:Assets/FG.png.meta
   mipmaps:
     mipMapMode: 0
     enableMipMap: 1
-    sRGBTexture: 1
+    sRGBTexture: 0
     linearTexture: 0
     fadeOut: 0
     borderMipMap: 0
@@ -22,7 +30,15 @@ TextureImporter:
     externalNormalMap: 0
     heightScale: 0.25
     normalMapFilter: 0
+    flipGreenChannel: 0
   isReadable: 0
+<<<<<<<< HEAD:Assets/TiltBrushToolkit/Assets/Brushes/Basic/DiamondHull/main.png.meta
+========
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+>>>>>>>> origin/main:Assets/FG.png.meta
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -31,12 +47,21 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
+<<<<<<<< HEAD:Assets/TiltBrushToolkit/Assets/Brushes/Basic/DiamondHull/main.png.meta
     filterMode: -1
     aniso: -1
     mipBias: -1
     wrapU: -1
     wrapV: -1
     wrapW: -1
+========
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
+>>>>>>>> origin/main:Assets/FG.png.meta
   nPOTScale: 1
   lightmap: 0
   compressionQuality: 50
@@ -52,11 +77,40 @@ TextureImporter:
   spriteTessellationDetail: -1
   textureType: 0
   textureShape: 1
+<<<<<<<< HEAD:Assets/TiltBrushToolkit/Assets/Brushes/Basic/DiamondHull/main.png.meta
   maxTextureSizeSet: 0
   compressionQualitySet: 0
   textureFormatSet: 0
   platformSettings:
   - buildTarget: DefaultTexturePlatform
+========
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 512
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+>>>>>>>> origin/main:Assets/FG.png.meta
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
@@ -65,13 +119,41 @@ TextureImporter:
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
+    maxTextureSize: 512
+    resizeAlgorithm: 0
+    textureFormat: 50
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 1
+    ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
   spriteSheet:
     serializedVersion: 2
     sprites: []
     outline: []
     physicsShape: []
+<<<<<<<< HEAD:Assets/TiltBrushToolkit/Assets/Brushes/Basic/DiamondHull/main.png.meta
   spritePackingTag: 
+========
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable: {}
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+>>>>>>>> origin/main:Assets/FG.png.meta
   userData: 
   assetBundleName: 
   assetBundleVariant: 

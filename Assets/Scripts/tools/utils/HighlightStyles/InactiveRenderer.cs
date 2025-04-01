@@ -27,42 +27,16 @@ namespace com.google.apps.peltzer.client.tools.utils
     public class InactiveRenderer
     {
         private static float SCALE_THRESH = 1f;
-        private const int MAX_INDEX_COUNT = 64000;
 
-        private class StaticCachedRenderMesh
-        {
-            public Vector3[] vertices;
-            public Vector3[] normals;
-            public List<int> indices;
-            public int numElements;
-            public bool dirty;
-            public Mesh mesh;
+        private static readonly int SelectPositionWorld = Shader.PropertyToID("_SelectPositionWorld");
+        private static readonly int SelectRadius = Shader.PropertyToID("_SelectRadius");
 
-            public StaticCachedRenderMesh()
-            {
-                mesh = new Mesh();
-                vertices = new Vector3[MAX_INDEX_COUNT];
-                normals = new Vector3[MAX_INDEX_COUNT];
-                indices = new List<int>(MAX_INDEX_COUNT);
-                numElements = 0;
-                dirty = false;
-                vertices[0] = new Vector3(999999, 999999, 999999);
-                vertices[1] = new Vector3(-999999, -999999, -999999);
-                mesh.vertices = vertices;
-                // Make sure this never gets culled
-                mesh.RecalculateBounds();
-            }
-
-            public void Clear()
-            {
-                Array.Clear(vertices, 0, vertices.Length);
-                Array.Clear(normals, 0, normals.Length);
-                indices.Clear();
-                numElements = 0;
-                dirty = false;
-            }
-        }
-
+        private HashSet<EdgeKey> edgeSet = new HashSet<EdgeKey>();
+        private List<Matrix4x4> edgeMatrices = new List<Matrix4x4>();
+        public Mesh edgeMesh; // used to render the inactive thick "wireframe" highlights
+        private List<VertexKey> vertexKeys = new List<VertexKey>();
+        private List<Matrix4x4> vertexMatrices = new List<Matrix4x4>();
+        public Mesh vertexMesh;
 
         private Model model;
         private WorldSpace worldSpace;
@@ -87,25 +61,14 @@ namespace com.google.apps.peltzer.client.tools.utils
         {
             this.model = model;
             this.worldSpace = worldSpace;
-            availableEdgeMeshes = new List<StaticCachedRenderMesh>();
-            edgeMeshes = new List<StaticCachedRenderMesh>();
-            meshesInEdgeMeshes = new HashSet<int>();
-            availablePointMeshes = new List<StaticCachedRenderMesh>();
-            pointMeshes = new List<StaticCachedRenderMesh>();
-            meshesInPointMeshes = new HashSet<int>();
-            inactiveEdgeMaterial = new Material(materialLibrary.edgeInactiveMaterial);
-            inactivePointMaterial = new Material(materialLibrary.pointInactiveMaterial);
-            baseVertexScale = inactivePointMaterial.GetFloat("_PointSphereRadius");
-            baseEdgeScale = inactiveEdgeMaterial.GetFloat("_PointSphereRadius");
+            inactiveEdgeMaterial = new Material(materialLibrary.pointEdgeInactiveMaterial);
+            inactivePointMaterial = new Material(materialLibrary.pointEdgeInactiveMaterial);
+            // baseVertexScale = inactivePointMaterial.GetFloat("_PointSphereRadius");
+            // baseEdgeScale = inactiveEdgeMaterial.GetFloat("_PointSphereRadius");
+            // these are the default values for the scale of the vertex and edge highlights
+            baseVertexScale = 0.006f;
+            baseEdgeScale = 0.005f;
         }
-
-        private List<StaticCachedRenderMesh> availableEdgeMeshes;
-        private List<StaticCachedRenderMesh> edgeMeshes;
-        private HashSet<int> meshesInEdgeMeshes;
-
-        private List<StaticCachedRenderMesh> availablePointMeshes;
-        private List<StaticCachedRenderMesh> pointMeshes;
-        private HashSet<int> meshesInPointMeshes;
 
         /// <summary>
         /// Returns the scale factor used for rendering inactive vertices - used by selector to make sure selection radii
@@ -125,21 +88,15 @@ namespace com.google.apps.peltzer.client.tools.utils
             return (Mathf.Min(worldSpace.scale, SCALE_THRESH) / SCALE_THRESH) * baseEdgeScale;
         }
 
-        private List<EdgeKey> edges = new List<EdgeKey>();
-        private HashSet<EdgeKey> edgeSet = new HashSet<EdgeKey>();
-
         /// <summary>
         /// Turns on edge wireframes for supplied meshes. (Will use cached data if a mesh has been passed to this method
         /// since the most recent clear.)
         /// </summary>
-        public void TurnOnEdgeWireframe(IEnumerable<int> meshIds)
+        public void TurnOnEdgeWireframe(IEnumerable<int> meshIds, HashSet<EdgeKey> selectedEdges, EdgeKey hoveredEdge)
         {
-            edges.Clear();
             edgeSet.Clear();
             foreach (int meshId in meshIds)
             {
-                if (meshesInEdgeMeshes.Contains(meshId)) continue;
-
                 if (!model.HasMesh(meshId)) continue;
 
                 MMesh polyMesh = model.GetMesh(meshId);
@@ -148,44 +105,31 @@ namespace com.google.apps.peltzer.client.tools.utils
                 {
                     for (int i = 0; i < curFace.vertexIds.Count; i++)
                     {
-                        edgeSet.Add(new EdgeKey(meshId, curFace.vertexIds[i], curFace.vertexIds[(i + 1) % curFace.vertexIds.Count]));
+                        var edge = new EdgeKey(meshId, curFace.vertexIds[i], curFace.vertexIds[(i + 1) % curFace.vertexIds.Count]);
+
+                        if (selectedEdges.Contains(edge) || edge.Equals(hoveredEdge)) continue;
+
+                        edgeSet.Add(edge);
                     }
                 }
-                meshesInEdgeMeshes.Add(meshId);
             }
-            edges = edgeSet.ToList();
-            int curEdge = 0;
-            while (curEdge < edges.Count)
+            if (edgeSet.Count == 0) return;
+            float scaleFactor = GetEdgeScaleFactor(worldSpace);
+            var sphereRadii = GetVertScaleFactor(worldSpace) * 2;
+            edgeMatrices.Clear();
+            foreach (EdgeKey key in edgeSet)
             {
-                StaticCachedRenderMesh curMesh = GetCurEdgeMesh();
-                int curMeshStartingIndex = curMesh.numElements;
-                int edgesSpaceStillNeeded = (edges.Count - curEdge) * 2;
-                int edgeSpaceLeftInCurMesh = MAX_INDEX_COUNT - curMesh.numElements;
-                int edgesToPutInCurMesh = Mathf.Min(edgesSpaceStillNeeded, edgeSpaceLeftInCurMesh);
-                int curMeshIndex = curMeshStartingIndex;
-                curMesh.dirty = curMesh.dirty || edgesToPutInCurMesh > 0;
-                for (int i = curEdge; i < edgesToPutInCurMesh / 2 + curEdge; i++)
-                {
-                    int index = curMeshIndex + 2 * (i - curEdge);
-                    if (!model.HasMesh(edges[i].meshId)) continue;
-
-                    MMesh polyMesh = model.GetMesh(edges[i].meshId);
-
-                    curMesh.vertices[index] =
-                      polyMesh.VertexPositionInModelCoords(edges[i].vertexId1);
-                    curMesh.vertices[index + 1] =
-                      polyMesh.VertexPositionInModelCoords(edges[i].vertexId2);
-                    curMesh.normals[index] = new Vector3(0f, 1f, 0f);
-                    curMesh.normals[index + 1] = new Vector3(0f, 1f, 0f);
-
-                    curMesh.indices.Add(index);
-                    curMesh.indices.Add(index + 1);
-                }
-                curEdge += edgesToPutInCurMesh / 2;
-                curMesh.numElements += edgesToPutInCurMesh;
-                curMesh.mesh.vertices = curMesh.vertices;
-                curMesh.mesh.normals = curMesh.normals;
-                curMesh.mesh.SetIndices(curMesh.indices.ToArray(), MeshTopology.Lines, 0, false /* recalculateBounds */);
+                if (!model.HasMesh(key.meshId)) continue;
+                MMesh mesh = model.GetMesh(key.meshId);
+                if (!mesh.HasVertex(key.vertexId1) || !mesh.HasVertex(key.vertexId2)) continue;
+                var v1 = mesh.VertexPositionInModelCoords(key.vertexId1);
+                var v2 = mesh.VertexPositionInModelCoords(key.vertexId2);
+                float distance = Vector3.Distance(v1, v2) - sphereRadii;
+                Vector3 midpoint = (v1 + v2) / 2;
+                Vector3 direction = v2 - v1;
+                Quaternion rotation = Quaternion.FromToRotation(Vector3.forward, direction);
+                Vector3 scale = new Vector3(scaleFactor, scaleFactor, distance);
+                edgeMatrices.Add(Matrix4x4.TRS(midpoint, rotation, scale));
             }
         }
 
@@ -193,52 +137,34 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// Turns on vertex wireframes for supplied meshes. (Will use cached data if a mesh has been passed to this method
         /// since the most recent clear.)
         /// </summary>
-        public void TurnOnPointWireframe(IEnumerable<int> meshIds)
+        public void TurnOnPointWireframe(IEnumerable<int> meshIds, HashSet<VertexKey> selectedVerts, VertexKey hoveredVert)
         {
-            List<VertexKey> vertexKeys = new List<VertexKey>();
+            // Debug.Log(meshIds.ToList().Count + " " + selectedVerts.Count + " " + hoveredVert);
+            vertexKeys.Clear();
             foreach (int meshId in meshIds)
             {
-                if (meshesInPointMeshes.Contains(meshId)) continue;
-
                 if (!model.HasMesh(meshId)) continue;
 
                 MMesh polyMesh = model.GetMesh(meshId);
 
                 foreach (int vertId in polyMesh.GetVertexIds())
                 {
-                    vertexKeys.Add(new VertexKey(meshId, vertId));
+                    var vertexKey = new VertexKey(meshId, vertId);
+                    if (selectedVerts.Contains(vertexKey) || vertexKey.Equals(hoveredVert)) continue;
+                    vertexKeys.Add(vertexKey);
                 }
-                meshesInPointMeshes.Add(meshId);
             }
 
-            int curVert = 0;
-            while (curVert < vertexKeys.Count)
+            if (vertexKeys.Count == 0) return;
+            float scaleFactor = GetVertScaleFactor(worldSpace);
+            vertexMatrices.Clear();
+            foreach (VertexKey key in vertexKeys)
             {
-                StaticCachedRenderMesh curMesh = GetCurPointMesh();
-                int curMeshStartingIndex = curMesh.numElements;
-                int vertexSpaceStillNeeded = (vertexKeys.Count - curVert);
-                int vertSpaceLeftInCurMesh = MAX_INDEX_COUNT - curMesh.numElements;
-                int numVertsToPutInCurMesh = Mathf.Min(vertexSpaceStillNeeded, vertSpaceLeftInCurMesh);
-                int curMeshIndex = curMeshStartingIndex;
-                curMesh.dirty = curMesh.dirty || numVertsToPutInCurMesh > 0;
-                for (int i = curVert; i < numVertsToPutInCurMesh + curVert; i++)
-                {
-                    int index = curMeshIndex + i - curVert;
-
-                    if (!model.HasMesh(vertexKeys[i].meshId)) continue;
-
-                    MMesh polyMesh = model.GetMesh(vertexKeys[i].meshId);
-
-                    curMesh.vertices[index] =
-                      polyMesh.VertexPositionInModelCoords(vertexKeys[i].vertexId);
-                    curMesh.indices.Add(index);
-
-                }
-                curVert += numVertsToPutInCurMesh;
-                curMesh.numElements += numVertsToPutInCurMesh;
-                curMesh.mesh.vertices = curMesh.vertices;
-                curMesh.mesh.normals = curMesh.normals;
-                curMesh.mesh.SetIndices(curMesh.indices.ToArray(), MeshTopology.Points, 0, false /* recalculateBounds */);
+                if (!model.HasMesh(key.meshId)) continue;
+                MMesh mesh = model.GetMesh(key.meshId);
+                if (!mesh.HasVertex(key.vertexId)) continue;
+                var v = mesh.VertexPositionInModelCoords(key.vertexId);
+                vertexMatrices.Add(Matrix4x4.TRS(v, Quaternion.identity, Vector3.one * scaleFactor));
             }
         }
 
@@ -251,80 +177,16 @@ namespace com.google.apps.peltzer.client.tools.utils
             selectPositionWorld = worldSpace.ModelToWorld(selectPositionModel);
         }
 
-        private StaticCachedRenderMesh GetCurEdgeMesh()
-        {
-            if (edgeMeshes.Count == 0)
-            {
-                if (availableEdgeMeshes.Count > 0)
-                {
-                    int lastAvailableMeshIndex = availableEdgeMeshes.Count - 1;
-                    StaticCachedRenderMesh mesh = availableEdgeMeshes[lastAvailableMeshIndex];
-                    edgeMeshes.Add(mesh);
-                    availableEdgeMeshes.RemoveAt(lastAvailableMeshIndex);
-                    return mesh;
-                }
-                StaticCachedRenderMesh newMesh = new StaticCachedRenderMesh();
-                edgeMeshes.Add(newMesh);
-                return newMesh;
-            }
-
-            StaticCachedRenderMesh lastMesh = edgeMeshes[edgeMeshes.Count - 1];
-            if (lastMesh.numElements >= MAX_INDEX_COUNT)
-            {
-                StaticCachedRenderMesh newMesh = new StaticCachedRenderMesh();
-                edgeMeshes.Add(newMesh);
-                return newMesh;
-            }
-            return lastMesh;
-        }
-
-        private StaticCachedRenderMesh GetCurPointMesh()
-        {
-            if (pointMeshes.Count == 0)
-            {
-                if (availablePointMeshes.Count > 0)
-                {
-                    int lastAvailableMeshIndex = availablePointMeshes.Count - 1;
-                    StaticCachedRenderMesh mesh = availablePointMeshes[lastAvailableMeshIndex];
-                    pointMeshes.Add(mesh);
-                    availablePointMeshes.RemoveAt(lastAvailableMeshIndex);
-                    return mesh;
-                }
-                StaticCachedRenderMesh newMesh = new StaticCachedRenderMesh();
-                pointMeshes.Add(newMesh);
-                return newMesh;
-            }
-
-            StaticCachedRenderMesh lastMesh = pointMeshes[pointMeshes.Count - 1];
-            if (lastMesh.numElements >= MAX_INDEX_COUNT)
-            {
-                StaticCachedRenderMesh newMesh = new StaticCachedRenderMesh();
-                pointMeshes.Add(newMesh);
-                return newMesh;
-            }
-            return lastMesh;
-        }
-
         /// <summary>
         /// Clears all vertices and edges out of the inactive renderer.
         /// </summary>
         public void Clear()
         {
-            availableEdgeMeshes.AddRange(edgeMeshes);
-            edgeMeshes.Clear();
-            foreach (StaticCachedRenderMesh mesh in availableEdgeMeshes)
-            {
-                mesh.Clear();
-            }
-            meshesInEdgeMeshes.Clear();
+            edgeMatrices.Clear();
+            vertexMatrices.Clear();
+            edgeMatricesWorld.Clear();
+            vertexMatricesWorld.Clear();
 
-            availablePointMeshes.AddRange(pointMeshes);
-            pointMeshes.Clear();
-            foreach (StaticCachedRenderMesh mesh in availablePointMeshes)
-            {
-                mesh.Clear();
-            }
-            meshesInPointMeshes.Clear();
             // If the user has changed the flag, we handle it here so that next time they use the tool it's updated.
             // It's a bit janky, but since this is handling a console command rather than real UX it's okay - if we go
             // with the new radius it will be set from the start and this just goes away.
@@ -333,45 +195,55 @@ namespace com.google.apps.peltzer.client.tools.utils
               : InactiveSelectionHighlighter.OLD_INACTIVE_HIGHLIGHT_RADIUS;
         }
 
+        private List<Matrix4x4> edgeMatricesWorld = new List<Matrix4x4>();
         /// <summary>
         /// Renders the inactive edges.
         /// </summary>
         public void RenderEdges()
         {
-            if (showEdges && edgeMeshes.Count > 0)
+            // Debug.Log("Edges: " + showEdges + " " + edgeMatrices.Count);
+            if (showEdges && edgeMatrices.Count > 0)
             {
-                float scaleFactor = GetEdgeScaleFactor(worldSpace);
-                inactiveEdgeMaterial.SetFloat("_PointSphereRadius", scaleFactor);
-                inactiveEdgeMaterial.SetFloat("_VertexSphereRadius", scaleFactor);
-                inactiveEdgeMaterial.SetVector("_SelectPositionWorld", selectPositionWorld);
-                inactiveEdgeMaterial.SetFloat("_SelectRadius", InactiveSelectionHighlighter.INACTIVE_HIGHLIGHT_RADIUS);
-                for (int i = 0; i < edgeMeshes.Count; i++)
+                // the edgeMatrices don't get updated every frame
+                // so when we move the model in world space we need to update the edgeMatrices in world space
+                edgeMatricesWorld.Clear();
+                for (int i = 0; i < edgeMatrices.Count; i++)
                 {
-                    Graphics.DrawMesh(edgeMeshes[i].mesh, worldSpace.modelToWorld, inactiveEdgeMaterial,
-                      MeshWithMaterialRenderer.DEFAULT_LAYER);
+                    edgeMatricesWorld.Add(worldSpace.modelToWorld * edgeMatrices[i]);
+                }
+
+                if (edgeMatricesWorld.Count > 0)
+                {
+                    inactiveEdgeMaterial.SetVector(SelectPositionWorld,
+                        new Vector4(selectPositionWorld.x, selectPositionWorld.y, selectPositionWorld.z, 0.0f));
+                    inactiveEdgeMaterial.SetFloat(SelectRadius, InactiveSelectionHighlighter.INACTIVE_HIGHLIGHT_RADIUS);
+
+                    Graphics.DrawMeshInstanced(edgeMesh, 0, inactiveEdgeMaterial, edgeMatricesWorld);
                 }
             }
         }
 
+        private List<Matrix4x4> vertexMatricesWorld = new List<Matrix4x4>();
         /// <summary>
         /// Renders the inactive vertices.
         /// </summary>
         public void RenderPoints()
         {
-            if (showPoints && pointMeshes.Count > 0)
+            // Debug.Log("Points: " + showPoints + " " + vertexMatrices.Count);
+            vertexMatricesWorld.Clear();
+            for (int i = 0; i < vertexMatrices.Count; i++)
             {
-                float scaleFactor = GetVertScaleFactor(worldSpace);
-                inactivePointMaterial.SetFloat("_PointSphereRadius", scaleFactor);
-                inactivePointMaterial.SetVector("_SelectPositionWorld", selectPositionWorld);
-                inactivePointMaterial.SetFloat("_SelectRadius", InactiveSelectionHighlighter.INACTIVE_HIGHLIGHT_RADIUS);
-                for (int i = 0; i < pointMeshes.Count; i++)
-                {
-                    Graphics.DrawMesh(pointMeshes[i].mesh, worldSpace.modelToWorld, inactivePointMaterial,
-                      MeshWithMaterialRenderer.DEFAULT_LAYER);
-                }
+                // TODO: maybe we could only do this when the world space has actually changed
+                vertexMatricesWorld.Add(worldSpace.modelToWorld * vertexMatrices[i]);
+            }
+            if (vertexMatricesWorld.Count > 0)
+            {
+                inactivePointMaterial.SetVector(SelectPositionWorld,
+                    new Vector4(selectPositionWorld.x, selectPositionWorld.y, selectPositionWorld.z, 0.0f));
+                inactivePointMaterial.SetFloat(SelectRadius, InactiveSelectionHighlighter.INACTIVE_HIGHLIGHT_RADIUS);
+
+                Graphics.DrawMeshInstanced(vertexMesh, 0, inactivePointMaterial, vertexMatricesWorld);
             }
         }
-
     }
-
 }

@@ -29,11 +29,11 @@ namespace com.google.apps.peltzer.client.tools.utils
     {
         private static readonly float HIGHLIGHT_EMISSIVE_AMOUNT = 0.7f;
         private static readonly float HIGHLIGHT_ALPHA = 0.75f;
-        public static Material material;
         public static Material silhouetteMaterial;
         private static Dictionary<MaterialRegistry.MaterialType, MaterialCycler> matDict;
         private static MaterialCycler silhouetteInstancer;
         private static Material gemInstance;
+        private static readonly int MultiplicitiveAlpha = Shader.PropertyToID("_MultiplicitiveAlpha");
 
         public static void Setup()
         {
@@ -84,20 +84,20 @@ namespace com.google.apps.peltzer.client.tools.utils
                     Mesh curMesh = MeshCycler.GetTempMeshForMeshMatId(key, matId, out needToPopulateMesh);
                     Material curMaterial = animPct >= .99f ? matDict[MaterialRegistry.GetMaterialType(matId)].GetFixedMaterial() :
                       matDict[MaterialRegistry.GetMaterialType(matId)].GetInstanceOfMaterial();
-                    curMaterial.SetFloat("_EmissiveAmount", emissiveAmount);
-                    float transparentMult = curMaterial.GetFloat("_MultiplicitiveAlpha") * (1 - animPct) + HIGHLIGHT_ALPHA * animPct;
-                    curMaterial.SetFloat("_MultiplicitiveAlpha", transparentMult);
+                    // curMaterial.SetFloat("_EmissiveAmount", emissiveAmount);
+                    float transparentMult = curMaterial.GetFloat(MultiplicitiveAlpha) * (1 - animPct) + HIGHLIGHT_ALPHA * animPct;
+                    curMaterial.SetFloat(MultiplicitiveAlpha, transparentMult);
                     Material curSilMat = animPct >= .99f ? silhouetteInstancer.GetFixedMaterial()
                       : silhouetteInstancer.GetInstanceOfMaterial();
-                    curSilMat.SetFloat("_EmissiveAmount", emissiveAmount);
-                    curSilMat.SetFloat("_MultiplicitiveAlpha", transparentMult);
+                    // curSilMat.SetFloat("_EmissiveAmount", emissiveAmount);
+                    curSilMat.SetFloat(MultiplicitiveAlpha, transparentMult);
                     // Set w component to indicate active vs inactive.
                     selectorWorldPosition.w = 0f;
                     if (PeltzerMain.Instance.GetSelector().isMultiSelecting)
                     {
                         selectorWorldPosition.w = 1.0f;
                     }
-                    curMaterial.SetVector("_SelectorPosition", selectorWorldPosition);
+                    // curMaterial.SetVector("_SelectorPosition", selectorWorldPosition);
                     curMaterial.renderQueue = 3000;
                     if (needToPopulateMesh)
                     {
@@ -107,7 +107,7 @@ namespace com.google.apps.peltzer.client.tools.utils
                         curMesh.RecalculateNormals();
                     }
 
-                    Graphics.DrawMesh(curMesh, worldSpace.modelToWorld, curMaterial, 0);
+                    // Graphics.DrawMesh(curMesh, worldSpace.modelToWorld, curMaterial, 0);
                     Graphics.DrawMesh(curMesh, worldSpace.modelToWorld, curSilMat, 0);
                 }
             }

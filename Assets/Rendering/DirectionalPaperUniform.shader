@@ -51,7 +51,7 @@ Shader "Mogwai/DirectionalPaperUniform"
         float3 ennoisenedNormal;
         float4 ennoisenedColorMult;
         generatePapercraftColorNormal(fragment.normal, fragment.tangent, fragment.binormal, fragment.objectPosition, ennoisenedColorMult, ennoisenedNormal);
-
+				
         float3 lightOut = 0;
 
         float3 V = normalize(_WorldSpaceCameraPos.xyz - fragment.worldPosition.xyz);

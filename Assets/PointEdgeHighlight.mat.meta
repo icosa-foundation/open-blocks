@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Resources/OVRPlatformToolSettings.asset.meta
+guid: 310edd45f67e51e459ed91eb15d18e86
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+========
+guid: 6cad5b83c13bdc9419767ec6e0a6b377
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+>>>>>>>> origin/main:Assets/PointEdgeHighlight.mat.meta
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -4,6 +4,13 @@
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
+<<<<<<<< HEAD:Assets/TiltBrushToolkit/Assets/Brushes/Basic/FlatSingleSided/Flat_0.mat
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_Name: Flat_0
+  m_Shader: {fileID: 4800000, guid: fc163d24473ddd04881e4fc188ed5802, type: 3}
+  m_ShaderKeywords: _EMISSION
+========
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -15,6 +22,7 @@ Material:
   m_InvalidKeywords:
   - _ALPHAPREMULTIPLY_ON
   - _EMISSION
+>>>>>>>> origin/main:Assets/Rendering/DirectionalUniformSlider.mat
   m_LightmapFlags: 1
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -87,7 +95,11 @@ Material:
     - _UVSec: 0
     - _ZWrite: 0
     m_Colors:
+<<<<<<<< HEAD:Assets/TiltBrushToolkit/Assets/Brushes/Basic/FlatSingleSided/Flat_0.mat
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+========
     - _Color: {r: 0.36547706, g: 0.38134643, b: 0.4056604, a: 0.103}
+>>>>>>>> origin/main:Assets/Rendering/DirectionalUniformSlider.mat
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _EmissiveColor: {r: 0, g: 0, b: 0, a: 0}
     - _OverrideColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}

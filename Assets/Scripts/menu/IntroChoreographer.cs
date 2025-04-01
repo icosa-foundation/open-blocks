@@ -230,7 +230,7 @@ namespace com.google.apps.peltzer.client.menu
                     foreach (var animator in introAnim.GetComponentsInChildren<Animator>(includeInactive: true))
                     {
                         animator.speed = INTRO_ANIMATION_SPEED_SCALE;
-                    };
+                    }
                     audioLibrary.PlayClip(audioLibrary.startupSound);
                     countdown = INTRO_ANIMATION_DURATION;
                     SetSkyboxLightFactor(0f);
@@ -299,8 +299,9 @@ namespace com.google.apps.peltzer.client.menu
             // once intro is done put background layer on main camera culling mask
             var mainCamera = Camera.main;
             mainCamera.cullingMask |= 1 << LayerMask.NameToLayer("Background");
-            Destroy(mainCamera.transform.Find("SkyCamera").gameObject);
             Destroy(mainCamera.transform.Find("LogoCamera").gameObject);
+            // disable logo light too
+            GameObject.FindWithTag("LogoLight")?.gameObject.SetActive(false);
             yield return null;
         }
 

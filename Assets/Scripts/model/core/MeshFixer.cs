@@ -146,7 +146,7 @@ namespace com.google.apps.peltzer.client.model.core
                     if (!mesh.TryGetFace(faceId, out face))
                     {
                         continue;
-                    };
+                    }
                     vertsToCheck.UnionWith(face.vertexIds);
                 }
 

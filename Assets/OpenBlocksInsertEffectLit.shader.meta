@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/TiltBrushToolkit/Materials/PbrBlendDoubleSided.shader.meta
+guid: 54d2dca8417702d4e849ce93707a354b
+========
+guid: 2ef16cbbea46a884e8677ce659368dfc
+>>>>>>>> origin/main:Assets/OpenBlocksInsertEffectLit.shader.meta
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

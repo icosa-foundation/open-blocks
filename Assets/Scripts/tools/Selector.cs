@@ -309,8 +309,11 @@ namespace com.google.apps.peltzer.client.tools
             multiselectTrail.transform.position = -1f * worldSpace.WorldToModel(Vector3.zero);
             multiSelectEnabled = selectModes.Contains(peltzerController.mode);
 
-            this.edgeRadiusWorld = materialLibrary.edgeHighlightMaterial.GetFloat("_PointSphereRadius");
-            this.pointRadiusWorld = materialLibrary.pointHighlightMaterial.GetFloat("_PointSphereRadius");
+            // urp shaders don't have _PointSphereRadius
+            // this.edgeRadiusWorld = materialLibrary.edgeHighlightMaterial.GetFloat("_PointSphereRadius");
+            // this.pointRadiusWorld = materialLibrary.pointHighlightMaterial.GetFloat("_PointSphereRadius");
+            this.edgeRadiusWorld = 0.002f;
+            this.pointRadiusWorld = 0.002f;
         }
 
         void Update()

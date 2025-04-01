@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Resources/OculusRuntimeSettings.asset.meta
+guid: 25323f81f9a6efb40872b9e6a34e53ad
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+========
+guid: a79bef7b63223524da9e1545d0840fbf
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+>>>>>>>> origin/main:Assets/PointEdgeInactive.mat.meta
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
