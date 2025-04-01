@@ -1193,7 +1193,9 @@ namespace com.google.apps.peltzer.client.model.core
         public bool MMeshFromObj(string[] filenames, out MMesh mesh)
         {
             string modelFileContents = ModelImportController.FileToString(filenames[0]);
-            string materialFileContents = ModelImportController.FileToString(filenames[1]);
+            string materialFileContents = "";
+            if (!string.IsNullOrEmpty(filenames[1]))
+                materialFileContents = ModelImportController.FileToString(filenames[1]);
             if (!ObjImporter.MMeshFromObjFile(modelFileContents, materialFileContents, GenerateMeshId(), out mesh)
                 || !CanAddMesh(mesh))
             {
