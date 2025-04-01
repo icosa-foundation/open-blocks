@@ -297,7 +297,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return $"{ApiBaseUrl}/assets?{CommonQueryParams(QueryParamsFeatured)}";
         }
 
-        private static string commonQueryParams
+        private static string LikedModelsSearchUrl()
         {
             return $"{ApiBaseUrl}/users/me/likedassets?{CommonQueryParams(QueryParamsLiked)}";
         }
@@ -306,15 +306,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             return $"{ApiBaseUrl}/users/me/assets?{CommonQueryParams(QueryParamsUser)}";
         }
-
-        public static string maxPolyModelTrianglesParam => maxPolyModelTriangles == -1 ? "" : $"triangleCountMax={maxPolyModelTriangles}";
-
-        // Old way
-        // private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&curated=true&{commonQueryParams}";
-        // New way
-        private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&orderBy=BEST&{commonQueryParams}&{maxPolyModelTrianglesParam}";
-        private static string LikedModelsSearchUrl() => $"{ApiBaseUrl}/users/me/likedassets?{commonQueryParams}&{maxPolyModelTrianglesParam}";
-        private static string YourModelsSearchUrl() => $"{ApiBaseUrl}/users/me/assets?{commonQueryParams}";
 
         // Some regex.
         private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";

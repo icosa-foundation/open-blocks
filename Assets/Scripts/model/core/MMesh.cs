@@ -44,7 +44,7 @@ namespace com.google.apps.peltzer.client.model.core
     ///   An MMesh can be attached to (and detached from) a GameObject to make it render on the screen. In particular,
     ///   it is rendered by the MeshWithMaterialRenderer behavior, which takes the mesh, transforms into World Space
     ///   and renders it.
-    ///
+    /// 
     ///   Partial class is to allow GeometryOperation to be an inner class but have its own file.
     /// </summary>
     public partial class MMesh
