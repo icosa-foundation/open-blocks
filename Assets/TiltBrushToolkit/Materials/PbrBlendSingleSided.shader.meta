@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/TiltBrushToolkit/Materials/PbrBlendSingleSided.shader.meta
 guid: f2ac7f21f7ce99242a92ce666e3a7df8
-========
-guid: 08624aa9df5de8047bd66830d0554114
->>>>>>>> origin/main:Assets/OpenBlocksLit.shader.meta
 ShaderImporter:
   externalObjects: {}
   defaultTextures: []
