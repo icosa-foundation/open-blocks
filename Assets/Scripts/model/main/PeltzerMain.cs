@@ -866,7 +866,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Model.
             exporter = gameObject.AddComponent<Exporter>();
             // Setup FBX exporter.
-            // FbxExporter.Setup();
+            //FbxExporter.Setup();
 
             // Starts the call to authenticate.
             zandriaCreationsManager.Setup();

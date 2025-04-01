@@ -79,9 +79,9 @@ namespace TiltBrush
         /// <param name="line">Current line</param>
         public KeyboardKeyEventArgs(KeyboardKeyUI key, bool isPress, string line)
         {
-            Key     = key;
+            Key = key;
             IsPress = isPress;
-            Line    = line;
+            Line = line;
         }
 
         #endregion
@@ -95,19 +95,19 @@ namespace TiltBrush
     {
         #region Inspector Properties/Serialized Fields
 
-        [SerializeField] private KeyboardKeyType                 _keyType;
-        [SerializeField] private KeyboardKeyLayoutType           _layout;
-        [SerializeField] private string                     _printShift;
-        [SerializeField] private string                     _printNoShift;
-        [SerializeField] private string                     _printAltGr;
-        [SerializeField] private string                     _forceLabel;
+        [SerializeField] private KeyboardKeyType _keyType;
+        [SerializeField] private KeyboardKeyLayoutType _layout;
+        [SerializeField] private string _printShift;
+        [SerializeField] private string _printNoShift;
+        [SerializeField] private string _printAltGr;
+        [SerializeField] private string _forceLabel;
 #if USE_LOCALIZATION
         [SerializeField] private LocalizedString            _LocalizedLabel;
 #endif
-        [SerializeField] private TMPro.TMP_Text             _singleLayoutValue;
-        [SerializeField] private TMPro.TMP_Text             _multipleLayoutValueTopLeft;
-        [SerializeField] private TMPro.TMP_Text             _multipleLayoutValueBottomLeft;
-        [SerializeField] private TMPro.TMP_Text             _multipleLayoutValueBottomRight;
+        [SerializeField] private TMPro.TMP_Text _singleLayoutValue;
+        [SerializeField] private TMPro.TMP_Text _multipleLayoutValueTopLeft;
+        [SerializeField] private TMPro.TMP_Text _multipleLayoutValueBottomLeft;
+        [SerializeField] private TMPro.TMP_Text _multipleLayoutValueBottomRight;
         [SerializeField] private List<KeyboardToggleSymbolsPage> _toggleSymbols;
 
         // Hidden in the custom inspector
@@ -270,7 +270,7 @@ namespace TiltBrush
         {
             if (_keyType == KeyboardKeyType.ToggleSymbols)
             {
-                _toggleSymbols       = entries;
+                _toggleSymbols = entries;
                 _currentSymbolsIndex = 0;
 
                 if (entries != null)
@@ -461,7 +461,7 @@ namespace TiltBrush
                     }
                     break;
                 case KeyboardKeyType.ToggleSymbols:
-                    _singleLayoutValue.text = NextToggleSymbolsPage != null    ? NextToggleSymbolsPage.Label :
+                    _singleLayoutValue.text = NextToggleSymbolsPage != null ? NextToggleSymbolsPage.Label :
                         CurrentToggleSymbolsPage != null ? CurrentToggleSymbolsPage.Label : string.Empty;
                     break;
             }

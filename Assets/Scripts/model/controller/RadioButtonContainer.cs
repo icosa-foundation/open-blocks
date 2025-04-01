@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.model.main;
 using UnityEngine;
 using UnityEngine.Events;
@@ -21,12 +22,19 @@ namespace com.google.apps.peltzer.client.model.controller
     public class RadioButtonContainer : MonoBehaviour
     {
         public UnityEvent<RadioButtonOption> m_Action;
+        private string m_Value;
+        public string Value => m_Value;
 
         private RadioButtonOption[] m_Options;
 
-        void Start()
+        void Awake()
         {
             m_Options = gameObject.GetComponentsInChildren<RadioButtonOption>();
+        }
+
+        public void ShowOptionByIndex(int index, bool show)
+        {
+            m_Options[index].gameObject.SetActive(show);
         }
 
         /// <summary>
@@ -38,17 +46,38 @@ namespace com.google.apps.peltzer.client.model.controller
             return PeltzerMain.Instance.restrictionManager.menuActionsAllowed;
         }
 
-        public void ActivateOption(PeltzerMain main, RadioButtonOption activatedOption)
+        public void SetInitialOption(string option)
+        {
+
+            foreach (var optionBtn in m_Options)
+            {
+                if (optionBtn.m_Value == option)
+                {
+                    optionBtn.isCurrentOption = true;
+                    optionBtn.sprite.color = PolyMenuMain.SELECTED_ICON_COLOR;
+                }
+                else
+                {
+                    optionBtn.isCurrentOption = false;
+                    optionBtn.sprite.color = PolyMenuMain.UNSELECTED_ICON_COLOR;
+                }
+            }
+        }
+
+        public void ActivateOption(PeltzerMain main, RadioButtonOption activatedOptionBtn)
         {
             if (!ActionIsAllowed()) return;
-            if (activatedOption.isActive) return;
-            foreach (var option in m_Options)
+            if (!activatedOptionBtn.isActive) return;
+            foreach (var optionBtn in m_Options)
             {
-                option.isActive = false;
+                optionBtn.isCurrentOption = false;
+                optionBtn.sprite.color = PolyMenuMain.UNSELECTED_ICON_COLOR;
             }
-            activatedOption.isActive = false;
+            activatedOptionBtn.isCurrentOption = true;
+            activatedOptionBtn.sprite.color = PolyMenuMain.SELECTED_ICON_COLOR;
             main.audioLibrary.PlayClip(main.audioLibrary.menuSelectSound);
-            m_Action.Invoke(activatedOption);
+            m_Value = activatedOptionBtn.m_Value;
+            m_Action.Invoke(activatedOptionBtn);
         }
     }
 }

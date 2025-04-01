@@ -16,6 +16,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using com.google.apps.peltzer.client.api_clients.assets_service_client;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.controller;
@@ -61,8 +62,8 @@ namespace com.google.apps.peltzer.client.menu
         // Set in editor.
         public Sprite signedOutIcon;
 
-        private static Color UNSELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 0.117f);
-        private static Color SELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 1f);
+        public static Color UNSELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 0.117f);
+        public static Color SELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 1f);
         private static Color UNSELECTED_AVATAR_COLOR = new Color(1f, 1f, 1f, 150f / 255f);
         private static Color SELECTED_AVATAR_COLOR = new Color(1f, 1f, 1f, 1f);
         private static Vector3 DEFAULT_AVATAR_SCALE = new Vector3(0.1875f, 0.25f, 0.75f);
@@ -93,7 +94,7 @@ namespace com.google.apps.peltzer.client.menu
 
         private PaletteController paletteController;
         private ControllerMain controllerMain;
-        private ZandriaCreationsManager creationsManager;
+        public ZandriaCreationsManager creationsManager;
         private ZandriaCreationHandler currentCreationHandler;
 
         // The possible menuModes in the order they can be moved through using the palette touchpad.
@@ -892,6 +893,8 @@ namespace com.google.apps.peltzer.client.menu
             // First close and remove the information for an already open Details panel.
             // The user is able to click on a new creation by clicking under the Details panel before closing.
 
+            // TODO Load the model at this point (at least on Quest)?
+
             if (creation != null)
             {
                 currentCreationHandler = creation.handler;
@@ -1014,7 +1017,7 @@ namespace com.google.apps.peltzer.client.menu
             return menuModes[menuIndex].menuSection;
         }
 
-        private CreationType CurrentCreationType()
+        public CreationType CurrentCreationType()
         {
             return menuModes[menuIndex].creationType;
         }
@@ -1087,7 +1090,7 @@ namespace com.google.apps.peltzer.client.menu
             // We ignore the 'bool' output of the below: it it fails, we'll continue with the mesh in its current scale.
             Scaler.TryScalingMeshes(meshes, 1f / PeltzerMain.Instance.worldSpace.scale);
 
-            // We give them new IDs at this point so they won't collide with anything already in the scene or 
+            // We give them new IDs at this point so they won't collide with anything already in the scene or
             // (much more likely) with a previous import of this same creation. We need to store a local list of usedIds
             // to avoid some rare, but potential, cases where the same ID is generated twice during this import.
             List<int> usedIds = new List<int>(meshes.Count);
@@ -1134,6 +1137,52 @@ namespace com.google.apps.peltzer.client.menu
         public bool DetailsMenuIsActive()
         {
             return activeMenu == Menu.DETAILS_MENU;
+        }
+
+        private void _SetModelParam(Action<ApiQueryParameters> modifyQuery)
+        {
+            var q = CurrentQueryParams;
+            modifyQuery(q);
+            creationsManager.SetQueryParams(CurrentCreationType(), q);
+        }
+
+        public ApiQueryParameters CurrentQueryParams => creationsManager.GetQueryParams(CurrentCreationType());
+
+        public void RefreshResults()
+        {
+            var type = CurrentCreationType();
+            // TODO - can we avoid losing work we've already done here?
+            creationsManager.ClearLoad(type);
+            creationsManager.StartLoad(type);
+            ApplyMenuChange(menuIndex, true);
+            offlineModelsMenu.SetActive(false);
+            modelsMenu.SetActive(true);
+        }
+
+        public void SetApiSearchText(string text)
+        {
+            _SetModelParam(q => q.SearchText = text);
+        }
+
+        public void SetApiCategoryFilter(string category)
+        {
+            if (ChoicesHelper.IsValidChoice<CategoryChoices>(category))
+            {
+                _SetModelParam(q => q.Category = category);
+            }
+        }
+
+        public void SetApiOrderBy(string orderBy)
+        {
+            if (ChoicesHelper.IsValidChoice<OrderByChoices>(orderBy))
+            {
+                _SetModelParam(q => q.OrderBy = orderBy);
+            }
+        }
+
+        public void SetApiTriangleCountMax(int max)
+        {
+            _SetModelParam(q => q.TriangleCountMax = max);
         }
     }
 }

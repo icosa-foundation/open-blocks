@@ -23,6 +23,7 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.tutorial;
+using com.google.apps.peltzer.client.zandria;
 using TiltBrush;
 using UnityEngine.Serialization;
 
@@ -61,6 +62,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject oculusRiftHolder;
 
         private Dictionary<ControllerMode, ToolOptionsPanel> m_ToolOptionsPanels;
+        private FilterPanel m_FilterPanel;
         public GameObject m_InitialPopupAnchor;
         public GameObject m_Popups;
         public ActionButton m_PanelOptionsButton;
@@ -308,6 +310,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
             var panels = GetComponentsInChildren<ToolOptionsPanel>(true);
             SetupToolOptionsPanels(panels);
+            m_FilterPanel = GetComponentInChildren<FilterPanel>(includeInactive: true);
             keyboardGameobject = transform.GetComponentInChildren<KeyboardUI>(includeInactive: true).gameObject;
 
             bool shouldNagForTutorial = !PlayerPrefs.HasKey(TutorialManager.HAS_EVER_STARTED_TUTORIAL_KEY);
@@ -1366,7 +1369,39 @@ namespace com.google.apps.peltzer.client.model.controller
             EnableToolOptionPanels(!m_ToolOptionsPanelsEnabled);
         }
 
-        public void EnableKeyboard(EventHandler<string> onSubmit, bool preservePreviousContent = false)
+        public void EnableFilterPanel(bool enable)
+        {
+            if (enable)
+            {
+                m_FilterPanel.Enable();
+                m_FilterPanel.InitControls();
+            }
+            else
+            {
+                m_FilterPanel.Disable();
+            }
+        }
+
+        public void ToggleFilterPanel()
+        {
+            EnableFilterPanel(!m_FilterPanel.IsOpen);
+        }
+
+        public void ToggleSearchKeyboard()
+        {
+            var mainMenu = PeltzerMain.Instance.GetPolyMenuMain();
+            EnableKeyboard(onSubmit, mainMenu.CurrentQueryParams.SearchText);
+            var keyboardUI = keyboardGameobject.GetComponent<KeyboardUI>();
+
+            void onSubmit(object sender, string text)
+            {
+                mainMenu.SetApiSearchText(text);
+                mainMenu.RefreshResults();
+                ToggleSearchKeyboard();
+            }
+        }
+
+        public void EnableKeyboard(EventHandler<string> onSubmit, string initialText = "")
         {
             var keyboardUI = keyboardGameobject.GetComponent<KeyboardUI>();
             void OnKeyPressed(object sender, KeyboardKeyEventArgs args)
@@ -1377,7 +1412,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     keyboardGameobject.SetActive(false);
                 }
             }
-            if (!preservePreviousContent) keyboardUI.Clear();
+            keyboardUI.SetInitialText(initialText);
             keyboardGameobject.SetActive(true);
             keyboardUI.KeyPressed += OnKeyPressed;
         }

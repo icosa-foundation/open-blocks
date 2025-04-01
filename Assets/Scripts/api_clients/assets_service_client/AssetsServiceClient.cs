@@ -180,11 +180,55 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
     }
 
+    public class ApiQueryParameters
+    {
+        public string SearchText;
+        public int TriangleCountMax;
+        public string License;
+        public string OrderBy;
+        public string Format;
+        public string Curated;
+        public string Category;
+    }
+
     public class AssetsServiceClient : MonoBehaviour
     {
         // Defaults
         public static string DEFAULT_WEB_BASE_URL = "https://icosa.gallery";
         private static string DEFAULT_API_BASE_URL = "https://api.icosa.gallery/v1";
+
+        public static ApiQueryParameters QueryParamsUser = new()
+        {
+            SearchText = "",
+            TriangleCountMax = maxPolyModelTriangles,
+            License = LicenseChoices.ANY,
+            OrderBy = OrderByChoices.NEWEST,
+            Format = FormatChoices.BLOCKS,
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
+
+        public static ApiQueryParameters QueryParamsLiked = new()
+        {
+            SearchText = "",
+            TriangleCountMax = maxPolyModelTriangles,
+            License = LicenseChoices.CREATIVE_COMMONS_BY,
+            OrderBy = OrderByChoices.LIKED_TIME,
+            Format = FormatChoices.BLOCKS,
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
+
+        public static ApiQueryParameters QueryParamsFeatured = new()
+        {
+            SearchText = "",
+            TriangleCountMax = maxPolyModelTriangles,
+            License = LicenseChoices.CREATIVE_COMMONS_BY,
+            OrderBy = OrderByChoices.BEST,
+            Format = FormatChoices.BLOCKS,
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
 
         private static int maxPolyModelTriangles
         {
@@ -230,13 +274,37 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         // Also used as the target for the "Your models" desktop menu
         public static string DEFAULT_SAVE_URL = WebBaseUrl + "/uploads";
 
+        private static string CommonQueryParams(ApiQueryParameters q)
+        {
+            // This might exceed the limit imposed by the server (currently 100)
+            int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
+            string url = $"format={q.Format}&";
+            url += $"pageSize={pageSize}&";
+            url += $"orderBy={q.OrderBy}&";
+            if (q.TriangleCountMax > 0) url += $"triangleCountMax={q.TriangleCountMax}&";
+            if (!string.IsNullOrEmpty(q.SearchText)) url += $"name={q.SearchText}&";
+            if (!string.IsNullOrEmpty(q.License)) url += $"license={q.License}&";
+            if (!string.IsNullOrEmpty(q.Curated)) url += $"curated={q.Curated}&";
+            if (!string.IsNullOrEmpty(q.Category)) url += $"category={q.Category}&";
+            return url;
+        }
+
+        // Old way
+        // private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&curated=true&{commonQueryParams}";
+        // New way
+        private static string FeaturedModelsSearchUrl()
+        {
+            return $"{ApiBaseUrl}/assets?{CommonQueryParams(QueryParamsFeatured)}";
+        }
+
         private static string commonQueryParams
         {
-            get
-            {
-                int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-                return $"&license=CREATIVE_COMMONS_BY&format=BLOCKS&pageSize={pageSize}";
-            }
+            return $"{ApiBaseUrl}/users/me/likedassets?{CommonQueryParams(QueryParamsLiked)}";
+        }
+
+        private static string YourModelsSearchUrl()
+        {
+            return $"{ApiBaseUrl}/users/me/assets?{CommonQueryParams(QueryParamsUser)}";
         }
 
         public static string maxPolyModelTrianglesParam => maxPolyModelTriangles == -1 ? "" : $"triangleCountMax={maxPolyModelTriangles}";
@@ -318,10 +386,12 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             if (type == PolyMenuMain.CreationType.FEATURED)
             {
+                // TODO This assumption may not hold if user changes orderBy
                 mostRecentFeaturedAssetId = firstAssetId;
             }
             else if (type == PolyMenuMain.CreationType.LIKED)
             {
+                // TODO This assumption may not hold if user changes orderBy
                 mostRecentLikedAssetId = firstAssetId;
             }
             objectStoreSearchResult.results = objectStoreEntries.ToArray();

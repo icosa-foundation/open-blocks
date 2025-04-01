@@ -392,7 +392,7 @@ PlayerSettings:
   m_BuildTargetBatching:
   - m_BuildTarget: Standalone
     m_StaticBatching: 1
-    m_DynamicBatching: 0
+    m_DynamicBatching: 1
   m_BuildTargetShaderSettings: []
   m_BuildTargetGraphicsJobs:
   - m_BuildTarget: MacStandaloneSupport
@@ -805,7 +805,7 @@ PlayerSettings:
     tvOS: 1
   scriptingBackend:
     Android: 1
-    Standalone: 0
+    Standalone: 1
     WebGL: 1
     WebPlayer: 0
     iPhone: 1
