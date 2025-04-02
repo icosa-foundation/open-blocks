@@ -558,6 +558,8 @@ namespace com.google.apps.peltzer.client.model.main
         /// </summary>
         public WebRequestManager webRequestManager { get; private set; }
 
+        public UserConfig userConfig { get; private set; }
+
         public PeltzerMain()
         {
             // Working space is a 6m cube centered at the origin.
@@ -580,6 +582,16 @@ namespace com.google.apps.peltzer.client.model.main
 
             // Initializes static buffers we're using for optimizing setting of list values.
             ReMesher.InitBufferCaches();
+
+            userPath = GetUserPath();
+
+            userPath = Path.Combine(userPath, "Blocks");
+            if (!Path.IsPathRooted(userPath))
+            {
+                Debug.Log("Failed to find Documents folder.");
+            }
+
+            GetUserConfig();
 
             // Set up the authentication.
             gameObject.AddComponent<OAuth2Identity>();
@@ -701,14 +713,6 @@ namespace com.google.apps.peltzer.client.model.main
             filePickerBackgroundThread.Start();
 
             // Set up auto-saving.
-            userPath = GetUserPath();
-
-            userPath = Path.Combine(userPath, "Blocks");
-            if (!Path.IsPathRooted(userPath))
-            {
-                Debug.Log("Failed to find Documents folder.");
-            }
-
             modelsPath = Path.Combine(userPath, "Models");
             offlineModelsPath = Path.Combine(userPath, "OfflineModels");
             // TODO(bug): Actually do something incremental with these commands instead of persisting the
@@ -785,6 +789,30 @@ namespace com.google.apps.peltzer.client.model.main
             }
             return userPath;
 #endif
+        }
+
+        private void GetUserConfig()
+        {
+            string configPath = Path.Combine(userPath, "OpenBlocks.cfg");
+            if (!File.Exists(configPath))
+            {
+                userConfig = new UserConfig();
+                // create file
+                using StreamWriter sw = File.CreateText(configPath);
+                sw.WriteLine(JsonUtility.ToJson(userConfig, true));
+            }
+            else
+            {
+                userConfig = JsonUtility.FromJson<UserConfig>(File.ReadAllText(configPath));
+                if (userConfig.GalleryUrl == "")
+                {
+                    PlayerPrefs.DeleteKey(AssetsServiceClient.WEB_BASE_URL_KEY);
+                }
+                else
+                {
+                    AssetsServiceClient.WebBaseUrl = userConfig.GalleryUrl;
+                }
+            }
         }
 
         /// <summary>
