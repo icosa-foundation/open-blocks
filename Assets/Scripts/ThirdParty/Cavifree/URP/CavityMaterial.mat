@@ -38,8 +38,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Exponent: 5
-    - _Intensity: 3.63
+    - _Exponent: 2.5
+    - _Intensity: 1
     - _Multiplier: 0.6
     - _Radius: 1
     - _Sharpness: 0.9
