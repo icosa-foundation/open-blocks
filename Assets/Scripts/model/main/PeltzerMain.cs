@@ -1779,7 +1779,6 @@ namespace com.google.apps.peltzer.client.model.main
                     return reshaper.IsReshaping();
                 case ControllerMode.subdivideFace:
                     return false;
-                case ControllerMode.csg:
                 case ControllerMode.subdividePlane:
                     return false;
                 case ControllerMode.subtract:

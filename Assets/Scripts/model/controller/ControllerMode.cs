@@ -77,5 +77,6 @@ namespace com.google.apps.peltzer.client.model.controller
         /// Mode for plane subdivision.
         /// </summary>
         subdividePlane,
+        subtract
     }
 }
