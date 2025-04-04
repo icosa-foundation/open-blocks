@@ -1732,7 +1732,7 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (mode)
             {
                 case ControllerMode.insertVolume:
-                case ControllerMode.subtract:
+                case ControllerMode.csg:
                     currentOverlayGO = controllerGeometry.volumeInserterOverlay;
                     break;
                 case ControllerMode.insertStroke:
@@ -1781,7 +1781,7 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (mode)
             {
                 case ControllerMode.insertVolume:
-                case ControllerMode.subtract:
+                case ControllerMode.csg:
                     ChangeTouchpadOverlay(TouchpadOverlay.VOLUME_INSERTER);
                     break;
                 case ControllerMode.insertStroke:

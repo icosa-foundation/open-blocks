@@ -1782,6 +1782,7 @@ namespace com.google.apps.peltzer.client.model.main
                 case ControllerMode.subdividePlane:
                     return false;
                 case ControllerMode.subtract:
+                case ControllerMode.csg:
                     return volumeInserter.IsFilling();
             }
 

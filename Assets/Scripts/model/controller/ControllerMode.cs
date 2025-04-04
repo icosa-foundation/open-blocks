@@ -68,7 +68,7 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <summary>
         /// Mode for deleting meshes via subtraction (csg).
         /// </summary>
-        subtract,
+        csg,
         /// <summary>
         /// Mode for deleting edges.
         /// </summary>
@@ -77,5 +77,6 @@ namespace com.google.apps.peltzer.client.model.controller
         /// Mode for plane subdivision.
         /// </summary>
         subdividePlane,
+        subtract
     }
 }
