@@ -24,17 +24,20 @@ namespace com.google.apps.peltzer.client.tools.utils
     /// </summary>
     public class GridHighlighter
     {
-        public static readonly int NO_SHADOWS_LAYER = 9; // NoShadowsLayer -- won't cast a shadow
+        private Mesh sphereMesh;
 
-        private Mesh gridMesh;
+        private List<Matrix4x4> matrices = new();
+        private List<Vector3> gridVertices = new();
+
+        private float sphereScale = 0.005f;
 
         public void InitGrid(int numVertsPerRow, int gridSkip = 1)
         {
-            gridMesh = new Mesh();
-            gridMesh.Clear();
+            // Create a sphere mesh for the grid highlight
+            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphereMesh = sphere.GetComponent<MeshFilter>().mesh;
+            Object.Destroy(sphere);
 
-            List<int> indexList = new List<int>();
-            List<Vector3> vertexList = new List<Vector3>();
             int x, y, z;
             float curX, curY, curZ;
             int index = 0;
@@ -47,28 +50,28 @@ namespace com.google.apps.peltzer.client.tools.utils
                     for (z = 0; z < numVertsPerRow; z++)
                     {
                         curZ = (z - (Mathf.FloorToInt(numVertsPerRow / 2))) * GridUtils.GRID_SIZE;
-                        vertexList.Add(new Vector3(curX, curY, curZ));
-                        indexList.Add(index);
+                        gridVertices.Add(new Vector3(curX, curY, curZ));
+                        matrices.Add(new Matrix4x4());
+
                         index++;
                     }
                 }
             }
-            int[] indices = indexList.ToArray();
-            Vector3[] vertices = vertexList.ToArray();
-
-            gridMesh.vertices = vertices;
-            // Since we're using a point geometry shader we need to set the mesh up to supply data as points.
-            gridMesh.SetIndices(indices, MeshTopology.Points, 0 /* submesh id */, true /* recalculate bounds */);
         }
 
-        public void Render(Vector3 unsnappedGridCenter, Matrix4x4 objectToWorld, Material renderMat, int scale)
+        public void Render(Vector3 unsnappedGridCenter, Matrix4x4 objectToWorld, Material renderMat, float scale)
         {
             // Scale to the correct grid granularity, then translate to the correct model position, then apply model to
             // world transform. This should result in the correct model->world matrix for the grid's vertices.
             Vector3 gridCenter = GridUtils.SnapToGrid(unsnappedGridCenter / scale) * scale;
             Matrix4x4 gridTransform = objectToWorld * Matrix4x4.TRS(gridCenter, Quaternion.identity, Vector3.one)
               * Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, scale));
-            Graphics.DrawMesh(gridMesh, gridTransform, renderMat, NO_SHADOWS_LAYER);
+            Debug.Log(scale);
+            for (var i = 0; i < gridVertices.Count; i++)
+            {
+                matrices[i] = Matrix4x4.TRS(gridTransform.MultiplyPoint3x4(gridVertices[i]), Quaternion.identity, new Vector3(sphereScale, sphereScale, sphereScale));
+            }
+            Graphics.DrawMeshInstanced(sphereMesh, 0, renderMat, matrices);
         }
     }
 }

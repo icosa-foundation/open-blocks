@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using com.google.apps.peltzer.client.model.controller;
+using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
 using UnityEngine;
 
@@ -24,6 +25,8 @@ namespace com.google.apps.peltzer.client.tools.utils
     /// </summary>
     public class GridHighlightComponent : MonoBehaviour
     {
+        private static readonly int SelectPositionWorld = Shader.PropertyToID("_SelectPositionWorld");
+        private static readonly int SelectRadius = Shader.PropertyToID("_SelectRadius");
         // Number of verts to draw in each row of the grid
         private int numVertsInRow = 7;
         // Scale of the grid - a value of 4 will have every visible unity represent 4 grid units for instance.
@@ -36,13 +39,14 @@ namespace com.google.apps.peltzer.client.tools.utils
         private float origWorldSpaceSpacing;
         public void Setup(MaterialLibrary materialLibrary, WorldSpace worldSpace, PeltzerController peltzerController)
         {
-            this.gridMaterial = new Material(materialLibrary.gridMaterial);
+            gridMaterial = new Material(materialLibrary.gridMaterial);
             this.worldSpace = worldSpace;
             this.peltzerController = peltzerController;
-            this.gridHighlight = new GridHighlighter();
-            this.gridHighlight.InitGrid(numVertsInRow, gridScale);
-            this.origWorldSpaceSpacing = GridUtils.GRID_SIZE * gridScale;
+            gridHighlight = new GridHighlighter();
+            gridHighlight.InitGrid(numVertsInRow, gridScale);
+            origWorldSpaceSpacing = GridUtils.GRID_SIZE * gridScale;
         }
+
 
         /// <summary>
         /// Renders the grid if we're in block mode.
@@ -56,7 +60,7 @@ namespace com.google.apps.peltzer.client.tools.utils
 
                 if (worldSpace.scale * GridUtils.GRID_SIZE * gridScale < 0.75f * origWorldSpaceSpacing)
                 {
-                    gridScale = gridScale * 2;
+                    gridScale *= 2;
                 }
                 else if (worldSpace.scale * GridUtils.GRID_SIZE * gridScale > 1.5f * origWorldSpaceSpacing)
                 {
@@ -65,10 +69,10 @@ namespace com.google.apps.peltzer.client.tools.utils
                 Vector3 curPos = peltzerController.LastPositionModel;
                 Vector3 curPosWorld = worldSpace.ModelToWorld(curPos);
                 // Set the shader uniforms for center of grid and fade radius
-                gridMaterial.SetVector("_GridCenterWorld", new Vector4(curPosWorld.x, curPosWorld.y, curPosWorld.z));
+                gridMaterial.SetVector(SelectPositionWorld, new Vector4(curPosWorld.x, curPosWorld.y, curPosWorld.z));
                 float worldSpaceRadius = 0.66f * worldSpace.scale
                   * Mathf.Floor(numVertsInRow / 2) * GridUtils.GRID_SIZE * gridScale;
-                gridMaterial.SetFloat("_GridRenderRadius", worldSpaceRadius);
+                gridMaterial.SetFloat(SelectRadius, worldSpaceRadius);
                 // Have the grid render itself
                 gridHighlight.Render(curPos, worldSpace.modelToWorld, gridMaterial, gridScale);
             }

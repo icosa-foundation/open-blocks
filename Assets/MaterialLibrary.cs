@@ -69,6 +69,8 @@ public class MaterialLibrary : MonoBehaviour
         // transparentMaterial.EnableKeyword("_REMESHER");
         // glassMaterial.EnableKeyword("_REMESHER");
 
+        // gridMaterial.EnableKeyword("_BLEND_TRANSPARENCY");
+
         // meshInsertEffectMaterialBack.EnableKeyword("_REMESHER");
         // meshInsertEffectMaterialBack.EnableKeyword("_INSERT_MESH");
         // meshInsertEffectMaterialFront.EnableKeyword("_REMESHER");
