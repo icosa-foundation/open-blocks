@@ -483,7 +483,7 @@ namespace com.google.apps.peltzer.client.model.render
 
 
 
-        public static MMesh xMMeshFromMeshes(int id,  List<Mesh> meshes)
+        public static MMesh xMMeshFromMeshes(int id, List<Mesh> meshes)
         {
             var verts = new List<Vector3>();
             var tris = new List<int>();
@@ -499,7 +499,7 @@ namespace com.google.apps.peltzer.client.model.render
             var mDict = new Dictionary<Material, List<MeshVerticesAndTriangles>>();
             int matId = MaterialRegistry.GetMaterialIdClosestToColor(Color.white); // TODO
             Material mat = MaterialRegistry.GetMaterialWithAlbedoById(matId);
-            mDict[mat] = new List<MeshVerticesAndTriangles>{mmVertsAndTris};
+            mDict[mat] = new List<MeshVerticesAndTriangles> { mmVertsAndTris };
             return MMeshFromMeshes(id, mDict);
         }
 

@@ -135,9 +135,9 @@ namespace com.google.apps.peltzer.client.model.core
                         vDict,
                         faceProperties[f.idx]
                     ));
-           Initialize(id, offset, rotation, vDict, fDict);
-           RecalcBounds();
-           RecalcReverseTable();
+            Initialize(id, offset, rotation, vDict, fDict);
+            RecalcBounds();
+            RecalcReverseTable();
         }
 
         public MMesh(int id, Vector3 offset, Quaternion rotation,

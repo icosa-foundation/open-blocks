@@ -427,7 +427,7 @@ namespace com.google.apps.peltzer.client.model.core
         public bool AddMMesh(MMesh mesh, Vector3 viewerPosInModelSpace,
                              Vector3 viewerDirInModelSpace, float minDistanceFromViewer)
         {
-            var meshes = new List<MMesh>{mesh};
+            var meshes = new List<MMesh> { mesh };
             return AddMMesh(meshes, viewerPosInModelSpace, viewerDirInModelSpace, minDistanceFromViewer);
         }
 

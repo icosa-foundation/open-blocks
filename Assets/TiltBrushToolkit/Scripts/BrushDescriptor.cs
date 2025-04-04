@@ -17,33 +17,36 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace TiltBrushToolkit {
+namespace TiltBrushToolkit
+{
 
-public class BrushDescriptor : ScriptableObject {
-  [Serializable]
-  public enum Semantic {
-    Unspecified,
-    Position,
-    Vector,
-    XyIsUvZIsDistance,
-    UnitlessVector,
-    XyIsUv,
-  }
+    public class BrushDescriptor : ScriptableObject
+    {
+        [Serializable]
+        public enum Semantic
+        {
+            Unspecified,
+            Position,
+            Vector,
+            XyIsUvZIsDistance,
+            UnitlessVector,
+            XyIsUv,
+        }
 
-  public Material Material { get { return m_Material; } }
-  public SerializableGuid m_Guid;
-  [Tooltip("A human readable name that cannot change, but is not guaranteed to be unique.")]
-  public string m_DurableName;
-  public Material m_Material;
-  public bool m_IsParticle;
+        public Material Material { get { return m_Material; } }
+        public SerializableGuid m_Guid;
+        [Tooltip("A human readable name that cannot change, but is not guaranteed to be unique.")]
+        public string m_DurableName;
+        public Material m_Material;
+        public bool m_IsParticle;
 
-  public int m_uv0Size;
-  public Semantic m_uv0Semantic;
-  public int m_uv1Size;
-  public Semantic m_uv1Semantic;
-  public bool m_bUseNormals;
-  public Semantic m_normalSemantic;
-  public bool m_bFbxExportNormalAsTexcoord1;
-}
+        public int m_uv0Size;
+        public Semantic m_uv0Semantic;
+        public int m_uv1Size;
+        public Semantic m_uv1Semantic;
+        public bool m_bUseNormals;
+        public Semantic m_normalSemantic;
+        public bool m_bFbxExportNormalAsTexcoord1;
+    }
 
 }

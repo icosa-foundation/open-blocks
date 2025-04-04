@@ -14,56 +14,60 @@
 
 using System;
 
-namespace TiltBrushToolkit {
-/// <summary>
-/// Options that indicate how to import a given asset.
-/// </summary>
-[Serializable]
-public struct GltfImportOptions {
-  public enum RescalingMode {
-    // Apply scaleFactor.
-    CONVERT,
-    // Scale the object such that it fits a box of desiredSize, ignoring scaleFactor.
-    FIT,
-  }
+namespace TiltBrushToolkit
+{
+    /// <summary>
+    /// Options that indicate how to import a given asset.
+    /// </summary>
+    [Serializable]
+    public struct GltfImportOptions
+    {
+        public enum RescalingMode
+        {
+            // Apply scaleFactor.
+            CONVERT,
+            // Scale the object such that it fits a box of desiredSize, ignoring scaleFactor.
+            FIT,
+        }
 
-  /// <summary>
-  /// If not set, axis conventions default to the glTF 2.0 standard.
-  /// </summary>
-  public AxisConvention? axisConventionOverride;
+        /// <summary>
+        /// If not set, axis conventions default to the glTF 2.0 standard.
+        /// </summary>
+        public AxisConvention? axisConventionOverride;
 
-  /// <summary>
-  /// What type of rescaling to perform.
-  /// </summary>
-  public RescalingMode rescalingMode;
+        /// <summary>
+        /// What type of rescaling to perform.
+        /// </summary>
+        public RescalingMode rescalingMode;
 
-  /// <summary>
-  /// Scale factor to apply (in addition to unit conversion).
-  /// Only relevant if rescalingMode==CONVERT.
-  /// </summary>
-  public float scaleFactor;
+        /// <summary>
+        /// Scale factor to apply (in addition to unit conversion).
+        /// Only relevant if rescalingMode==CONVERT.
+        /// </summary>
+        public float scaleFactor;
 
-  /// <summary>
-  /// The desired size of the bounding cube, if scaleMode==FIT.
-  /// </summary>
-  public float desiredSize;
+        /// <summary>
+        /// The desired size of the bounding cube, if scaleMode==FIT.
+        /// </summary>
+        public float desiredSize;
 
-  /// <summary>
-  /// If true, recenters this object such that the center of its bounding box
-  /// coincides with the center of the resulting GameObject (recommended).
-  /// </summary>
-  public bool recenter;
+        /// <summary>
+        /// If true, recenters this object such that the center of its bounding box
+        /// coincides with the center of the resulting GameObject (recommended).
+        /// </summary>
+        public bool recenter;
 
-  /// <summary>
-  /// Returns a default set of import options.
-  /// </summary>
-  public static GltfImportOptions Default() {
-    GltfImportOptions options = new GltfImportOptions();
-    options.recenter = true;
-    options.rescalingMode = RescalingMode.CONVERT;
-    options.scaleFactor = 1.0f;
-    options.desiredSize = 1.0f;
-    return options;
-  }
-}
+        /// <summary>
+        /// Returns a default set of import options.
+        /// </summary>
+        public static GltfImportOptions Default()
+        {
+            GltfImportOptions options = new GltfImportOptions();
+            options.recenter = true;
+            options.rescalingMode = RescalingMode.CONVERT;
+            options.scaleFactor = 1.0f;
+            options.desiredSize = 1.0f;
+            return options;
+        }
+    }
 }

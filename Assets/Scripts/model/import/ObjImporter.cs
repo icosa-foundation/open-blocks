@@ -76,7 +76,7 @@ namespace com.google.apps.peltzer.client.model.import
                 {
                     if (currentText.StartsWith("newmtl"))
                     {
-                        string materialName = currentText.Split(new [] {' '}, StringSplitOptions.RemoveEmptyEntries)[1];
+                        string materialName = currentText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1];
                         Color materialColor = Color.white;
 
                         currentText = reader.ReadLine();
@@ -85,13 +85,13 @@ namespace com.google.apps.peltzer.client.model.import
                             currentText = currentText.Trim();
                             if (currentText.StartsWith("Ka"))
                             {
-                                string[] colorString = currentText.Split(new [] {' '}, StringSplitOptions.RemoveEmptyEntries);
+                                string[] colorString = currentText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                                 materialColor = new Color(float.Parse(colorString[1]), float.Parse(colorString[2]),
                                   float.Parse(colorString[3]));
                             }
                             else if (currentText.StartsWith("Kd"))
                             {
-                                string[] colorString = currentText.Split(new [] {'/'}, StringSplitOptions.RemoveEmptyEntries);
+                                string[] colorString = currentText.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
                                 materialColor = new Color(float.Parse(colorString[1]), float.Parse(colorString[2]),
                                   float.Parse(colorString[3]));
                             }
@@ -255,7 +255,7 @@ namespace com.google.apps.peltzer.client.model.import
                             else
                             {
                                 // -1 as vertices are 0-indexed when read but 1-indexed when referenced.
-                                string vIndex = parts[i].Split(new [] {'/'}, StringSplitOptions.RemoveEmptyEntries)[0]; // Ignore texture and normal indices.
+                                string vIndex = parts[i].Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)[0]; // Ignore texture and normal indices.
                                 face.vertexIds.Add(int.Parse(vIndex) - 1);
                             }
                         }

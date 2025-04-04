@@ -17,34 +17,43 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace TiltBrushToolkit {
+namespace TiltBrushToolkit
+{
 
-public class BrushManifest : ScriptableObject {
-  [SerializeField] private BrushDescriptor[] m_Brushes = null;
-  private Dictionary<Guid, BrushDescriptor> m_ByGuid;
-  private ILookup<string, BrushDescriptor> m_ByName;
+    public class BrushManifest : ScriptableObject
+    {
+        [SerializeField] private BrushDescriptor[] m_Brushes = null;
+        private Dictionary<Guid, BrushDescriptor> m_ByGuid;
+        private ILookup<string, BrushDescriptor> m_ByName;
 
-  public IEnumerable<BrushDescriptor> AllBrushes {
-    get { return m_Brushes; }
-  }
+        public IEnumerable<BrushDescriptor> AllBrushes
+        {
+            get { return m_Brushes; }
+        }
 
-  public Dictionary<Guid, BrushDescriptor> BrushesByGuid {
-    get {
-      if (m_ByGuid == null) {
-        m_ByGuid = m_Brushes.ToDictionary(desc => (Guid)desc.m_Guid);
-      }
-      return m_ByGuid;
-    }
-  }
+        public Dictionary<Guid, BrushDescriptor> BrushesByGuid
+        {
+            get
+            {
+                if (m_ByGuid == null)
+                {
+                    m_ByGuid = m_Brushes.ToDictionary(desc => (Guid)desc.m_Guid);
+                }
+                return m_ByGuid;
+            }
+        }
 
-  public ILookup<string, BrushDescriptor> BrushesByName {
-    get {
-      if (m_ByName == null) {
-        m_ByName = m_Brushes.ToLookup(desc => desc.m_DurableName);
-      }
-      return m_ByName; 
-    }
-  }
+        public ILookup<string, BrushDescriptor> BrushesByName
+        {
+            get
+            {
+                if (m_ByName == null)
+                {
+                    m_ByName = m_Brushes.ToLookup(desc => desc.m_DurableName);
+                }
+                return m_ByName;
+            }
+        }
 
 #if true
 #if UNITY_EDITOR
@@ -59,6 +68,6 @@ public class BrushManifest : ScriptableObject {
   }
 #endif
 #endif
-}
+    }
 
 }

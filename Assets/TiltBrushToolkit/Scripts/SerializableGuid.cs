@@ -18,7 +18,8 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace TiltBrushToolkit {
+namespace TiltBrushToolkit
+{
 
 #if UNITY_EDITOR
 // See http://docs.unity3d.com/ScriptReference/PropertyDrawer.html
@@ -49,37 +50,46 @@ public class SerializableGuidDrawer : PropertyDrawer {
 }
 #endif
 
-/// Mostly a drop-in replacement for System.Guid.
-/// Adds the expense of conversions to/from native System.Guid,
-/// but enables Unity serialization.
-[System.Serializable]
-public struct SerializableGuid : IFormattable {
-  [SerializeField]
-  private string m_storage;
+    /// Mostly a drop-in replacement for System.Guid.
+    /// Adds the expense of conversions to/from native System.Guid,
+    /// but enables Unity serialization.
+    [System.Serializable]
+    public struct SerializableGuid : IFormattable
+    {
+        [SerializeField]
+        private string m_storage;
 
-  public static implicit operator SerializableGuid(System.Guid rhs) {
-    return new SerializableGuid { m_storage = rhs.ToString("D") };
-  }
+        public static implicit operator SerializableGuid(System.Guid rhs)
+        {
+            return new SerializableGuid { m_storage = rhs.ToString("D") };
+        }
 
-  public static implicit operator System.Guid(SerializableGuid rhs) {
-    if (rhs.m_storage == null) {
-      return System.Guid.Empty;
+        public static implicit operator System.Guid(SerializableGuid rhs)
+        {
+            if (rhs.m_storage == null)
+            {
+                return System.Guid.Empty;
+            }
+
+            try
+            {
+                return new System.Guid(rhs.m_storage);
+            }
+            catch (System.FormatException)
+            {
+                return System.Guid.Empty;
+            }
+        }
+
+        public override string ToString()
+        {
+            return ToString("D");
+        }
+
+        public string ToString(string format, IFormatProvider provider = null)
+        {
+            return ((System.Guid)this).ToString(format);
+        }
     }
-
-    try {
-      return new System.Guid(rhs.m_storage);
-    } catch (System.FormatException) {
-      return System.Guid.Empty;
-    }
-  }
-
-  public override string ToString() {
-    return ToString("D");
-  }
-
-  public string ToString(string format, IFormatProvider provider=null) {
-    return ((System.Guid)this).ToString(format);
-  }
-}
 
 }  // namespace TiltBrushToolkit

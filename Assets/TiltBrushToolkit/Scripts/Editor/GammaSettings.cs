@@ -16,36 +16,45 @@ using UnityEditor;
 using System.Collections;
 using System.Reflection;
 
-namespace TiltBrushToolkit {
+namespace TiltBrushToolkit
+{
 
-[InitializeOnLoad]
-public class GammaSettings : EditorWindow {
+    [InitializeOnLoad]
+    public class GammaSettings : EditorWindow
+    {
 
-  static ColorSpace m_LastColorSpace;
+        static ColorSpace m_LastColorSpace;
 
-  static GammaSettings() {
-    EditorApplication.update += OnUpdate;
+        static GammaSettings()
+        {
+            EditorApplication.update += OnUpdate;
 
-    SetKeywords();
-    m_LastColorSpace = PlayerSettings.colorSpace;
-  }
+            SetKeywords();
+            m_LastColorSpace = PlayerSettings.colorSpace;
+        }
 
-  static void OnUpdate() {
-    if (m_LastColorSpace != PlayerSettings.colorSpace) {
-      SetKeywords();
-      m_LastColorSpace = PlayerSettings.colorSpace;
+        static void OnUpdate()
+        {
+            if (m_LastColorSpace != PlayerSettings.colorSpace)
+            {
+                SetKeywords();
+                m_LastColorSpace = PlayerSettings.colorSpace;
+            }
+
+        }
+
+        static void SetKeywords()
+        {
+            bool linear = PlayerSettings.colorSpace == ColorSpace.Linear;
+            if (linear)
+            {
+                Shader.EnableKeyword("TBT_LINEAR_TARGET");
+            }
+            else
+            {
+                Shader.DisableKeyword("TBT_LINEAR_TARGET");
+            }
+        }
+
     }
-    
-  }
-
-  static void SetKeywords() {
-    bool linear = PlayerSettings.colorSpace == ColorSpace.Linear;
-    if (linear) {
-      Shader.EnableKeyword("TBT_LINEAR_TARGET");
-    } else {
-      Shader.DisableKeyword("TBT_LINEAR_TARGET");
-    }
-  }
-
-}
 }
