@@ -66,7 +66,6 @@ namespace com.google.apps.peltzer.client.tools.utils
             Vector3 gridCenter = GridUtils.SnapToGrid(unsnappedGridCenter / scale) * scale;
             Matrix4x4 gridTransform = objectToWorld * Matrix4x4.TRS(gridCenter, Quaternion.identity, Vector3.one)
               * Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, scale));
-            Debug.Log(scale);
             for (var i = 0; i < gridVertices.Count; i++)
             {
                 matrices[i] = Matrix4x4.TRS(gridTransform.MultiplyPoint3x4(gridVertices[i]), Quaternion.identity, new Vector3(sphereScale, sphereScale, sphereScale));
