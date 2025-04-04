@@ -143,8 +143,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3611184552196604702}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0000000027939677, y: -0.000000014901159, z: 0.000000014901159,
-    w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0.0081, y: -0, z: -0.0286}
   m_LocalScale: {x: 1, y: 0.005, z: 1}
   m_ConstrainProportionsScale: 0
@@ -403,7 +402,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6860002796404900790}
   - component: {fileID: 9114359347454832236}
-  - component: {fileID: 8481576450856779004}
   - component: {fileID: 3486668620311142874}
   m_Layer: 10
   m_Name: txt
@@ -473,14 +471,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &8481576450856779004
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6930781339467416199}
-  m_CullTransparentMesh: 0
 --- !u!114 &3486668620311142874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -585,7 +575,6 @@ GameObject:
   - component: {fileID: 6009479993242977057}
   - component: {fileID: 3719715863746354126}
   - component: {fileID: 6079554925893633224}
-  - component: {fileID: 2751130957250334960}
   - component: {fileID: 4997985704833923188}
   m_Layer: 10
   m_Name: txt
@@ -663,14 +652,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!222 &2751130957250334960
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7047123461233437969}
-  m_CullTransparentMesh: 0
 --- !u!114 &4997985704833923188
 MonoBehaviour:
   m_ObjectHideFlags: 0

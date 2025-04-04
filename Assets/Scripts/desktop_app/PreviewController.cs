@@ -75,9 +75,13 @@ namespace com.google.apps.peltzer.client.desktop_app
 
         public void SelectPreviewImage()
         {
-            BackgroundWork openDialog = new OpenFileDialogAndCreatePreview(this);
-            PeltzerMain.Instance.DoFilePickerBackgroundWork(openDialog);
-            ChangeMenuPrompt(showClickToInsert: false);
+            // Currently desktop only
+            if (!Application.isMobilePlatform)
+            {
+                BackgroundWork openDialog = new OpenFileDialogAndCreatePreview(this);
+                PeltzerMain.Instance.DoFilePickerBackgroundWork(openDialog);
+                ChangeMenuPrompt(showClickToInsert: false);
+            }
         }
 
         /// <summary>

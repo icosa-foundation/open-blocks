@@ -221,7 +221,7 @@ namespace com.google.apps.peltzer.client.model.render
                         MeshGenContext existingContext = contextDict[material];
                         if (existingContext.verts.Count + newContext.verts.Count > ReMesher.MAX_VERTS_PER_MESH)
                         {
-                            // If adding the new context to this dictionary would exceed the limits of 
+                            // If adding the new context to this dictionary would exceed the limits of
                             // a Unity mesh, continue searching.
                             continue;
                         }
@@ -355,7 +355,7 @@ namespace com.google.apps.peltzer.client.model.render
         }
 
         /// <summary>
-        ///   Adds the locations of the vertices of a given face to a given list, applying a 'wiggle' to them to 
+        ///   Adds the locations of the vertices of a given face to a given list, applying a 'wiggle' to them to
         ///   avoid z-fighting.
         /// </summary>
         /// <param name="mmesh">The mesh containing the face</param>
@@ -469,12 +469,86 @@ namespace com.google.apps.peltzer.client.model.render
         /// <param name="id">id for new mesh</param>
         /// <param name="meshes">the meshes to construct the mmesh from</param>
         /// <returns></returns>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public static MMesh xMMeshFromMeshes(int id, List<Mesh> meshes)
+        {
+            var verts = new List<Vector3>();
+            var tris = new List<int>();
+            foreach (var mesh in meshes)
+            {
+                var meshVerts = mesh.vertices;
+                var meshTris = mesh.triangles;
+                var offset = verts.Count;
+                verts.AddRange(meshVerts);
+                tris.AddRange(meshTris.Select(t => t + offset));
+            }
+            MeshVerticesAndTriangles mmVertsAndTris = new MeshVerticesAndTriangles(verts.ToArray(), tris.ToArray());
+            var mDict = new Dictionary<Material, List<MeshVerticesAndTriangles>>();
+            int matId = MaterialRegistry.GetMaterialIdClosestToColor(Color.white); // TODO
+            Material mat = MaterialRegistry.GetMaterialWithAlbedoById(matId);
+            mDict[mat] = new List<MeshVerticesAndTriangles> { mmVertsAndTris };
+            return MMeshFromMeshes(id, mDict);
+        }
+
+        public static List<MMesh> MMeshFromMeshes(List<Mesh> meshes, List<Color> meshBaseColors)
+        {
+            var mmeshes = new List<MMesh>();
+
+            for (var i = 0; i < meshes.Count; i++)
+            {
+                var mesh = meshes[i];
+                var faces = new List<List<int>>();
+                var faceProperties = new List<FaceProperties>();
+                var colors = mesh.colors;
+                for (var vertexIndex = 0; vertexIndex < mesh.triangles.Length - 3; vertexIndex += 3)
+                {
+                    var face = new List<int>
+                    {
+                        mesh.triangles[vertexIndex],
+                        mesh.triangles[vertexIndex + 1],
+                        mesh.triangles[vertexIndex + 2]
+                    };
+                    faces.Add(face);
+                    Color col = meshBaseColors[i];
+                    if (colors.Length > vertexIndex)
+                    {
+                        col *= colors[vertexIndex];
+                    }
+                    faceProperties.Add(new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(col)));
+                }
+                mmeshes.Add(new MMesh(
+                    PeltzerMain.Instance.model.GenerateMeshId(),
+                    Vector3.zero,
+                    Quaternion.identity,
+                    mesh.vertices.ToList(),
+                    faces,
+                    faceProperties
+                ));
+            }
+            return mmeshes;
+        }
+
         public static MMesh MMeshFromMeshes(int id, Dictionary<Material, List<MeshVerticesAndTriangles>> materialsAndMeshes)
         {
             Dictionary<int, Vertex> verticesById = new Dictionary<int, Vertex>();
             Dictionary<int, Face> facesById = new Dictionary<int, Face>();
+
             int vIdx = 0;
             int faceIdx = 0;
+
             foreach (KeyValuePair<Material, List<MeshVerticesAndTriangles>> pair in materialsAndMeshes)
             {
                 Material material = pair.Key;
@@ -505,8 +579,13 @@ namespace com.google.apps.peltzer.client.model.render
                     }
                 }
             }
+
+
             return new MMesh(id, Vector3.zero, Quaternion.identity, verticesById, facesById);
+
+
         }
+
 
         private static int TryGetMaterialId(Material material)
         {

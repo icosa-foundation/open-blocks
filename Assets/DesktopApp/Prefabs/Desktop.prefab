@@ -413,6 +413,7 @@ GameObject:
   - component: {fileID: 114971071431945964}
   - component: {fileID: 114105701949258060}
   - component: {fileID: 114807676034631320}
+  - component: {fileID: 646193786}
   m_Layer: 5
   m_Name: Desktop
   m_TagString: Untagged
@@ -523,6 +524,7 @@ MonoBehaviour:
   consoleObject: {fileID: 1817304294844502}
   consoleOutput: {fileID: 114952958628801308}
   consoleInput: {fileID: 114015786329258356}
+  modelImportController: {fileID: 0}
 --- !u!114 &114807676034631320
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -533,6 +535,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f8b2b4a89df7a746ae6c5d9d1eec81b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &646193786
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1080698760957680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4df247a1ce7fc884481b604f3498af05, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1090738706222528

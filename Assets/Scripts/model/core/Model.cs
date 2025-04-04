@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.util;
@@ -22,7 +23,9 @@ using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.import;
 using System.Linq;
 using System.Text;
-using com.google.apps.peltzer.client.model.export;
+using com.google.apps.peltzer.client.desktop_app;
+using TiltBrushToolkit;
+using Object = UnityEngine.Object;
 
 namespace com.google.apps.peltzer.client.model.core
 {
@@ -352,6 +355,8 @@ namespace com.google.apps.peltzer.client.model.core
         /// <returns>True if the mesh can be added.</returns>
         public bool CanAddMesh(MMesh mesh)
         {
+
+            return true; // TODO
             return Math3d.ContainsBounds(bounds, mesh.bounds);
         }
 
@@ -419,39 +424,50 @@ namespace com.google.apps.peltzer.client.model.core
         /// <param name="minDistanceFromViewer">The minimum distance from the viewer at which the imported geometry
         /// should be placed.</returns>
         /// <returns>True if the mesh was added to the model.</returns>
-        public bool AddMeshFromObjAndMtl(string objFileContents, string mtlFileContents, Vector3 viewerPosInModelSpace,
-            Vector3 viewerDirInModelSpace, float minDistanceFromViewer)
+        public bool AddMMesh(MMesh mesh, Vector3 viewerPosInModelSpace,
+                             Vector3 viewerDirInModelSpace, float minDistanceFromViewer)
+        {
+            var meshes = new List<MMesh> { mesh };
+            return AddMMesh(meshes, viewerPosInModelSpace, viewerDirInModelSpace, minDistanceFromViewer);
+        }
+
+        public bool AddMMesh(List<MMesh> meshes, Vector3 viewerPosInModelSpace,
+                             Vector3 viewerDirInModelSpace, float minDistanceFromViewer, bool asGroup = false)
         {
             AssertOrThrow.True(writeable, "Model is not writable.");
 
-            MMesh mesh;
-            if (!ObjImporter.MMeshFromObjFile(objFileContents, mtlFileContents, GenerateMeshId(), out mesh) ||
-                !CanAddMesh(mesh))
-            {
-                return false;
-            }
-
             // We will now transform the mesh such that it's in front of the user but at the specified minimum distance.
 
-            // Get the original bounding box.
-            Bounds bounds = mesh.bounds;
-
             // Rotate the mesh to match the direction of the viewer.
-            MMesh.MoveMMesh(mesh, Vector3.zero, Quaternion.FromToRotation(Vector3.forward, viewerDirInModelSpace));
+            Bounds meshBounds = meshes[0].bounds;
+            foreach (var mesh in meshes)
+            {
+                MMesh.MoveMMesh(mesh, Vector3.zero, Quaternion.FromToRotation(Vector3.forward, viewerDirInModelSpace));
+                meshBounds.Encapsulate(mesh.bounds);
+            }
 
             // Now figure out where the center of the imported geometry should be. We can figure this out by starting
             // at the viewer position and then moving along the viewing direction. The distance we should move is
             // the minimum distance plus half the depth of the bounding box, to guarantee that the nearest part of
             // the geometry will be at least minDistanceFromViewer away from the viewer.
-            float distToCenterOfGeometry = minDistanceFromViewer + mesh.bounds.extents.z * 0.5f;
+            float distToCenterOfGeometry = minDistanceFromViewer + meshBounds.extents.z * 0.5f;
             Vector3 correctCenter = viewerPosInModelSpace + distToCenterOfGeometry * viewerDirInModelSpace.normalized;
 
             // Now transform the mesh to place the center of its bounding box in the right place.
-            Vector3 offset = correctCenter - mesh.bounds.center;
-            MMesh.MoveMMesh(mesh, offset, Quaternion.identity);
+            Vector3 offset = correctCenter - meshBounds.center;
 
-            // Finally, add the mesh to the model.
-            AddMesh(mesh);
+            int groupId = GenerateGroupId();
+            foreach (var mesh in meshes)
+            {
+                MMesh.MoveMMesh(mesh, offset, Quaternion.identity);
+                // Finally, add the mesh to the model.
+                AddMesh(mesh);
+                if (asGroup)
+                {
+                    SetMeshGroup(mesh.id, groupId);
+                }
+            }
+
             return true;
         }
 
@@ -1172,6 +1188,60 @@ namespace com.google.apps.peltzer.client.model.core
             }
             builder.Append("]\n");
             return builder.ToString();
+        }
+
+        public bool MMeshFromObj(string[] filenames, out MMesh mesh)
+        {
+            string modelFileContents = ModelImportController.FileToString(filenames[0]);
+            string materialFileContents = "";
+            if (!string.IsNullOrEmpty(filenames[1]))
+                materialFileContents = ModelImportController.FileToString(filenames[1]);
+            if (!ObjImporter.MMeshFromObjFile(modelFileContents, materialFileContents, GenerateMeshId(), out mesh)
+                || !CanAddMesh(mesh))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool MMeshFromOff(string[] filenames, out MMesh mesh)
+        {
+            string fileContents = ModelImportController.FileToString(filenames[0]);
+            if (!OffImporter.MMeshFromOffFile(fileContents, GenerateMeshId(), out mesh) || !CanAddMesh(mesh))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public List<MMesh> MMeshFromGltf(string[] filenames)
+        {
+            Color getBaseColor(Material m)
+            {
+                if (m.HasProperty("_BaseColorFactor"))
+                {
+                    return m.GetColor("_BaseColorFactor");
+                }
+                if (m.HasProperty("_Color"))
+                {
+                    return m.GetColor("_Color");
+                }
+                if (m.HasProperty("_BaseColor"))
+                {
+                    return m.GetColor("_BaseColor");
+                }
+                return Color.white;
+            }
+            IUriLoader loader = new BufferedStreamLoader(
+                filenames[0], Path.GetDirectoryName(filenames[0]));
+            GltfImportOptions options = GltfImportOptions.Default();
+            options.rescalingMode = GltfImportOptions.RescalingMode.FIT;
+            options.desiredSize = 1f;
+            var gltfResult = ImportGltf.Import(filenames[0], loader, null, options);
+            List<Color> meshBaseColors = gltfResult.materials.Select(m => getBaseColor(m)).ToList();
+            var mmeshes = MeshHelper.MMeshFromMeshes(gltfResult.meshes, meshBaseColors);
+            Object.Destroy(gltfResult.root);
+            return mmeshes;
         }
     }
 }
