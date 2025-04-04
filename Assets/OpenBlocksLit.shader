@@ -360,8 +360,12 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
 
             // -------------------------------------
             // Shader Stages
-            #pragma vertex DepthOnlyVertex
+            #pragma vertex OpenBlocksDepthOnlyPassVertex
             #pragma fragment DepthOnlyFragment
+
+            // -------------------------------------
+            // Open Blocks Keywords
+            #pragma multi_compile _ _REMESHER
 
             // -------------------------------------
             // Material Keywords
@@ -381,6 +385,7 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
             // Includes
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
+            #include "OpenBlocksDepthOnlyPass.hlsl"
             ENDHLSL
         }
 
@@ -403,8 +408,12 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
 
             // -------------------------------------
             // Shader Stages
-            #pragma vertex DepthNormalsVertex
+            #pragma vertex OpenBlocksLitDepthNormalsPassVertex
             #pragma fragment DepthNormalsFragment
+
+            // -------------------------------------
+            // Open Blocks Keywords
+            #pragma multi_compile _ _REMESHER
 
             // -------------------------------------
             // Material Keywords
@@ -431,6 +440,7 @@ Shader "Universal Render Pipeline/OpenBlocksLit"
             // Includes
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitDepthNormalsPass.hlsl"
+            #include "OpenBlocksLitDepthNormalsPass.hlsl"
             ENDHLSL
         }
 
