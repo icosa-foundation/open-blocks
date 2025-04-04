@@ -46,7 +46,6 @@ public class MaterialLibrary : MonoBehaviour
     // public Material glassSpecMaterial;
     public Material subtractMaterial; // TODO
     public Material copyMaterial; // TODO
-    public Material snapEffectMaterial; // not sure if ever used!
     public Material meshInsertEffectMaterialFront;
     public Material meshInsertEffectMaterialBack;
     public Material gridMaterial;
