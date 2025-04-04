@@ -108,7 +108,6 @@ namespace com.google.apps.peltzer.client.model.export
         /// </summary>
         static void CallBackFunction(string str)
         {
-            Debug.Log("Callback " + str);
         }
 
         /// <summary>
