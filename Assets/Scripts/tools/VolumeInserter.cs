@@ -304,7 +304,7 @@ namespace com.google.apps.peltzer.client.tools
             return args.ControllerType == ControllerType.PELTZER
               && args.ButtonId == ButtonId.ApplicationMenu
               && args.Action == ButtonAction.DOWN
-              && Features.csgSubtractEnabled;
+              && Features.csgEnabled;
         }
 
         // Touchpad Hover Tests
@@ -686,7 +686,7 @@ namespace com.google.apps.peltzer.client.tools
         /// <param name="args">The controller event arguments.</param>
         private void ControllerEventHandler(object sender, ControllerEventArgs args)
         {
-            // If we are not in insert or subtract mode, do nothing.
+            // If we are not in insert or csg mode, do nothing.
             if ((peltzerController.mode != ControllerMode.insertVolume && peltzerController.mode != ControllerMode.csg)
               || PeltzerMain.Instance.peltzerController.isPointingAtMenu)
             {
