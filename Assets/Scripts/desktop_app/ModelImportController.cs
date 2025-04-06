@@ -227,8 +227,7 @@ namespace com.google.apps.peltzer.client.desktop_app
                             meshes = new List<MMesh> { mesh };
                             break;
                         case FileType.GLTF:
-                            // TODO
-                            //meshes = model.MMeshFromGltf(modelFilenames);
+                            meshes = model.MMeshFromGltf(modelFilenames);
                             break;
                         case FileType.BLOCKS:
                             // Everything done in DoBlocksImport

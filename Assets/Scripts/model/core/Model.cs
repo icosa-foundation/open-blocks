@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.util;
@@ -24,7 +23,8 @@ using com.google.apps.peltzer.client.model.import;
 using System.Linq;
 using System.Text;
 using com.google.apps.peltzer.client.desktop_app;
-using Object = UnityEngine.Object;
+using com.google.apps.peltzer.client.tools;
+using UnityGLTF;
 
 namespace com.google.apps.peltzer.client.model.core
 {
@@ -1213,35 +1213,57 @@ namespace com.google.apps.peltzer.client.model.core
             return true;
         }
 
-        // TODO Update to use UnityGLTF
-        // public List<MMesh> MMeshFromGltf(string[] filenames)
-        // {
-        //     Color getBaseColor(Material m)
-        //     {
-        //         if (m.HasProperty("_BaseColorFactor"))
-        //         {
-        //             return m.GetColor("_BaseColorFactor");
-        //         }
-        //         if (m.HasProperty("_Color"))
-        //         {
-        //             return m.GetColor("_Color");
-        //         }
-        //         if (m.HasProperty("_BaseColor"))
-        //         {
-        //             return m.GetColor("_BaseColor");
-        //         }
-        //         return Color.white;
-        //     }
-        //     IUriLoader loader = new BufferedStreamLoader(
-        //         filenames[0], Path.GetDirectoryName(filenames[0]));
-        //     GltfImportOptions options = GltfImportOptions.Default();
-        //     options.rescalingMode = GltfImportOptions.RescalingMode.FIT;
-        //     options.desiredSize = 1f;
-        //     var gltfResult = ImportGltf.Import(filenames[0], loader, null, options);
-        //     List<Color> meshBaseColors = gltfResult.materials.Select(m => getBaseColor(m)).ToList();
-        //     var mmeshes = MeshHelper.MMeshFromMeshes(gltfResult.meshes, meshBaseColors);
-        //     Object.Destroy(gltfResult.root);
-        //     return mmeshes;
-        // }
+        public List<MMesh> MMeshFromGltf(string[] filenames)
+        {
+            ImportOptions options = new ImportOptions();
+            options.CameraImport = CameraImportOption.None;
+
+            // See https://github.com/KhronosGroup/UnityGLTF/issues/805
+            var uriPath = $"file:///{Uri.UnescapeDataString(filenames[0]).Replace("\\", "/")}";
+            GLTFSceneImporter gltf = new GLTFSceneImporter(uriPath, options);
+
+            gltf.IsMultithreaded = false;
+            AsyncHelpers.RunSync(() => gltf.LoadSceneAsync());
+            // var meshes = gltf.MeshCache.Select(x => x.LoadedMesh).ToList();
+            gltf.CreatedObject.transform.localScale = new Vector3(.1f, .1f, .1f);
+            var meshes = gltf.CreatedObject.GetComponentsInChildren<MeshFilter>().Select(mf => mf.sharedMesh).ToList();
+            var meshMaterials = gltf.CreatedObject.GetComponentsInChildren<MeshRenderer>().Select(mf => mf.material).ToList();
+            var meshBaseColors = meshMaterials.Select(getBaseColor).ToList();
+            var bounds = meshes[0].bounds;
+            foreach (var mesh in meshes.Skip(1))
+            {
+                bounds.Encapsulate(mesh.bounds);
+            }
+            // Calculate scaling factor based on the bounds of all meshes
+            float scalingFactor = 1.0f / Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
+            var mmeshes = MeshHelper.MMeshFromMeshes(meshes, meshBaseColors, scale: scalingFactor);
+            GameObject go = gltf.CreatedObject;
+            if (go != null)
+            {
+                GameObject.Destroy(go);
+            }
+            return mmeshes;
+
+            Color getBaseColor(Material m)
+            {
+                if (m.HasProperty("_BaseColorFactor"))
+                {
+                    return m.GetColor("_BaseColorFactor");
+                }
+                if (m.HasProperty("_Color"))
+                {
+                    return m.GetColor("_Color");
+                }
+                if (m.HasProperty("_BaseColor"))
+                {
+                    return m.GetColor("_BaseColor");
+                }
+                if (m.HasProperty("baseColorFactor"))
+                {
+                    return m.GetColor("baseColorFactor");
+                }
+                return Color.white;
+            }
+        }
     }
 }

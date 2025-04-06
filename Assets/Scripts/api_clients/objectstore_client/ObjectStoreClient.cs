@@ -13,14 +13,12 @@
 // limitations under the License.
 
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.main;
-using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.export;
 using System.Text;
 using com.google.apps.peltzer.client.entitlement;
@@ -28,45 +26,6 @@ using ICSharpCode.SharpZipLib.Zip;
 
 namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 {
-    internal class CreateMeshWork : BackgroundWork
-    {
-        private Dictionary<string, Material> materials;
-        private string objString;
-        private bool successfullyReadMesh;
-        private System.Action<Dictionary<Material, Mesh>> callback;
-
-        private Dictionary<Material, List<MeshVerticesAndTriangles>> meshes;
-
-        internal CreateMeshWork(Dictionary<string, Material> materials, string obj,
-          System.Action<Dictionary<Material, Mesh>> callback)
-        {
-            this.materials = materials;
-            this.objString = obj;
-            this.callback = callback;
-        }
-
-        public void BackgroundWork()
-        {
-            // TODO AB: We need to create mmeshes not MeshVerticesAndTriangles
-            // successfullyReadMesh = ObjImporter.ImportMeshes(objString, materials, out meshes);
-        }
-
-        public void PostWork()
-        {
-            if (successfullyReadMesh)
-            {
-                Dictionary<Material, Mesh> finalizedMeshes = new Dictionary<Material, Mesh>();
-                foreach (KeyValuePair<Material, List<MeshVerticesAndTriangles>> materialAndMesh in meshes)
-                {
-                    foreach (MeshVerticesAndTriangles mesh in materialAndMesh.Value)
-                    {
-                        finalizedMeshes.Add(new Material(materialAndMesh.Key), mesh.ToMesh());
-                    }
-                }
-                callback(finalizedMeshes);
-            }
-        }
-    }
 
     public class ObjectStoreClient
     {
@@ -119,57 +78,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 if (!searchRequest.isNetworkError)
                 {
                     callback(JsonUtility.FromJson<ObjectStoreSearchResult>(searchRequest.downloadHandler.text));
-                }
-            }
-        }
-
-        // Given the entry metadata for an object queries the actual object from the ObjectStore.
-        public IEnumerator GetObject(ObjectStoreEntry entry, System.Action<Dictionary<Material, Mesh>> callback)
-        {
-            // First, check and see if there's a zip file, because it will load a lot faster.
-            if (entry.assets.object_package != null
-                && !string.IsNullOrEmpty(entry.assets.object_package.rootUrl)
-                && !string.IsNullOrEmpty(entry.assets.object_package.baseFile))
-            {
-                StringBuilder zipUrl = new StringBuilder(
-                    OBJECT_STORE_BASE_URL).Append(entry.assets.object_package.rootUrl)
-                    .Append(entry.assets.object_package.baseFile);
-                using (UnityWebRequest fetchRequest = GetNewGetRequest(zipUrl, "text/plain"))
-                {
-                    yield return fetchRequest.Send();
-                    if (!fetchRequest.isNetworkError)
-                    {
-                        PeltzerMain.Instance.DoPolyMenuBackgroundWork(new CreateMeshFromStreamWork(fetchRequest.downloadHandler, callback));
-                    }
-                }
-            }
-            else
-            {
-                StringBuilder url =
-                  new StringBuilder(OBJECT_STORE_BASE_URL).Append(entry.assets.obj.rootUrl).Append(entry.assets.obj.baseFile);
-                using (UnityWebRequest fetchRequest = GetNewGetRequest(url, "text/plain"))
-                {
-                    yield return fetchRequest.Send();
-                    if (!fetchRequest.isNetworkError)
-                    {
-                    }
-                    else
-                    {
-                        if (entry.assets.obj.supportingFiles != null && entry.assets.obj.supportingFiles.Length > 0)
-                        {
-                            using (UnityWebRequest materialFetch =
-                                  GetNewGetRequest(new StringBuilder(OBJECT_STORE_BASE_URL).Append(entry.assets.obj.rootUrl).Append(
-                                  entry.assets.obj.supportingFiles[0]), "text/plain"))
-                            {
-                                yield return materialFetch.Send();
-                                if (!materialFetch.isNetworkError)
-                                {
-                                    PeltzerMain.Instance.DoPolyMenuBackgroundWork(new CreateMeshWork(ObjImporter.ImportMaterials(
-                                        materialFetch.downloadHandler.text), fetchRequest.downloadHandler.text, callback));
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -379,59 +287,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         peltzerFileCallback(peltzerFile);
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        ///   BackgroundWork for copying a stream (a zip-file containing a .obj file and a .mtl file) into memory
-        ///   and then creating a mesh and sending a callback.
-        /// </summary>
-        public class CreateMeshFromStreamWork : BackgroundWork
-        {
-            DownloadHandler downloadHandler;
-            string objFile;
-            string mtlFile;
-            System.Action<Dictionary<Material, Mesh>> callback;
-
-            public CreateMeshFromStreamWork(DownloadHandler downloadHandler, System.Action<Dictionary<Material, Mesh>> callback)
-            {
-                this.downloadHandler = downloadHandler;
-                this.callback = callback;
-            }
-
-            public void BackgroundWork()
-            {
-                // Go through our zip file entries and find the obj and mtl.
-                byte[] zippedData = downloadHandler.data;
-                using (ZipFile zipFile = new ZipFile(new MemoryStream(zippedData)))
-                {
-                    foreach (ZipEntry zipEntry in zipFile)
-                    {
-                        if (zipEntry.Name.EndsWith(".obj"))
-                        {
-                            using (MemoryStream unzippedData = new MemoryStream())
-                            {
-                                CopyStream(zipFile.GetInputStream(zipEntry), unzippedData);
-                                objFile = System.Text.Encoding.Default.GetString(unzippedData.ToArray());
-                            }
-                        }
-                        else if (zipEntry.Name.EndsWith(".mtl"))
-                        {
-                            using (MemoryStream unzippedData = new MemoryStream())
-                            {
-                                CopyStream(zipFile.GetInputStream(zipEntry), unzippedData);
-                                mtlFile = System.Text.Encoding.Default.GetString(unzippedData.ToArray());
-                            }
-                        }
-                    }
-                }
-            }
-
-            public void PostWork()
-            {
-                // Create meshes
-                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new CreateMeshWork(ObjImporter.ImportMaterials(mtlFile),
-                  objFile, callback));
             }
         }
     }
