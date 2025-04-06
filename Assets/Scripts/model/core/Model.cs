@@ -24,7 +24,6 @@ using com.google.apps.peltzer.client.model.import;
 using System.Linq;
 using System.Text;
 using com.google.apps.peltzer.client.desktop_app;
-using TiltBrushToolkit;
 using Object = UnityEngine.Object;
 
 namespace com.google.apps.peltzer.client.model.core
@@ -1214,34 +1213,35 @@ namespace com.google.apps.peltzer.client.model.core
             return true;
         }
 
-        public List<MMesh> MMeshFromGltf(string[] filenames)
-        {
-            Color getBaseColor(Material m)
-            {
-                if (m.HasProperty("_BaseColorFactor"))
-                {
-                    return m.GetColor("_BaseColorFactor");
-                }
-                if (m.HasProperty("_Color"))
-                {
-                    return m.GetColor("_Color");
-                }
-                if (m.HasProperty("_BaseColor"))
-                {
-                    return m.GetColor("_BaseColor");
-                }
-                return Color.white;
-            }
-            IUriLoader loader = new BufferedStreamLoader(
-                filenames[0], Path.GetDirectoryName(filenames[0]));
-            GltfImportOptions options = GltfImportOptions.Default();
-            options.rescalingMode = GltfImportOptions.RescalingMode.FIT;
-            options.desiredSize = 1f;
-            var gltfResult = ImportGltf.Import(filenames[0], loader, null, options);
-            List<Color> meshBaseColors = gltfResult.materials.Select(m => getBaseColor(m)).ToList();
-            var mmeshes = MeshHelper.MMeshFromMeshes(gltfResult.meshes, meshBaseColors);
-            Object.Destroy(gltfResult.root);
-            return mmeshes;
-        }
+        // TODO Update to use UnityGLTF
+        // public List<MMesh> MMeshFromGltf(string[] filenames)
+        // {
+        //     Color getBaseColor(Material m)
+        //     {
+        //         if (m.HasProperty("_BaseColorFactor"))
+        //         {
+        //             return m.GetColor("_BaseColorFactor");
+        //         }
+        //         if (m.HasProperty("_Color"))
+        //         {
+        //             return m.GetColor("_Color");
+        //         }
+        //         if (m.HasProperty("_BaseColor"))
+        //         {
+        //             return m.GetColor("_BaseColor");
+        //         }
+        //         return Color.white;
+        //     }
+        //     IUriLoader loader = new BufferedStreamLoader(
+        //         filenames[0], Path.GetDirectoryName(filenames[0]));
+        //     GltfImportOptions options = GltfImportOptions.Default();
+        //     options.rescalingMode = GltfImportOptions.RescalingMode.FIT;
+        //     options.desiredSize = 1f;
+        //     var gltfResult = ImportGltf.Import(filenames[0], loader, null, options);
+        //     List<Color> meshBaseColors = gltfResult.materials.Select(m => getBaseColor(m)).ToList();
+        //     var mmeshes = MeshHelper.MMeshFromMeshes(gltfResult.meshes, meshBaseColors);
+        //     Object.Destroy(gltfResult.root);
+        //     return mmeshes;
+        // }
     }
 }
