@@ -880,6 +880,9 @@ namespace com.google.apps.peltzer.client.tools
             {
                 peltzerController.shapesMenu.Hide();
                 UnsetAllHoverTooltips();
+                // Reset CSG mode when entering insert mode.
+                csgOperation = CsgOperations.CsgOperation.INACTIVE;
+                peltzerController.ChangeTouchpadCsgSprite(csgOperation);
             }
 
             if (newMode == ControllerMode.insertVolume || newMode == ControllerMode.csg)
