@@ -221,7 +221,7 @@ namespace com.google.apps.peltzer.client.model.render
                         MeshGenContext existingContext = contextDict[material];
                         if (existingContext.verts.Count + newContext.verts.Count > ReMesher.MAX_VERTS_PER_MESH)
                         {
-                            // If adding the new context to this dictionary would exceed the limits of
+                            // If adding the new context to this dictionary would exceed the limits of 
                             // a Unity mesh, continue searching.
                             continue;
                         }
@@ -355,7 +355,7 @@ namespace com.google.apps.peltzer.client.model.render
         }
 
         /// <summary>
-        ///   Adds the locations of the vertices of a given face to a given list, applying a 'wiggle' to them to
+        ///   Adds the locations of the vertices of a given face to a given list, applying a 'wiggle' to them to 
         ///   avoid z-fighting.
         /// </summary>
         /// <param name="mmesh">The mesh containing the face</param>
@@ -483,7 +483,7 @@ namespace com.google.apps.peltzer.client.model.render
 
 
 
-        public static MMesh xMMeshFromMeshes(int id, List<Mesh> meshes)
+        public static MMesh MMeshFromMeshes(int id, List<Mesh> meshes)
         {
             var verts = new List<Vector3>();
             var tris = new List<int>();
@@ -545,10 +545,8 @@ namespace com.google.apps.peltzer.client.model.render
         {
             Dictionary<int, Vertex> verticesById = new Dictionary<int, Vertex>();
             Dictionary<int, Face> facesById = new Dictionary<int, Face>();
-
             int vIdx = 0;
             int faceIdx = 0;
-
             foreach (KeyValuePair<Material, List<MeshVerticesAndTriangles>> pair in materialsAndMeshes)
             {
                 Material material = pair.Key;
@@ -579,13 +577,8 @@ namespace com.google.apps.peltzer.client.model.render
                     }
                 }
             }
-
-
             return new MMesh(id, Vector3.zero, Quaternion.identity, verticesById, facesById);
-
-
         }
-
 
         private static int TryGetMaterialId(Material material)
         {
