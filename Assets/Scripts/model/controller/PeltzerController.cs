@@ -14,7 +14,6 @@
 
 #define STEAMVRBUILD
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -26,7 +25,7 @@ using com.google.apps.peltzer.client.tools.utils;
 using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.app;
-using UnityEngine.Serialization;
+using com.google.apps.peltzer.client.model.csg;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -57,7 +56,17 @@ namespace com.google.apps.peltzer.client.model.controller
     /// </summary>
     public enum TouchpadOverlay
     {
-        NONE, VOLUME_INSERTER, FREEFORM, PAINT, MODIFY, MOVE, DELETE, MENU, UNDO_REDO, RESET_ZOOM, RESIZE
+        NONE,
+        VOLUME_INSERTER,
+        FREEFORM,
+        PAINT,
+        MODIFY,
+        MOVE,
+        DELETE,
+        MENU,
+        UNDO_REDO,
+        RESET_ZOOM,
+        RESIZE
     };
 
     public enum TouchpadHoverState
@@ -307,6 +316,11 @@ namespace com.google.apps.peltzer.client.model.controller
         private GameObject saveSubMenu;
         private GameObject tutorialSubMenu;
         private GameObject grabToolOnPalette;
+
+        public Sprite CsgUnionSprite;
+        public Sprite CsgSubtractSprite;
+        public Sprite CsgIntersectSprite;
+        public Sprite CsgInactiveSprite;
 
         private VolumeInserter volumeInserterInstance;
         private Freeform freeformInstance;
@@ -1586,6 +1600,31 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 currentTool.ChangeMaterial(currentMaterial);
             }
+        }
+
+        /// <summary>
+        ///   Assigns the correc sprite to the Insert Volume overlay based on the current CSG operation.
+        /// </summary>
+        /// <param name="csgOperation"></param>
+        public void ChangeTouchpadCsgSprite(CsgOperations.CsgOperation csgOperation)
+        {
+            Sprite sprite;
+            switch (csgOperation)
+            {
+                case CsgOperations.CsgOperation.UNION:
+                    sprite = CsgUnionSprite;
+                    break;
+                case CsgOperations.CsgOperation.SUBTRACT:
+                    sprite = CsgSubtractSprite;
+                    break;
+                case CsgOperations.CsgOperation.INTERSECT:
+                    sprite = CsgIntersectSprite;
+                    break;
+                default:
+                    sprite = CsgInactiveSprite;
+                    break;
+            }
+            controllerGeometry.volumeInserterOverlay.GetComponent<Overlay>().centerIcon.sprite = sprite;
         }
 
         /// <summary>

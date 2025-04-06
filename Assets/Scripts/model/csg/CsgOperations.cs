@@ -27,6 +27,7 @@ namespace com.google.apps.peltzer.client.model.csg
 
         public enum CsgOperation
         {
+            INACTIVE,
             UNION,
             INTERSECT,
             SUBTRACT

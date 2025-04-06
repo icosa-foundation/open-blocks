@@ -95,7 +95,7 @@ namespace com.google.apps.peltzer.client.tools
         /// showed enough knowledge of how to snap.
         /// </summary>
         private int completedSnaps = 0;
-        private CsgOperations.CsgOperation csgOperation;
+        public CsgOperations.CsgOperation csgOperation;
         private const int SNAP_KNOW_HOW_COUNT = 3;
 
         /// <summary>
@@ -843,32 +843,34 @@ namespace com.google.apps.peltzer.client.tools
 
             if (IsSwitchModeEvent(args))
             {
+                // Enter CSG mode
                 if (peltzerController.mode == ControllerMode.insertVolume)
                 {
+                    peltzerController.ChangeMode(ControllerMode.csg);
                     peltzerController.shapesMenu.ChangeShapesMenuMaterial(MaterialRegistry.PINK_WIREFRAME_ID);
-                    peltzerController.ChangeMode(ControllerMode.csg, ObjectFinder.ObjectById("ID_ToolShapes"));
                     csgOperation = CsgOperations.CsgOperation.SUBTRACT;
                 }
+                // Cycle CSG Mode or return to normal mode
                 else if (peltzerController.mode == ControllerMode.csg)
                 {
                     switch (csgOperation)
                     {
                         case CsgOperations.CsgOperation.SUBTRACT:
                             csgOperation = CsgOperations.CsgOperation.INTERSECT;
-                            audioLibrary.PlayClip(audioLibrary.swipeRightSound);
-                            peltzerController.TriggerHapticFeedback();
                             break;
                         case CsgOperations.CsgOperation.INTERSECT:
                             csgOperation = CsgOperations.CsgOperation.UNION;
-                            audioLibrary.PlayClip(audioLibrary.swipeRightSound);
-                            peltzerController.TriggerHapticFeedback();
                             break;
                         case CsgOperations.CsgOperation.UNION:
-                            peltzerController.ChangeMode(ControllerMode.insertVolume, ObjectFinder.ObjectById("ID_ToolShapes"));
+                            peltzerController.ChangeMode(ControllerMode.insertVolume);
                             peltzerController.shapesMenu.ChangeShapesMenuMaterial(peltzerController.currentMaterial);
+                            csgOperation = CsgOperations.CsgOperation.INACTIVE;
                             break;
                     }
                 }
+                peltzerController.ChangeTouchpadCsgSprite(csgOperation);
+                audioLibrary.PlayClip(audioLibrary.swipeRightSound);
+                peltzerController.TriggerHapticFeedback();
             }
         }
 
