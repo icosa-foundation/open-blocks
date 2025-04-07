@@ -596,8 +596,8 @@ namespace com.google.apps.peltzer.client.zandria
                 if (thumbnailFiles.Count() == 0)
                 {
                     Debug.Log("No thumbnail file found in offline directory " + directory.FullName);
-                    return false;
                 }
+                thumbnailFiles = new FileInfo[] { null };
 
                 FileInfo[] blocksFiles = directory.GetFiles("*.blocks");
                 if (blocksFiles.Count() == 0)
