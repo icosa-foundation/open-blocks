@@ -32,9 +32,8 @@ namespace com.google.apps.peltzer.client.model.main
         private PaletteController paletteController;
         private WorldSpace worldSpace;
         private GameObject visualBoundingBox;
-        private GameObject visualBoundingBoxCube;
         private GameObject visualBoundingBoxLines;
-        private GameObject gridPlanes;
+        // private GameObject gridPlanes;
         private AudioLibrary audioLibrary;
 
         // Whether the user is manipulating a grid plane to show the bounding box or not.
@@ -62,9 +61,6 @@ namespace com.google.apps.peltzer.client.model.main
         private Vector3 controllerDiffAtZoomStart;
         private Vector3 centerAtZoomStartModel;
 
-        // World space rendering.
-        private Material wallMaterial;
-
         /// <summary>
         ///   Every tool is implemented as MonoBehaviour, which means it may do no work in its constructor.
         ///   As such, this setup method must be called before the tool is used for it to have a valid state.
@@ -80,10 +76,9 @@ namespace com.google.apps.peltzer.client.model.main
 
             // Get the reference to the bounding box GameObject.
             visualBoundingBox = ObjectFinder.ObjectById("ID_PolyWorldBounds");
-            gridPlanes = visualBoundingBox.transform.Find("GridPlanes").gameObject;
-            visualBoundingBoxCube = visualBoundingBox.transform.Find("Cube").gameObject;
+            // gridPlanes = visualBoundingBox.transform.Find("GridPlanes").gameObject;
             visualBoundingBoxLines = visualBoundingBox.transform.Find("Lines").gameObject;
-            wallMaterial = visualBoundingBox.transform.Find("Cube").GetComponent<Renderer>().material;
+            visualBoundingBoxLines.SetActive(false);
         }
 
         private bool IsResetEvent(ControllerEventArgs args)
@@ -313,11 +308,6 @@ namespace com.google.apps.peltzer.client.model.main
         /// </summary>
         private void UpdateVisualBoundingBox()
         {
-            // Get world position of selector position.
-            Vector4 selectorWorldPosition = PeltzerMain.Instance.worldSpace
-              .ModelToWorld(PeltzerMain.Instance.peltzerController.LastPositionModel);
-            selectorWorldPosition.w = 0;
-            wallMaterial.SetVector("_SelectorPosition", selectorWorldPosition);
             visualBoundingBox.transform.position = worldSpace.offset;
             visualBoundingBox.transform.localScale = worldSpace.scale * PeltzerMain.DEFAULT_BOUNDS.size;
             visualBoundingBox.transform.localRotation = worldSpace.rotation;
@@ -340,7 +330,6 @@ namespace com.google.apps.peltzer.client.model.main
               || peltzerController.heldMeshes
               || isManipulatingGridPlane ? true : false;
             visualBoundingBoxLines.SetActive(showVisualBoundingBox);
-            visualBoundingBoxCube.SetActive(showVisualBoundingBox);
             if (showVisualBoundingBox)
             {
                 UpdateVisualBoundingBox();
