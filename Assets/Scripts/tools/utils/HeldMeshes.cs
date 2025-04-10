@@ -155,7 +155,6 @@ namespace com.google.apps.peltzer.client.tools.utils
         internal List<HeldMesh> heldMeshes;
         // Snapping.
         private bool isSnapping;
-        private SnapGrid snapGrid;
         // A reference to the vertices that make up the preview face.
         private List<Vector3> coplanarPreviewFaceVerticesAtOrigin;
         // The face on the previewMesh being used for snapping.
@@ -212,8 +211,6 @@ namespace com.google.apps.peltzer.client.tools.utils
 
         // The most recent hold mode.
         private HoldMode lastMode = HoldMode.FREE;
-
-        private FaceSnapEffect currentFaceSnapEffect;
 
         private bool setupDone;
 
@@ -395,17 +392,14 @@ namespace com.google.apps.peltzer.client.tools.utils
         // Hide the rope guides.
         public void HideSnapGuides()
         {
-            if (Features.useContinuousSnapDetection)
+            if (snapDetector != null)
             {
-                if (snapDetector != null)
-                {
-                    snapDetector.HideGuides();
-                }
+                snapDetector.HideGuides();
+            }
 
-                if (snapSpace != null)
-                {
-                    snapSpace.StopSnap();
-                }
+            if (snapSpace != null)
+            {
+                snapSpace.StopSnap();
             }
         }
 
@@ -428,57 +422,16 @@ namespace com.google.apps.peltzer.client.tools.utils
 
             isSnapping = true;
 
-            if (Features.useContinuousSnapDetection)
-            {
-                MMesh mesh = heldMeshes[0].Mesh;
-                GameObject preview = heldMeshes[0].Preview;
-                MeshWithMaterialRenderer renderMesh = preview.transform.GetComponent<MeshWithMaterialRenderer>();
-                Vector3 previewMeshOffset = renderMesh.GetPositionInModelSpace();
-                Quaternion previewMeshRotation = renderMesh.GetOrientationInModelSpace();
 
-                snapSpace = snapDetector.ExecuteSnap(mesh, previewMeshOffset, previewMeshRotation);
-                PeltzerMain.Instance.audioLibrary.PlayClip(PeltzerMain.Instance.audioLibrary.alignSound);
-                PeltzerMain.Instance.peltzerController.TriggerHapticFeedback();
-            }
-            else
-            {
-                MMesh mesh = heldMeshes[0].Mesh;
-                GameObject preview = heldMeshes[0].Preview;
-                MeshWithMaterialRenderer renderMesh = preview.transform.GetComponent<MeshWithMaterialRenderer>();
-                Vector3 previewMeshOffset = renderMesh.GetPositionInModelSpace();
-                Quaternion previewMeshRotation = renderMesh.GetOrientationInModelSpace();
-                Quaternion finalVolumePreviewMeshRotation = Quaternion.identity;
-                int snapTargetId;
-                snapGrid = new SnapGrid(
-                  mesh,
-                  previewMeshOffset,
-                  previewMeshRotation,
-                  model,
-                  spatialIndex,
-                  worldSpace,
-                  peltzerController.mode == ControllerMode.subtract,
-                  out finalVolumePreviewMeshRotation,
-                  out previewFace,
-                  out coplanarPreviewFaceVerticesAtOrigin,
-                  out snapTargetId);
-                if (snapGrid.snapType == SnapGrid.SnapType.FACE)
-                {
-                    if (snapTargetId != -1)
-                    {
-                        currentFaceSnapEffect = new FaceSnapEffect(snapTargetId);
-                        UXEffectManager.GetEffectManager().StartEffect(currentFaceSnapEffect);
-                    }
-                }
-                renderMesh.SetOrientationModelSpace(finalVolumePreviewMeshRotation, /* smooth */ true);
-                if (snapGrid.snapType == SnapGrid.SnapType.UNIVERSAL)
-                {
-                    PeltzerMain.Instance.audioLibrary.PlayClip(PeltzerMain.Instance.audioLibrary.alignSound);
-                }
-                else
-                {
-                    PeltzerMain.Instance.audioLibrary.PlayClip(PeltzerMain.Instance.audioLibrary.snapSound);
-                }
-            }
+            MMesh mesh = heldMeshes[0].Mesh;
+            GameObject preview = heldMeshes[0].Preview;
+            MeshWithMaterialRenderer renderMesh = preview.transform.GetComponent<MeshWithMaterialRenderer>();
+            Vector3 previewMeshOffset = renderMesh.GetPositionInModelSpace();
+            Quaternion previewMeshRotation = renderMesh.GetOrientationInModelSpace();
+
+            snapSpace = snapDetector.ExecuteSnap(mesh, previewMeshOffset, previewMeshRotation);
+            PeltzerMain.Instance.audioLibrary.PlayClip(PeltzerMain.Instance.audioLibrary.alignSound);
+            PeltzerMain.Instance.peltzerController.TriggerHapticFeedback();
         }
 
         /// <summary>
@@ -486,25 +439,14 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// </summary>
         public void StopSnapping()
         {
-            if (currentFaceSnapEffect != null)
-            {
-                currentFaceSnapEffect.Finish();
-                currentFaceSnapEffect = null;
-            }
             if (!isSnapping)
                 return;
 
             // Reset snapping.
             isSnapping = false;
-            if (Features.useContinuousSnapDetection)
-            {
-                HideSnapGuides();
-                snapSpace = null;
-            }
-            else
-            {
-                snapGrid.snapType = SnapGrid.SnapType.NONE;
-            }
+
+            HideSnapGuides();
+            snapSpace = null;
         }
 
         public void StartInserting(Vector3 controllerStartPosition)
@@ -691,48 +633,15 @@ namespace com.google.apps.peltzer.client.tools.utils
 
                 SnapTransform snappedTransform = null;
 
-                if (Features.useContinuousSnapDetection)
-                {
-                    Vector3 newPositionModel = Math3d.RotatePointAroundPivot(
-                    peltzerController.LastPositionModel + heldMesh.grabOffset,
-                    peltzerController.LastPositionModel, rotationDeltaModel);
+                Vector3 newPositionModel = Math3d.RotatePointAroundPivot(
+                peltzerController.LastPositionModel + heldMesh.grabOffset,
+                peltzerController.LastPositionModel, rotationDeltaModel);
 
-                    Quaternion newRotationModel = peltzerController.LastRotationModel * heldMesh.rotationOffsetSelf;
-                    snappedTransform = snapSpace.Snap(previewOffset, newRotationModel);
-                    snapDetector.UpdateHints(snapSpace, heldMesh.Mesh, previewOffset, previewRotation);
-                    renderMesh.SetPositionModelSpace(snappedTransform.position, /* smooth */ true);
-                    renderMesh.SetOrientationModelSpace(snappedTransform.rotation, /* smooth */ true);
-                }
-                else
-                {
-                    if (snapGrid.snapType == SnapGrid.SnapType.VERTEX
-                        || snapGrid.snapType == SnapGrid.SnapType.FACE)
-                    {
-                        List<Vector3> vertices = new List<Vector3>(coplanarPreviewFaceVerticesAtOrigin.Count);
-                        foreach (Vector3 vertex in coplanarPreviewFaceVerticesAtOrigin)
-                        {
-                            vertices.Add((previewRotation * vertex) + previewOffset);
-                        }
-                        positionToSnap = MeshMath.CalculateGeometricCenter(vertices);
-                        previewFaceId = previewFace.id;
-                    }
-                    SnapInfo snapInfo = snapGrid
-                      .snapToGrid(
-                      positionToSnap,
-                      previewFaceId,
-                      previewOffset,
-                      previewRotation,
-                      heldMesh.Mesh);
-                    snappedTransform = snapInfo.transform;
-
-                    if (snapGrid.snapType == SnapGrid.SnapType.FACE && currentFaceSnapEffect != null)
-                    {
-                        currentFaceSnapEffect.UpdateSnapEffect(snapInfo);
-                    }
-
-                    renderMesh.SetPositionModelSpace(snappedTransform.position, /* smooth */ true);
-                    renderMesh.SetOrientationModelSpace(snappedTransform.rotation, /* smooth */ true);
-                }
+                Quaternion newRotationModel = peltzerController.LastRotationModel * heldMesh.rotationOffsetSelf;
+                snappedTransform = snapSpace.Snap(previewOffset, newRotationModel);
+                snapDetector.UpdateHints(snapSpace, heldMesh.Mesh, previewOffset, previewRotation);
+                renderMesh.SetPositionModelSpace(snappedTransform.position, /* smooth */ true);
+                renderMesh.SetOrientationModelSpace(snappedTransform.rotation, /* smooth */ true);
             }
         }
 
@@ -1368,11 +1277,6 @@ namespace com.google.apps.peltzer.client.tools.utils
             foreach (HeldMesh heldMesh in heldMeshes)
             {
                 DestroyImmediate(heldMesh.Preview);
-            }
-            if (currentFaceSnapEffect != null)
-            {
-                currentFaceSnapEffect.Finish();
-                currentFaceSnapEffect = null;
             }
         }
     }

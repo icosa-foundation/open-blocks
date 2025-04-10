@@ -95,9 +95,6 @@ namespace com.google.apps.peltzer.client.model.main
         // If true, show rope guides for snapping.
         public static bool showSnappingGuides = true;
 
-        // If true, use the new continuous snap detection;
-        public static bool useContinuousSnapDetection = true;
-
         // If true, enable world space grid planes.
         public static bool enableWorldSpaceGridPlanes = false;
 

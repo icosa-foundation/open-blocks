@@ -695,6 +695,10 @@ namespace com.google.apps.peltzer.client.model.main
             // Find the eye camera.
             eyeCamera = ObjectFinder.ComponentById<Camera>("ID_Camera (eye)") as Camera;
 
+            // Disable shadows by default on Quest 2
+            var shadowToggle = ObjectFinder.ObjectById("ID_toggle_shadows").GetComponentInChildren<ShadowToggle>();
+            shadowToggle.DeviceBasedShadows();
+
             // Create initial empty model.
             model = new Model(worldSpace.bounds);
             spatialIndex = new SpatialIndex(model, worldSpace.bounds);

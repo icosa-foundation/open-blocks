@@ -421,7 +421,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     }
                 }
 
-                if (Features.useContinuousSnapDetection && controller.IsTriggerHalfPressed())
+                if (controller.IsTriggerHalfPressed())
                 {
                     if (PaletteControllerActionHandler != null)
                     {
@@ -433,7 +433,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     }
                 }
 
-                if (Features.useContinuousSnapDetection && controller.WasTriggerJustReleasedFromHalfPress())
+                if (controller.WasTriggerJustReleasedFromHalfPress())
                 {
                     if (PaletteControllerActionHandler != null)
                     {

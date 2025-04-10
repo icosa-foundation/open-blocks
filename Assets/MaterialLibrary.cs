@@ -43,10 +43,8 @@ public class MaterialLibrary : MonoBehaviour
     public Material gemMaterialPaletteBack;
     public Material glassMaterial;
     public Material glassMaterialPalette;
-    // public Material glassSpecMaterial;
-    public Material subtractMaterial; // TODO
-    public Material copyMaterial; // TODO
-    public Material snapEffectMaterial; // not sure if ever used!
+    public Material subtractMaterial;
+    public Material copyMaterial;
     public Material meshInsertEffectMaterialFront;
     public Material meshInsertEffectMaterialBack;
     public Material gridMaterial;
@@ -68,6 +66,10 @@ public class MaterialLibrary : MonoBehaviour
         // baseMaterial.EnableKeyword("_REMESHER");
         // transparentMaterial.EnableKeyword("_REMESHER");
         // glassMaterial.EnableKeyword("_REMESHER");
+
+        // gridMaterial.EnableKeyword("_BLEND_TRANSPARENCY");
+
+        // subtractMaterial.EnableKeyword("_REMESHER");
 
         // meshInsertEffectMaterialBack.EnableKeyword("_REMESHER");
         // meshInsertEffectMaterialBack.EnableKeyword("_INSERT_MESH");

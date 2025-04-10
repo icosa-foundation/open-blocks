@@ -298,10 +298,7 @@ namespace com.google.apps.peltzer.client.menu
         {
             // once intro is done put background layer on main camera culling mask
             var mainCamera = Camera.main;
-            mainCamera.cullingMask |= 1 << LayerMask.NameToLayer("Background");
-            Destroy(mainCamera.transform.Find("LogoCamera").gameObject);
-            // disable logo light too
-            GameObject.FindWithTag("LogoLight")?.gameObject.SetActive(false);
+            if (mainCamera != null) Destroy(mainCamera.transform.Find("LogoCamera").gameObject);
             yield return null;
         }
 
