@@ -53,9 +53,6 @@ namespace com.google.apps.peltzer.client.model.main
         // If true, force first-time users into tutorial.
         public static bool forceFirstTimeUsersIntoTutorial = false;
 
-        // If true, publish to Zandria prod (else autopush).
-        public static bool useZandriaProd = false;
-
         // Show ruler for volume inserter
 #if UNITY_EDITOR
     public static bool showVolumeInserterRuler = true;
