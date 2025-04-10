@@ -265,7 +265,7 @@ namespace com.google.apps.peltzer.client.tools
                 heldMeshes.HideSnapGuides();
                 CompleteMove();
             }
-            else if (Features.useContinuousSnapDetection && IsStartSnapDetectionEvent(args) && heldMeshes != null)
+            else if (IsStartSnapDetectionEvent(args) && heldMeshes != null)
             {
                 // Show the snap guides if the trigger is slightly pressed.
                 heldMeshes.DetectSnap();
@@ -284,7 +284,7 @@ namespace com.google.apps.peltzer.client.tools
                     halfTriggerTooltipShown = true;
                 }
             }
-            else if (Features.useContinuousSnapDetection && IsStopSnapDetectionEvent(args) && heldMeshes != null)
+            else if (IsStopSnapDetectionEvent(args) && heldMeshes != null)
             {
                 // If we are previewing the snap guide with a half trigger press and then release the trigger,
                 // hide the guide.

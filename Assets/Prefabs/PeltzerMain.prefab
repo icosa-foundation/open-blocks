@@ -153,9 +153,8 @@ MonoBehaviour:
   glassMaterial: {fileID: 2100000, guid: eb80cddad2a268b46a34bd7e81ad3f01, type: 2}
   glassMaterialPalette: {fileID: 2100000, guid: 92d668d9026e0db45b801c0a0037f8a0,
     type: 2}
-  subtractMaterial: {fileID: 2100000, guid: 0a5748c460d589746a25d885404bace2, type: 2}
-  copyMaterial: {fileID: 2100000, guid: b23e4ca96af9acf4694afad1de7c0818, type: 2}
-  snapEffectMaterial: {fileID: 2100000, guid: aba0c6b0d431a3242ae929604d0a6876, type: 2}
+  subtractMaterial: {fileID: 2100000, guid: b3e870e7e8476804392d805e07c89d9c, type: 2}
+  copyMaterial: {fileID: 2100000, guid: 1a444b7d6785183409a4bbb87338fe97, type: 2}
   meshInsertEffectMaterialFront: {fileID: 2100000, guid: b1f26417c3f7a8442b23e3f18fca5fc8,
     type: 2}
   meshInsertEffectMaterialBack: {fileID: 2100000, guid: 1c31b048c15af5140bae8667a35a7480,
