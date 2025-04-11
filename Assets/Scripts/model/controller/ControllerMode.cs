@@ -66,9 +66,9 @@ namespace com.google.apps.peltzer.client.model.controller
         /// </summary>
         paintDropper,
         /// <summary>
-        /// Mode for deleting meshes via subtraction (csg).
+        /// Mode for union, intersection, and subtract operations.
         /// </summary>
-        subtract,
+        csg,
         /// <summary>
         /// Mode for deleting edges.
         /// </summary>

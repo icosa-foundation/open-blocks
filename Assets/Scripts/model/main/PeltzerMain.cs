@@ -394,7 +394,7 @@ namespace com.google.apps.peltzer.client.model.main
                     return painter;
                 case ControllerMode.paintDropper:
                     return painter;
-                case ControllerMode.subtract:
+                case ControllerMode.csg:
                     return volumeInserter;
                 case ControllerMode.deletePart:
                     return deleter;
@@ -1785,7 +1785,7 @@ namespace com.google.apps.peltzer.client.model.main
                     return false;
                 case ControllerMode.subdividePlane:
                     return false;
-                case ControllerMode.subtract:
+                case ControllerMode.csg:
                     return volumeInserter.IsFilling();
             }
 

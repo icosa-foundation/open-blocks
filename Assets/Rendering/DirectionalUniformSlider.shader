@@ -14,80 +14,112 @@
 
 Shader "Mogwai/DirectionalUniformSlider"
 {
-	Properties
-	{
-		_Color( "Color", Color ) = ( 1, 1, 1, 1 )
-		_EmissiveColor("EmissiveColor", Color) = ( 0, 0, 0, 0 )
-	    _EmissiveAmount("Emissive Amount", Float) = 1
-	    _Roughness("Roughness", Float) = 0.8
-	    _Metallic("Metallic", Float) = 1.0
-	    _RefractiveIndex("Fresnel Effect Refractive Index", Float) = 1.3
-	    _OverrideColor("Override Color", Color) = (0.5, 0.5, 0.5, 1)
-	    _OverrideAmount("Override Amount", Float) = 0
-		_SlideValue("Slide Value", Range(0, 1)) = 0
-	}
-	SubShader
-	{
-		Tags { "RenderType"="Opaque" }
-		LOD 100
+    Properties
+    {
+        _Color( "Color", Color ) = ( 1, 1, 1, 1 )
+        _EmissiveColor("EmissiveColor", Color) = ( 0, 0, 0, 0 )
+        _EmissiveAmount("Emissive Amount", Float) = 1
+        _Roughness("Roughness", Float) = 0.8
+        _Metallic("Metallic", Float) = 1.0
+        _RefractiveIndex("Fresnel Effect Refractive Index", Float) = 1.3
+        _OverrideColor("Override Color", Color) = (0.5, 0.5, 0.5, 1)
+        _OverrideAmount("Override Amount", Float) = 0
+        _SlideValue("Slide Value", Range(0, 1)) = 0
+        
+        // URP required properties
+        [HideInInspector] _BaseMap("Base Map", 2D) = "white" {}
+        [HideInInspector] _Smoothness("Smoothness", Range(0.0, 1.0)) = 0.5
+    }
+    
+    SubShader
+    {
+        Tags { 
+            "RenderType" = "Opaque" 
+            "RenderPipeline" = "UniversalPipeline"
+        }
+        LOD 100
 
-		Pass
-		{
-			CGPROGRAM
-			#pragma vertex vert
-			#pragma fragment frag
-	        #pragma target 5.0
-			#include "UnityCG.cginc"
-	        #include "shaderMath.cginc"
-			#define INV_PI 0.31830988618
+        HLSLINCLUDE
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+        
+        CBUFFER_START(UnityPerMaterial)
+            float4 _Color;
+            float3 _EmissiveColor;
+            float _EmissiveAmount;
+            float _Roughness;
+            float _Metallic;
+            float _RefractiveIndex;
+            float3 _OverrideColor;
+            float _OverrideAmount;
+            half _SlideValue;
+            float4 _BaseMap_ST;
+            float _Smoothness;
+        CBUFFER_END
+        ENDHLSL
+        
+        Pass
+        {
+            Name "ForwardLit"
+            Tags { "LightMode" = "UniversalForward" }
+            
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile _ _SHADOWS_SOFT
+            
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
+            };
 
-			struct VertexInput
-			{
-				float4 position : POSITION;
-				float3 normal : NORMAL;
-			};
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float3 normalWS : TEXCOORD0;
+                float3 positionWS : TEXCOORD1;
+                float4 localPos : TEXCOORD2;
+            };
 
-			struct VertexOutput
-			{
-				float4 position : SV_POSITION;
-				float3 normal : TEXCOORD0;
-				float4 worldPosition : TEXCOORD1;
-				float4 shadowPosition : TEXCOORD2;
-				float4 localPos : TEXCOORD3;
-			};
+            Varyings vert (Attributes input)
+            {
+                Varyings output;
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                output.positionWS = TransformObjectToWorld(input.positionOS.xyz);
+                output.localPos = input.positionOS + 0.5;
+                return output;
+            }
 
-			VertexOutput vert (VertexInput vertex)
-			{
-				VertexOutput output;
-				output.position = UnityObjectToClipPos(vertex.position);
-				output.normal = UnityObjectToWorldNormal( vertex.normal );
-				output.worldPosition = mul(unity_ObjectToWorld, vertex.position);
-				output.shadowPosition = mul(_ShadowMatrix ,output.worldPosition);
-				output.localPos = vertex.position + 0.5;
-				return output;
-			}
-
-			float4 _Color;
-			float3 _OverrideColor;
-			float _OverrideAmount;
-			half _SlideValue;
-
-			float4 frag (VertexOutput fragment) : SV_Target
-			{
-		        float3 lightOut = 0;
-
-		        evaluateLights(
-		          fragment.worldPosition.xyz /* pixelPos */,
-		          fragment.normal /* pixelNormal */,
-		          _Color,
-		          fragment.shadowPosition /* shadowPosition */,
-		          lightOut /* inout diffuseOut */);
-				float3 slide = fragment.localPos.x < _SlideValue;
-		        float3 overrideColor = _OverrideColor + _EmissiveColor * _EmissiveAmount;
-		        return float4(lerp(lightOut, overrideColor.rgb, _OverrideAmount) * slide, _Color.a);
-			}
-			ENDCG
-		}
-		UsePass "VertexLit/SHADOWCASTER"
-	}
+            float4 frag (Varyings input) : SV_Target
+            {
+                // Get light and shadow data
+                float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
+                Light mainLight = GetMainLight(shadowCoord);
+                
+                // Calculate basic lighting
+                float3 normalWS = normalize(input.normalWS);
+                float3 lightDir = normalize(mainLight.direction);
+                float NdotL = saturate(dot(normalWS, lightDir));
+                
+                float3 baseColor = _Color.rgb;
+                float3 ambientColor = SampleSH(normalWS) * baseColor;
+                float3 diffuseColor = mainLight.color * baseColor * NdotL * mainLight.shadowAttenuation;
+                
+                // Combine lighting
+                float3 lightOut = ambientColor + diffuseColor;
+                
+                // Apply slider effect
+                float slide = input.localPos.x < _SlideValue ? 1.0 : 0.0;
+                float3 overrideColor = _OverrideColor + _EmissiveColor * _EmissiveAmount;
+                
+                return float4(lerp(lightOut, overrideColor.rgb, _OverrideAmount) * slide, _Color.a);
+            }
+            ENDHLSL
+        }
+    }
 }

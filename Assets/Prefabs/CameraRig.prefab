@@ -53791,6 +53791,10 @@ MonoBehaviour:
   currentOverlay: 0
   isPointingAtMenu: 0
   attachedToolHead: {fileID: 0}
+  CsgUnionSprite: {fileID: 21300000, guid: 4f4b5f6433b99af469f6dc26e8b55b7c, type: 3}
+  CsgSubtractSprite: {fileID: 21300000, guid: 6a1d385b53ecb544289404050bfb66bc, type: 3}
+  CsgIntersectSprite: {fileID: 21300000, guid: 7ecba71d95b4629498c43c8a0ee68d91, type: 3}
+  CsgInactiveSprite: {fileID: 21300000, guid: a949fb027ce2c9e4ab4dc1e00e65b818, type: 3}
   handedness: 2
 --- !u!114 &114717694159959046
 MonoBehaviour:
