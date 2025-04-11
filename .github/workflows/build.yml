@@ -211,7 +211,7 @@ jobs:
 
           # Disable slow triggers before package removal
           echo "Disabling slow triggers and package update hooks"
-          sudo rm -rf /var/lib/man-db # Remove man-db database completely
+          sudo rm -rf /var/lib/man-db # remove man-db database completely
           sudo mkdir -p /etc/dpkg/dpkg.cfg.d/
           echo "path-exclude=/usr/share/man/*" | sudo tee /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null
           echo "path-exclude=/usr/share/icons/hicolor/*" | sudo tee -a /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null
@@ -227,8 +227,14 @@ jobs:
             sudo mkdir -p /var/lib/dpkg/triggers
           fi
 
+          # Force remove google-cloud-cli directly instead of using apt
+          echo "Removing Google Cloud CLI directly"
+          sudo rm -rf /usr/lib/google-cloud-sdk
+          sudo rm -rf /etc/apt/sources.list.d/google-cloud-sdk.list
+
           # Remove packages with faster options
-          sudo DEBIAN_FRONTEND=noninteractive apt-get remove -y --allow-change-held-packages \
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -yq remove \
             '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox \
             microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' \
             default-jre-headless mono-devel libgl1-mesa-dri man-db hicolor-icon-theme
@@ -245,11 +251,20 @@ jobs:
 
           df -h /
           echo "Removing Android"
-          sudo rm -rf /usr/local/lib/android # Removes ~9GB
+          sudo rm -rf /usr/local/lib/android # ~9GB
+          sudo rm -rf /opt/android # Any potential extras
+          sudo rm -rf /usr/local/android* # Any misplaced files
           df -h /
           echo "Removing remaining large directories"
-          rm -rf /usr/share/dotnet/  # Removes ~1GB
-          rm -rf "$AGENT_TOOLSDIRECTORY"  # Removes ~7GB
+          sudo rm -rf /usr/share/dotnet/  # ~1GB
+          sudo rm -rf /usr/share/swift/
+          sudo rm -rf /usr/share/rust/
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/node_modules
+          sudo rm -rf /opt/hostedtoolcache
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"  # ~7GB
           echo "Disk space after cleanup"
           df -h /
 
