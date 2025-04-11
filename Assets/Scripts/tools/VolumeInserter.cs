@@ -680,12 +680,50 @@ namespace com.google.apps.peltzer.client.tools
         }
 
         /// <summary>
+        /// Updates the shape or csg tooltip
+        /// </summary>
+        public void UpdateTooltip()
+        {
+            bool isVolumeInsertOrCsgMode = peltzerController.mode is ControllerMode.insertVolume or ControllerMode.csg;
+            if (isVolumeInsertOrCsgMode)
+            {
+                peltzerController.controllerGeometry.shapeTooltips.SetActive(true);
+                var textMesh = peltzerController.controllerGeometry.csgTooltips.GetComponentInChildren<TextMesh>();
+                switch (PeltzerMain.Instance.GetVolumeInserter().csgOperation)
+                {
+                    case CsgOperations.CsgOperation.INACTIVE:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(false);
+                        break;
+                    case CsgOperations.CsgOperation.SUBTRACT:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
+                        textMesh.text = "Subtract Shape";
+                        break;
+                    case CsgOperations.CsgOperation.INTERSECT:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
+                        textMesh.text = "Intersect Shape";
+                        break;
+                    case CsgOperations.CsgOperation.UNION:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
+                        textMesh.text = "Merge Shape";
+                        break;
+                }
+            }
+            else
+            {
+                peltzerController.controllerGeometry.shapeTooltips.SetActive(false);
+                peltzerController.controllerGeometry.csgTooltips.SetActive(false);
+            }
+        }
+
+        /// <summary>
         ///   An event handler that listens for controller input and delegates accordingly.
         /// </summary>
         /// <param name="sender">The sender of the controller event.</param>
         /// <param name="args">The controller event arguments.</param>
         private void ControllerEventHandler(object sender, ControllerEventArgs args)
         {
+            UpdateTooltip();
+
             // If we are not in insert or csg mode, do nothing.
             if ((peltzerController.mode != ControllerMode.insertVolume && peltzerController.mode != ControllerMode.csg)
               || PeltzerMain.Instance.peltzerController.isPointingAtMenu)
