@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
@@ -23,8 +24,8 @@ namespace TiltBrush
         [SerializeField] private bool _multiline = true;
         [SerializeField] private int _maxLineLength;
         [SerializeField] private int _maxLineCount;
-        [SerializeField] private Text _consoleDisplay;
-        [SerializeField] private Text _currentLineDisplay;
+        [SerializeField] private TextMeshProUGUI _consoleDisplay;
+        [SerializeField] private TextMeshProUGUI _currentLineDisplay;
         [SerializeField] private bool _consoleDisplayUsesCursor = true;
         [SerializeField] private bool _lineDisplayUsesCursor = true;
         [SerializeField] private GameObject _capsLockEnabledObject;
