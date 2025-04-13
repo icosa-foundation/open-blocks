@@ -1,3 +1,6 @@
+// This shader is a version of the Universal Render Pipeline Unlit shader.
+// NEEDS TO BE UPDATED IF URP VERSION CHANGES
+// CURRENT URP VERSION: 14.0.11
 Shader "Universal Render Pipeline/OpenBlocksUnlit"
 {
     Properties
