@@ -487,7 +487,7 @@ namespace com.google.apps.peltzer.client.tools
             {
                 mesh.GetFace(faceId).SetProperties(faceProperties);
             }
-            Scaler.TryScalingMeshes(new List<MMesh> {mesh}, scale.x);
+            Scaler.TryScalingMeshes(new List<MMesh> { mesh }, scale.x);
             return mesh;
         }
 
