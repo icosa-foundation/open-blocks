@@ -93,7 +93,7 @@ namespace com.google.apps.peltzer.client.model.controller
         private GameObject wandTip;
 
         private MeshRepresentationCache meshRepresentationCache;
-
+        private List<MMesh> currentCustomShapes;
 
         static ShapesMenu()
         {
@@ -226,9 +226,25 @@ namespace com.google.apps.peltzer.client.model.controller
         /// Sets the custom primitive to display in the shapes menu.
         /// </summary>
         /// <param name="meshes">The meshes that constitute the custom primitive.</param>
-        public void SetShapesMenuCustomShape(IEnumerable<MMesh> meshes)
+        public void SetShapesMenuCustomShapes()
         {
-            AssertOrThrow.True(meshes.Count() > 0, "Can't set a custom shape with an empty list of meshes.");
+            var selectedMeshIds = PeltzerMain.Instance.GetSelector()
+                .SelectedOrHoveredMeshes().ToList();
+            if (!selectedMeshIds.Any())
+            {
+                Debug.LogWarning("Can't set a custom shape with no selected meshes.");
+                return;
+            }
+            var meshId = selectedMeshIds.First();
+            var newId = PeltzerMain.Instance.model.GenerateMeshId();
+            var mesh = PeltzerMain.Instance.model.GetMesh(meshId).CloneWithNewId(newId);
+            if (mesh == null)
+            {
+                Debug.LogWarning("Can't set a custom shape with an empty mesh.");
+                return;
+            }
+            mesh.groupId = MMesh.GROUP_NONE;
+            var meshes = new List<MMesh> { mesh };
             // First destroy the previous object hierarchy, if any.
             if (null != shapesMenu[INDEX_FOR_ID[CUSTOM_SHAPE_ID]])
             {
@@ -240,6 +256,7 @@ namespace com.google.apps.peltzer.client.model.controller
             preview.SetActive(false);
             shapesMenu[INDEX_FOR_ID[CUSTOM_SHAPE_ID]] = preview;
             UpdateShapesMenu();
+            currentCustomShapes = meshes;
         }
 
         /// <summary>
@@ -281,6 +298,8 @@ namespace com.google.apps.peltzer.client.model.controller
 
             // Now that we know the scale factor and how much to translate each preview, let's go through them and set
             // them up.
+            var model = new Model(bounds);
+            meshRepresentationCache.Setup(model, customWorldSpace);
             foreach (MMesh mesh in meshes)
             {
                 GameObject thisPreview = meshRepresentationCache.GeneratePreview(mesh);
@@ -338,7 +357,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 float oldScale = volumeInserter.GetScaleForScaleDelta(volumeInserter.scaleDelta);
                 float newScale = volumeInserter.GetScaleForScaleDelta(0) / worldSpace.scale;
                 float scaleDiff = oldScale / newScale;
-                shapesMenu[INDEX_FOR_ID[currentItemId]].GetComponent<MeshWithMaterialRenderer>().AnimateScaleFrom(scaleDiff);
+                shapesMenu[INDEX_FOR_ID[currentItemId]].GetComponent<MeshWithMaterialRenderer>()?.AnimateScaleFrom(scaleDiff);
             }
 
             currentItemId = newItemId;
@@ -499,6 +518,11 @@ namespace com.google.apps.peltzer.client.model.controller
                     shapesMenu[i].SetActive(false);
                 }
             }
+        }
+
+        public IEnumerable<MMesh> GetShapesMenuCustomShapes()
+        {
+            return currentCustomShapes;
         }
     }
 }

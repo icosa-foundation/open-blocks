@@ -558,6 +558,10 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     // If we didn't find any nearby faces, but have a nearby mesh, we'll highlight that.
                     TryHighlightingAMesh(nearestMesh.Value, options.includeMeshGroups, forceSelection, out successfulSelectionMesh);
+                    if (Features.stampingEnabled)
+                    {
+                        peltzerController.shapesMenu.SetShapesMenuCustomShapes();
+                    }
                     return;
                 }
             }

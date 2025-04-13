@@ -394,9 +394,24 @@ namespace com.google.apps.peltzer.client.tools
             {
                 scale = Vector3.one * GetScaleForScaleDelta(scaleDelta);
             }
-            Primitives.Shape selectedVolumeShape = (Primitives.Shape)peltzerController.shapesMenu.CurrentItemId;
-            MMesh newMesh = Primitives.BuildPrimitive(selectedVolumeShape, scale, /* offset */ Vector3.zero,
-              model.GenerateMeshId(), material);
+            int id = peltzerController.shapesMenu.CurrentItemId;
+            MMesh newMesh = null;
+            if (id >= 0)
+            {
+                Primitives.Shape selectedVolumeShape = (Primitives.Shape)id;
+                newMesh = Primitives.BuildPrimitive(
+                    selectedVolumeShape, scale, offset: Vector3.zero,
+                    model.GenerateMeshId(), material);
+            }
+            else if (Features.stampingEnabled && id == ShapesMenu.CUSTOM_SHAPE_ID)
+            {
+                newMesh = BuildCustomShape(scale, model.GenerateMeshId(), material);
+            }
+
+            if (newMesh == null)
+            {
+                return;
+            }
 
             newMesh.RecalcBounds();
             Vector3 baseBounds = newMesh.bounds.size;
@@ -450,6 +465,30 @@ namespace com.google.apps.peltzer.client.tools
                 // Hide held meshes, they will unhide on next update if we are in the right mode.
                 heldMeshes.Hide();
             }
+        }
+
+        private MMesh BuildCustomShape(Vector3 scale, int generateMeshId, int materialId)
+        {
+            FaceProperties faceProperties = new FaceProperties(materialId);
+            var customShapes = peltzerController.shapesMenu.GetShapesMenuCustomShapes();
+            if (customShapes == null)
+            {
+                Debug.LogWarning("Custom shapes not initialized");
+                return null;
+            }
+            if (!customShapes.Any())
+            {
+                Debug.LogWarning("No custom shapes");
+                return null;
+            }
+            var mesh = customShapes.FirstOrDefault();
+            mesh = mesh.CloneWithNewId(generateMeshId);
+            foreach (int faceId in mesh.GetFaceIds())
+            {
+                mesh.GetFace(faceId).SetProperties(faceProperties);
+            }
+            Scaler.TryScalingMeshes(new List<MMesh> {mesh}, scale.x);
+            return mesh;
         }
 
         /// <summary>
@@ -953,7 +992,7 @@ namespace com.google.apps.peltzer.client.tools
             {
                 // Start copy mode.
                 // TODO(bug): show copy mode affordance (new tool head?).
-                ResetHeldMeshes(null);
+                //////ResetHeldMeshes(null);
             }
             else
             {
