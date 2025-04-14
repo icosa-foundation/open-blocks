@@ -306,7 +306,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 GameObject thisPreview = meshRepresentationCache.GeneratePreview(mesh);
                 MeshWithMaterialRenderer renderer = thisPreview.GetComponent<MeshWithMaterialRenderer>();
                 renderer.worldSpace = customWorldSpace;
-                thisPreview.transform.SetParent(preview.transform, /* worldPositionStays */ true);
+                thisPreview.transform.SetParent(preview.transform, worldPositionStays: true);
                 thisPreview.transform.localRotation = Quaternion.identity;
                 // Position this preview such that its local position is the offset to the bounding box's center
                 // and scaled such that it fits in the menu.
@@ -317,7 +317,7 @@ namespace com.google.apps.peltzer.client.model.controller
             // the controller (as it's part of the shapes menu).
             // We pass worldPositionStays=false because we want the object to be repositioned such that it
             // lies its correct position in the new parent.
-            preview.transform.SetParent(gameObject.transform, /* worldPositionStays */ false);
+            preview.transform.SetParent(gameObject.transform, worldPositionStays: false);
 
             return preview;
         }
