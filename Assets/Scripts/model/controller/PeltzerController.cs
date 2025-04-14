@@ -408,13 +408,10 @@ namespace com.google.apps.peltzer.client.model.controller
             ShowTooltips();
 
             shapesMenu = gameObject.AddComponent<ShapesMenu>();
-            if (Features.stampingEnabled)
-            {
-                shapesMenu.Setup(
-                    worldSpace, wandTip, _currentMaterial,
-                    gameObject.AddComponent<MeshRepresentationCache>()
-                );
-            }
+            shapesMenu.Setup(
+                worldSpace, wandTip, _currentMaterial,
+                gameObject.AddComponent<MeshRepresentationCache>()
+            );
 
             // Put everything in the default handedness position.
             ControllerHandednessChanged();

@@ -98,9 +98,9 @@ namespace com.google.apps.peltzer.client.model.controller
         static ShapesMenu()
         {
             int pos = 0;
+                MENU_ITEMS = new int[Primitives.NUM_SHAPES + 2];
             if (Features.stampingEnabled)
             {
-                MENU_ITEMS = new int[Primitives.NUM_SHAPES + 2];
                 // The menu starts with "copy" and "custom shape", then come the primitives.
                 // If we ever want to change the order of these items in the menu, this is the place to do it.
                 MENU_ITEMS[pos++] = COPY_MODE_ID;
