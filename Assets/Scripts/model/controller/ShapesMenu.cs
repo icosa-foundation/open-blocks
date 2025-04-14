@@ -244,6 +244,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 return;
             }
             mesh.groupId = MMesh.GROUP_NONE;
+            mesh.offset = Vector3.zero;
             var meshes = new List<MMesh> { mesh };
             // First destroy the previous object hierarchy, if any.
             if (null != shapesMenu[INDEX_FOR_ID[CUSTOM_SHAPE_ID]])
