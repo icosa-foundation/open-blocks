@@ -140,7 +140,8 @@ namespace com.google.apps.peltzer.client.tools
             // If we are in "copy mode", use the selector to allow the user to hover/select meshes to copy.
             // (we have to check if peltzerController.shapesMenu is null because VolumeInserter might be
             // created before PeltzerController setup is done).
-            if (peltzerController.shapesMenu != null &&
+            if (Features.stampingEnabled &&
+                peltzerController.shapesMenu != null &&
                 peltzerController.shapesMenu.CurrentItemId == ShapesMenu.COPY_MODE_ID)
             {
                 selector.SelectMeshAtPosition(peltzerController.LastPositionModel, Selector.MESHES_ONLY);
@@ -807,7 +808,7 @@ namespace com.google.apps.peltzer.client.tools
                 }
             }
 
-            if (IsStartInsertVolumeOrCopyEvent(args))
+            if (IsStartInsertVolumeOrCopyEvent(args) && !isCopyMode())
             {
                 // If the shapes menu was open, just close it instead of starting an insertion or copy..
                 if (peltzerController.shapesMenu.showingShapeMenu)
@@ -819,7 +820,7 @@ namespace com.google.apps.peltzer.client.tools
                 StartInsertMesh();
 
             }
-            else if (IsEndInsertVolumeEvent(args))
+            else if (IsEndInsertVolumeEvent(args) && !isCopyMode())
             {
                 if (heldMeshes != null && (heldMeshes.IsInserting || heldMeshes.IsFilling))
                 {
@@ -951,6 +952,11 @@ namespace com.google.apps.peltzer.client.tools
             }
         }
 
+        private bool isCopyMode()
+        {
+            return peltzerController.shapesMenu.CurrentItemId == ShapesMenu.COPY_MODE_ID;
+        }
+
         private void ModeChangeEventHandler(ControllerMode oldMode, ControllerMode newMode)
         {
             if (oldMode == ControllerMode.insertVolume || oldMode == ControllerMode.csg)
@@ -992,7 +998,11 @@ namespace com.google.apps.peltzer.client.tools
             {
                 // Start copy mode.
                 // TODO(bug): show copy mode affordance (new tool head?).
-                //////ResetHeldMeshes(null);
+                var held = peltzerController.shapesMenu.GetShapesMenuCustomShapes()?.ToList();
+                if (held != null && held.Any())
+                {
+                    ResetHeldMeshes(held);
+                }
             }
             else
             {
