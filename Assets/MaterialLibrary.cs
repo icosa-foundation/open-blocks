@@ -44,7 +44,9 @@ public class MaterialLibrary : MonoBehaviour
     public Material glassMaterial;
     public Material glassMaterialPalette;
     public Material subtractMaterial;
+    public Material subtractMaterialQuest; // Quest cannot do geometry shaders in single pass
     public Material copyMaterial;
+    public Material copyMaterialQuest; // Quest cannot do geometry shaders in single pass
     public Material meshInsertEffectMaterialFront;
     public Material meshInsertEffectMaterialBack;
     public Material gridMaterial;
@@ -58,6 +60,13 @@ public class MaterialLibrary : MonoBehaviour
     public Cubemap gemRefractionMap;
     private void OnEnable()
     {
+        if (SystemInfo.deviceName.Contains("Quest"))
+        {
+            // quest can't do geometry shader so use the non geometry shader version
+            copyMaterial = copyMaterialQuest;
+            subtractMaterial = subtractMaterialQuest;
+        }
+
         // NOTE: we only need to enable keywpords once when we want to change the shader
         // otherwise keep things commented out!!!
 
@@ -70,6 +79,7 @@ public class MaterialLibrary : MonoBehaviour
         // gridMaterial.EnableKeyword("_BLEND_TRANSPARENCY");
 
         // subtractMaterial.EnableKeyword("_REMESHER");
+        // subtractMaterialQuest.EnableKeyword("_REMESHER");
 
         // meshInsertEffectMaterialBack.EnableKeyword("_REMESHER");
         // meshInsertEffectMaterialBack.EnableKeyword("_INSERT_MESH");
