@@ -395,9 +395,10 @@ namespace com.google.apps.peltzer.client.tools
             {
                 scale = Vector3.one * GetScaleForScaleDelta(scaleDelta);
             }
-            int id = peltzerController.shapesMenu.CurrentItemId;
+
             MMesh newMesh = null;
-            if (id >= 0)
+            int id = peltzerController.shapesMenu.CurrentItemId;
+            if (id != ShapesMenu.COPY_MODE_ID && id != ShapesMenu.CUSTOM_SHAPE_ID) // A regular primitive
             {
                 Primitives.Shape selectedVolumeShape = (Primitives.Shape)id;
                 newMesh = Primitives.BuildPrimitive(
