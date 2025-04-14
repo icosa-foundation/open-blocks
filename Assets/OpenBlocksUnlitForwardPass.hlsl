@@ -14,6 +14,10 @@ struct OpenBlocksAttributes
     // uvs (TEXCOORD0) is used for animation percentage (based on original shader)
     float3 selectPositionWorld : TANGENT; // use this if there are multiple select positions
     #endif
+    #if defined(_REMESHER)
+    float2 remesher  : TEXCOORD2;
+    #endif
+
 
 };
 
@@ -40,8 +44,7 @@ OpenBlocksVaryings OpenBlocksUnlitPassVertex(OpenBlocksAttributes input)
     OpenBlocksVaryings output;
 
     #if defined(_REMESHER)
-    input.attributes.positionOS = mul(_RemesherMeshTransforms[input.attributes.dynamicLightmapUV.x], input.attributes.positionOS);
-    input.attributes.normalOS = mul(_RemesherMeshTransforms[input.attributes.dynamicLightmapUV.x], input.attributes.normalOS);
+    input.attributes.positionOS = mul(_RemesherMeshTransforms[input.remesher.x], input.attributes.positionOS);
     #endif
     
     // output.varyings = UnlitPassVertex(input.attributes);
