@@ -38483,7 +38483,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.005, z: 0}
   m_LocalScale: {x: 0.07, y: 0.07, z: 0.07}
   m_ConstrainProportionsScale: 0
-  m_Children: [{fileID: 2855065251515051148}]
+  m_Children:
+  - {fileID: 2855065251515051148}
   m_Father: {fileID: 4580881533812108}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!212 &212472395966794932
@@ -75588,9 +75589,9 @@ MonoBehaviour:
       m_Calls: []
   m_text: '<b>Early Access</b>
 
-    We are excited to share the first version of Open Blocks for standalone headsets.
-    Our next release will focus on improving performance and memory usage in more
-    complex scenes. '
+    We are excited to share the first version of
+    Open Blocks for standalone headsets. Our next release will focus on improving
+    performance and memory usage in more complex scenes. '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
   m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
@@ -75861,7 +75862,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3280240004959306640}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2626dfb714711a640ac837fa8919061c, type: 3}
   m_Name: 
@@ -76607,8 +76608,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "LOW MEMORY \r\nMax number of vertices reached!\r\nPerformance will be impacted
-    and the app could crash!\r\nSave your work to avoid losing it!"
+  m_text: "LOW MEMORY \r\nMax number of vertices reached!\r\nPerformance will be
+    impacted and the app could crash!\r\nSave your work to avoid losing it!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
   m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
