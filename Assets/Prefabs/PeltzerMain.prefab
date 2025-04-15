@@ -154,10 +154,10 @@ MonoBehaviour:
   glassMaterialPalette: {fileID: 2100000, guid: 92d668d9026e0db45b801c0a0037f8a0,
     type: 2}
   subtractMaterial: {fileID: 2100000, guid: b3e870e7e8476804392d805e07c89d9c, type: 2}
-  subtractMaterialQuest: {fileID: 2100000, guid: 6f15b838627b3ca49b449b0c8424ca14,
+  subtractMaterialQuest: {fileID: 2100000, guid: 076c3049eb1121b469f8b1f758736b2c,
     type: 2}
   copyMaterial: {fileID: 2100000, guid: 1a444b7d6785183409a4bbb87338fe97, type: 2}
-  copyMaterialQuest: {fileID: 2100000, guid: 6f15b838627b3ca49b449b0c8424ca14, type: 2}
+  copyMaterialQuest: {fileID: 2100000, guid: e4c616e14b7c9d0458721c30dd5a9702, type: 2}
   meshInsertEffectMaterialFront: {fileID: 2100000, guid: b1f26417c3f7a8442b23e3f18fca5fc8,
     type: 2}
   meshInsertEffectMaterialBack: {fileID: 2100000, guid: 1c31b048c15af5140bae8667a35a7480,
