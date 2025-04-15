@@ -337,6 +337,7 @@ namespace com.google.apps.peltzer.client.model.controller
         private bool setupDone;
         private bool triggerIsDown;
         private bool m_isDraggingSlider;
+        public Mesh copyModeMesh;
 
         /// <summary>
         /// Performs one-time setup. This must be called before anything else.

@@ -149,8 +149,17 @@ namespace com.google.apps.peltzer.client.model.controller
                 GameObject obj;
                 if (id == COPY_MODE_ID)
                 {
-                    obj = MeshHelper.GameObjectFromMMesh(identityWorldSpace,
-                      Primitives.AxisAlignedCone(0, Vector3.zero, Vector3.one * 0.0125f, MaterialRegistry.YELLOW_ID));
+                    Mesh mesh = PeltzerMain.Instance.peltzerController.copyModeMesh;
+                    // clone unity mesh to avoid modifying the original
+                    mesh = Instantiate(mesh);
+                    obj = new GameObject();
+                    var renderer = obj.AddComponent<MeshWithMaterialRenderer>();
+                    renderer.Init(worldSpace);
+                    renderer.meshes = new List<MeshWithMaterial>
+                    {
+                        new (mesh, MaterialRegistry.GetMaterialAndColorById(material))
+                    };
+                    obj.gameObject.transform.rotation = Quaternion.Euler(90, 33, 0);
                 }
                 else if (id == CUSTOM_SHAPE_ID)
                 {
