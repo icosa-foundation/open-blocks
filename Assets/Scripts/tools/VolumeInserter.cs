@@ -586,7 +586,10 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     audioLibrary.PlayClip(audioLibrary.deleteSound);
                     peltzerController.TriggerHapticFeedback(
-                      HapticFeedback.HapticFeedbackType.FEEDBACK_3, /* durationSeconds */ 0.05f, /* strength */ 0.3f);
+                        HapticFeedback.HapticFeedbackType.FEEDBACK_3,
+                        durationSeconds: 0.05f,
+                        strength: 0.3f
+                    );
                 }
             }
 
