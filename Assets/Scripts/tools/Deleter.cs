@@ -238,12 +238,12 @@ namespace com.google.apps.peltzer.client.tools
             int failSafeCount = 0;
             while (faces.Count > 0 && failSafeCount <= INFINITE_LOOP_FAILSAFE_COUNT)
             {
-                failSafeCount++;
                 List<int> retainedVerts = faceToRetainedVerts[nextFaceId];
                 newFaceVertexIds.AddRange(retainedVerts);
                 faces.Remove(nextFaceId);
                 deleteVertOp.DeleteFace(nextFaceId);
-                nextFaceId = startVertToFace[retainedVerts[retainedVerts.Count - 1]];
+                nextFaceId = startVertToFace[retainedVerts[^1]];
+                failSafeCount++;
             }
 
             if (failSafeCount >= INFINITE_LOOP_FAILSAFE_COUNT)
