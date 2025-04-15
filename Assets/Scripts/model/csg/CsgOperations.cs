@@ -560,6 +560,11 @@ namespace com.google.apps.peltzer.client.model.csg
             List<CsgPolygon> polys, Dictionary<int, CsgVertex> idToVert, MMesh mesh, Face face)
         {
             List<CsgVertex> vertices = new List<CsgVertex>();
+            if (face.vertexIds.Count < 3)
+            {
+                Debug.LogWarning($"Invalid Face {face}: {face.vertexIds.Count} verts");
+                return;
+            }
             foreach (int vertexId in face.vertexIds)
             {
                 vertices.Add(idToVert[vertexId]);
