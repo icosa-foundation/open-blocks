@@ -582,9 +582,17 @@ namespace com.google.apps.peltzer.client.tools
             }
             else if (peltzerController.mode == ControllerMode.csg)
             {
+                AudioClip clip = csgOperation switch
+                {
+                    CsgOperations.CsgOperation.UNION => audioLibrary.insertVolumeSound,
+                    CsgOperations.CsgOperation.INTERSECT => audioLibrary.deleteSound,
+                    CsgOperations.CsgOperation.SUBTRACT => audioLibrary.deleteSound,
+                    _ => null
+                };
+
                 if (CsgOperations.CsgMeshFromModel(model, spatialIndex, meshToInsert, csgOperation))
                 {
-                    audioLibrary.PlayClip(audioLibrary.deleteSound);
+                    audioLibrary.PlayClip(clip);
                     peltzerController.TriggerHapticFeedback(
                         HapticFeedback.HapticFeedbackType.FEEDBACK_3,
                         durationSeconds: 0.05f,
