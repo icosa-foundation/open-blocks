@@ -32,8 +32,6 @@ namespace com.google.apps.peltzer.client.tools
         private Selector selector;
         private AudioLibrary audioLibrary;
 
-        private const int INFINITE_LOOP_FAILSAFE_COUNT = 100000;
-
         /// <summary>
         /// Whether we are currently deleting all hovered objects.
         /// </summary>
@@ -235,8 +233,13 @@ namespace com.google.apps.peltzer.client.tools
             List<int> newFaceVertexIds = new List<int>();
             HashSet<int> faces = new HashSet<int>(mesh.reverseTable[vertexKey.vertexId]);
 
+            // Could probably just be faces.Count
+            // but I'm not 100% sure if there are any exceptions to this
+            // without analyzing the mesh code - so just to be safe, double it
+            int infiniteLoopFailsafeLimit = faces.Count * 2;
+
             int failSafeCount = 0;
-            while (faces.Count > 0 && failSafeCount <= INFINITE_LOOP_FAILSAFE_COUNT)
+            while (faces.Count > 0 && failSafeCount <= infiniteLoopFailsafeLimit)
             {
                 List<int> retainedVerts = faceToRetainedVerts[nextFaceId];
                 newFaceVertexIds.AddRange(retainedVerts);
@@ -246,7 +249,8 @@ namespace com.google.apps.peltzer.client.tools
                 failSafeCount++;
             }
 
-            if (failSafeCount >= INFINITE_LOOP_FAILSAFE_COUNT)
+            // If we hit the limit then something has gone wrong
+            if (failSafeCount >= infiniteLoopFailsafeLimit)
             {
                 Debug.LogError("Failed to delete vertex - infinite loop detected.");
                 audioLibrary.PlayClip(audioLibrary.errorSound);
