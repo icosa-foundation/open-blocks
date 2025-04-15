@@ -159,7 +159,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     {
                         new (mesh, MaterialRegistry.GetMaterialAndColorById(material))
                     };
-                    obj.gameObject.transform.rotation = Quaternion.Euler(90, 33, 0);
+                    obj.transform.rotation = Quaternion.Euler(90, 33, 0);
                 }
                 else if (id == CUSTOM_SHAPE_ID)
                 {
@@ -182,7 +182,10 @@ namespace com.google.apps.peltzer.client.model.controller
                 // Set up the GameObject to show up in the menu. We will make it a child of our gameObject (the controller)
                 // so that it moves around with the controller.
                 obj.transform.parent = gameObject.transform;
-                obj.transform.localRotation = Quaternion.identity;
+                if (id != COPY_MODE_ID)
+                {
+                    obj.transform.localRotation = Quaternion.identity;
+                }
                 // Default shapes smaller for the menu.
                 obj.transform.localScale /= 1.6f;
                 MeshWithMaterialRenderer meshRenderer = obj.GetComponent<MeshWithMaterialRenderer>();

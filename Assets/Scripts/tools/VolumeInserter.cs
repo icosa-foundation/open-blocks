@@ -141,8 +141,7 @@ namespace com.google.apps.peltzer.client.tools
             // (we have to check if peltzerController.shapesMenu is null because VolumeInserter might be
             // created before PeltzerController setup is done).
             if (Features.stampingEnabled &&
-                peltzerController.shapesMenu != null &&
-                peltzerController.shapesMenu.CurrentItemId == ShapesMenu.COPY_MODE_ID)
+                peltzerController.shapesMenu != null && isCopyMode())
             {
                 selector.SelectMeshAtPosition(peltzerController.LastPositionModel, Selector.MESHES_ONLY);
             }
@@ -850,7 +849,7 @@ namespace com.google.apps.peltzer.client.tools
             {
                 // If we are previewing the snap guide with a half trigger press and then release the trigger,
                 // hide the guide.
-                heldMeshes.HideSnapGuides();
+                heldMeshes?.HideSnapGuides();
             }
             else if (IsStartSnapEvent(args))
             {
@@ -1009,12 +1008,7 @@ namespace com.google.apps.peltzer.client.tools
             if (newShapeMenuItemId == ShapesMenu.COPY_MODE_ID)
             {
                 // Start copy mode.
-                // TODO(bug): show copy mode affordance (new tool head?).
-                var held = peltzerController.shapesMenu.GetShapesMenuCustomShapes()?.ToList();
-                if (held != null && held.Any())
-                {
-                    ResetHeldMeshes(held);
-                }
+                ResetHeldMeshes(null);
             }
             else
             {
