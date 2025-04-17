@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.util;
-using com.google.apps.peltzer.client.model.render;
 
 namespace com.google.apps.peltzer.client.model.csg
 {
@@ -28,22 +25,30 @@ namespace com.google.apps.peltzer.client.model.csg
     {
         private const float COPLANAR_EPS = 0.001f;
 
-        /// <summary>
-        ///   Subtract a mesh from all intersecting meshes in a model.
-        /// </summary>
-        /// <returns>true if the subtract brush intersects with meshes in the scene.</returns>
-        public static bool SubtractMeshFromModel(Model model, SpatialIndex spatialIndex, MMesh toSubtract)
+        public enum CsgOperation
         {
-            Bounds bounds = toSubtract.bounds;
+            INACTIVE,
+            UNION,
+            INTERSECT,
+            SUBTRACT
+        }
+
+        /// <summary>
+        ///   Performs a CSG operation on all intersecting meshes in a model.
+        /// </summary>
+        /// <returns>true if the brush intersects with meshes in the scene.</returns>
+        public static bool CsgMeshFromModel(Model model, SpatialIndex spatialIndex, MMesh brush, CsgOperation csgOp = CsgOperation.SUBTRACT)
+        {
+            Bounds bounds = brush.bounds;
 
             List<Command> commands = new List<Command>();
             HashSet<int> intersectingMeshIds;
-            if (spatialIndex.FindIntersectingMeshes(toSubtract.bounds, out intersectingMeshIds))
+            if (spatialIndex.FindIntersectingMeshes(brush.bounds, out intersectingMeshIds))
             {
                 foreach (int meshId in intersectingMeshIds)
                 {
                     MMesh mesh = model.GetMesh(meshId);
-                    MMesh result = Subtract(mesh, toSubtract);
+                    MMesh result = DoCsgOperation(mesh, brush, csgOp);
                     commands.Add(new DeleteMeshCommand(mesh.id));
                     // If the result is null, it means the mesh was entirely erased.  No need to add a new version back.
                     if (result != null)
@@ -69,16 +74,21 @@ namespace com.google.apps.peltzer.client.model.csg
         }
 
         /// <summary>
-        ///   Subtract a mesh from another.  Returns a new MMesh that is the result of the subtraction.
+        ///   Performs CSG on two meshes.  Returns a new MMesh that is the result of the operation.
         ///   If the result is an empty space, returns null.
         /// </summary>
-        public static MMesh Subtract(MMesh subtrahend, MMesh minuend)
+        public static MMesh DoCsgOperation(MMesh brush, MMesh target, CsgOperation csgOp = CsgOperation.SUBTRACT)
         {
-            // If the objects don't overlap, just bail out:
-
-            if (!subtrahend.bounds.Intersects(minuend.bounds))
+            // If the objects don't overlap, we have two fast paths:
+            if (!brush.bounds.Intersects(target.bounds))
             {
-                return subtrahend.Clone();
+                switch (csgOp)
+                {
+                    case CsgOperation.INTERSECT:
+                        return null;
+                    case CsgOperation.SUBTRACT:
+                        return brush.Clone();
+                }
             }
 
             // Our epsilons aren't very good for operations that are either very small or very big,
@@ -87,8 +97,8 @@ namespace com.google.apps.peltzer.client.model.csg
             //
             // Here's a good article for comparing floating point numbers:
             // https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
-            Vector3 operationalCenter = (subtrahend.bounds.center + minuend.bounds.center) / 2.0f;
-            float averageRadius = (subtrahend.bounds.extents.magnitude + minuend.bounds.extents.magnitude) / 2.0f;
+            Vector3 operationalCenter = (brush.bounds.center + target.bounds.center) / 2.0f;
+            float averageRadius = (brush.bounds.extents.magnitude + target.bounds.extents.magnitude) / 2.0f;
             Vector3 operationOffset = -operationalCenter;
             float operationScale = 1.0f / averageRadius;
             if (operationScale < 1.0f)
@@ -97,34 +107,48 @@ namespace com.google.apps.peltzer.client.model.csg
             }
 
             Bounds operationBounds = new Bounds();
-            foreach (int vertexId in subtrahend.GetVertexIds())
+            foreach (int vertexId in brush.GetVertexIds())
             {
-                operationBounds.Encapsulate((subtrahend.VertexPositionInModelCoords(vertexId) + operationOffset) * operationScale);
+                operationBounds.Encapsulate((brush.VertexPositionInModelCoords(vertexId) + operationOffset) * operationScale);
             }
-            foreach (int vertexId in minuend.GetVertexIds())
+            foreach (int vertexId in target.GetVertexIds())
             {
-                operationBounds.Encapsulate((minuend.VertexPositionInModelCoords(vertexId) + operationOffset) * operationScale);
+                operationBounds.Encapsulate((target.VertexPositionInModelCoords(vertexId) + operationOffset) * operationScale);
             }
             operationBounds.Expand(0.01f);
 
             CsgContext ctx = new CsgContext(operationBounds);
 
-            CsgObject leftObj = ToCsg(ctx, subtrahend, operationOffset, operationScale);
-            CsgObject rightObj = ToCsg(ctx, minuend, operationOffset, operationScale);
-            List<CsgPolygon> result = CsgSubtract(ctx, leftObj, rightObj);
-            if (result.Count > 0)
+            CsgObject leftObj = ToCsg(ctx, brush, operationOffset, operationScale);
+            CsgObject rightObj = ToCsg(ctx, target, operationOffset, operationScale);
+            List<CsgPolygon> result = null;
+
+            switch (csgOp)
+            {
+                case CsgOperation.UNION:
+                    result = CsgUnion(ctx, leftObj, rightObj);
+                    break;
+                case CsgOperation.INTERSECT:
+                    result = CsgIntersect(ctx, leftObj, rightObj);
+                    break;
+                case CsgOperation.SUBTRACT:
+                    result = CsgSubtract(ctx, leftObj, rightObj);
+                    break;
+            }
+
+            if (result != null && result.Count > 0)
             {
                 HashSet<string> combinedRemixIds = null;
-                if (subtrahend.remixIds != null || minuend.remixIds != null)
+                if (brush.remixIds != null || target.remixIds != null)
                 {
                     combinedRemixIds = new HashSet<string>();
-                    if (subtrahend.remixIds != null) combinedRemixIds.UnionWith(subtrahend.remixIds);
-                    if (minuend.remixIds != null) combinedRemixIds.UnionWith(minuend.remixIds);
+                    if (brush.remixIds != null) combinedRemixIds.UnionWith(brush.remixIds);
+                    if (target.remixIds != null) combinedRemixIds.UnionWith(target.remixIds);
                 }
                 return FromPolys(
-                  subtrahend.id,
-                  subtrahend.offset,
-                  subtrahend.rotation,
+                  brush.id,
+                  brush.offset,
+                  brush.rotation,
                   result,
                   operationOffset,
                   operationScale,
@@ -151,6 +175,42 @@ namespace com.google.apps.peltzer.client.model.csg
             FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
             List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.OUTSIDE, PolygonStatus.OPPOSITE);
             polys.AddRange(SelectPolygons(rightObj, true, facePropertiesForNewFaces, PolygonStatus.INSIDE));
+
+            return polys;
+        }
+
+        /// <summary>
+        ///   Perform union on CsgObjects
+        /// </summary>
+        public static List<CsgPolygon> CsgUnion(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
+        {
+            SplitObject(ctx, leftObj, rightObj);
+            SplitObject(ctx, rightObj, leftObj);
+            SplitObject(ctx, leftObj, rightObj);
+            ClassifyPolygons(leftObj, rightObj);
+            ClassifyPolygons(rightObj, leftObj);
+
+            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
+            List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.OUTSIDE, PolygonStatus.SAME);
+            polys.AddRange(SelectPolygons(rightObj, false, facePropertiesForNewFaces, PolygonStatus.OUTSIDE));
+
+            return polys;
+        }
+
+        /// <summary>
+        ///   Perform intersection on CsgObjects
+        /// </summary>
+        public static List<CsgPolygon> CsgIntersect(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
+        {
+            SplitObject(ctx, leftObj, rightObj);
+            SplitObject(ctx, rightObj, leftObj);
+            SplitObject(ctx, leftObj, rightObj);
+            ClassifyPolygons(leftObj, rightObj);
+            ClassifyPolygons(rightObj, leftObj);
+
+            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
+            List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.INSIDE, PolygonStatus.SAME);
+            polys.AddRange(SelectPolygons(rightObj, false, facePropertiesForNewFaces, PolygonStatus.INSIDE));
 
             return polys;
         }
@@ -500,6 +560,11 @@ namespace com.google.apps.peltzer.client.model.csg
             List<CsgPolygon> polys, Dictionary<int, CsgVertex> idToVert, MMesh mesh, Face face)
         {
             List<CsgVertex> vertices = new List<CsgVertex>();
+            if (face.vertexIds.Count < 3)
+            {
+                Debug.LogWarning($"Invalid Face {face}: {face.vertexIds.Count} verts");
+                return;
+            }
             foreach (int vertexId in face.vertexIds)
             {
                 vertices.Add(idToVert[vertexId]);

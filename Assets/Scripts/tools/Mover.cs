@@ -22,7 +22,6 @@ using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.tools.utils;
 using com.google.apps.peltzer.client.model.render;
-using UnityEngine.UI;
 
 namespace com.google.apps.peltzer.client.tools
 {

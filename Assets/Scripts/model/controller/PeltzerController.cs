@@ -14,7 +14,6 @@
 
 #define STEAMVRBUILD
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -26,7 +25,7 @@ using com.google.apps.peltzer.client.tools.utils;
 using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.app;
-using UnityEngine.Serialization;
+using com.google.apps.peltzer.client.model.csg;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -57,7 +56,17 @@ namespace com.google.apps.peltzer.client.model.controller
     /// </summary>
     public enum TouchpadOverlay
     {
-        NONE, VOLUME_INSERTER, FREEFORM, PAINT, MODIFY, MOVE, DELETE, MENU, UNDO_REDO, RESET_ZOOM, RESIZE
+        NONE,
+        VOLUME_INSERTER,
+        FREEFORM,
+        PAINT,
+        MODIFY,
+        MOVE,
+        DELETE,
+        MENU,
+        UNDO_REDO,
+        RESET_ZOOM,
+        RESIZE
     };
 
     public enum TouchpadHoverState
@@ -308,6 +317,11 @@ namespace com.google.apps.peltzer.client.model.controller
         private GameObject tutorialSubMenu;
         private GameObject grabToolOnPalette;
 
+        public Sprite CsgUnionSprite;
+        public Sprite CsgSubtractSprite;
+        public Sprite CsgIntersectSprite;
+        public Sprite CsgInactiveSprite;
+
         private VolumeInserter volumeInserterInstance;
         private Freeform freeformInstance;
 
@@ -323,6 +337,7 @@ namespace com.google.apps.peltzer.client.model.controller
         private bool setupDone;
         private bool triggerIsDown;
         private bool m_isDraggingSlider;
+        public Mesh copyModeMesh;
 
         /// <summary>
         /// Performs one-time setup. This must be called before anything else.
@@ -394,7 +409,10 @@ namespace com.google.apps.peltzer.client.model.controller
             ShowTooltips();
 
             shapesMenu = gameObject.AddComponent<ShapesMenu>();
-            shapesMenu.Setup(worldSpace, wandTip, _currentMaterial, meshRepresentationCache);
+            shapesMenu.Setup(
+                worldSpace, wandTip, _currentMaterial,
+                gameObject.AddComponent<MeshRepresentationCache>()
+            );
 
             // Put everything in the default handedness position.
             ControllerHandednessChanged();
@@ -1589,6 +1607,31 @@ namespace com.google.apps.peltzer.client.model.controller
         }
 
         /// <summary>
+        ///   Assigns the correc sprite to the Insert Volume overlay based on the current CSG operation.
+        /// </summary>
+        /// <param name="csgOperation"></param>
+        public void ChangeTouchpadCsgSprite(CsgOperations.CsgOperation csgOperation)
+        {
+            Sprite sprite;
+            switch (csgOperation)
+            {
+                case CsgOperations.CsgOperation.UNION:
+                    sprite = CsgUnionSprite;
+                    break;
+                case CsgOperations.CsgOperation.SUBTRACT:
+                    sprite = CsgSubtractSprite;
+                    break;
+                case CsgOperations.CsgOperation.INTERSECT:
+                    sprite = CsgIntersectSprite;
+                    break;
+                default:
+                    sprite = CsgInactiveSprite;
+                    break;
+            }
+            controllerGeometry.volumeInserterOverlay.GetComponent<Overlay>().centerIcon.sprite = sprite;
+        }
+
+        /// <summary>
         ///   Change the touchpad overlay to the given type.  Will automatically highlight selected
         ///   modes where appropriate.
         /// </summary>
@@ -1732,7 +1775,7 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (mode)
             {
                 case ControllerMode.insertVolume:
-                case ControllerMode.subtract:
+                case ControllerMode.csg:
                     currentOverlayGO = controllerGeometry.volumeInserterOverlay;
                     break;
                 case ControllerMode.insertStroke:
@@ -1781,7 +1824,7 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (mode)
             {
                 case ControllerMode.insertVolume:
-                case ControllerMode.subtract:
+                case ControllerMode.csg:
                     ChangeTouchpadOverlay(TouchpadOverlay.VOLUME_INSERTER);
                     break;
                 case ControllerMode.insertStroke:
