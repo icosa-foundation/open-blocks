@@ -102,7 +102,7 @@ namespace com.google.apps.peltzer.client.model.controller
         static ShapesMenu()
         {
             int pos = 0;
-                MENU_ITEMS = new int[Primitives.NUM_SHAPES + 2];
+            MENU_ITEMS = new int[Primitives.NUM_SHAPES + 2];
             if (Features.stampingEnabled)
             {
                 // The menu starts with "copy" and "custom shape", then come the primitives.
