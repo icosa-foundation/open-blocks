@@ -55,7 +55,7 @@ namespace com.google.apps.peltzer.client.model.csg
             Model m = new Model(bounds);
             m.AddMesh(shape1);
 
-            NUnit.Framework.Assert.IsTrue(CsgOperations.SubtractMeshFromModel(m, spatialIndex, shape2));
+            NUnit.Framework.Assert.IsTrue(CsgOperations.CsgMeshFromModel(m, spatialIndex, shape2));
         }
 
         [Test]
@@ -82,7 +82,7 @@ namespace com.google.apps.peltzer.client.model.csg
             Model m = new Model(bounds);
             m.AddMesh(shape1);
 
-            NUnit.Framework.Assert.IsTrue(CsgOperations.SubtractMeshFromModel(m, spatialIndex, shape2));
+            NUnit.Framework.Assert.IsTrue(CsgOperations.CsgMeshFromModel(m, spatialIndex, shape2));
         }
 
         [Test]
@@ -109,7 +109,7 @@ namespace com.google.apps.peltzer.client.model.csg
             Model m = new Model(bounds);
             m.AddMesh(shape1);
 
-            NUnit.Framework.Assert.IsTrue(CsgOperations.SubtractMeshFromModel(m, spatialIndex, shape2));
+            NUnit.Framework.Assert.IsTrue(CsgOperations.CsgMeshFromModel(m, spatialIndex, shape2));
         }
 
         [Test]
@@ -136,7 +136,7 @@ namespace com.google.apps.peltzer.client.model.csg
             Model m = new Model(bounds);
             m.AddMesh(shape1);
 
-            NUnit.Framework.Assert.IsTrue(CsgOperations.SubtractMeshFromModel(m, spatialIndex, shape2));
+            NUnit.Framework.Assert.IsTrue(CsgOperations.CsgMeshFromModel(m, spatialIndex, shape2));
         }
 
         [Test]
@@ -163,7 +163,7 @@ namespace com.google.apps.peltzer.client.model.csg
             Model m = new Model(bounds);
             m.AddMesh(shape1);
 
-            NUnit.Framework.Assert.IsTrue(CsgOperations.SubtractMeshFromModel(m, spatialIndex, shape2));
+            NUnit.Framework.Assert.IsTrue(CsgOperations.CsgMeshFromModel(m, spatialIndex, shape2));
         }
 
         [Test]
@@ -190,7 +190,7 @@ namespace com.google.apps.peltzer.client.model.csg
             Model m = new Model(bounds);
             m.AddMesh(shape1);
 
-            NUnit.Framework.Assert.IsTrue(CsgOperations.SubtractMeshFromModel(m, spatialIndex, shape2));
+            NUnit.Framework.Assert.IsTrue(CsgOperations.CsgMeshFromModel(m, spatialIndex, shape2));
         }
 
         [Test]
@@ -216,7 +216,7 @@ namespace com.google.apps.peltzer.client.model.csg
             Model m = new Model(bounds);
             m.AddMesh(shape1);
 
-            NUnit.Framework.Assert.IsTrue(CsgOperations.SubtractMeshFromModel(m, spatialIndex, shape2));
+            NUnit.Framework.Assert.IsTrue(CsgOperations.CsgMeshFromModel(m, spatialIndex, shape2));
         }
 
         [Test]
@@ -242,7 +242,7 @@ namespace com.google.apps.peltzer.client.model.csg
             Model m = new Model(bounds);
             m.AddMesh(shape1);
 
-            NUnit.Framework.Assert.IsTrue(CsgOperations.SubtractMeshFromModel(m, spatialIndex, shape2));
+            NUnit.Framework.Assert.IsTrue(CsgOperations.CsgMeshFromModel(m, spatialIndex, shape2));
         }
 
         [Test]
@@ -269,7 +269,7 @@ namespace com.google.apps.peltzer.client.model.csg
             Model m = new Model(bounds);
             m.AddMesh(shape1);
 
-            NUnit.Framework.Assert.IsTrue(CsgOperations.SubtractMeshFromModel(m, spatialIndex, shape2));
+            NUnit.Framework.Assert.IsTrue(CsgOperations.CsgMeshFromModel(m, spatialIndex, shape2));
         }
 
         [Test]
@@ -296,7 +296,7 @@ namespace com.google.apps.peltzer.client.model.csg
             Model m = new Model(bounds);
             m.AddMesh(shape1);
 
-            NUnit.Framework.Assert.IsTrue(CsgOperations.SubtractMeshFromModel(m, spatialIndex, shape2));
+            NUnit.Framework.Assert.IsTrue(CsgOperations.CsgMeshFromModel(m, spatialIndex, shape2));
         }
     }
 }

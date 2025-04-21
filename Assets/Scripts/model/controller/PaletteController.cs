@@ -557,7 +557,7 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (mode)
             {
                 case ControllerMode.insertVolume:
-                case ControllerMode.subtract:
+                case ControllerMode.csg:
                     return shapeToolhead;
                 case ControllerMode.insertStroke:
                     return freeformToolhead;

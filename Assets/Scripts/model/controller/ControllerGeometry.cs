@@ -71,6 +71,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject ungroupRightTooltip;
 
         public GameObject shapeTooltips;
+        public GameObject csgTooltips;
 
         public GameObject menuLeftTooltip;
         public GameObject menuRightTooltip;
