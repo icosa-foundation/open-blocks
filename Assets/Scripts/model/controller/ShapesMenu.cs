@@ -93,14 +93,14 @@ namespace com.google.apps.peltzer.client.model.controller
         private GameObject wandTip;
 
         private MeshRepresentationCache meshRepresentationCache;
-
+        private List<MMesh> currentCustomShapes;
 
         static ShapesMenu()
         {
             int pos = 0;
+            MENU_ITEMS = new int[Primitives.NUM_SHAPES + 2];
             if (Features.stampingEnabled)
             {
-                MENU_ITEMS = new int[Primitives.NUM_SHAPES + 2];
                 // The menu starts with "copy" and "custom shape", then come the primitives.
                 // If we ever want to change the order of these items in the menu, this is the place to do it.
                 MENU_ITEMS[pos++] = COPY_MODE_ID;
@@ -149,8 +149,17 @@ namespace com.google.apps.peltzer.client.model.controller
                 GameObject obj;
                 if (id == COPY_MODE_ID)
                 {
-                    obj = MeshHelper.GameObjectFromMMesh(identityWorldSpace,
-                      Primitives.AxisAlignedCone(0, Vector3.zero, Vector3.one * 0.0125f, MaterialRegistry.YELLOW_ID));
+                    Mesh mesh = PeltzerMain.Instance.peltzerController.copyModeMesh;
+                    // clone unity mesh to avoid modifying the original
+                    mesh = Instantiate(mesh);
+                    obj = new GameObject();
+                    var renderer = obj.AddComponent<MeshWithMaterialRenderer>();
+                    renderer.Init(worldSpace);
+                    renderer.meshes = new List<MeshWithMaterial>
+                    {
+                        new (mesh, MaterialRegistry.GetMaterialAndColorById(material))
+                    };
+                    obj.transform.rotation = Quaternion.Euler(90, 33, 0);
                 }
                 else if (id == CUSTOM_SHAPE_ID)
                 {
@@ -173,7 +182,10 @@ namespace com.google.apps.peltzer.client.model.controller
                 // Set up the GameObject to show up in the menu. We will make it a child of our gameObject (the controller)
                 // so that it moves around with the controller.
                 obj.transform.parent = gameObject.transform;
-                obj.transform.localRotation = Quaternion.identity;
+                if (id != COPY_MODE_ID)
+                {
+                    obj.transform.localRotation = Quaternion.identity;
+                }
                 // Default shapes smaller for the menu.
                 obj.transform.localScale /= 1.6f;
                 MeshWithMaterialRenderer meshRenderer = obj.GetComponent<MeshWithMaterialRenderer>();
@@ -226,9 +238,26 @@ namespace com.google.apps.peltzer.client.model.controller
         /// Sets the custom primitive to display in the shapes menu.
         /// </summary>
         /// <param name="meshes">The meshes that constitute the custom primitive.</param>
-        public void SetShapesMenuCustomShape(IEnumerable<MMesh> meshes)
+        public void SetShapesMenuCustomShapes()
         {
-            AssertOrThrow.True(meshes.Count() > 0, "Can't set a custom shape with an empty list of meshes.");
+            var selectedMeshIds = PeltzerMain.Instance.GetSelector()
+                .SelectedOrHoveredMeshes().ToList();
+            if (!selectedMeshIds.Any())
+            {
+                Debug.LogWarning("Can't set a custom shape with no selected meshes.");
+                return;
+            }
+            var meshId = selectedMeshIds.First();
+            var newId = PeltzerMain.Instance.model.GenerateMeshId();
+            var mesh = PeltzerMain.Instance.model.GetMesh(meshId).CloneWithNewId(newId);
+            if (mesh == null)
+            {
+                Debug.LogWarning("Can't set a custom shape with an empty mesh.");
+                return;
+            }
+            mesh.groupId = MMesh.GROUP_NONE;
+            mesh.offset = Vector3.zero;
+            var meshes = new List<MMesh> { mesh };
             // First destroy the previous object hierarchy, if any.
             if (null != shapesMenu[INDEX_FOR_ID[CUSTOM_SHAPE_ID]])
             {
@@ -240,6 +269,7 @@ namespace com.google.apps.peltzer.client.model.controller
             preview.SetActive(false);
             shapesMenu[INDEX_FOR_ID[CUSTOM_SHAPE_ID]] = preview;
             UpdateShapesMenu();
+            currentCustomShapes = meshes;
         }
 
         /// <summary>
@@ -281,12 +311,14 @@ namespace com.google.apps.peltzer.client.model.controller
 
             // Now that we know the scale factor and how much to translate each preview, let's go through them and set
             // them up.
+            var model = new Model(bounds);
+            meshRepresentationCache.Setup(model, customWorldSpace);
             foreach (MMesh mesh in meshes)
             {
                 GameObject thisPreview = meshRepresentationCache.GeneratePreview(mesh);
                 MeshWithMaterialRenderer renderer = thisPreview.GetComponent<MeshWithMaterialRenderer>();
                 renderer.worldSpace = customWorldSpace;
-                thisPreview.transform.SetParent(preview.transform, /* worldPositionStays */ true);
+                thisPreview.transform.SetParent(preview.transform, worldPositionStays: true);
                 thisPreview.transform.localRotation = Quaternion.identity;
                 // Position this preview such that its local position is the offset to the bounding box's center
                 // and scaled such that it fits in the menu.
@@ -297,7 +329,7 @@ namespace com.google.apps.peltzer.client.model.controller
             // the controller (as it's part of the shapes menu).
             // We pass worldPositionStays=false because we want the object to be repositioned such that it
             // lies its correct position in the new parent.
-            preview.transform.SetParent(gameObject.transform, /* worldPositionStays */ false);
+            preview.transform.SetParent(gameObject.transform, worldPositionStays: false);
 
             return preview;
         }
@@ -338,7 +370,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 float oldScale = volumeInserter.GetScaleForScaleDelta(volumeInserter.scaleDelta);
                 float newScale = volumeInserter.GetScaleForScaleDelta(0) / worldSpace.scale;
                 float scaleDiff = oldScale / newScale;
-                shapesMenu[INDEX_FOR_ID[currentItemId]].GetComponent<MeshWithMaterialRenderer>().AnimateScaleFrom(scaleDiff);
+                shapesMenu[INDEX_FOR_ID[currentItemId]].GetComponent<MeshWithMaterialRenderer>()?.AnimateScaleFrom(scaleDiff);
             }
 
             currentItemId = newItemId;
@@ -499,6 +531,11 @@ namespace com.google.apps.peltzer.client.model.controller
                     shapesMenu[i].SetActive(false);
                 }
             }
+        }
+
+        public IEnumerable<MMesh> GetShapesMenuCustomShapes()
+        {
+            return currentCustomShapes;
         }
     }
 }

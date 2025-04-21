@@ -95,6 +95,7 @@ namespace com.google.apps.peltzer.client.tools
         /// showed enough knowledge of how to snap.
         /// </summary>
         private int completedSnaps = 0;
+        public CsgOperations.CsgOperation csgOperation;
         private const int SNAP_KNOW_HOW_COUNT = 3;
 
         /// <summary>
@@ -139,14 +140,14 @@ namespace com.google.apps.peltzer.client.tools
             // If we are in "copy mode", use the selector to allow the user to hover/select meshes to copy.
             // (we have to check if peltzerController.shapesMenu is null because VolumeInserter might be
             // created before PeltzerController setup is done).
-            if (peltzerController.shapesMenu != null &&
-                peltzerController.shapesMenu.CurrentItemId == ShapesMenu.COPY_MODE_ID)
+            if (Features.stampingEnabled &&
+                peltzerController.shapesMenu != null && isCopyMode())
             {
                 selector.SelectMeshAtPosition(peltzerController.LastPositionModel, Selector.MESHES_ONLY);
             }
 
             bool activeMode = (peltzerController.mode == ControllerMode.insertVolume
-              || peltzerController.mode == ControllerMode.subtract)
+              || peltzerController.mode == ControllerMode.csg)
               && !PeltzerMain.Instance.peltzerController.isPointingAtMenu
               && PeltzerMain.Instance.introChoreographer.introIsComplete;
 
@@ -303,7 +304,7 @@ namespace com.google.apps.peltzer.client.tools
             return args.ControllerType == ControllerType.PELTZER
               && args.ButtonId == ButtonId.ApplicationMenu
               && args.Action == ButtonAction.DOWN
-              && Features.csgSubtractEnabled;
+              && Features.csgEnabled;
         }
 
         // Touchpad Hover Tests
@@ -380,8 +381,7 @@ namespace com.google.apps.peltzer.client.tools
             // Create the primitive.
             List<MMesh> newMeshes = new List<MMesh>();
             // TODO(bug) Replace pink with wireframe
-            int material = peltzerController.mode == ControllerMode.subtract ?
-              /* pink wireframe */ MaterialRegistry.PINK_WIREFRAME_ID : peltzerController.currentMaterial;
+            int material = peltzerController.currentMaterial;
 
             Vector3 scale;
             if (peltzerController.shapesMenu.showingShapeMenu)
@@ -394,9 +394,25 @@ namespace com.google.apps.peltzer.client.tools
             {
                 scale = Vector3.one * GetScaleForScaleDelta(scaleDelta);
             }
-            Primitives.Shape selectedVolumeShape = (Primitives.Shape)peltzerController.shapesMenu.CurrentItemId;
-            MMesh newMesh = Primitives.BuildPrimitive(selectedVolumeShape, scale, /* offset */ Vector3.zero,
-              model.GenerateMeshId(), material);
+
+            MMesh newMesh = null;
+            int id = peltzerController.shapesMenu.CurrentItemId;
+            if (id != ShapesMenu.COPY_MODE_ID && id != ShapesMenu.CUSTOM_SHAPE_ID) // A regular primitive
+            {
+                Primitives.Shape selectedVolumeShape = (Primitives.Shape)id;
+                newMesh = Primitives.BuildPrimitive(
+                    selectedVolumeShape, scale, offset: Vector3.zero,
+                    model.GenerateMeshId(), material);
+            }
+            else if (Features.stampingEnabled && id == ShapesMenu.CUSTOM_SHAPE_ID)
+            {
+                newMesh = BuildCustomShape(scale, model.GenerateMeshId(), material);
+            }
+
+            if (newMesh == null)
+            {
+                return;
+            }
 
             newMesh.RecalcBounds();
             Vector3 baseBounds = newMesh.bounds.size;
@@ -450,6 +466,30 @@ namespace com.google.apps.peltzer.client.tools
                 // Hide held meshes, they will unhide on next update if we are in the right mode.
                 heldMeshes.Hide();
             }
+        }
+
+        private MMesh BuildCustomShape(Vector3 scale, int generateMeshId, int materialId)
+        {
+            FaceProperties faceProperties = new FaceProperties(materialId);
+            var customShapes = peltzerController.shapesMenu.GetShapesMenuCustomShapes();
+            if (customShapes == null)
+            {
+                Debug.LogWarning("Custom shapes not initialized");
+                return null;
+            }
+            if (!customShapes.Any())
+            {
+                Debug.LogWarning("No custom shapes");
+                return null;
+            }
+            var mesh = customShapes.FirstOrDefault();
+            mesh = mesh.CloneWithNewId(generateMeshId);
+            foreach (int faceId in mesh.GetFaceIds())
+            {
+                mesh.GetFace(faceId).SetProperties(faceProperties);
+            }
+            Scaler.TryScalingMeshes(new List<MMesh> { mesh }, scale.x);
+            return mesh;
         }
 
         /// <summary>
@@ -539,13 +579,24 @@ namespace com.google.apps.peltzer.client.tools
                   HapticFeedback.HapticFeedbackType.FEEDBACK_3, /* durationSeconds */ 0.05f, /* strength */ 0.3f);
                 Primitives.Shape selectedShape = (Primitives.Shape)peltzerController.shapesMenu.CurrentItemId;
             }
-            else if (peltzerController.mode == ControllerMode.subtract)
+            else if (peltzerController.mode == ControllerMode.csg)
             {
-                if (CsgOperations.SubtractMeshFromModel(model, spatialIndex, meshToInsert))
+                AudioClip clip = csgOperation switch
                 {
-                    audioLibrary.PlayClip(audioLibrary.deleteSound);
+                    CsgOperations.CsgOperation.UNION => audioLibrary.insertVolumeSound,
+                    CsgOperations.CsgOperation.INTERSECT => audioLibrary.deleteSound,
+                    CsgOperations.CsgOperation.SUBTRACT => audioLibrary.deleteSound,
+                    _ => null
+                };
+
+                if (CsgOperations.CsgMeshFromModel(model, spatialIndex, meshToInsert, csgOperation))
+                {
+                    audioLibrary.PlayClip(clip);
                     peltzerController.TriggerHapticFeedback(
-                      HapticFeedback.HapticFeedbackType.FEEDBACK_3, /* durationSeconds */ 0.05f, /* strength */ 0.3f);
+                        HapticFeedback.HapticFeedbackType.FEEDBACK_3,
+                        durationSeconds: 0.05f,
+                        strength: 0.3f
+                    );
                 }
             }
 
@@ -680,14 +731,52 @@ namespace com.google.apps.peltzer.client.tools
         }
 
         /// <summary>
+        /// Updates the shape or csg tooltip
+        /// </summary>
+        public void UpdateTooltip()
+        {
+            bool isVolumeInsertOrCsgMode = peltzerController.mode is ControllerMode.insertVolume or ControllerMode.csg;
+            if (isVolumeInsertOrCsgMode)
+            {
+                peltzerController.controllerGeometry.shapeTooltips.SetActive(true);
+                var textMesh = peltzerController.controllerGeometry.csgTooltips.GetComponentInChildren<TextMesh>();
+                switch (PeltzerMain.Instance.GetVolumeInserter().csgOperation)
+                {
+                    case CsgOperations.CsgOperation.INACTIVE:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(false);
+                        break;
+                    case CsgOperations.CsgOperation.SUBTRACT:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
+                        textMesh.text = "Subtract Shape";
+                        break;
+                    case CsgOperations.CsgOperation.INTERSECT:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
+                        textMesh.text = "Intersect Shape";
+                        break;
+                    case CsgOperations.CsgOperation.UNION:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
+                        textMesh.text = "Merge Shape";
+                        break;
+                }
+            }
+            else
+            {
+                peltzerController.controllerGeometry.shapeTooltips.SetActive(false);
+                peltzerController.controllerGeometry.csgTooltips.SetActive(false);
+            }
+        }
+
+        /// <summary>
         ///   An event handler that listens for controller input and delegates accordingly.
         /// </summary>
         /// <param name="sender">The sender of the controller event.</param>
         /// <param name="args">The controller event arguments.</param>
         private void ControllerEventHandler(object sender, ControllerEventArgs args)
         {
-            // If we are not in insert or subtract mode, do nothing.
-            if ((peltzerController.mode != ControllerMode.insertVolume && peltzerController.mode != ControllerMode.subtract)
+            UpdateTooltip();
+
+            // If we are not in insert or csg mode, do nothing.
+            if ((peltzerController.mode != ControllerMode.insertVolume && peltzerController.mode != ControllerMode.csg)
               || PeltzerMain.Instance.peltzerController.isPointingAtMenu)
             {
                 return;
@@ -730,7 +819,7 @@ namespace com.google.apps.peltzer.client.tools
                 }
             }
 
-            if (IsStartInsertVolumeOrCopyEvent(args))
+            if (IsStartInsertVolumeOrCopyEvent(args) && !isCopyMode())
             {
                 // If the shapes menu was open, just close it instead of starting an insertion or copy..
                 if (peltzerController.shapesMenu.showingShapeMenu)
@@ -742,7 +831,7 @@ namespace com.google.apps.peltzer.client.tools
                 StartInsertMesh();
 
             }
-            else if (IsEndInsertVolumeEvent(args))
+            else if (IsEndInsertVolumeEvent(args) && !isCopyMode())
             {
                 if (heldMeshes != null && (heldMeshes.IsInserting || heldMeshes.IsFilling))
                 {
@@ -760,7 +849,7 @@ namespace com.google.apps.peltzer.client.tools
             {
                 // If we are previewing the snap guide with a half trigger press and then release the trigger,
                 // hide the guide.
-                heldMeshes.HideSnapGuides();
+                heldMeshes?.HideSnapGuides();
             }
             else if (IsStartSnapEvent(args))
             {
@@ -843,28 +932,54 @@ namespace com.google.apps.peltzer.client.tools
 
             if (IsSwitchModeEvent(args))
             {
+                // Enter CSG mode
                 if (peltzerController.mode == ControllerMode.insertVolume)
                 {
-                    peltzerController.ChangeMode(ControllerMode.subtract);
+                    peltzerController.ChangeMode(ControllerMode.csg);
                     peltzerController.shapesMenu.ChangeShapesMenuMaterial(MaterialRegistry.PINK_WIREFRAME_ID);
+                    csgOperation = CsgOperations.CsgOperation.SUBTRACT;
                 }
-                else if (peltzerController.mode == ControllerMode.subtract)
+                // Cycle CSG Mode or return to normal mode
+                else if (peltzerController.mode == ControllerMode.csg)
                 {
-                    peltzerController.ChangeMode(ControllerMode.insertVolume);
-                    peltzerController.shapesMenu.ChangeShapesMenuMaterial(peltzerController.currentMaterial);
+                    switch (csgOperation)
+                    {
+                        case CsgOperations.CsgOperation.SUBTRACT:
+                            csgOperation = CsgOperations.CsgOperation.INTERSECT;
+                            break;
+                        case CsgOperations.CsgOperation.INTERSECT:
+                            csgOperation = CsgOperations.CsgOperation.UNION;
+                            break;
+                        case CsgOperations.CsgOperation.UNION:
+                            peltzerController.ChangeMode(ControllerMode.insertVolume);
+                            peltzerController.shapesMenu.ChangeShapesMenuMaterial(peltzerController.currentMaterial);
+                            csgOperation = CsgOperations.CsgOperation.INACTIVE;
+                            break;
+                    }
                 }
+                peltzerController.ChangeTouchpadCsgSprite(csgOperation);
+                audioLibrary.PlayClip(audioLibrary.swipeRightSound);
+                peltzerController.TriggerHapticFeedback();
             }
+        }
+
+        private bool isCopyMode()
+        {
+            return peltzerController.shapesMenu.CurrentItemId == ShapesMenu.COPY_MODE_ID;
         }
 
         private void ModeChangeEventHandler(ControllerMode oldMode, ControllerMode newMode)
         {
-            if (oldMode == ControllerMode.insertVolume || oldMode == ControllerMode.subtract)
+            if (oldMode == ControllerMode.insertVolume || oldMode == ControllerMode.csg)
             {
                 peltzerController.shapesMenu.Hide();
                 UnsetAllHoverTooltips();
+                // Reset CSG mode when entering insert mode.
+                csgOperation = CsgOperations.CsgOperation.INACTIVE;
+                peltzerController.ChangeTouchpadCsgSprite(csgOperation);
             }
 
-            if (newMode == ControllerMode.insertVolume || newMode == ControllerMode.subtract)
+            if (newMode == ControllerMode.insertVolume || newMode == ControllerMode.csg)
             {
                 CreateNewVolumeMesh();
 
@@ -893,7 +1008,6 @@ namespace com.google.apps.peltzer.client.tools
             if (newShapeMenuItemId == ShapesMenu.COPY_MODE_ID)
             {
                 // Start copy mode.
-                // TODO(bug): show copy mode affordance (new tool head?).
                 ResetHeldMeshes(null);
             }
             else
@@ -905,7 +1019,7 @@ namespace com.google.apps.peltzer.client.tools
 
         private void BlockModeChangedHandler(bool isBlockMode)
         {
-            if (peltzerController.mode == ControllerMode.insertVolume || peltzerController.mode == ControllerMode.subtract)
+            if (peltzerController.mode == ControllerMode.insertVolume || peltzerController.mode == ControllerMode.csg)
             {
                 CreateNewVolumeMesh();
             }

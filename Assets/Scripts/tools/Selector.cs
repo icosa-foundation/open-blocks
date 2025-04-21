@@ -558,6 +558,19 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     // If we didn't find any nearby faces, but have a nearby mesh, we'll highlight that.
                     TryHighlightingAMesh(nearestMesh.Value, options.includeMeshGroups, forceSelection, out successfulSelectionMesh);
+                    bool isVolumeMode = peltzerController.mode is ControllerMode.insertVolume or ControllerMode.csg;
+                    bool isCopyMode = peltzerController.shapesMenu.CurrentItemId == ShapesMenu.COPY_MODE_ID;
+                    if (Features.stampingEnabled && isVolumeMode && isCopyMode)
+                    {
+                        peltzerController.shapesMenu.SetShapesMenuCustomShapes();
+                        PeltzerMain.Instance.audioLibrary.PlayClip(PeltzerMain.Instance.audioLibrary.copySound);
+                        peltzerController.TriggerHapticFeedback(
+                            HapticFeedback.HapticFeedbackType.FEEDBACK_1,
+                            durationSeconds: 0.03f,
+                            strength: 0.15f
+                        );
+                        peltzerController.shapesMenu.SetShapeMenuItem(ShapesMenu.CUSTOM_SHAPE_ID, true);
+                    }
                     return;
                 }
             }
