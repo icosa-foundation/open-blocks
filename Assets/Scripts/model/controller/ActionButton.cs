@@ -20,6 +20,17 @@ namespace com.google.apps.peltzer.client.model.controller
 {
     public class ActionButton : PolyMenuButton
     {
+
+        public override void Start()
+        {
+            defaultYPosition = transform.localPosition.y;
+            defaultYScale = transform.localScale.y;
+            hoveredYScale = defaultYScale * 3f;
+            hoveredYPosition = defaultYPosition;
+            bumpedYScale = defaultYScale * 2f;
+            bumpedYPosition = defaultYPosition;
+        }
+
         public UnityEvent m_Action;
 
         /// <summary>

@@ -78321,7 +78321,7 @@ PrefabInstance:
     - target: {fileID: 2170627608553439912, guid: 5dac744749868004ab4365c89ca2fab6,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3879522860456695884, guid: 5dac744749868004ab4365c89ca2fab6,
         type: 3}
@@ -78926,6 +78926,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Actions (No tool options)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2170627608553439912, guid: 5dac744749868004ab4365c89ca2fab6,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3879522860456695884, guid: 5dac744749868004ab4365c89ca2fab6,
         type: 3}

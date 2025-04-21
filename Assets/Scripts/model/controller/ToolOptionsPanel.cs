@@ -31,8 +31,6 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public virtual void Enable(ControllerMode mode)
         {
-            m_Title.text = mode.ToString();
-
             if (m_IsOpen || !m_Allowed) return; // No change or we've disabled this panel
             m_IsOpen = true;
             gameObject.SetActive(true);

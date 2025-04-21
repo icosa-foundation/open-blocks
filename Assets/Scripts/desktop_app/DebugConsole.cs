@@ -29,7 +29,10 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.app;
+using Polyhydra.Core;
 using UnityEngine.InputSystem;
+using Face = com.google.apps.peltzer.client.model.core.Face;
+using Vertex = com.google.apps.peltzer.client.model.core.Vertex;
 
 namespace com.google.apps.peltzer.client.desktop_app
 {
@@ -758,41 +761,97 @@ namespace com.google.apps.peltzer.client.desktop_app
                 return;
             }
 
-            // Parse the desired primitive type.
-            Primitives.Shape shape;
-            try
-            {
-                shape = (Primitives.Shape)Enum.Parse(typeof(Primitives.Shape), parts[1], /* ignoreCase */ true);
-            }
-            catch (Exception)
-            {
-                PrintLn("Error: invalid primitive: " + parts[1]);
-                PrintInsertCommandHelp();
-                return;
-            }
-
-            Vector3 offset = Vector3.zero;
-            Vector3 scale = Vector3.one;
-
-            // Parse the offset, if it was provided.
-            if (parts.Length >= 3 && !TryParseVector3(parts[2], out offset))
-            {
-                PrintInsertCommandHelp();
-                return;
-            }
-
-            // Parse the scale, if it was provided.
-            if (parts.Length >= 4 && !TryParseVector3(parts[3], out scale))
-            {
-                PrintInsertCommandHelp();
-                return;
-            }
-
+            MMesh mesh;
             int meshId = PeltzerMain.Instance.model.GenerateMeshId();
-            MMesh mesh = Primitives.BuildPrimitive(shape, scale, offset, meshId, /* material */ 0);
-            PeltzerMain.Instance.model.AddMesh(mesh);
+            // Parse the desired primitive type.
+            if (Enum.TryParse(typeof(Primitives.Shape), parts[1], ignoreCase: true, out object result))
+            {
+                Primitives.Shape shape = (Primitives.Shape)result;
+                Vector3 offset = Vector3.zero;
+                Vector3 scale = Vector3.one;
 
-            PrintLn(string.Format("Inserted {0} at {1}, scale {2}, mesh ID {3}", shape, offset, scale, meshId));
+                // Parse the offset, if it was provided.
+                if (parts.Length >= 3 && !TryParseVector3(parts[2], out offset))
+                {
+                    PrintInsertCommandHelp();
+                    return;
+                }
+
+                // Parse the scale, if it was provided.
+                if (parts.Length >= 4 && !TryParseVector3(parts[3], out scale))
+                {
+                    PrintInsertCommandHelp();
+                    return;
+                }
+
+
+                mesh = Primitives.BuildPrimitive(shape, scale, offset, meshId, /* material */ 0);
+                PrintLn(string.Format("Inserted {0} at {1}, scale {2}, mesh ID {3}", shape, offset, scale, meshId));
+            }
+            else
+            {
+                PolyMesh poly;
+                switch (parts[1].ToLower())
+                {
+                    case "prism":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Prism, 6, 1, 1);
+                        break;
+                    case "antiprism":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Antiprism, 6, 1, 1);
+                        break;
+                    case "pyramid":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Pyramid, 6, 1, 1);
+                        break;
+                    case "elongatedpyramid":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedPyramid, 6, 1, 1);
+                        break;
+                    case "gyroelongatedpyramid":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedPyramid, 6, 1, 1);
+                        break;
+                    case "dipyramid":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Dipyramid, 6, 1, 1);
+                        break;
+                    case "elongateddipyramid":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedDipyramid, 6, 1, 1);
+                        break;
+                    case "gyroelongateddipyramid":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedDipyramid, 6, 1, 1);
+                        break;
+                    case "cupola":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Cupola, 6, 1, 1);
+                        break;
+                    case "elongatedcupola":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedCupola, 6, 1, 1);
+                        break;
+                    case "gyroelongatedcupola":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedCupola, 6, 1, 1);
+                        break;
+                    case "orthobicupola":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.OrthoBicupola, 6, 1, 1);
+                        break;
+                    case "gyrobicupola":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroBicupola, 6, 1, 1);
+                        break;
+                    case "elongatedorthobicupola":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedOrthoBicupola, 6, 1, 1);
+                        break;
+                    case "elongatedgyrobicupola":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedGyroBicupola, 6, 1, 1);
+                        break;
+                    case "gyroelongatedbicupola":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedBicupola, 6, 1, 1);
+                        break;
+                    case "trapezohedron":
+                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Trapezohedron, 6, 1, 1);
+                        break;
+                    default:
+                        PrintLn("Error: invalid primitive: " + parts[1]);
+                        PrintInsertCommandHelp();
+                        return;
+                }
+                mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, 0);
+            }
+            PeltzerMain.Instance.model.AddMesh(mesh);
         }
 
         private void CommandInsertDuration(string[] parts)
