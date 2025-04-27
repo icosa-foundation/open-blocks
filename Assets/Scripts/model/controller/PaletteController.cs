@@ -1319,7 +1319,10 @@ namespace com.google.apps.peltzer.client.model.controller
             m_ToolOptionsPanels = new Dictionary<ControllerMode, ToolOptionsPanel>();
             foreach (var panel in panels)
             {
-                m_ToolOptionsPanels.Add(panel.m_Mode, panel);
+                foreach (var mode in panel.m_Modes)
+                {
+                    m_ToolOptionsPanels.Add(mode, panel);
+                }
             }
         }
 
