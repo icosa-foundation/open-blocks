@@ -79,7 +79,14 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void UpdateSliderLabel(float value)
         {
-            m_TriangleCountSlider.hoverName = $"Max {(int)value} faces";
+            if (value == m_TriangleCountSlider.m_NoLimitSpecialValue)
+            {
+                m_TriangleCountSlider.hoverName = $"Unlimited faces";
+            }
+            else
+            {
+                m_TriangleCountSlider.hoverName = $"Max {(int)value} faces";
+            }
         }
     }
 }

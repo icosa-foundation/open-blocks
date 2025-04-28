@@ -200,7 +200,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public static ApiQueryParameters QueryParamsUser = new()
         {
             SearchText = "",
-            TriangleCountMax = maxPolyModelTriangles,
+            TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.ANY,
             OrderBy = OrderByChoices.NEWEST,
             Format = FormatChoices.BLOCKS,
@@ -211,7 +211,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public static ApiQueryParameters QueryParamsLiked = new()
         {
             SearchText = "",
-            TriangleCountMax = maxPolyModelTriangles,
+            TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.CREATIVE_COMMONS_BY,
             OrderBy = OrderByChoices.LIKED_TIME,
             Format = FormatChoices.BLOCKS,
@@ -222,7 +222,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public static ApiQueryParameters QueryParamsFeatured = new()
         {
             SearchText = "",
-            TriangleCountMax = maxPolyModelTriangles,
+            TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.CREATIVE_COMMONS_BY,
             OrderBy = OrderByChoices.BEST,
             Format = FormatChoices.BLOCKS,
@@ -230,7 +230,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             Category = CategoryChoices.ANY
         };
 
-        private static int maxPolyModelTriangles
+        private static int defaultMaxPolyModelTriangles
         {
             get
             {
@@ -241,8 +241,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
                 else
                 {
-                    // -1 for "no limit"
-                    return -1;
+                    // -9999 for "no limit"
+                    // This must match the special value set on the slider in FilterPanel.cs
+                    return -9999;
                 }
             }
         }

@@ -30,11 +30,17 @@ namespace com.google.apps.peltzer.client.model.controller
         public float m_Step = 0.1f;
         public int m_UpdateInterval = 1;
         public bool m_UpdateOnlyOnRelease;
+        public bool m_MaxMeansNoLimit;
+        public int m_NoLimitSpecialValue = -9999;
 
         public float Value
         {
             get
             {
+                if (m_MaxMeansNoLimit && m_NormalizedValue >= 1)
+                {
+                    return m_NoLimitSpecialValue;
+                }
                 float val = Mathf.Lerp(m_Minimum, m_Maximum, m_NormalizedValue);
                 val = Mathf.Round(val / m_Step) * m_Step;
                 return val;
@@ -102,13 +108,16 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void SetInitialValue(float val)
         {
+            if (val == m_NoLimitSpecialValue && m_MaxMeansNoLimit)
+            {
+                val = m_Maximum;
+            }
             val = Mathf.Round(val / m_Step) * m_Step;
             m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, val);
             if (m_SliderMaterial == null)
             {
                 m_SliderMaterial = m_SliderRenderer.material;
             }
-            ;
             m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
         }
 
