@@ -45,19 +45,21 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
+    "com.unity.modules.xr": "1.0.0",
+    "com.iam1337.extapi": "1.4.1"
   },
   "scopedRegistries": [
     {
       "name": "OpenUPM",
       "url": "https://package.openupm.com",
       "scopes": [
+        "com.iam1337.extapi",
         "com.ixxy.polyhydra.core",
         "com.nition.unity-octree",
-        "org.nuget.sharpziplib",
-        "org.nuget.system",
         "com.openupm",
-        "com.syomus.proceduraltoolkit"
+        "com.syomus.proceduraltoolkit",
+        "org.nuget.sharpziplib",
+        "org.nuget.system"
       ]
     }
   ]
