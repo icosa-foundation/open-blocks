@@ -361,14 +361,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     {
                         firstAssetId = assetId;
                     }
-                    // Once we've seen an ID we've seen before, no need to continue through the list. This helps with polling
-                    // regularly. This assumes new items always appear at the top of the list; we explicitly ask Zandria to sort by
-                    // featured/liked time, descending.
-                    if ((type == PolyMenuMain.CreationType.FEATURED && mostRecentFeaturedAssetId == assetId)
-                      || (type == PolyMenuMain.CreationType.LIKED && mostRecentLikedAssetId == assetId))
-                    {
-                        break;
-                    }
                 }
                 if (ParseAsset(asset, out objectStoreEntry, hackUrls))
                 {
@@ -378,12 +370,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             if (type == PolyMenuMain.CreationType.FEATURED)
             {
-                // TODO This assumption may not hold if user changes orderBy
                 mostRecentFeaturedAssetId = firstAssetId;
             }
             else if (type == PolyMenuMain.CreationType.LIKED)
             {
-                // TODO This assumption may not hold if user changes orderBy
                 mostRecentLikedAssetId = firstAssetId;
             }
             objectStoreSearchResult.results = objectStoreEntries.ToArray();
