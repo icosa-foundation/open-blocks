@@ -103,6 +103,12 @@ namespace com.google.apps.peltzer.client.zandria
             else
             {
                 Debug.LogError("Invalid file with asset id " + creationAssetId + " and local id " + creationLocalId);
+                // If the file is small enough, print the response to the console.
+                if (rawFileData.Length < 1024)
+                {
+                    string rawFileDataString = System.Text.Encoding.UTF8.GetString(rawFileData);
+                    Debug.LogError($"Response: {rawFileDataString}");
+                }
             }
 
             return false;
