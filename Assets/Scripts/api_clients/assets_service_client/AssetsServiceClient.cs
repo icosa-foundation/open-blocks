@@ -329,6 +329,21 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private readonly object deflateMutex = new object();
         private byte[] tempDeflateBuffer = new byte[65536 * 4];
 
+        private static List<string> mostRecentAssetIds = new();
+
+        private static void UpdateMostRecentAssetIds(IJEnumerable<JToken> assets)
+        {
+            mostRecentAssetIds.Clear();
+            foreach (JToken asset in assets)
+            {
+                string assetId = asset["url"]?.ToString();
+                if (assetId != null)
+                {
+                    mostRecentAssetIds.Add(assetId);
+                }
+            }
+        }
+
         /// <summary>
         ///   Takes a string, representing the ListAssetsResponse proto, and fills objectStoreSearchResult with
         ///   relevant fields from the response and returns true, if the response is of the expected format.
@@ -350,6 +365,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             List<ObjectStoreEntry> objectStoreEntries = new List<ObjectStoreEntry>();
 
             string firstAssetId = null;
+            var i = 0;
             foreach (JToken asset in assets)
             {
                 ObjectStoreEntry objectStoreEntry;
@@ -362,10 +378,24 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                         firstAssetId = assetId;
                     }
                 }
+
+                // If the asset is still in the same place we assume nothing has changed
+                if (mostRecentAssetIds.IndexOf(asset["url"]?.ToString()) == i)
+                {
+                    i++;
+                    continue;
+                }
+
                 if (ParseAsset(asset, out objectStoreEntry, hackUrls))
                 {
                     objectStoreEntries.Add(objectStoreEntry);
                 }
+                i++;
+            }
+
+            if (objectStoreEntries.Count > 0)
+            {
+                UpdateMostRecentAssetIds(assets);
             }
 
             if (type == PolyMenuMain.CreationType.FEATURED)
