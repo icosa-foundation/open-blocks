@@ -26,18 +26,32 @@ namespace TiltBrush
         public ShapeTypes ShapeType;
         public GridEnums.GridTypes GridType;
         public GridEnums.GridShapes GridShape;
-        public int Param1Int;
-        public int Param2Int;
-        public int Param3Int;
-        public float Param1Float;
-        public float Param2Float;
-        public float Param3Float;
         public List<PreviewPolyhedron.OpDefinition> Operators;
 
         // Used for all polymeshes
         public int MaterialIndex;
         public ColorMethods ColorMethod;
         public Color[] Colors;
+
+        public Dictionary<string, object> generatorParams;
+
+        // TODO
+        public int JohnsonSolidType => (int)generatorParams["JohnsonSolidType"];
+        public int WatermanSolidType => (int)generatorParams["WatermanSolidType"];
+
+        public float Width => (float)generatorParams["Width"];
+        public float Height => (float)generatorParams["Height"];
+        public float Depth => (float)generatorParams["Depth"];
+        public float CapHeight => (float)generatorParams["CapHeight"];
+        public int WatermanRoot => (int)generatorParams["WatermanRoot"];
+        public int WatermanC => (int)generatorParams["WatermanC"];
+        public int RepeatU => (int)generatorParams["RepeatU"];
+        public int RepeatV => (int)generatorParams["RepeatV"];
+        public int SegmentsU => (int)generatorParams["SegmentsU"];
+        public int SegmentsV => (int)generatorParams["SegmentsV"];
+        public int SegmentsW => (int)generatorParams["SegmentsW"];
+        public float RadiusInner => (float)generatorParams["RadiusInner"];
+        public float Angle => (float)generatorParams["Angle"];
 
         public Material CurrentMaterial => EditableModelManager.m_Instance.m_Materials[MaterialIndex];
 
@@ -48,164 +62,11 @@ namespace TiltBrush
             clone.Operators = (Operators == null) ? null : new List<PreviewPolyhedron.OpDefinition>(Operators);
             return clone;
         }
-
-        public static PolyRecipe FromDef(EditableModelDefinition emd)
-        {
-            var recipe = new PolyRecipe
-            {
-                GeneratorType = emd.GeneratorType
-            };
-
-            var p = emd.GeneratorParameters;
-
-            switch (emd.GeneratorType)
-            {
-                case GeneratorTypes.GeometryData:
-                    recipe.Vertices = emd.Vertices.ToList();
-                    recipe.Faces = emd.Faces.ToList();
-                    recipe.FaceRoles = emd.FaceRoles.Select(r => (int)r).ToList();
-                    recipe.FaceTags = emd.FaceTags;
-                    break;
-                // case GeneratorTypes.Johnson:
-                //     recipe.JohnsonPolyType = Convert.ToInt32(p.GetValueOrDefault("type"]);)                //     break;
-                case GeneratorTypes.Shapes:
-                    recipe.ShapeType = (ShapeTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
-                    recipe.Param1Float = Convert.ToSingle(p.GetValueOrDefault("a"));
-                    recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("b"));
-                    recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("c"));
-                    break;
-                case GeneratorTypes.Radial:
-                    recipe.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(p.GetValueOrDefault("type"));
-                    recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("sides"));
-                    switch (recipe.RadialPolyType)
-                    {
-                        case RadialSolids.RadialPolyType.Prism:
-                        case RadialSolids.RadialPolyType.Antiprism:
-                        case RadialSolids.RadialPolyType.Pyramid:
-                        case RadialSolids.RadialPolyType.Dipyramid:
-                        case RadialSolids.RadialPolyType.OrthoBicupola:
-                        case RadialSolids.RadialPolyType.GyroBicupola:
-                        case RadialSolids.RadialPolyType.Cupola:
-                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("height"));
-                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("capheight"));
-                            break;
-                        default:
-                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("height"));
-                            recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("capheight"));
-                            break;
-                    }
-                    break;
-                case GeneratorTypes.Uniform:
-                    recipe.UniformPolyType = (UniformTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
-                    break;
-                case GeneratorTypes.Waterman:
-                    recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("root"));
-                    recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("c"));
-                    break;
-                case GeneratorTypes.RegularGrids:
-                case GeneratorTypes.CatalanGrids:
-                case GeneratorTypes.OneUniformGrids:
-                case GeneratorTypes.TwoUniformGrids:
-                case GeneratorTypes.DurerGrids:
-                    recipe.GridType = (GridEnums.GridTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
-                    recipe.GridShape = (GridEnums.GridShapes)Convert.ToInt32(p.GetValueOrDefault("shape"));
-                    recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
-                    recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
-                    break;
-                case GeneratorTypes.Various:
-                    recipe.VariousSolidsType = (VariousSolidTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
-                    switch (recipe.VariousSolidsType)
-                    {
-                        case VariousSolidTypes.Box:
-                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
-                            recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
-                            recipe.Param3Int = Convert.ToInt32(p.GetValueOrDefault("z"));
-                            break;
-                        case VariousSolidTypes.Torus:
-                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
-                            recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
-                            recipe.Param1Float = Convert.ToSingle(p.GetValueOrDefault("z"));
-                            break;
-                        case VariousSolidTypes.Stairs:
-                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
-                            recipe.Param1Float = Convert.ToSingle(p.GetValueOrDefault("y"));
-                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("z"));
-                            break;
-                        case VariousSolidTypes.UvSphere:
-                        case VariousSolidTypes.UvHemisphere:
-                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
-                            recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
-                            break;
-                    }
-                    break;
-            }
-
-            recipe.Operators = new List<PreviewPolyhedron.OpDefinition>();
-            if (emd.Operations != null)
-            {
-                foreach (var opDict in emd.Operations)
-                {
-                    bool disabled = Convert.ToBoolean(opDict.GetValueOrDefault("disabled"));
-                    PolyMesh.Operation opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
-                    float amount = Convert.ToSingle(opDict.GetValueOrDefault("param1"));
-                    float amount2 = Convert.ToSingle(opDict.GetValueOrDefault("param2"));
-                    Color paramColor = Color.white;
-                    if (opDict.ContainsKey("paramColor"))
-                    {
-                        var colorData = (opDict["paramColor"] as JArray);
-                        paramColor = new Color(
-                            colorData[0].Value<float>(),
-                            colorData[1].Value<float>(),
-                            colorData[2].Value<float>()
-                        );
-                    }
-
-                    // Filter filterType = PreviewPolyhedron.OpDefinition.MakeFilterFromDict(opDict);
-                    // OpParams parameters = new OpParams(param1, param2, $"#{ColorUtility.ToHtmlStringRGB(paramColor)}", filter);
-                    FilterTypes filterType = (FilterTypes)Convert.ToInt32(opDict["filterType"]);
-                    bool amountRandomize = Convert.ToBoolean(opDict.GetValueOrDefault("param1Randomize"));
-                    bool amount2Randomize = Convert.ToBoolean(opDict.GetValueOrDefault("param2Randomize"));
-                    float filterParamFloat = Convert.ToSingle(opDict.GetValueOrDefault("filterParamFloat"));
-                    int filterParamInt = Convert.ToInt32(opDict.GetValueOrDefault("filterParamInt"));
-                    bool filterNot = Convert.ToBoolean(opDict.GetValueOrDefault("filterNot"));
-
-                    var opDef = new PreviewPolyhedron.OpDefinition
-                    {
-                        opType = opType,
-                        amount = amount,
-                        amountRandomize = amountRandomize,
-                        amount2 = amount2,
-                        amount2Randomize = amount2Randomize,
-                        disabled = disabled,
-                        filterType = filterType,
-                        filterParamFloat = filterParamFloat,
-                        filterParamInt = filterParamInt,
-                        paramColor = paramColor,
-                        filterNot = filterNot,
-                    };
-                    recipe.Operators.Add(opDef);
-                }
-            }
-            Color[] colors = null;
-            if (emd.Colors == null || emd.Colors.Length == 0)
-            {
-                // PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
-                // colors = (Color[])polyhydraPanel.DefaultColorPalette.Clone();
-            }
-            else
-            {
-                colors = (Color[])emd.Colors.Clone();
-            }
-            recipe.Colors = colors;
-            recipe.MaterialIndex = emd.MaterialIndex;
-            recipe.ColorMethod = emd.ColorMethod;
-            return recipe;
-        }
     }
 
     public static class PolyBuilder
     {
-        public static (PolyMesh, PolyMesh.MeshData) BuildFromPolyDef(PolyRecipe p)
+        public static PolyMesh BuildPolyMesh(PolyRecipe p)
         {
             PolyMesh poly = null;
 
@@ -219,69 +80,56 @@ namespace TiltBrush
                     poly.ScalingFactor = 0.864f;
                     break;
                 case GeneratorTypes.Waterman:
-                    poly = WatermanPoly.Build(root: p.Param1Int, c: p.Param2Int, mergeFaces: true);
+                    poly = WatermanPoly.Build(root: p.WatermanRoot, c: p.WatermanC, mergeFaces: true);
                     break;
                 case GeneratorTypes.RegularGrids:
                 case GeneratorTypes.CatalanGrids:
                 case GeneratorTypes.OneUniformGrids:
                 case GeneratorTypes.TwoUniformGrids:
                 case GeneratorTypes.DurerGrids:
-                    poly = Grids.Build(p.GridType, p.GridShape, p.Param1Int, p.Param2Int);
+                    poly = Grids.Build(p.GridType, p.GridShape, p.SegmentsU, p.SegmentsV);
                     poly.ScalingFactor = Mathf.Sqrt(2f) / 2f;
                     break;
                 case GeneratorTypes.Radial:
-                    p.Param1Int = Mathf.Max(p.Param1Int, 3);
-                    float height, capHeight;
-                    switch (p.RadialPolyType)
                     {
-                        case RadialSolids.RadialPolyType.Prism:
-                        case RadialSolids.RadialPolyType.Antiprism:
-                        case RadialSolids.RadialPolyType.Pyramid:
-                        case RadialSolids.RadialPolyType.Dipyramid:
-                        case RadialSolids.RadialPolyType.OrthoBicupola:
-                        case RadialSolids.RadialPolyType.GyroBicupola:
-                        case RadialSolids.RadialPolyType.Cupola:
-                            height = p.Param2Float;
-                            capHeight = p.Param2Float;
-                            break;
-                        default:
-                            height = p.Param2Float;
-                            capHeight = p.Param3Float;
-                            break;
+                        int segmentsU = Mathf.Max(p.SegmentsU, 3);
+                        poly = RadialSolids.Build(p.RadialPolyType, segmentsU, p.Height, p.CapHeight);
+                        poly.ScalingFactor = Mathf.Sqrt(2f) / 2f;
                     }
-
-                    poly = RadialSolids.Build(p.RadialPolyType, p.Param1Int, height, capHeight);
-                    poly.ScalingFactor = Mathf.Sqrt(2f) / 2f;
                     break;
                 case GeneratorTypes.Shapes:
                     switch (p.ShapeType)
                     {
                         case ShapeTypes.Polygon:
-                            p.Param1Int = Mathf.Max(p.Param1Int, 3);
-                            poly = Shapes.Build(ShapeTypes.Polygon, p.Param1Int);
-                            // Intentionally different to radial scaling.
-                            // Set so side lengths will match for any polygon
-                            poly.ScalingFactor = 1f / (2f * Mathf.Sin(Mathf.PI / p.Param1Int));
+                            {
+                                int segmentsU = Mathf.Max(p.SegmentsU, 3);
+                                poly = Shapes.Polygon(segmentsU, false, 0, 0, 1);
+                                // Intentionally different to radial scaling.
+                                // Set so side lengths will match for any polygon
+                                poly.ScalingFactor = 1f / (2f * Mathf.Sin(Mathf.PI / p.SegmentsU));
+                            }
                             break;
                         case ShapeTypes.Star:
-                            p.Param1Int = Mathf.Max(p.Param1Int, 3);
-                            poly = Shapes.Build(ShapeTypes.Star, p.Param1Int, p.Param2Float);
-                            poly.ScalingFactor = 1f / (2f * Mathf.Sin(Mathf.PI / p.Param1Int));
+                            {
+                                int segmentsU = Mathf.Max(p.SegmentsU, 3);
+                                poly = Shapes.Polygon(segmentsU, false, 0, 0, 1, p.RadiusInner);
+                                poly.ScalingFactor = 1f / (2f * Mathf.Sin(Mathf.PI / p.SegmentsU));
+                            }
                             break;
                         case ShapeTypes.L_Shape:
-                            poly = Shapes.Build(ShapeTypes.L_Shape, p.Param1Float, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
+                            poly = Shapes.L_Shape(p.Width, p.Height, p.Depth);
                             break;
                         case ShapeTypes.C_Shape:
-                            poly = Shapes.Build(ShapeTypes.C_Shape, p.Param1Float, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
+                            poly = Shapes.C_Shape(p.Width, p.Height, p.Depth);
                             break;
                         case ShapeTypes.H_Shape:
-                            poly = Shapes.Build(ShapeTypes.H_Shape, p.Param1Float, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
+                            poly = Shapes.H_Shape(p.Width, p.Height, p.Depth);
                             break;
                         case ShapeTypes.Arc:
-                            poly = Shapes.Build(ShapeTypes.Arc, p.Param1Int, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
+                            poly = Shapes.Arc(p.SegmentsU, 1, p.RadiusInner, p.Angle);
                             break;
                         case ShapeTypes.Arch:
-                            poly = Shapes.Build(ShapeTypes.Arch, p.Param1Int, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
+                            poly = Shapes.Arch(p.SegmentsU, 1, p.RadiusInner, p.Height);
                             break;
                     }
                     break;
@@ -289,23 +137,23 @@ namespace TiltBrush
                     switch (p.VariousSolidsType)
                     {
                         case VariousSolidTypes.Box:
-                            poly = VariousSolids.Box(p.Param1Int, p.Param2Int, p.Param3Int);
+                            poly = VariousSolids.Box(p.SegmentsU, p.SegmentsV, p.SegmentsW);
                             poly.ScalingFactor = 1f / Mathf.Sqrt(2f);
                             break;
                         case VariousSolidTypes.UvSphere:
-                            poly = VariousSolids.UvSphere(p.Param1Int, p.Param2Int);
+                            poly = VariousSolids.UvSphere(p.SegmentsU, p.SegmentsV);
                             poly.ScalingFactor = 0.5f;
                             break;
                         case VariousSolidTypes.UvHemisphere:
-                            poly = VariousSolids.UvHemisphere(p.Param1Int, p.Param2Int);
+                            poly = VariousSolids.UvHemisphere(p.SegmentsU, p.SegmentsV);
                             poly.ScalingFactor = 0.5f;
                             break;
                         case VariousSolidTypes.Torus:
-                            poly = VariousSolids.Torus(p.Param1Int, p.Param2Int, p.Param3Float);
+                            poly = VariousSolids.Torus(p.SegmentsU, p.SegmentsV, p.RadiusInner);
                             poly.ScalingFactor = 1f / Mathf.Sqrt(2f);
                             break;
                         case VariousSolidTypes.Stairs:
-                            poly = VariousSolids.Stairs(p.Param1Int, p.Param2Float, p.Param3Float);
+                            poly = VariousSolids.Stairs(p.SegmentsU, p.Width, p.Height);
                             poly.ScalingFactor = 1f / Mathf.Sqrt(2f);
                             break;
                     }
@@ -322,6 +170,12 @@ namespace TiltBrush
                     poly = ApplyOp(poly, op);
                 }
             }
+            return poly;
+        }
+
+        public static (PolyMesh, PolyMesh.MeshData) BuildFromPolyDef(PolyRecipe p)
+        {
+            var poly = BuildPolyMesh(p);
             PolyMesh.MeshData meshData = poly.BuildMeshData(false, p.Colors, p.ColorMethod);
             return (poly, meshData);
         }
@@ -373,5 +227,10 @@ namespace TiltBrush
             return poly;
         }
 
+        public static PolyMesh.MeshData BuildMeshData(PolyMesh poly, Color[] colors, ColorMethods colorMethod)
+        {
+            return poly.BuildMeshData(false, colors, colorMethod);
+
+        }
     }
 }

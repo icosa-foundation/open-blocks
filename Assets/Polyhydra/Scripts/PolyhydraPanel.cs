@@ -231,7 +231,7 @@ namespace TiltBrush
                 // experimentalPanel = PanelManager.m_Instance.GetActivePanelByType(PanelType.Experimental);
                 // if (experimentalPanel != null)
                 // {
-                    // attachPoint = experimentalPanel.GetComponentInChildren<PolyhydraModeTray>().m_PreviewPolyAttachPoint;
+                // attachPoint = experimentalPanel.GetComponentInChildren<PolyhydraModeTray>().m_PreviewPolyAttachPoint;
                 // }
             }
             if (attachPoint != null)
@@ -258,27 +258,6 @@ namespace TiltBrush
         {
             PresetInitialSaveButton.SetActive(!popupButtonEnabled);
             PresetSaveOptionsPopupButton.SetActive(popupButtonEnabled);
-        }
-
-        public void HandleSlider1(Vector3 value)
-        {
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = Mathf.FloorToInt(value.z);
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Float = value.z;
-            RebuildPreviewAndLinked();
-        }
-
-        public void HandleSlider2(Vector3 value)
-        {
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = Mathf.FloorToInt(value.z);
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Float = value.z;
-            RebuildPreviewAndLinked();
-        }
-
-        public void HandleSlider3(Vector3 value)
-        {
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Int = Mathf.FloorToInt(value.z);
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Float = value.z;
-            RebuildPreviewAndLinked();
         }
 
         private void RebuildPreviewAndLinked()
@@ -797,7 +776,6 @@ namespace TiltBrush
 
         void SavePresetJson(string presetPath)
         {
-            EditableModelDefinition emDef = new EditableModelDefinition(PreviewPolyhedron.m_Instance.m_PolyRecipe);
             var jsonSerializer = new JsonSerializer
             {
                 // ContractResolver = new CustomJsonContractResolver()
@@ -944,13 +922,6 @@ namespace TiltBrush
                     ButtonColorMethod.SetDescriptionText($"Filter: {friendlyLabel}");
                     break;
             }
-        }
-
-        public void LoadFromWidget(EditableModelWidget ewidget)
-        {
-            // LoadFromRecipe(ewidget.m_PolyRecipe);
-            var edef = new EditableModelDefinition(ewidget.m_PolyRecipe);
-            LoadFromDefinition(edef);
         }
 
         public void LoadFromDefinition(EditableModelDefinition emd)
@@ -1232,28 +1203,28 @@ namespace TiltBrush
                     break;
                 case GeneratorTypes.RegularGrids:
                     m_CurrentMainCategory = PolyhydraMainCategories.RegularGrids;
-                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                    Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                    Slider1.UpdateValueAbsolute(recipe.RepeatU);
+                    Slider2.UpdateValueAbsolute(recipe.RepeatV);
                     break;
                 case GeneratorTypes.CatalanGrids:
                     m_CurrentMainCategory = PolyhydraMainCategories.CatalanGrids;
-                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                    Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                    Slider1.UpdateValueAbsolute(recipe.RepeatU);
+                    Slider2.UpdateValueAbsolute(recipe.RepeatV);
                     break;
                 case GeneratorTypes.OneUniformGrids:
                     m_CurrentMainCategory = PolyhydraMainCategories.ArchimedeanGrids;
-                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                    Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                    Slider1.UpdateValueAbsolute(recipe.RepeatU);
+                    Slider2.UpdateValueAbsolute(recipe.RepeatV);
                     break;
                 case GeneratorTypes.TwoUniformGrids:
                     m_CurrentMainCategory = PolyhydraMainCategories.TwoUniformGrids;
-                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                    Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                    Slider1.UpdateValueAbsolute(recipe.RepeatU);
+                    Slider2.UpdateValueAbsolute(recipe.RepeatV);
                     break;
                 case GeneratorTypes.DurerGrids:
                     m_CurrentMainCategory = PolyhydraMainCategories.DurerGrids;
-                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                    Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                    Slider1.UpdateValueAbsolute(recipe.RepeatU);
+                    Slider2.UpdateValueAbsolute(recipe.RepeatV);
                     break;
                 case GeneratorTypes.Shapes:
                     m_CurrentMainCategory = PolyhydraMainCategories.Various;
@@ -1261,42 +1232,42 @@ namespace TiltBrush
                     {
                         case ShapeTypes.Polygon:
                             m_OtherSolidsCategory = OtherSolidsCategories.Polygon;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Int);
+                            Slider1.UpdateValueAbsolute(recipe.SegmentsU);
                             break;
                         case ShapeTypes.Star:
                             m_OtherSolidsCategory = OtherSolidsCategories.Star;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Float);
+                            Slider1.UpdateValueAbsolute(recipe.SegmentsU);
+                            Slider2.UpdateValueAbsolute(recipe.RadiusInner);
                             break;
                         case ShapeTypes.L_Shape:
                             m_OtherSolidsCategory = OtherSolidsCategories.L_Shape;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Float);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Float);
-                            Slider3.UpdateValueAbsolute(recipe.Param3Float);
+                            Slider1.UpdateValueAbsolute(recipe.Width);
+                            Slider2.UpdateValueAbsolute(recipe.Height);
+                            Slider3.UpdateValueAbsolute(recipe.Depth);
                             break;
                         case ShapeTypes.C_Shape:
                             m_OtherSolidsCategory = OtherSolidsCategories.C_Shape;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Float);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Float);
-                            Slider3.UpdateValueAbsolute(recipe.Param3Float);
+                            Slider1.UpdateValueAbsolute(recipe.Width);
+                            Slider2.UpdateValueAbsolute(recipe.Height);
+                            Slider3.UpdateValueAbsolute(recipe.Depth);
                             break;
                         case ShapeTypes.H_Shape:
                             m_OtherSolidsCategory = OtherSolidsCategories.H_Shape;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Float);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Float);
-                            Slider3.UpdateValueAbsolute(recipe.Param3Float);
+                            Slider1.UpdateValueAbsolute(recipe.Width);
+                            Slider2.UpdateValueAbsolute(recipe.Height);
+                            Slider3.UpdateValueAbsolute(recipe.Depth);
                             break;
                         case ShapeTypes.Arc:
                             m_OtherSolidsCategory = OtherSolidsCategories.Arc;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Float);
-                            Slider3.UpdateValueAbsolute(recipe.Param3Float);
+                            Slider1.UpdateValueAbsolute(recipe.SegmentsU);
+                            Slider2.UpdateValueAbsolute(recipe.RadiusInner);
+                            Slider3.UpdateValueAbsolute(recipe.Angle);
                             break;
                         case ShapeTypes.Arch:
                             m_OtherSolidsCategory = OtherSolidsCategories.Arch;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Float);
-                            Slider3.UpdateValueAbsolute(recipe.Param3Float);
+                            Slider1.UpdateValueAbsolute(recipe.SegmentsU);
+                            Slider2.UpdateValueAbsolute(recipe.RadiusInner);
+                            Slider3.UpdateValueAbsolute(recipe.Height);
                             break;
                     }
                     break;
@@ -1306,44 +1277,44 @@ namespace TiltBrush
                     {
                         case VariousSolidTypes.Box:
                             m_OtherSolidsCategory = OtherSolidsCategories.Box;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Int);
-                            Slider3.UpdateValueAbsolute(recipe.Param3Int);
+                            Slider1.UpdateValueAbsolute(recipe.SegmentsU);
+                            Slider2.UpdateValueAbsolute(recipe.SegmentsV);
+                            Slider3.UpdateValueAbsolute(recipe.SegmentsW);
                             break;
                         case VariousSolidTypes.UvHemisphere:
                             m_OtherSolidsCategory = OtherSolidsCategories.UvHemisphere;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                            Slider1.UpdateValueAbsolute(recipe.SegmentsU);
+                            Slider2.UpdateValueAbsolute(recipe.SegmentsV);
                             break;
                         case VariousSolidTypes.UvSphere:
                             m_OtherSolidsCategory = OtherSolidsCategories.UvSphere;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                            Slider1.UpdateValueAbsolute(recipe.SegmentsU);
+                            Slider2.UpdateValueAbsolute(recipe.SegmentsV);
                             break;
                         case VariousSolidTypes.Torus:
                             m_OtherSolidsCategory = OtherSolidsCategories.Torus;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Int);
-                            Slider3.UpdateValueAbsolute(recipe.Param3Float);
+                            Slider1.UpdateValueAbsolute(recipe.SegmentsU);
+                            Slider2.UpdateValueAbsolute(recipe.SegmentsV);
+                            Slider3.UpdateValueAbsolute(recipe.RadiusInner);
                             break;
                         case VariousSolidTypes.Stairs:
                             m_OtherSolidsCategory = OtherSolidsCategories.Stairs;
-                            Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                            Slider2.UpdateValueAbsolute(recipe.Param2Float);
-                            Slider3.UpdateValueAbsolute(recipe.Param3Float);
+                            Slider1.UpdateValueAbsolute(recipe.SegmentsU);
+                            Slider2.UpdateValueAbsolute(recipe.Width);
+                            Slider3.UpdateValueAbsolute(recipe.Height);
                             break;
                     }
                     break;
                 case GeneratorTypes.Radial:
                     m_CurrentMainCategory = PolyhydraMainCategories.Radial;
-                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                    Slider2.UpdateValueAbsolute(recipe.Param2Float);
-                    Slider3.UpdateValueAbsolute(recipe.Param3Float);
+                    Slider1.UpdateValueAbsolute(recipe.SegmentsU);
+                    Slider2.UpdateValueAbsolute(recipe.Height);
+                    Slider3.UpdateValueAbsolute(recipe.CapHeight);
                     break;
                 case GeneratorTypes.Waterman:
                     m_CurrentMainCategory = PolyhydraMainCategories.Waterman;
-                    Slider1.UpdateValueAbsolute(recipe.Param1Int);
-                    Slider2.UpdateValueAbsolute(recipe.Param2Int);
+                    Slider1.UpdateValueAbsolute(recipe.WatermanRoot);
+                    Slider2.UpdateValueAbsolute(recipe.WatermanC);
                     break;
                 case GeneratorTypes.Uniform:
                     var uniformType = Uniform.Uniforms[(int)recipe.UniformPolyType];

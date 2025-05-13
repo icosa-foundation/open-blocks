@@ -166,10 +166,11 @@ public class PreviewPolyhedron : MonoBehaviour
     {
         if (m_PolyRecipe.GeneratorType == GeneratorTypes.Uniform)
         {
-            if (m_PolyRecipe.Param1Int < 3) { m_PolyRecipe.Param1Int = 3; }
-            if (m_PolyRecipe.Param1Int > 16) m_PolyRecipe.Param1Int = 16;
-            if (m_PolyRecipe.Param2Int > m_PolyRecipe.Param1Int - 2) m_PolyRecipe.Param2Int = m_PolyRecipe.Param1Int - 2;
-            if (m_PolyRecipe.Param2Int < 2) m_PolyRecipe.Param2Int = 2;
+            // TODO
+            // if (m_PolyRecipe.Param1Int < 3) { m_PolyRecipe.Param1Int = 3; }
+            // if (m_PolyRecipe.Param1Int > 16) m_PolyRecipe.Param1Int = 16;
+            // if (m_PolyRecipe.Param2Int > m_PolyRecipe.Param1Int - 2) m_PolyRecipe.Param2Int = m_PolyRecipe.Param1Int - 2;
+            // if (m_PolyRecipe.Param2Int < 2) m_PolyRecipe.Param2Int = 2;
         }
 
         // Control the amount variables to some degree
@@ -375,13 +376,13 @@ public class PreviewPolyhedron : MonoBehaviour
         return conway;
     }
 
-//     public List<EditableModelWidget> GetSelectedWidgets() => SelectionManager
-//         .m_Instance
-//         .SelectedWidgets
-//         .Where(widget =>
-//             widget.GetType() == typeof(EditableModelWidget)
-//         )
-//         .Select(w => w as EditableModelWidget)
-//         .ToList();
+    //     public List<EditableModelWidget> GetSelectedWidgets() => SelectionManager
+    //         .m_Instance
+    //         .SelectedWidgets
+    //         .Where(widget =>
+    //             widget.GetType() == typeof(EditableModelWidget)
+    //         )
+    //         .Select(w => w as EditableModelWidget)
+    //         .ToList();
 }
 
