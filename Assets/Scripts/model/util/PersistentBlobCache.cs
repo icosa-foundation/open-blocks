@@ -322,7 +322,7 @@ namespace com.google.apps.peltzer.client.model.util
             }
             else if (!File.Exists(fullPath))
             {
-                // Too old.
+                // Cache hit, but file not found.
                 readRequest.data = null;
                 readRequest.success = false;
             }

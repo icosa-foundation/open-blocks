@@ -16,6 +16,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using com.google.apps.peltzer.client.api_clients.assets_service_client;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.controller;
@@ -70,7 +71,7 @@ namespace com.google.apps.peltzer.client.menu
 
         private static float DETAIL_TILE_SIZE = 0.15f;
 
-        private static string TAKE_HEADSET_OFF_FOR_SIGN_IN_PROMPT = "Take off your headset to sign in";
+        private static string USE_BROWSER_FOR_SIGN_IN_PROMPT = "Continue sign-in using your web browser";
 
         private static StringBuilder BASE_CREATOR = new StringBuilder("by ");
 
@@ -93,7 +94,7 @@ namespace com.google.apps.peltzer.client.menu
 
         private PaletteController paletteController;
         private ControllerMain controllerMain;
-        private ZandriaCreationsManager creationsManager;
+        public ZandriaCreationsManager creationsManager;
         private ZandriaCreationHandler currentCreationHandler;
 
         // The possible menuModes in the order they can be moved through using the palette touchpad.
@@ -778,19 +779,6 @@ namespace com.google.apps.peltzer.client.menu
             // available creations but we should keep adding creations as they load when the menu is open. This
             // should be implemented with our pagination.
 
-            // First hide any gameObjects on the palette so we can show the correct ones.
-            for (int i = 0; i < placeholders.Length; i++)
-            {
-                ZandriaCreationHandler[] creationHandlers =
-                  placeholders[i].GetComponentsInChildren<ZandriaCreationHandler>();
-
-                for (int j = 0; j < creationHandlers.Length; j++)
-                {
-                    creationHandlers[j].isActiveOnMenu = false;
-                    creationHandlers[j].gameObject.SetActive(false);
-                }
-            }
-
             int from = CurrentPage() * TILE_COUNT;
             int upToNotIncluding = from + TILE_COUNT;
             List<GameObject> previews = creationsManager.GetPreviews(type, CurrentPage() * TILE_COUNT, upToNotIncluding);
@@ -798,6 +786,20 @@ namespace com.google.apps.peltzer.client.menu
             // If there are available previews load them onto the palette.
             if (previews.Count > 0)
             {
+                Debug.Log("Found " + previews.Count + " previews for type: " + type);
+                // First hide any gameObjects on the palette so we can show the correct ones.
+                for (int i = 0; i < placeholders.Length; i++)
+                {
+                    ZandriaCreationHandler[] creationHandlers =
+                        placeholders[i].GetComponentsInChildren<ZandriaCreationHandler>();
+
+                    for (int j = 0; j < creationHandlers.Length; j++)
+                    {
+                        creationHandlers[j].isActiveOnMenu = false;
+                        creationHandlers[j].gameObject.SetActive(false);
+                    }
+                }
+
                 for (int i = 0; i < TILE_COUNT && i < previews.Count; i++)
                 {
                     GameObject zandriaCreationHolder = previews[i];
@@ -891,6 +893,8 @@ namespace com.google.apps.peltzer.client.menu
             SetActiveMenu(Menu.DETAILS_MENU);
             // First close and remove the information for an already open Details panel.
             // The user is able to click on a new creation by clicking under the Details panel before closing.
+
+            // TODO Load the model at this point (at least on Quest)?
 
             if (creation != null)
             {
@@ -1014,7 +1018,7 @@ namespace com.google.apps.peltzer.client.menu
             return menuModes[menuIndex].menuSection;
         }
 
-        private CreationType CurrentCreationType()
+        public CreationType CurrentCreationType()
         {
             return menuModes[menuIndex].creationType;
         }
@@ -1067,7 +1071,7 @@ namespace com.google.apps.peltzer.client.menu
         /// </summary>
         public void PromptUserToSignIn()
         {
-            signInText.text = TAKE_HEADSET_OFF_FOR_SIGN_IN_PROMPT;
+            signInText.text = USE_BROWSER_FOR_SIGN_IN_PROMPT;
         }
 
         /// <summary>
@@ -1087,7 +1091,7 @@ namespace com.google.apps.peltzer.client.menu
             // We ignore the 'bool' output of the below: it it fails, we'll continue with the mesh in its current scale.
             Scaler.TryScalingMeshes(meshes, 1f / PeltzerMain.Instance.worldSpace.scale);
 
-            // We give them new IDs at this point so they won't collide with anything already in the scene or 
+            // We give them new IDs at this point so they won't collide with anything already in the scene or
             // (much more likely) with a previous import of this same creation. We need to store a local list of usedIds
             // to avoid some rare, but potential, cases where the same ID is generated twice during this import.
             List<int> usedIds = new List<int>(meshes.Count);
@@ -1134,6 +1138,52 @@ namespace com.google.apps.peltzer.client.menu
         public bool DetailsMenuIsActive()
         {
             return activeMenu == Menu.DETAILS_MENU;
+        }
+
+        private void _SetModelParam(Action<ApiQueryParameters> modifyQuery)
+        {
+            var q = CurrentQueryParams;
+            modifyQuery(q);
+            creationsManager.SetQueryParams(CurrentCreationType(), q);
+        }
+
+        public ApiQueryParameters CurrentQueryParams => creationsManager.GetQueryParams(CurrentCreationType());
+
+        public void RefreshResults()
+        {
+            var type = CurrentCreationType();
+            // TODO - can we avoid losing work we've already done here?
+            // creationsManager.ClearLoad(type);
+            creationsManager.StartLoad(type);
+            ApplyMenuChange(menuIndex, true);
+            offlineModelsMenu.SetActive(false);
+            modelsMenu.SetActive(true);
+        }
+
+        public void SetApiSearchText(string text)
+        {
+            _SetModelParam(q => q.SearchText = text);
+        }
+
+        public void SetApiCategoryFilter(string category)
+        {
+            if (ChoicesHelper.IsValidChoice<CategoryChoices>(category))
+            {
+                _SetModelParam(q => q.Category = category);
+            }
+        }
+
+        public void SetApiOrderBy(string orderBy)
+        {
+            if (ChoicesHelper.IsValidChoice<OrderByChoices>(orderBy))
+            {
+                _SetModelParam(q => q.OrderBy = orderBy);
+            }
+        }
+
+        public void SetApiTriangleCountMax(int max)
+        {
+            _SetModelParam(q => q.TriangleCountMax = max);
         }
     }
 }

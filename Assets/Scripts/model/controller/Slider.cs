@@ -30,11 +30,17 @@ namespace com.google.apps.peltzer.client.model.controller
         public float m_Step = 0.1f;
         public int m_UpdateInterval = 1;
         public bool m_UpdateOnlyOnRelease;
+        public bool m_MaxMeansNoLimit;
+        public int m_NoLimitSpecialValue = -9999;
 
         public float Value
         {
             get
             {
+                if (m_MaxMeansNoLimit && m_NormalizedValue >= 1)
+                {
+                    return m_NoLimitSpecialValue;
+                }
                 float val = Mathf.Lerp(m_Minimum, m_Maximum, m_NormalizedValue);
                 val = Mathf.Round(val / m_Step) * m_Step;
                 return val;
@@ -95,21 +101,11 @@ namespace com.google.apps.peltzer.client.model.controller
             if (m_IsDragging)
             {
                 float normalizedLocalPosition = GetNormalizedLocalPosition(hit);
-                float val = Mathf.Lerp(m_Minimum, m_Maximum, normalizedLocalPosition);
-                SetInitialValue(val);
+                m_Value = Mathf.Lerp(m_Minimum, m_Maximum, normalizedLocalPosition);
+                m_Value = Mathf.Round(m_Value / m_Step) * m_Step;
+                m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, m_Value);
+                m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
             }
-        }
-
-        public void SetInitialValue(float val)
-        {
-            val = Mathf.Round(val / m_Step) * m_Step;
-            m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, val);
-            if (m_SliderMaterial == null)
-            {
-                m_SliderMaterial = m_SliderRenderer.material;
-            }
-            ;
-            m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
         }
 
         private void ControllerEventHandler(object sender, ControllerEventArgs args)
