@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.iam1337.extapi": "file:../../extApi",
     "com.ixxy.polyhydra.core": "file:../../polyhydra-core/packages/Polyhydra",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.meta.xr.sdk.platform": "74.0.0",
@@ -45,8 +46,7 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0",
-    "com.iam1337.extapi": "1.4.1"
+    "com.unity.modules.xr": "1.0.0"
   },
   "scopedRegistries": [
     {

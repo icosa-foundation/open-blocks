@@ -1,11 +1,10 @@
 {
   "dependencies": {
     "com.iam1337.extapi": {
-      "version": "1.4.1",
+      "version": "file:../../extApi",
       "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://package.openupm.com"
+      "source": "local",
+      "dependencies": {}
     },
     "com.ixxy.polyhydra.core": {
       "version": "file:../../polyhydra-core/packages/Polyhydra",
