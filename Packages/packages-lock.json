@@ -1,22 +1,24 @@
 {
   "dependencies": {
     "com.iam1337.extapi": {
-      "version": "file:../../extApi",
+      "version": "https://github.com/icosa-mirror/extApi.git#upm",
       "depth": 0,
-      "source": "local",
-      "dependencies": {}
+      "source": "git",
+      "dependencies": {},
+      "hash": "cbc6696738c4e4c1f84b45ae5bcd21f477a8c38a"
     },
     "com.ixxy.polyhydra.core": {
-      "version": "file:../../polyhydra-core/packages/Polyhydra",
+      "version": "https://github.com/ixxyXR/polyhydra-core.git#upm",
       "depth": 0,
-      "source": "local",
+      "source": "git",
       "dependencies": {
         "com.syomus.proceduraltoolkit": "0.2.3",
         "com.nition.unity-octree": "0.0.1-preview"
-      }
+      },
+      "hash": "fbe34113e8af9d4514cd2392a244c58059dc16bb"
     },
     "com.ixxy.unitysymmetry": {
-      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
+      "version": "https://github.com/IxxyXR/unity-symmetry.git#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {},
