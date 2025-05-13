@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using com.google.apps.peltzer.client.desktop_app;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.export;
 using com.google.apps.peltzer.client.model.main;
 using extApi;
 using Polyhydra.Core;
+using Polyhydra.Wythoff;
+using TiltBrush;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -33,27 +36,6 @@ public class ApiManager : MonoBehaviour
 [ApiRoute("api")]
 public class ApiController
 {
-    [Serializable]
-    class ResponseMessage
-    {
-        public string message;
-
-        public ResponseMessage(string message)
-        {
-            this.message = message;
-        }
-    }
-
-    [Serializable]
-    class ResponseMeshId
-    {
-        public int meshId;
-
-        public ResponseMeshId(int meshId)
-        {
-            this.meshId = meshId;
-        }
-    }
 
     private Vector3 ParseVector3(string position)
     {
@@ -61,17 +43,12 @@ public class ApiController
         return new Vector3(float.Parse(p[0]), float.Parse(p[1]), float.Parse(p[2]));
     }
 
-    private ApiResult Msg(string message)
-    {
-        return ApiResult.Ok(new ResponseMessage(message));
-    }
-
-    [ApiGet("load/{path}")]
+    [ApiGet("scene/load/{path}")]
     public ApiResult ApiLoadFile(string filePath)
     {
         if (!File.Exists(filePath))
         {
-            return Msg($"Error: file does not exist: {filePath}");
+            return ApiResult.NotFound($"Error: file does not exist: {filePath}");
         }
         try
         {
@@ -79,52 +56,68 @@ public class ApiController
             byte[] fileBytes = File.ReadAllBytes(filePath);
             if (!PeltzerFileHandler.PeltzerFileFromBytes(fileBytes, out peltzerFile))
             {
-                return Msg("Failed to load. Bad format?");
+                return ApiResult.BadRequest("Failed to load. Bad format?");
             }
             PeltzerMain.Instance.LoadPeltzerFileIntoModel(peltzerFile);
-            return Msg($"Loaded successfully: {filePath}");
+            return ApiResult.Ok($"Success");
         }
         catch (Exception e)
         {
-            return Msg($"Load failed: {e}");
+            return ApiResult.InternalServerError($"Load failed: {e}");
         }
     }
 
-    [ApiGet("paintmesh/{meshId}/{materialId}")]
+    [ApiGet("mesh/paint/{meshId}")]
     public ApiResult Paint(int meshId, int materialId)
     {
         FaceProperties props = new FaceProperties(materialId);
         var cmd = new ChangeFacePropertiesCommand(meshId, props);
         PeltzerMain.Instance.model.ApplyCommand(cmd);
-        return Msg($"Set mesh {meshId} to color {materialId}");
+        return ApiResult.Ok(meshId);
     }
 
-    [ApiGet("copymesh/{meshId}")]
+    [ApiGet("mesh/copy/{meshId}")]
     public ApiResult CopyMesh(int meshId)
     {
         var mesh = PeltzerMain.Instance.model.GetMesh(meshId);
-        MMesh copy = mesh.CloneWithNewIdAndGroup(PeltzerMain.Instance.model.GenerateMeshId(), MMesh.GROUP_NONE);
+        int newMeshId = PeltzerMain.Instance.model.GenerateMeshId();
+        MMesh copy = mesh.CloneWithNewIdAndGroup(newMeshId, MMesh.GROUP_NONE);
         var cmd = new CopyMeshCommand(meshId, copy);
         PeltzerMain.Instance.model.ApplyCommand(cmd);
-        return Msg("Success");
+        return ApiResult.Ok(newMeshId);
     }
 
-    [ApiGet("deletemesh/{meshId}")]
+    [ApiGet("scene/meshes")]
+    public ApiResult ListMeshes()
+    {
+        var meshes = PeltzerMain.Instance.model.GetAllMeshes();
+        var meshIds = meshes.Select(m => m.id);
+        return ApiResult.Ok(meshIds);
+    }
+
+    [ApiGet("mesh/info/{meshId}")]
+    public ApiResult GetMeshInfo(int meshId)
+    {
+        var mesh = PeltzerMain.Instance.model.GetMesh(meshId);
+        return ApiResult.Ok(new MeshApiResponse(mesh));
+    }
+
+    [ApiGet("mesh/delete/{meshId}")]
     public ApiResult DeleteMesh(int meshId)
     {
         var cmd = new DeleteMeshCommand(meshId);
         PeltzerMain.Instance.model.ApplyCommand(cmd);
-        return Msg("Success");
+        return ApiResult.Ok("Success");
     }
 
-    [ApiGet("movemesh/{meshId}/{position}/{rotation}")]
+    [ApiGet("mesh/transform/{meshId}")]
     public ApiResult MoveMesh(int meshId, string position, string rotation)
     {
         var pos = ParseVector3(position);
-        var rot = Quaternion.Euler(pos[0], pos[1], pos[2]);
-        var cmd = new MoveMeshCommand(meshId, pos, rot);
+        var rot = ParseVector3(rotation);
+        var cmd = new MoveMeshCommand(meshId, pos, Quaternion.Euler(rot[0], rot[1], rot[2]));
         PeltzerMain.Instance.model.ApplyCommand(cmd);
-        return Msg("Success");
+        return ApiResult.Ok("Success");
     }
 
     // [ApiGet("addmesh/{foo}/{id}")]
@@ -134,7 +127,7 @@ public class ApiController
     //     int meshId = PeltzerMain.Instance.model.GenerateMeshId();
     //     var cmd = new AddMeshCommand(mesh, false);
     //     PeltzerMain.Instance.model.ApplyCommand(cmd);
-    //     return Msg("Success");
+    //     return ApiResult.Ok("Success");
     // }
 
     // [ApiGet("replacemesh/{foo}/{id}")]
@@ -142,22 +135,89 @@ public class ApiController
     // {
     //     var cmd = new ReplaceMeshCommand();
     //     PeltzerMain.Instance.model.ApplyCommand(cmd);
-    //     return Msg("Success");
+    //     return ApiResult.Ok("Success");
     // }
 
-    [ApiGet("groupmesh/{meshId}/{group}")]
-    public ApiResult GroupMesh(int meshId, int groupId)
+    [ApiGet("mesh/group/{meshIds}")]
+    public ApiResult GroupMeshes(string meshIds)
     {
+        var meshes = meshIds.Split(',').Select(int.Parse).ToList();
         var model = PeltzerMain.Instance.model;
-        var cmd = SetMeshGroupsCommand.CreateGroupMeshesCommand(model, new List<int> { meshId });
+        var cmd = SetMeshGroupsCommand.CreateGroupMeshesCommand(model, meshes);
         PeltzerMain.Instance.model.ApplyCommand(cmd);
-        return Msg("Success");
+        return ApiResult.Ok("Success");
     }
 
-    [ApiGet("insert/{shape}")]
+    [ApiGet("mesh/insert")]
     public ApiResult Insert(string shape)
     {
         return _Insert(shape, Vector3.zero, Vector3.one);
+    }
+
+    public ApiResult InsertPolyhydra(Dictionary<string, object> kwargs)
+    {
+        MMesh mesh;
+        int meshId = PeltzerMain.Instance.model.GenerateMeshId();
+
+        var recipe = GenerateRecipe(kwargs);
+
+        var poly = PolyBuilder.BuildPolyMesh(recipe);
+        mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, 0);
+        if (mesh != null)
+        {
+            PeltzerMain.Instance.model.AddMesh(mesh);
+            return ApiResult.Ok(meshId);
+        }
+        return ApiResult.InternalServerError("Failed to add mesh");
+    }
+
+    private PolyRecipe GenerateRecipe(Dictionary<string, object> kwargs)
+    {
+        var recipe = new PolyRecipe();
+
+        T ParseEnum<T>(string value) where T : Enum
+        {
+            return (T)Enum.Parse(typeof(T), value);
+        }
+
+        recipe.GeneratorType = ParseEnum<GeneratorTypes>("generator");
+        recipe.generatorParams = kwargs;
+
+        switch (recipe.GeneratorType)
+        {
+            case GeneratorTypes.RegularGrids:
+            case GeneratorTypes.CatalanGrids:
+            case GeneratorTypes.OneUniformGrids:
+            case GeneratorTypes.TwoUniformGrids:
+            case GeneratorTypes.DurerGrids:
+                recipe.GridType = ParseEnum<GridEnums.GridTypes>("gridType");
+                recipe.GridShape = ParseEnum<GridEnums.GridShapes>("gridShape");
+                break;
+            case GeneratorTypes.Shapes:
+                recipe.ShapeType = ParseEnum<ShapeTypes>("shapeName");
+                break;
+            case GeneratorTypes.Radial:
+                recipe.RadialPolyType = ParseEnum<RadialSolids.RadialPolyType>("RadialPolyType");
+                break;
+            // case GeneratorTypes.Johnson:
+            //     recipe.JohnsonSolidType = int.Parse(kwargs["johnsonSolidType"].ToString());
+            //     break;
+            case GeneratorTypes.Uniform:
+                recipe.UniformPolyType = ParseEnum<UniformTypes>("shapeName");
+                break;
+            case GeneratorTypes.Various:
+                recipe.VariousSolidsType = ParseEnum<VariousSolidTypes>("shapeName");
+                break;
+            // case GeneratorTypes.Waterman:
+            //     recipe.WatermanSolidType = int.Parse(kwargs["watermanSolidType"].ToString());
+            //     break;
+            case GeneratorTypes.FileSystem:
+            case GeneratorTypes.GeometryData:
+            case GeneratorTypes.ConwayString:
+            default:
+                break;
+        }
+        return recipe;
     }
 
     public ApiResult _Insert(string shapeName, Vector3 offset, Vector3 scale)
@@ -169,77 +229,13 @@ public class ApiController
         {
             Primitives.Shape shape = (Primitives.Shape)result;
             mesh = Primitives.BuildPrimitive(shape, scale, offset, meshId, material: 0);
-        }
-        else
-        {
-            PolyMesh poly;
-            switch (shapeName.ToLower())
-            {
-                case "prism":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.Prism, 6, 1, 1);
-                    break;
-                case "antiprism":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.Antiprism, 6, 1, 1);
-                    break;
-                case "pyramid":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.Pyramid, 6, 1, 1);
-                    break;
-                case "elongatedpyramid":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedPyramid, 6, 1, 1);
-                    break;
-                case "gyroelongatedpyramid":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedPyramid, 6, 1, 1);
-                    break;
-                case "dipyramid":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.Dipyramid, 6, 1, 1);
-                    break;
-                case "elongateddipyramid":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedDipyramid, 6, 1, 1);
-                    break;
-                case "gyroelongateddipyramid":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedDipyramid, 6, 1, 1);
-                    break;
-                case "cupola":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.Cupola, 6, 1, 1);
-                    break;
-                case "elongatedcupola":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedCupola, 6, 1, 1);
-                    break;
-                case "gyroelongatedcupola":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedCupola, 6, 1, 1);
-                    break;
-                case "orthobicupola":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.OrthoBicupola, 6, 1, 1);
-                    break;
-                case "gyrobicupola":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroBicupola, 6, 1, 1);
-                    break;
-                case "elongatedorthobicupola":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedOrthoBicupola, 6, 1, 1);
-                    break;
-                case "elongatedgyrobicupola":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedGyroBicupola, 6, 1, 1);
-                    break;
-                case "gyroelongatedbicupola":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedBicupola, 6, 1, 1);
-                    break;
-                case "trapezohedron":
-                    poly = RadialSolids.Build(RadialSolids.RadialPolyType.Trapezohedron, 6, 1, 1);
-                    break;
-                default:
-                    return Msg($"Error: invalid primitive: {shapeName}");
-            }
-            mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, 0);
-        }
-        if (mesh != null)
-        {
             PeltzerMain.Instance.model.AddMesh(mesh);
-            return ApiResult.Ok(new ResponseMeshId(meshId));
+            return ApiResult.Ok(meshId);
         }
-        return Msg("Failed to add mesh");
+        return ApiResult.InternalServerError("Failed to add mesh");
     }
 
-    [ApiGet("addreferenceimage/{path}/{position}/{rotation}/{scale}")]
+    [ApiGet("image/insert/{path}")]
     public ApiResult AddReferenceImage(string path, string position, string rotation, float scale)
     {
         var pos = ParseVector3(position);
@@ -247,16 +243,16 @@ public class ApiController
         var setupParams = PeltzerMain.Instance.referenceImageManager.LoadTextureSync(path, pos, rot, scale);
         if (setupParams.texture == null)
         {
-            return Msg("Failed to load texture");
+            return ApiResult.InternalServerError("Failed to load texture");
         }
-        return Msg($"Success: {setupParams.refImageId}");
+        return ApiResult.Ok(setupParams.refImageId);
     }
 
-    [ApiGet("deletereferenceimage/{id}")]
-    public ApiResult DeleteReferenceImage(int id)
+    [ApiGet("image/delete/{imageId}")]
+    public ApiResult DeleteReferenceImage(int imageId)
     {
-        PeltzerMain.Instance.referenceImageManager.DeleteReferenceImage(id);
-        return Msg("Success");
+        PeltzerMain.Instance.referenceImageManager.DeleteReferenceImage(imageId);
+        return ApiResult.Ok("Success");
     }
 
     [ApiGet("videoviewer/{state}")]
@@ -272,9 +268,37 @@ public class ApiController
                 cmd = new HideVideoViewerCommand();
                 break;
             default:
-                return Msg("Error: invalid state");
+                return ApiResult.BadRequest("Error: invalid state");
         }
         PeltzerMain.Instance.model.ApplyCommand(cmd);
-        return Msg("Success");
+        return ApiResult.Ok("Success");
+    }
+}
+
+public class MeshApiResponse
+{
+    public Vector3 offset;
+    public Quaternion rotation;
+    public Vector3 euler;
+    public int vertexCount;
+    public int faceCount;
+    public Bounds bounds;
+    public Bounds localBounds;
+    public int groupId;
+    public HashSet<string> remixIds;
+    public int id;
+
+    public MeshApiResponse(MMesh mesh)
+    {
+        this.offset = mesh._offset;
+        this.rotation = mesh._rotation;
+        this.euler = mesh._rotation.eulerAngles;
+        this.vertexCount = mesh.vertexCount;
+        this.faceCount = mesh.faceCount;
+        this.bounds = mesh.bounds;
+        this.localBounds = mesh.localBounds;
+        this.groupId = mesh.groupId;
+        this.remixIds = mesh.remixIds;
+        this.id = mesh.id;
     }
 }
