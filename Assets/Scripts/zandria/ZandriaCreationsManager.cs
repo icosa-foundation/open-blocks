@@ -320,7 +320,7 @@ namespace com.google.apps.peltzer.client.zandria
         public enum LoadStatus { NONE, LOADING_THUMBNAIL, LOADING_MODEL, FAILED, SUCCESSFUL }
         public const int NUMBER_OF_CREATIONS_PER_PAGE = 9;
         public const int MAX_NUMBER_OF_PAGES = 10;
-        public const int NUMBER_OF_PAGES_AT_START = 2;
+        public const int NUMBER_OF_PAGES_AT_START = 1;
         // The PPU for imported thumbnails from Zandria that will be displayed on the menu. Chosen by eyeballing it.
         // More positive numbers will give smaller thumbnails, and vice-versa.
         private const int THUMBNAIL_IMPORT_PIXELS_PER_UNIT = 300;
@@ -330,7 +330,9 @@ namespace com.google.apps.peltzer.client.zandria
 
         // We implement polling for the "Featured" and "Liked" sections in order to show any
         // new models that get featured or liked by the user while Blocks is running.
-        private const float POLLING_INTERVAL_SECONDS = 8;
+        // TODO Can we ask the server for a timestamp of the last update and only poll if it's changed?
+        // Could the timestamp be specific to each API call?
+        private const float POLLING_INTERVAL_SECONDS = 60;
 
         // WARNING: All dictionaries in ZandriaCreationsManager are private because they are not threadsafe. They must be
         // accessed from within ZandriaCreationsManager and they must be locked before access.
@@ -404,7 +406,8 @@ namespace com.google.apps.peltzer.client.zandria
                         // Update the progress of the load.
                         creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
                         // Execute the load.
-                        LoadModelForCreation(creation, pair.Key);
+                        // (We now defer until the user interacts with the thumbnail)
+                        // LoadModelForCreation(creation, pair.Key);
                     }
 
                     // Clear pendingModelLoadRequestIndices. We have made a load request for every pending request.
@@ -439,6 +442,8 @@ namespace com.google.apps.peltzer.client.zandria
         /// <param name="type">The enum type of the load.</param>
         public void StartLoad(PolyMenuMain.CreationType type)
         {
+            pendingLoadsByType.Remove(type);
+
             lock (mutex)
             {
                 pendingLoadsByType.Add(type);
@@ -449,6 +454,8 @@ namespace com.google.apps.peltzer.client.zandria
             delegate (ObjectStoreSearchResult objectStoreResults)
             {
                 if (objectStoreResults.results.Length == 0) { return; }
+
+                loadsByType.Remove(type);
 
                 // We've successfully called back with results from the query. Parse them into actual entries.
                 List<Entry> entries = new List<Entry>();
@@ -488,6 +495,11 @@ namespace com.google.apps.peltzer.client.zandria
 
         public void Poll(PolyMenuMain.CreationType type)
         {
+
+            // TODO this presumes Featured and Liked will only add new items at the front
+            // This assumption will sometimes break when orderBy is changes
+            // Also - new featured items might be added that don't appear at the front even when ordered by "BEST"
+
             lock (mutex)
             {
                 if (pendingLoadsByType.Contains(type)) { return; }
@@ -588,8 +600,8 @@ namespace com.google.apps.peltzer.client.zandria
                 if (thumbnailFiles.Count() == 0)
                 {
                     Debug.Log("No thumbnail file found in offline directory " + directory.FullName);
-                    return false;
                 }
+                thumbnailFiles = new FileInfo[] { null };
 
                 FileInfo[] blocksFiles = directory.GetFiles("*.blocks");
                 if (blocksFiles.Count() == 0)
@@ -776,6 +788,36 @@ namespace com.google.apps.peltzer.client.zandria
             }
         }
 
+        public ApiQueryParameters GetQueryParams(PolyMenuMain.CreationType type)
+        {
+            switch (type)
+            {
+                case PolyMenuMain.CreationType.FEATURED:
+                    return AssetsServiceClient.QueryParamsFeatured;
+                case PolyMenuMain.CreationType.YOUR:
+                    return AssetsServiceClient.QueryParamsUser;
+                case PolyMenuMain.CreationType.LIKED:
+                    return AssetsServiceClient.QueryParamsLiked;
+            }
+            throw new InvalidOperationException();
+        }
+
+        public void SetQueryParams(PolyMenuMain.CreationType type, ApiQueryParameters q)
+        {
+            switch (type)
+            {
+                case PolyMenuMain.CreationType.FEATURED:
+                    AssetsServiceClient.QueryParamsFeatured = q;
+                    break;
+                case PolyMenuMain.CreationType.YOUR:
+                    AssetsServiceClient.QueryParamsUser = q;
+                    break;
+                case PolyMenuMain.CreationType.LIKED:
+                    AssetsServiceClient.QueryParamsLiked = q;
+                    break;
+            }
+        }
+
         /// <summary>
         ///   Makes a query to get creations metadata for the given asset.
         /// </summary>
@@ -863,7 +905,8 @@ namespace com.google.apps.peltzer.client.zandria
             }
             else
             {
-                UnityWebRequest request = assetsServiceClient.GetRequest(entry.thumbnail, "image/png");
+                // TODO Do we ever need to authenticate thumbnail requests?
+                UnityWebRequest request = assetsServiceClient.GetRequest(entry.thumbnail, "image/png", false);
                 PeltzerMain.Instance.webRequestManager.EnqueueRequest(
                   () => { return request; },
                   (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
