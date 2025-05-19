@@ -464,11 +464,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             var blocksEntry = assets?.FirstOrDefault(x => x["formatType"].ToString() == "BLOCKS");
             if (blocksEntry == null)
             {
+                Debug.LogWarning("Asset had no blocks format type");
                 return false;
             }
             blocksAsset.rootUrl = blocksEntry["root"]?["url"]?.ToString();
             if (string.IsNullOrEmpty(blocksAsset.rootUrl))
             {
+                Debug.LogWarning("Asset had no blocks root URL");
                 return false;
             }
             blocksAsset.baseFile = "";
