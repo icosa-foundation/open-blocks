@@ -779,19 +779,6 @@ namespace com.google.apps.peltzer.client.menu
             // available creations but we should keep adding creations as they load when the menu is open. This
             // should be implemented with our pagination.
 
-            // First hide any gameObjects on the palette so we can show the correct ones.
-            for (int i = 0; i < placeholders.Length; i++)
-            {
-                ZandriaCreationHandler[] creationHandlers =
-                  placeholders[i].GetComponentsInChildren<ZandriaCreationHandler>();
-
-                for (int j = 0; j < creationHandlers.Length; j++)
-                {
-                    creationHandlers[j].isActiveOnMenu = false;
-                    creationHandlers[j].gameObject.SetActive(false);
-                }
-            }
-
             int from = CurrentPage() * TILE_COUNT;
             int upToNotIncluding = from + TILE_COUNT;
             List<GameObject> previews = creationsManager.GetPreviews(type, CurrentPage() * TILE_COUNT, upToNotIncluding);
@@ -799,6 +786,20 @@ namespace com.google.apps.peltzer.client.menu
             // If there are available previews load them onto the palette.
             if (previews.Count > 0)
             {
+                Debug.Log("Found " + previews.Count + " previews for type: " + type);
+                // First hide any gameObjects on the palette so we can show the correct ones.
+                for (int i = 0; i < placeholders.Length; i++)
+                {
+                    ZandriaCreationHandler[] creationHandlers =
+                        placeholders[i].GetComponentsInChildren<ZandriaCreationHandler>();
+
+                    for (int j = 0; j < creationHandlers.Length; j++)
+                    {
+                        creationHandlers[j].isActiveOnMenu = false;
+                        creationHandlers[j].gameObject.SetActive(false);
+                    }
+                }
+
                 for (int i = 0; i < TILE_COUNT && i < previews.Count; i++)
                 {
                     GameObject zandriaCreationHolder = previews[i];
@@ -1152,7 +1153,7 @@ namespace com.google.apps.peltzer.client.menu
         {
             var type = CurrentCreationType();
             // TODO - can we avoid losing work we've already done here?
-            creationsManager.ClearLoad(type);
+            // creationsManager.ClearLoad(type);
             creationsManager.StartLoad(type);
             ApplyMenuChange(menuIndex, true);
             offlineModelsMenu.SetActive(false);

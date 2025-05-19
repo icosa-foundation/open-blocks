@@ -1397,7 +1397,6 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 mainMenu.SetApiSearchText(text);
                 mainMenu.RefreshResults();
-                ToggleSearchKeyboard();
             }
         }
 
@@ -1408,6 +1407,8 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 if (args.Key.KeyType == KeyboardKeyType.Enter)
                 {
+                    // unregister when closing otherwise it keeps adding handlers
+                    keyboardUI.KeyPressed -= OnKeyPressed;
                     onSubmit(sender, keyboardUI.ConsoleContent);
                     keyboardGameobject.SetActive(false);
                 }

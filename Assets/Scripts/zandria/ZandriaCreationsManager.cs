@@ -442,6 +442,8 @@ namespace com.google.apps.peltzer.client.zandria
         /// <param name="type">The enum type of the load.</param>
         public void StartLoad(PolyMenuMain.CreationType type)
         {
+            pendingLoadsByType.Remove(type);
+
             lock (mutex)
             {
                 pendingLoadsByType.Add(type);
@@ -452,6 +454,8 @@ namespace com.google.apps.peltzer.client.zandria
             delegate (ObjectStoreSearchResult objectStoreResults)
             {
                 if (objectStoreResults.results.Length == 0) { return; }
+
+                loadsByType.Remove(type);
 
                 // We've successfully called back with results from the query. Parse them into actual entries.
                 List<Entry> entries = new List<Entry>();
