@@ -28,6 +28,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         private bool m_IsOpen;
         public bool IsOpen => m_IsOpen;
+        public TextMeshPro m_TitleText;
         public RadioButtonContainer m_OrderByContainer;
         public RadioButtonContainer m_CategoryContainer;
         public Slider m_TriangleCountSlider;
@@ -75,6 +76,29 @@ namespace com.google.apps.peltzer.client.model.controller
             m_CategoryContainer.SetInitialOption(currentQueryParams.Category);
             m_OrderByContainer.SetInitialOption(currentQueryParams.OrderBy);
             m_TriangleCountSlider.SetInitialValue(currentQueryParams.TriangleCountMax);
+
+            string titleText;
+            if (string.IsNullOrWhiteSpace(currentQueryParams.SearchText))
+            {
+                titleText = $"Listing: ";
+            }
+            else
+            {
+                titleText = $"Searching: ";
+            }
+            switch (menuMain.CurrentCreationType())
+            {
+                case PolyMenuMain.CreationType.FEATURED:
+                    titleText += "All Models";
+                    break;
+                case PolyMenuMain.CreationType.LIKED:
+                    titleText += "Your Likes";
+                    break;
+                case PolyMenuMain.CreationType.YOUR:
+                    titleText += "Your Uploads";
+                    break;
+            }
+            m_TitleText.text = titleText;
         }
 
         public void UpdateSliderLabel(float value)
