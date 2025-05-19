@@ -78,7 +78,7 @@ namespace com.google.apps.peltzer.client.model.controller
             m_TriangleCountSlider.SetInitialValue(currentQueryParams.TriangleCountMax);
 
             string titleText;
-            if (!string.IsNullOrWhiteSpace(currentQueryParams.SearchText))
+            if (string.IsNullOrWhiteSpace(currentQueryParams.SearchText))
             {
                 titleText = $"Listing: ";
             }
