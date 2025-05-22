@@ -54,6 +54,16 @@ namespace com.google.apps.peltzer.client.model.controller
             var category = m_CategoryContainer.Value;
             var orderBy = m_OrderByContainer.Value;
             var triangleCount = (int)m_TriangleCountSlider.Value;
+
+            // check if refresh is necessary
+            if (m_MainMenu.CurrentQueryParams.Category == category &&
+                m_MainMenu.CurrentQueryParams.OrderBy == orderBy &&
+                m_MainMenu.CurrentQueryParams.TriangleCountMax == triangleCount)
+            {
+                Disable();
+                return;
+            }
+
             m_MainMenu.SetApiOrderBy(orderBy);
             m_MainMenu.SetApiCategoryFilter(category);
             m_MainMenu.SetApiTriangleCountMax(triangleCount);
