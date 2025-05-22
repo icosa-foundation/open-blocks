@@ -197,6 +197,9 @@ namespace TiltBrush
 
         public void Hide()
         {
+            // when the keyboard is opened, an event handler is added for when enter is pressed (and removed when enter is pressed and closed)
+            // when the keyboard is closed using the "x" button, this handler is not removed, so we need to remove it here
+            KeyPressed = null;
             gameObject.SetActive(false);
         }
 
