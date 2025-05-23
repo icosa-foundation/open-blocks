@@ -249,7 +249,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             SearchText = "",
             TriangleCountMax = defaultMaxPolyModelTriangles,
-            License = LicenseChoices.CREATIVE_COMMONS_BY,
+            License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.LIKED_TIME,
             Format = FormatChoices.BLOCKS,
             Curated = CuratedChoices.ANY,
@@ -260,7 +260,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             SearchText = "",
             TriangleCountMax = defaultMaxPolyModelTriangles,
-            License = LicenseChoices.CREATIVE_COMMONS_BY,
+            License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.BEST,
             Format = FormatChoices.BLOCKS,
             Curated = CuratedChoices.ANY,
@@ -1281,6 +1281,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// </summary>
         public UnityWebRequest GetRequest(string path, string contentType, bool requireAuth)
         {
+            if (!path.StartsWith("https://s3."))
+            {
+                Debug.Log($"get: {path}");
+            }
             // The default constructor for a UnityWebRequest gives a GET request.
             UnityWebRequest request = new UnityWebRequest(path);
             request.SetRequestHeader("Content-type", contentType);
