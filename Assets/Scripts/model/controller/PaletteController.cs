@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #define STEAMVRBUILD
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -22,6 +23,8 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.tutorial;
+using com.google.apps.peltzer.client.zandria;
+using TiltBrush;
 using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.model.controller
@@ -59,6 +62,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject oculusRiftHolder;
 
         private Dictionary<ControllerMode, ToolOptionsPanel> m_ToolOptionsPanels;
+        private FilterPanel m_FilterPanel;
         public GameObject m_InitialPopupAnchor;
         public GameObject m_Popups;
         public ActionButton m_PanelOptionsButton;
@@ -97,6 +101,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public GameObject tutorialButton;
         public GameObject UIPanels;
+        public GameObject addReferenceImageButton;
         public float speed;
 
         /// <summary>
@@ -191,6 +196,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject publishSignInPrompt;
         public GameObject tutorialExitPrompt;
         public GameObject saveLocallyPrompt;
+        public GameObject keyboardGameobject;
 
         /// <summary>
         ///   Library to generate haptic feedback.
@@ -270,6 +276,11 @@ namespace com.google.apps.peltzer.client.model.controller
             polyMenuPanel = transform.Find("Panel-Menu").gameObject;
             detailsMenuPanel = transform.Find("Model-Details").gameObject;
             tutorialButton = transform.Find("ID_PanelTools/ToolSide/Actions/Tutorial").gameObject;
+            // TODO Android file picker
+            if (Application.isMobilePlatform)
+            {
+                addReferenceImageButton.GetComponentInChildren<MenuActionItem>().isActive = false;
+            }
 
             if (Config.Instance.sdkMode == SdkMode.Oculus)
             {
@@ -299,6 +310,8 @@ namespace com.google.apps.peltzer.client.model.controller
 
             var panels = GetComponentsInChildren<ToolOptionsPanel>(true);
             SetupToolOptionsPanels(panels);
+            m_FilterPanel = GetComponentInChildren<FilterPanel>(includeInactive: true);
+            keyboardGameobject = transform.GetComponentInChildren<KeyboardUI>(includeInactive: true).gameObject;
 
             bool shouldNagForTutorial = !PlayerPrefs.HasKey(TutorialManager.HAS_EVER_STARTED_TUTORIAL_KEY);
             if (shouldNagForTutorial)
@@ -1354,6 +1367,55 @@ namespace com.google.apps.peltzer.client.model.controller
         public void ToggleToolOptionPanels()
         {
             EnableToolOptionPanels(!m_ToolOptionsPanelsEnabled);
+        }
+
+        public void EnableFilterPanel(bool enable)
+        {
+            if (enable)
+            {
+                m_FilterPanel.Enable();
+                m_FilterPanel.InitControls();
+            }
+            else
+            {
+                m_FilterPanel.Disable();
+            }
+        }
+
+        public void ToggleFilterPanel()
+        {
+            EnableFilterPanel(!m_FilterPanel.IsOpen);
+        }
+
+        public void ToggleSearchKeyboard()
+        {
+            var mainMenu = PeltzerMain.Instance.GetPolyMenuMain();
+            EnableKeyboard(onSubmit, mainMenu.CurrentQueryParams.SearchText);
+            var keyboardUI = keyboardGameobject.GetComponent<KeyboardUI>();
+
+            void onSubmit(object sender, string text)
+            {
+                mainMenu.SetApiSearchText(text);
+                mainMenu.RefreshResults();
+            }
+        }
+
+        public void EnableKeyboard(EventHandler<string> onSubmit, string initialText = "")
+        {
+            var keyboardUI = keyboardGameobject.GetComponent<KeyboardUI>();
+            void OnKeyPressed(object sender, KeyboardKeyEventArgs args)
+            {
+                if (args.Key.KeyType == KeyboardKeyType.Enter)
+                {
+                    // unregister when closing otherwise it keeps adding handlers
+                    keyboardUI.KeyPressed -= OnKeyPressed;
+                    onSubmit(sender, keyboardUI.ConsoleContent);
+                    keyboardGameobject.SetActive(false);
+                }
+            }
+            keyboardUI.SetInitialText(initialText);
+            keyboardGameobject.SetActive(true);
+            keyboardUI.KeyPressed += OnKeyPressed;
         }
     }
 }

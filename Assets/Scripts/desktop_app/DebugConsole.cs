@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
@@ -29,7 +30,9 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.app;
+using com.google.apps.peltzer.client.entitlement;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.desktop_app
 {
@@ -44,14 +47,14 @@ namespace com.google.apps.peltzer.client.desktop_app
           "flag\n  lists/sets feature flags\n" +
           "fuse\n  fuses all selected meshes into a single mesh.\n" +
           "help\n  shows this help text\n" +
+          "import\n  import 3d model\n" +
           "insert\n  insert primitives\n" +
           "insertduration <duration>\n  sets the mesh insert effect duration (e.g. 0.6).\n" +
           "loadfile <path>\n  loads a model from the given file (use full path).\n" +
           "loadres <path>\n  loads a model from the given resource file.\n" +
+          "login <code>\n  logs in using either a device code or a bearer token.\n" +
           "minfo\n  prints info about the selected meshes.\n" +
           "movev\n  moves vertices by a given delta.\n" +
-          "osq <query>\n  queries objects from the object store.\n" +
-          "osload <num>\n  loads the given search result# of the last osq command.\n" +
           "publish\n  saves & publishes the current scene.\n" +
           "rest\n  change restrictions.\n" +
           "savefile <path>\n  saves model to the given file (use full path).\n" +
@@ -64,6 +67,7 @@ namespace com.google.apps.peltzer.client.desktop_app
         public GameObject consoleObject;
         public Text consoleOutput;
         public InputField consoleInput;
+        [FormerlySerializedAs("objImportController")] public ModelImportController modelImportController;
 
         private string lastCommand = "";
 
@@ -74,6 +78,7 @@ namespace com.google.apps.peltzer.client.desktop_app
 
         public void Start()
         {
+            modelImportController = gameObject.GetComponent<ModelImportController>();
             consoleOutput.text = "DEBUG CONSOLE\n" +
               "Blocks version: " + Config.Instance.version + "\n" +
               "For a list of available commands, type 'help'." +
@@ -153,6 +158,9 @@ namespace com.google.apps.peltzer.client.desktop_app
                 case "loadfile":
                     CommandLoadFile(parts);
                     break;
+                case "login":
+                    CommandLogin(parts);
+                    break;
                 case "loadres":
                     CommandLoadRes(parts);
                     break;
@@ -162,17 +170,11 @@ namespace com.google.apps.peltzer.client.desktop_app
                 case "movev":
                     CommandMoveV(parts);
                     break;
-                case "osq":
-                    CommandOsQ(parts);
-                    break;
-                case "osload":
-                    CommandOsLoad(parts);
-                    break;
-                case "ospublish":
-                    CommandOsPublish(parts);
-                    break;
                 case "publish":
                     CommandPublish(parts);
+                    break;
+                case "ram":
+                    CommandLogRam(parts);
                     break;
                 case "rest":
                     CommandRest(parts);
@@ -192,6 +194,9 @@ namespace com.google.apps.peltzer.client.desktop_app
                 case "tut":
                     CommandTut(parts);
                     break;
+                case "import":
+                    CommandImport(parts);
+                    break;
                 default:
                     PrintLn("Unrecognized command: " + command);
                     PrintLn("Type 'help' for a list of commands.");
@@ -199,9 +204,67 @@ namespace com.google.apps.peltzer.client.desktop_app
             }
         }
 
+        private void PrintImportCommandHelp()
+        {
+            PrintLn("Syntax: import {relative path}");
+            PrintLn("Path is relative to your Documents/Blocks folder.");
+            PrintLn("For example:");
+            PrintLn("   import mymodels/Andy.obj");
+            PrintLn("Supported filetypes: .obj, .off, .gltf, .glb");
+        }
+
+        private void CommandImport(string[] parts)
+        {
+            if (parts.Length < 2)
+            {
+                PrintImportCommandHelp();
+                return;
+            }
+            string userPath = PeltzerMain.Instance.userPath;
+            modelImportController.Import(parts.Skip(1).Select(p => Path.Combine(userPath, p)).ToArray());
+        }
+
         private void PrintLn(string message)
         {
             consoleOutput.text += message + "\n";
+        }
+
+        private void CommandLogRam(string[] parts)
+        {
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                using (var activityManager = activity.Call<AndroidJavaObject>("getSystemService", "activity"))
+                using (var memoryInfo = new AndroidJavaObject("android.app.ActivityManager$MemoryInfo"))
+                {
+                    activityManager.Call("getMemoryInfo", memoryInfo);
+
+                    long availMem = memoryInfo.Get<long>("availMem");
+                    long totalMem = memoryInfo.Get<long>("totalMem");
+                    long threshold = memoryInfo.Get<long>("threshold");
+
+                    long usedMem = totalMem - availMem;
+
+                    PrintLn($"Total Memory: {totalMem / (1024.0 * 1024.0):F2} MB");
+                    PrintLn($"Available Memory: {availMem / (1024.0 * 1024.0):F2} MB");
+                    PrintLn($"Used Memory: {usedMem / (1024.0 * 1024.0):F2} MB");
+                    PrintLn($"Low Memory Threshold: {threshold / (1024.0 * 1024.0):F2} MB");
+
+                    // Compare app memory usage
+                    long appMemoryUsage = System.GC.GetTotalMemory(false);
+                    PrintLn($"App Memory Usage: {appMemoryUsage / (1024.0 * 1024.0):F2} MB");
+
+                    if (availMem < threshold)
+                    {
+                        PrintLn("Warning. Device is running low on memory. App may be terminated soon.");
+                    }
+                }
+            }
+            else
+            {
+                PrintLn("This feature is available only on Android.");
+            }
         }
 
         private void CommandOsQ(string[] parts)
@@ -451,6 +514,24 @@ namespace com.google.apps.peltzer.client.desktop_app
             }
             PrintLn("Starting tutorial #" + tutorialNumber);
             PeltzerMain.Instance.tutorialManager.StartTutorial(tutorialNumber);
+        }
+
+        private void CommandLogin(string[] parts)
+        {
+            if (parts.Length != 2)
+            {
+                PrintLn("Syntax: login <code>");
+                PrintLn("   Logs in using either a device code or a bearer token.");
+                return;
+            }
+            var token = parts[1];
+            if (token.Length <= 5)
+            {
+                // TODO
+                // Exchange device code for token.
+            }
+            OAuth2Identity.Instance.SetAccessToken(token);
+            PeltzerMain.Instance.SignIn(false);
         }
 
         private void CommandLoadRes(string[] parts)

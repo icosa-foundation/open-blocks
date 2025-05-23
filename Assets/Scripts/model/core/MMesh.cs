@@ -125,19 +125,7 @@ namespace com.google.apps.peltzer.client.model.core
           Dictionary<int, Vertex> verticesById, Dictionary<int, Face> facesById,
           int groupId = GROUP_NONE, HashSet<string> remixIds = null)
         {
-            _id = id;
-            this._offset = offset;
-            System.Random rand = new System.Random();
-
-            this._offsetJitter = new Vector3((float)(rand.NextDouble() - 0.5) / 5000f,
-              (float)(rand.NextDouble() - 0.5) / 5000f,
-              (float)(rand.NextDouble() - 0.5) / 5000f);
-            this._rotation = rotation;
-            this.verticesById = verticesById;
-            this.facesById = facesById;
-            this.groupId = groupId;
-            this.remixIds = remixIds;
-            this.reverseTable = new Dictionary<int, HashSet<int>>();
+            Initialize(id, offset, rotation, verticesById, facesById, groupId, remixIds);
             RecalcBounds();
             RecalcReverseTable();
         }
@@ -145,6 +133,40 @@ namespace com.google.apps.peltzer.client.model.core
         public MMesh(int id, Vector3 offset, Quaternion rotation,
           Dictionary<int, Vertex> verticesById, Dictionary<int, Face> facesById,
           Bounds bounds, Bounds localBounds, Dictionary<int, HashSet<int>> reverseTable, int groupId = GROUP_NONE,
+          HashSet<string> remixIds = null)
+        {
+            Initialize(
+                id, offset, rotation, verticesById, facesById,
+                groupId, remixIds
+            );
+            this.bounds = bounds;
+            this.reverseTable = reverseTable;
+        }
+
+        public MMesh(int id, Vector3 offset, Quaternion rotation,
+            List<Vector3> verts, List<List<int>> faces, List<FaceProperties> faceProperties)
+        {
+            Dictionary<int, Vertex> vDict = verts.Select((vec, idx) =>
+                new { vec, idx }).ToDictionary(v => v.idx, v => new Vertex(v.idx, v.vec)
+            );
+            Dictionary<int, Face> fDict = faces.Select((idxs, idx) =>
+                new { idxs, idx }).ToDictionary(f => f.idx, f =>
+                    new Face(
+                        f.idx,
+                        f.idxs.AsReadOnly(),
+                        vDict,
+                        faceProperties[f.idx]
+                    ));
+            Initialize(id, offset, rotation, vDict, fDict);
+            RecalcBounds();
+            RecalcReverseTable();
+        }
+
+
+
+        private void Initialize(int id, Vector3 offset, Quaternion rotation,
+          Dictionary<int, Vertex> verticesById, Dictionary<int, Face> facesById,
+          int groupId = GROUP_NONE,
           HashSet<string> remixIds = null)
         {
             _id = id;
@@ -543,7 +565,8 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         public void RecalcReverseTable()
         {
-            reverseTable.Clear();
+            if (reverseTable == null) reverseTable = new Dictionary<int, HashSet<int>>();
+            else reverseTable.Clear();
             foreach (Face face in facesById.Values)
             {
                 for (int i = 0; i < face.vertexIds.Count; i++)

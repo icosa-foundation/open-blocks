@@ -18,6 +18,7 @@ using System.Text;
 using System.IO;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -30,6 +31,7 @@ using com.google.apps.peltzer.client.entitlement;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.menu;
 using ICSharpCode.SharpZipLib.Zip.Compression;
+using SimpleJSON;
 
 namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 {
@@ -62,19 +64,29 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         public void BackgroundWork()
         {
-            saveData.GLTFfiles.root.multipartBytes = assetsServiceClient.MultiPartContent(saveData.GLTFfiles.root.fileName,
-              saveData.GLTFfiles.root.mimeType, saveData.GLTFfiles.root.bytes);
-            foreach (FormatDataFile file in saveData.GLTFfiles.resources)
+            if (saveData.GLTFfiles != null)
             {
-                file.multipartBytes = assetsServiceClient.MultiPartContent(file.fileName, file.mimeType, file.bytes);
+                saveData.GLTFfiles.root.multipartBytes = assetsServiceClient.MultiPartContent(saveData.GLTFfiles.root.fileName,
+                    saveData.GLTFfiles.root.mimeType, saveData.GLTFfiles.root.bytes);
+                foreach (FormatDataFile file in saveData.GLTFfiles.resources)
+                {
+                    file.multipartBytes = assetsServiceClient.MultiPartContent(file.fileName, file.mimeType, file.bytes);
+                }
+            }
+            if (saveData.objFile != null)
+            {
+                objMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.OBJ_FILENAME, "text/plain", saveData.objFile);
+                triangulatedObjMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.TRIANGULATED_OBJ_FILENAME,
+                    "text/plain", saveData.triangulatedObjFile);
+                mtlMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.MTL_FILENAME, "text/plain", saveData.mtlFile);
+            }
+            if (saveData.fbxFile != null)
+            {
+                fbxMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.FBX_FILENAME, "application/octet-stream",
+                    saveData.fbxFile);
             }
 
-            objMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.OBJ_FILENAME, "text/plain", saveData.objFile);
-            triangulatedObjMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.TRIANGULATED_OBJ_FILENAME,
-              "text/plain", saveData.triangulatedObjFile);
-            mtlMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.MTL_FILENAME, "text/plain", saveData.mtlFile);
-            fbxMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.FBX_FILENAME, "application/octet-stream",
-              saveData.fbxFile);
+            // Blocks format MUST be present
             blocksMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.BLOCKS_FILENAME, "application/octet-stream",
               saveData.blocksFile);
             thumbnailMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.THUMBNAIL_FILENAME, "image/png",
@@ -168,52 +180,173 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
     }
 
+    public class ApiQueryParameters
+    {
+        public string SearchText;
+        public int TriangleCountMax;
+        public string License;
+        public string OrderBy;
+        public string Format;
+        public string Curated;
+        public string Category;
+
+        public override string ToString()
+        {
+            return "SearchText: " + SearchText + "\n" +
+                "TriangleCountMax: " + TriangleCountMax + "\n" +
+                "License: " + License + "\n" +
+                "OrderBy: " + OrderBy + "\n" +
+                "Format: " + Format + "\n" +
+                "Curated: " + Curated + "\n" +
+                "Category: " + Category;
+        }
+
+        public ApiQueryParameters Copy()
+        {
+            return new ApiQueryParameters()
+            {
+                SearchText = SearchText,
+                TriangleCountMax = TriangleCountMax,
+                License = License,
+                OrderBy = OrderBy,
+                Format = Format,
+                Curated = Curated,
+                Category = Category
+            };
+        }
+
+        public bool Equals(ApiQueryParameters other)
+        {
+            if (other == null) { return false; }
+            return SearchText.Equals(other.SearchText) &&
+                TriangleCountMax == other.TriangleCountMax &&
+                License.Equals(other.License) &&
+                OrderBy.Equals(other.OrderBy) &&
+                Format.Equals(other.Format) &&
+                Curated.Equals(other.Curated) &&
+                Category.Equals(other.Category);
+        }
+    }
+
     public class AssetsServiceClient : MonoBehaviour
     {
-        // The base for API requests to the assets service.
-        public static string AUTOPUSH_BASE_URL = "[Removed]";
-        public static string PROD_BASE_URL = "[Removed]";
-        public static string BaseUrl() { return Features.useZandriaProd ? PROD_BASE_URL : AUTOPUSH_BASE_URL; }
+        // Defaults
+        public static string DEFAULT_WEB_BASE_URL = "https://icosa.gallery";
+        private static string DEFAULT_API_BASE_URL = "https://api.icosa.gallery/v1";
+
+        public static ApiQueryParameters QueryParamsUser = new()
+        {
+            SearchText = "",
+            TriangleCountMax = defaultMaxPolyModelTriangles,
+            License = LicenseChoices.ANY,
+            OrderBy = OrderByChoices.NEWEST,
+            Format = FormatChoices.BLOCKS,
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
+
+        public static ApiQueryParameters QueryParamsLiked = new()
+        {
+            SearchText = "",
+            TriangleCountMax = defaultMaxPolyModelTriangles,
+            License = LicenseChoices.REMIXABLE,
+            OrderBy = OrderByChoices.LIKED_TIME,
+            Format = FormatChoices.BLOCKS,
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
+
+        public static ApiQueryParameters QueryParamsFeatured = new()
+        {
+            SearchText = "",
+            TriangleCountMax = defaultMaxPolyModelTriangles,
+            License = LicenseChoices.REMIXABLE,
+            OrderBy = OrderByChoices.BEST,
+            Format = FormatChoices.BLOCKS,
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
+
+        private static int defaultMaxPolyModelTriangles
+        {
+            get
+            {
+                // TODO make this user configurable
+                if (Application.isMobilePlatform)
+                {
+                    return 5000;
+                }
+                else
+                {
+                    // -9999 for "no limit"
+                    // This must match the special value set on the slider in FilterPanel.cs
+                    return -9999;
+                }
+            }
+        }
+        // Key names for player prefs
+        public static string WEB_BASE_URL_KEY = "WEB_BASE_URL";
+        public static string API_BASE_URL_KEY = "API_BASE_URL";
+
+        public static string WebBaseUrl
+        {
+            get => GetPlayerPrefOrDefault(WEB_BASE_URL_KEY, DEFAULT_WEB_BASE_URL);
+            set => PlayerPrefs.SetString(WEB_BASE_URL_KEY, value);
+        }
+        public static string ApiBaseUrl
+        {
+            get => GetPlayerPrefOrDefault(API_BASE_URL_KEY, DEFAULT_API_BASE_URL);
+            set => PlayerPrefs.SetString(API_BASE_URL_KEY, value);
+        }
+
+        public static string GetPlayerPrefOrDefault(string key, string defaultValue)
+        {
+            return PlayerPrefs.HasKey(key) ? PlayerPrefs.GetString(key) : defaultValue;
+        }
+
         // The base for the URL to be opened in a user's browser if they wish to publish.
-        public static string AUTOPUSH_PUBLISH_URL_BASE = "[Removed]";
-        public static string PROD_DEFAULT_PUBLISH_URL_BASE = "[Removed]";
-        public static string PublishUrl() { return Features.useZandriaProd ? PROD_DEFAULT_PUBLISH_URL_BASE : AUTOPUSH_PUBLISH_URL_BASE; }
+        public static string DEFAULT_PUBLISH_URL_BASE = WebBaseUrl + "/publish/";
+
+        public static string PublishUrl => DEFAULT_PUBLISH_URL_BASE;
         // The base for the URL to be opened in a user's browser if they have saved.
         // Also used as the target for the "Your models" desktop menu
-        public static string AUTOPUSH_SAVE_URL = "[Removed]";
-        public static string PROD_DEFAULT_SAVE_URL = "[Removed]";
-        public static string SaveUrl() { return Features.useZandriaProd ? PROD_DEFAULT_SAVE_URL : AUTOPUSH_SAVE_URL; }
+        public static string DEFAULT_SAVE_URL = WebBaseUrl + "/uploads";
 
-        // Poly's application key for the assets service/
-        public const string POLY_KEY = "[Removed]";
+        private static string CommonQueryParams(ApiQueryParameters q)
+        {
+            // This might exceed the limit imposed by the server (currently 100)
+            int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
+            string url = $"format={q.Format}&";
+            url += $"pageSize={pageSize}&";
+            url += $"orderBy={q.OrderBy}&";
+            if (q.TriangleCountMax > 0) url += $"triangleCountMax={q.TriangleCountMax}&";
+            if (!string.IsNullOrEmpty(q.SearchText)) url += $"name={q.SearchText}&";
+            if (!string.IsNullOrEmpty(q.License)) url += $"license={q.License}&";
+            if (!string.IsNullOrEmpty(q.Curated)) url += $"curated={q.Curated}&";
+            if (!string.IsNullOrEmpty(q.Category)) url += $"category={q.Category}&";
+            return url;
+        }
 
-        // Search request strings corresponding to ListAssetRequest protos, see point of call for details.
+        // Old way
+        // private static string FeaturedModelsSearchUrl() => $"{ApiBaseUrl}/assets?&curated=true&{commonQueryParams}";
+        // New way
         private static string FeaturedModelsSearchUrl()
         {
-            int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-            return String.Format("{0}/v1/assets?key={1}&filter=format_type:BLOCKS,admin_tag:blocksgallery,license:CREATIVE_COMMONS_BY" +
-              "&order_by=create_time%20desc&page_size={2}", BaseUrl(), POLY_KEY, pageSize);
+            return $"{ApiBaseUrl}/assets?{CommonQueryParams(QueryParamsFeatured)}";
         }
 
         private static string LikedModelsSearchUrl()
         {
-            int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-
-            return String.Format("{0}/v1/assets?key={1}&filter=format_type:BLOCKS,liked:true,license:CREATIVE_COMMONS_BY" +
-              "&order_by=liked_time%20desc&page_size={2}", BaseUrl(), POLY_KEY, pageSize);
+            return $"{ApiBaseUrl}/users/me/likedassets?{CommonQueryParams(QueryParamsLiked)}";
         }
+
         private static string YourModelsSearchUrl()
         {
-            int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-
-            return String.Format("{0}/v1/accounts/me/assets?key={1}&filter=format_type:BLOCKS&access_level=PRIVATE" +
-              "&order_by=create_time%20desc&page_size={2}", BaseUrl(), POLY_KEY, pageSize);
+            return $"{ApiBaseUrl}/users/me/assets?{CommonQueryParams(QueryParamsUser)}";
         }
 
         // Some regex.
         private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";
-        private const string ASSET_ID_MATCH = "assetId\": \"(.+?)\"";
-        private const string ELEMENT_ID_MATCH = "elementId\": \"(.+?)\"";
 
         // Most recent asset IDs we have seen in the "Featured" and "Liked" sections.
         // Used for polling economically (so we know which part of the results is new and which part isn't).
@@ -233,6 +366,98 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private readonly object deflateMutex = new object();
         private byte[] tempDeflateBuffer = new byte[65536 * 4];
 
+        // we are using this to check if the assets have changed in any way,
+        // if yes, we update the list of assets, otherwise we do nothing
+        private static List<string> mostRecentFeaturedAssetIds = new();
+        private static List<string> mostRecentLikedAssetIds = new();
+        private static List<string> mostRecentYourAssetIds = new();
+
+        /// <summary>
+        /// Clears all list of most recent asset ids. We use this list to check if assets have changed
+        /// after polling or when the user sends a query. When the user logs out, we want to clear the lists
+        /// in order to start fresh when the user logs in again.
+        /// Also clears the featured assets which we could leave in theory as they also work when the user is not logged in.
+        /// </summary>
+        public static void ClearAllRecentAssetIds()
+        {
+            mostRecentFeaturedAssetIds.Clear();
+            mostRecentLikedAssetIds.Clear();
+            mostRecentYourAssetIds.Clear();
+        }
+
+        public static void ClearRecentAssetIdsByType(PolyMenuMain.CreationType type)
+        {
+            switch (type)
+            {
+                case PolyMenuMain.CreationType.FEATURED:
+                    mostRecentFeaturedAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.LIKED:
+                    mostRecentLikedAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.YOUR:
+                    mostRecentYourAssetIds.Clear();
+                    break;
+            }
+        }
+
+        private static void UpdateMostRecentAssetIds(IJEnumerable<JToken> assets, PolyMenuMain.CreationType type)
+        {
+            switch (type)
+            {
+                case PolyMenuMain.CreationType.FEATURED:
+                    mostRecentFeaturedAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.LIKED:
+                    mostRecentLikedAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.YOUR:
+                    mostRecentYourAssetIds.Clear();
+                    break;
+            }
+            foreach (JToken asset in assets)
+            {
+                var assetId = asset["url"]?.ToString();
+                if (assetId != null)
+                {
+                    switch (type)
+                    {
+                        case PolyMenuMain.CreationType.FEATURED:
+                            mostRecentFeaturedAssetIds.Add(assetId);
+                            break;
+                        case PolyMenuMain.CreationType.LIKED:
+                            mostRecentLikedAssetIds.Add(assetId);
+                            break;
+                        case PolyMenuMain.CreationType.YOUR:
+                            mostRecentYourAssetIds.Add(assetId);
+                            break;
+                    }
+                }
+            }
+        }
+
+        private static bool AssetIndexChanged(JToken asset, int index, PolyMenuMain.CreationType type)
+        {
+            return type switch
+            {
+                PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                _ => false
+            };
+        }
+
+        private static bool IsPreviousAssetsEmpty(PolyMenuMain.CreationType type)
+        {
+            return type switch
+            {
+                PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.Count == 0,
+                PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.Count == 0,
+                PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.Count == 0,
+                _ => false
+            };
+        }
+
         /// <summary>
         ///   Takes a string, representing the ListAssetsResponse proto, and fills objectStoreSearchResult with
         ///   relevant fields from the response and returns true, if the response is of the expected format.
@@ -244,66 +469,69 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             // Try and actually parse the string.
             JObject results = JObject.Parse(response);
-            IJEnumerable<JToken> assets = results["asset"].AsJEnumerable();
-            if (assets == null)
-            {
-                return false;
-            }
-
-            // Build accountId to name map first
-            Dictionary<string, string> authorNamesById = new Dictionary<string, string>();
-            JToken accounts = results["account"];
-            if (accounts != null)
-            {
-                foreach (JToken account in accounts)
-                {
-                    string id = account.First["accountId"].ToString();
-                    string name = "";
-                    JToken displayName = account.First["displayName"];
-                    if (displayName != null)
-                    {
-                        name = displayName.ToString();
-                    }
-                    authorNamesById.Add(id, name);
-                }
-            }
+            IJEnumerable<JToken> assets = results["assets"].AsJEnumerable();
 
             // Then parse the assets.
             List<ObjectStoreEntry> objectStoreEntries = new List<ObjectStoreEntry>();
+
+            // If anything has changed in LIKED or FEATURED we update the all object store entries
+            var i = 0;
+            foreach (JToken asset in assets)
+            {
+                if (AssetIndexChanged(asset, i, type))
+                {
+                    i = -1;
+                    break;
+                }
+                i++;
+            }
+            var polyMenu = PeltzerMain.Instance.polyMenuMain;
+
+            // edge case where someone might change category and not get any assets and then try to change
+            // OrderBy, in that case previous and current assets would be empty, which means nothing changed,
+            // and we wouldn't get the "no creations" notification
+            // and because we exclude the OrderBy from the check below we handle it here separately
+            if (IsPreviousAssetsEmpty(type) && !assets.Any())
+            {
+                objectStoreSearchResult.results = objectStoreEntries.ToArray();
+                return false;
+            }
+
+            if (i == assets.Count()) // nothing has changed, return empty array and leave preview as is
+            {
+                objectStoreSearchResult.results = objectStoreEntries.ToArray();
+
+                // no assets returned either because the search text or category filter
+                // didn't have any assets of that type
+                if (!assets.Any())
+                {
+                    UpdateMostRecentAssetIds(assets, type);
+                    return false;
+                }
+                return true;
+            }
 
             string firstAssetId = null;
             foreach (JToken asset in assets)
             {
                 ObjectStoreEntry objectStoreEntry;
-                string author = null;
-                var accountId = asset["accountId"];
-                if (accountId != null)
-                {
-                    authorNamesById.TryGetValue(accountId.ToString(), out author);
-                }
 
                 if (type == PolyMenuMain.CreationType.FEATURED || type == PolyMenuMain.CreationType.LIKED)
                 {
-                    string assetId = asset["assetId"].ToString();
+                    string assetId = asset["url"]?.ToString();
                     if (firstAssetId == null)
                     {
                         firstAssetId = assetId;
                     }
-                    // Once we've seen an ID we've seen before, no need to continue through the list. This helps with polling
-                    // regularly. This assumes new items always appear at the top of the list; we explicitly ask Zandria to sort by
-                    // featured/liked time, descending.
-                    if ((type == PolyMenuMain.CreationType.FEATURED && mostRecentFeaturedAssetId == assetId)
-                      || (type == PolyMenuMain.CreationType.LIKED && mostRecentLikedAssetId == assetId))
-                    {
-                        break;
-                    }
                 }
+
                 if (ParseAsset(asset, out objectStoreEntry, hackUrls))
                 {
-                    objectStoreEntry.author = author;
                     objectStoreEntries.Add(objectStoreEntry);
                 }
             }
+
+            UpdateMostRecentAssetIds(assets, type);
 
             if (type == PolyMenuMain.CreationType.FEATURED)
             {
@@ -318,30 +546,36 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
 
         /// <summary>
-        ///   Parses a single asset as defined in vr/assets/v1/asset.proto
+        ///   Parses a single asset as defined in vr/assets/asset.proto
         /// </summary>
         /// <returns></returns>
         public static bool ParseAsset(JToken asset, out ObjectStoreEntry objectStoreEntry, bool hackUrls)
         {
             objectStoreEntry = new ObjectStoreEntry();
 
-            if (asset["accessLevel"] == null)
+            if (asset["visibility"] == null)
             {
-                Debug.Log("Asset had no access level set");
+                Debug.LogWarning("Asset had no access level set");
+                objectStoreEntry.isPrivateAsset = true; // TODO API should set defaults but should we still have our own default?
+            }
+            else
+            {
+                objectStoreEntry.isPrivateAsset = asset["visibility"].ToString() == "PRIVATE";
+            }
+
+            if (asset["assetId"] != null)
+            {
+                objectStoreEntry.id = asset["assetId"].ToString();
+            }
+            else
+            {
+                Debug.LogError($"Asset had no ID: {asset}");
                 return false;
             }
-            objectStoreEntry.isPrivateAsset = asset["accessLevel"].ToString() == "PRIVATE";
-
-            objectStoreEntry.id = asset["assetId"].ToString();
             JToken thumbnailRoot = asset["thumbnail"];
-            if (thumbnailRoot != null)
+            if (thumbnailRoot != null && thumbnailRoot["url"] != null)
             {
-                IJEnumerable<JToken> thumbnailElements = asset["thumbnail"].AsJEnumerable();
-                foreach (JToken thumbnailElement in thumbnailElements)
-                {
-                    objectStoreEntry.thumbnail = thumbnailElement["typeInfo"]["imageInfo"]["fifeUrl"].ToString();
-                    break;
-                }
+                objectStoreEntry.thumbnail = asset["thumbnail"]["url"].ToString();
             }
             List<string> tags = new List<string>();
             IJEnumerable<JToken> assetTags = asset["tag"].AsJEnumerable();
@@ -356,18 +590,31 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     objectStoreEntry.tags = tags.ToArray();
                 }
             }
-            ObjectStoreObjectAssetsWrapper entryAssets = new ObjectStoreObjectAssetsWrapper();
-            ObjectStorePeltzerAssets blocksAsset = new ObjectStorePeltzerAssets();
+            var entryAssets = new ObjectStoreObjectAssetsWrapper();
+            var blocksAsset = new ObjectStorePeltzerAssets();
             // 7 is the enum for Blocks in ElementType
             // A bit ugly: we simply take one arbitrary entry (we assume only one entry exists, as we only ever upload one).
-            blocksAsset.rootUrl = asset["formatList"]["7"]["format"][0]["root"]["dataUrl"].ToString();
-
+            //blocksAsset.rootUrl = asset["formats"]["7"]["format"][0]["root"]["dataUrl"].ToString();
+            var assets = asset["formats"].AsJEnumerable();
+            var blocksEntry = assets?.FirstOrDefault(x => x["formatType"].ToString() == "BLOCKS");
+            if (blocksEntry == null)
+            {
+                Debug.LogWarning("Asset had no blocks format type");
+                return false;
+            }
+            blocksAsset.rootUrl = blocksEntry["root"]?["url"]?.ToString();
+            if (string.IsNullOrEmpty(blocksAsset.rootUrl))
+            {
+                Debug.LogWarning("Asset had no blocks root URL");
+                return false;
+            }
             blocksAsset.baseFile = "";
             entryAssets.peltzer = blocksAsset;
             objectStoreEntry.assets = entryAssets;
             objectStoreEntry.title = asset["displayName"].ToString();
+            objectStoreEntry.author = asset["authorName"].ToString();
             objectStoreEntry.createdDate = DateTime.Parse(asset["createTime"].ToString());
-            objectStoreEntry.cameraForward = GetCameraForward(asset["cameraParams"]);
+            objectStoreEntry.cameraForward = GetCameraForward(asset["presentationParams"]?["orientingRotation"]);
             return true;
         }
 
@@ -384,6 +631,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <returns>A string of three float values separated by spaces that represent the camera forward.</returns>
         private static Vector3 GetCameraForward(JToken cameraParams)
         {
+            if (cameraParams == null) return Vector3.zero;
             JToken cameraMatrix = cameraParams["matrix4x4"];
             if (cameraMatrix == null) return Vector3.zero;
             // We want the third column, which holds the camera's forward.
@@ -411,7 +659,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           bool isRecursion = false)
         {
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
-            UnityWebRequest request = GetRequest(FeaturedModelsSearchUrl(), "text/text");
+            UnityWebRequest request = GetRequest(FeaturedModelsSearchUrl(), "text/text", false);
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
             () => { return request; },
             (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
@@ -429,14 +677,16 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 if (isRecursion)
                 {
-                    Debug.Log(GetDebugString(request, "Failed to get featured models"));
+                    Debug.LogError(GetDebugString(request, "Failed to get featured models"));
                     yield break;
                 }
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
                 GetFeaturedModels(successCallback, failureCallback, /* isRecursion */ true);
             }
             else
             {
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(
                   new ParseAssetsBackgroundWork(Encoding.UTF8.GetString(responseBytes),
                   PolyMenuMain.CreationType.FEATURED, successCallback, failureCallback));
@@ -451,7 +701,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public void GetYourModels(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
           bool isRecursion = false)
         {
-            UnityWebRequest request = GetRequest(YourModelsSearchUrl(), "text/text");
+            UnityWebRequest request = GetRequest(YourModelsSearchUrl(), "text/text", true);
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
@@ -469,14 +719,16 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 if (isRecursion)
                 {
-                    Debug.Log(GetDebugString(request, "Failed to get your models"));
+                    Debug.LogError(GetDebugString(request, "Failed to get your models"));
                     yield break;
                 }
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
                 GetYourModels(successCallback, failureCallback);
             }
             else
             {
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
                   Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.YOUR, successCallback,
                   failureCallback, hackUrls: true));
@@ -491,7 +743,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <param name="callback">A callback to which to pass the results.</param>
         public void GetLikedModels(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback)
         {
-            UnityWebRequest request = GetRequest(LikedModelsSearchUrl(), "text/text");
+            UnityWebRequest request = GetRequest(LikedModelsSearchUrl(), "text/text", true);
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
@@ -509,14 +761,16 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 if (isRecursion)
                 {
-                    Debug.Log(GetDebugString(request, "Failed to get liked models"));
+                    Debug.LogError(GetDebugString(request, "Failed to get liked models"));
                     yield break;
                 }
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
                 GetLikedModels(successCallback, failureCallback);
             }
             else
             {
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
                   Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.LIKED, successCallback, failureCallback));
             }
@@ -528,8 +782,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <param name="callback">A callback to which to pass the results.</param>
         public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback)
         {
-            string url = String.Format("{0}/v1/assets/{1}?key={2}", BaseUrl(), assetId, POLY_KEY);
-            UnityWebRequest request = GetRequest(url, "text/text");
+            string url = String.Format("{0}/assets/{1}", ApiBaseUrl, assetId);
+            UnityWebRequest request = GetRequest(url, "text/text", true); // Authentication is sometimes required
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
@@ -545,7 +799,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 if (isRecursion)
                 {
-                    Debug.Log(GetDebugString(request, "Failed to fetch an asset with id " + assetId));
+                    Debug.LogError(GetDebugString(request, "Failed to fetch an asset with id " + assetId));
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
@@ -581,25 +835,33 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile, bool publish, bool saveSelected)
         {
 
-            // Upload the resources.
-            yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
-                blocksFile, thumbnailFile, saveSelected);
+            yield return CreateNewAsset(saveSelected);
 
-            // Create an asset if all uploads succeded.
-            if (resourceUploadSuccess)
+            // Upload the resources.
+            // Create an asset if all uploads succeeded.
+            if (assetCreationSuccess)
             {
-                yield return CreateNewAsset(gltfData, objPolyCount, triangulatedObjPolyCount, remixIds, saveSelected);
+                yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
+                    blocksFile, thumbnailFile, saveSelected);
             }
 
-            // Show a toast informing the user that they uploaded to Zandria (or that there was an error.)
-            PeltzerMain.Instance
-              .HandleSaveComplete(/* success */ assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
+            if (resourceUploadSuccess)
+            {
+                yield return FinalizeAsset(assetId, gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
+            }
+            else
+            {
+                // TODO: Handle failure.
+            }
+
+            // Show a toast informing the user that they uploaded to Zandria (or that there was an error)
+            PeltzerMain.Instance.HandleSaveComplete(assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
             if (assetCreationSuccess)
             {
                 PeltzerMain.Instance.LoadSavedModelOntoPolyMenu(assetId, publish);
             }
 
-            if (assetCreationSuccess)
+            if (assetCreationSuccess && resourceUploadSuccess)
             {
                 // If we are only saving the selected content, then we don't want to overwrite the LastSavedAssetId
                 // as the id we are currently using is meant to be temporary.
@@ -638,20 +900,22 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           byte[] triangulatedObjFile, int triangulatedObjPolyCount, byte[] mtlFile, FormatSaveData gltfData,
           byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile, bool publish)
         {
-
+            this.assetId = assetId;
             // Upload the resources.
             yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
                 blocksFile, thumbnailFile, saveSelected: false);
 
+
+            assetCreationSuccess = true; // Temporary until we reimplement this
             // Update the asset if all uploads succeded.
             if (resourceUploadSuccess)
             {
-                yield return UpdateAsset(assetId, gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
+                yield return FinalizeAsset(assetId, gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
             }
 
             // Show a toast informing the user that they uploaded to Zandria, or that there was an error.
             PeltzerMain.Instance
-              .HandleSaveComplete(/* success */ assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
+              .HandleSaveComplete(assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
             if (assetCreationSuccess)
             {
                 PeltzerMain.Instance.LastSavedAssetId = assetId;
@@ -659,23 +923,14 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 {
                     OpenPublishUrl(assetId);
                 }
-                else
-                {
-                }
-            }
-            else
-            {
             }
         }
 
         public static void OpenPublishUrl(string assetId)
         {
-            string publishUrl = PublishUrl() + assetId;
-            string emailAddress = OAuth2Identity.Instance.Profile == null ? null : OAuth2Identity.Instance.Profile.email;
-            string urlToOpen = emailAddress == null ? publishUrl :
-              string.Format("https://accounts.google.com/AccountChooser?Email={0}&continue={1}", emailAddress, publishUrl);
+            string publishUrl = PublishUrl + assetId;
             PeltzerMain.Instance.paletteController.SetPublishDialogActive();
-            System.Diagnostics.Process.Start(urlToOpen);
+            System.Diagnostics.Process.Start(publishUrl);
         }
 
         private void OpenSaveUrl()
@@ -684,10 +939,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 return;
             }
-            string emailAddress = OAuth2Identity.Instance.Profile == null ? null : OAuth2Identity.Instance.Profile.email;
-            string urlToOpen = emailAddress == null ? SaveUrl() :
-              string.Format("https://accounts.google.com/AccountChooser?Email={0}&continue={1}", emailAddress, SaveUrl());
-            System.Diagnostics.Process.Start(urlToOpen);
+            System.Diagnostics.Process.Start(DEFAULT_SAVE_URL);
             PeltzerMain.Instance.HasOpenedSaveUrlThisSession = true;
         }
 
@@ -698,24 +950,31 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           byte[] mtlFile, FormatSaveData gltfData, byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile,
           bool saveSelected)
         {
-            StartCoroutine(AddResource(ExportUtils.OBJ_FILENAME, "text/plain", objFile, "obj"));
-            StartCoroutine(AddResource(ExportUtils.TRIANGULATED_OBJ_FILENAME, "text/plain", triangulatedObjFile,
-              "triangulated-obj"));
-            StartCoroutine(AddResource(ExportUtils.MTL_FILENAME, "text/plain", mtlFile, "mtl"));
-            StartCoroutine(AddResource(ExportUtils.FBX_FILENAME, "application/octet-stream", fbxFile, "fbx"));
-            StartCoroutine(AddResource(gltfData.root.fileName, gltfData.root.mimeType, gltfData.root.multipartBytes,
-              gltfData.root.tag));
-
-            for (int i = 0; i < gltfData.resources.Count; i++)
+            if (objFile != null)
             {
-                FormatDataFile file = gltfData.resources[i];
-                StartCoroutine(AddResource(file.fileName, file.mimeType, file.multipartBytes, file.tag + i));
+                yield return StartCoroutine(AddResource(ExportUtils.OBJ_FILENAME, "text/plain", objFile, "obj"));
+                yield return StartCoroutine(AddResource(ExportUtils.TRIANGULATED_OBJ_FILENAME, "text/plain", triangulatedObjFile, "triangulated-obj"));
+                yield return StartCoroutine(AddResource(ExportUtils.MTL_FILENAME, "text/plain", mtlFile, "mtl"));
+            }
+            if (fbxFile != null)
+            {
+                yield return StartCoroutine(AddResource(ExportUtils.FBX_FILENAME, "application/octet-stream", fbxFile, "fbx"));
+            }
+            if (gltfData != null)
+            {
+                yield return StartCoroutine(AddResource(gltfData.root.fileName, gltfData.root.mimeType, gltfData.root.multipartBytes, gltfData.root.tag));
+                for (int i = 0; i < gltfData.resources.Count; i++)
+                {
+                    FormatDataFile file = gltfData.resources[i];
+                    yield return StartCoroutine(AddResource(file.fileName, file.mimeType, file.multipartBytes, file.tag + i));
+                }
             }
 
-            StartCoroutine(AddResource(ExportUtils.BLOCKS_FILENAME, "application/octet-stream", blocksFile, "blocks"));
+            yield return StartCoroutine(AddResource(ExportUtils.BLOCKS_FILENAME, "application/octet-stream", blocksFile, "blocks"));
+
             if (!saveSelected)
             {
-                StartCoroutine(AddResource(ExportUtils.THUMBNAIL_FILENAME, "image/png", thumbnailFile, "png"));
+                yield return StartCoroutine(AddResource(ExportUtils.THUMBNAIL_FILENAME, "image/png", thumbnailFile, "png"));
             }
 
             // Wait for all uploads to complete (or fail);
@@ -728,7 +987,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     switch (pair.Value)
                     {
                         case UploadState.FAILED:
-                            Debug.Log("Failed to upload " + pair.Key);
+                            Debug.LogError("Failed to upload " + pair.Key);
                             allSucceeded = false;
                             overallState = UploadState.FAILED;
                             resourceUploadSuccess = false;
@@ -750,168 +1009,122 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <summary>
         ///   Create a new asset from the uploaded files.
         /// </summary>
-        private IEnumerator CreateNewAsset(FormatSaveData saveData, int objPolyCount, int triangulatedObjPolyCount,
-          HashSet<string> remixIds, bool saveSelected)
+        private IEnumerator CreateNewAsset(bool saveSelected)
         {
-            string json = CreateJsonForAssetResources(saveData, remixIds, objPolyCount, triangulatedObjPolyCount,
-              /* displayName */ "(Untitled)", saveSelected);
-            string url = String.Format("{0}/v1/assets?key={1}", BaseUrl(), POLY_KEY);
+            string url = $"{ApiBaseUrl}/assets";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
             for (int i = 0; i < 2; i++)
             {
-                request = PostRequest(url, "application/json", Encoding.UTF8.GetBytes(json));
+                // TODO add metadata to the asset
+                // string json = CreateJsonForAssetResources(remixIds, objPolyCount, triangulatedObjPolyCount, "(Untitled)", saveSelected);
+
+                // Create an empty asset ready to be filled with resources.
+                request = PostRequest(
+                    url,
+                    "multipart/form-data; boundary=" + BOUNDARY,
+                    Array.Empty<byte>(),
+                    compressResourceUpload
+                );
                 request.downloadHandler = new DownloadHandlerBuffer();
 
-                yield return request.Send();
+                yield return request.SendWebRequest();
 
                 if (request.responseCode == 401 || request.isNetworkError)
                 {
                     yield return OAuth2Identity.Instance.Reauthorize();
                     continue;
                 }
-                else
+
+                if (request.responseCode < 200 || request.responseCode >= 300)
                 {
-                    assetId = null;
-                    Regex regex = new Regex(ASSET_ID_MATCH);
-                    Match match = regex.Match(request.downloadHandler.text);
-                    if (match.Success)
-                    {
-                        assetId = match.Groups[1].Captures[0].Value;
-                        // Only update the global AssetId if the user has not hit 'new model' or opened a model
-                        // since this save began, and if we are not only saving selected content, as the id used
-                        // is meant to be temporary.
-                        if (!PeltzerMain.Instance.newModelSinceLastSaved && !saveSelected)
-                        {
-                            PeltzerMain.Instance.AssetId = assetId;
-                        }
-                        assetCreationSuccess = true;
-                    }
-                    else
-                    {
-                        Debug.Log("Failed to save to Assets Store. Response: " + request.downloadHandler.text);
-                    }
+                    Debug.LogError($"Unexpected response from Icosa: {request.downloadHandler.text}");
                     yield break;
                 }
+                try
+                {
+                    var responseJson = JSON.Parse(request.downloadHandler.text);
+                    assetId = responseJson["assetId"];
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Exception while save to Icosa: {request.downloadHandler.text}\n{e}");
+                    yield break;
+                }
+
+                // Only update the global AssetId if the user has not hit 'new model' or opened a model
+                // since this save began, and if we are not only saving selected content, as the id used
+                // is meant to be temporary.
+                if (!PeltzerMain.Instance.newModelSinceLastSaved && !saveSelected)
+                {
+                    PeltzerMain.Instance.AssetId = assetId;
+                }
+                assetCreationSuccess = true;
+                yield break;
             }
 
-            Debug.Log(GetDebugString(request, "Failed to save to asset store"));
+            Debug.LogError(GetDebugString(request, "Failed to save to asset store"));
         }
 
         /// <summary>
-        ///   Update an existing asset.
+        ///   Overload of the above method used for updating an existing asset.
         /// </summary>
-        private IEnumerator UpdateAsset(string assetId, FormatSaveData saveData, int objPolyCount,
+        private IEnumerator FinalizeAsset(string assetId, FormatSaveData saveData, int objPolyCount,
           int triangulatedObjPolyCount, HashSet<string> remixIds)
         {
-            string json = CreateJsonForAssetResources(saveData, remixIds, objPolyCount, triangulatedObjPolyCount,
-              /* displayName */ null, saveSelected: false);
-            string url = String.Format("{0}/v1/assets/{1}:updateData?key={2}", BaseUrl(), assetId, POLY_KEY);
+            string json = CreateJsonForAssetResources(remixIds, objPolyCount, triangulatedObjPolyCount, saveSelected: false);
+
+            string url = $"{ApiBaseUrl}/assets/{assetId}/blocks_finalize";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
             for (int i = 0; i < 2; i++)
             {
-                request = Patch(url, "application/json", Encoding.UTF8.GetBytes(json));
+                request = PostRequest(
+                    url,
+                    "application/json",
+                    Encoding.UTF8.GetBytes(json)
+                );
                 request.downloadHandler = new DownloadHandlerBuffer();
 
-                yield return request.Send();
+                yield return request.SendWebRequest();
 
                 if (request.responseCode == 401 || request.isNetworkError)
                 {
                     yield return OAuth2Identity.Instance.Reauthorize();
                     continue;
                 }
-                else
+
+                if (request.responseCode < 200 || request.responseCode >= 300)
                 {
-                    assetId = null;
-                    Regex regex = new Regex(ASSET_ID_MATCH);
-                    Match match = regex.Match(request.downloadHandler.text);
-                    if (match.Success)
-                    {
-                        assetId = match.Groups[1].Captures[0].Value;
-                        PeltzerMain.Instance.UpdateCloudModelOntoPolyMenu(request.downloadHandler.text);
-                        assetCreationSuccess = true;
-                    }
-                    else
-                    {
-                        Debug.Log("Failed to update " + assetId + " in Assets Store. Response: " + request.downloadHandler.text);
-                    }
+                    Debug.LogError($"Unexpected response from Icosa: {request.downloadHandler.text}");
                     yield break;
                 }
+
+                try
+                {
+                    var responseJson = JObject.Parse(request.downloadHandler.text);
+                    assetId = responseJson["assetId"].ToString();
+                    PeltzerMain.Instance.UpdateCloudModelOntoPolyMenu(request.downloadHandler.text);
+                    assetCreationSuccess = true;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to update {assetId} on Icosa. Response: {request.downloadHandler.text}\n{e}"); ;
+                }
+                yield break;
             }
-            Debug.Log(GetDebugString(request, "Failed to save to asset store"));
+            Debug.LogError(GetDebugString(request, "Failed to save to Icosa"));
         }
 
-        private string CreateJsonForAssetResources(FormatSaveData saveData, HashSet<string> remixIds,
-          int objPolyCount, int triangulatedObjPolyCount, string displayName, bool saveSelected)
+        private string CreateJsonForAssetResources(HashSet<string> remixIds, int objPolyCount, int triangulatedObjPolyCount, bool saveSelected)
         {
-            List<String> gltfResourceFiles = new List<string>();
-            for (int i = 0; i < saveData.resources.Count; i++)
-            {
-                FormatDataFile dataFile = saveData.resources[i];
-                gltfResourceFiles.Add(String.Format("\"resource_id\": \"{0}\"", elementIds[dataFile.tag + i]));
-            }
-
-            string gltfFormatComplexity = "";
-            if (saveData.triangleCount > 0)
-            {
-                gltfFormatComplexity = String.Format("\"format_complexity\": {{ \"triangle_count\": {0} }},",
-                  saveData.triangleCount);
-            }
-            string objFormatComplexity = String.Format("\"format_complexity\": {{ \"triangle_count\": {0} }},",
-              objPolyCount);
-            string triangulatedObjFormatComplexity = String.Format("\"format_complexity\": {{ \"triangle_count\": {0} }},",
-              triangulatedObjPolyCount);
-
-            // Create asset using the uploaded components.
-            // Newtonsoft library doesn't like repeated keys, so we do it by hand.
-            string gltfResources = String.Join(",", gltfResourceFiles.ToArray());
-            string gltfBlock = String.Format("\"format\": [ {{ \"root_id\": \"{0}\", {1} " +
-              "{2} }} ]", elementIds[saveData.root.tag], gltfFormatComplexity, gltfResources);
-
-            string remixBlock;
-            // Note: we have to include the remix_info section even if it's empty, because its absence would
-            // mean "keep the existing remix IDs" (incorrect), not "there are no remix IDs" (correct).
-            StringBuilder remixBlockBuilder = new StringBuilder("\"remix_info\": { ");
-            foreach (string remixId in remixIds)
-            {
-                remixBlockBuilder.Append("\"source_asset\": \"").Append(remixId).Append("\", ");
-            }
-            remixBlockBuilder.Append("}");
-            remixBlock = remixBlockBuilder.ToString();
-
-            string prelude = displayName == null ? "{ " : String.Format("{{ \"display_name\": \"{0}\",", displayName);
-
-            string json;
+            string json = "";
             if (!saveSelected)
             {
-                json = String.Format(
-                  "{0}\"thumbnail_id\": \"{1}\"," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_WAVEFRONT_OBJ\", \"root_id\": \"{2}\", {3} \"resource_id\": \"{4}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_WAVEFRONT_OBJ_TRIANGULATED\", \"root_id\": \"{5}\", {6} \"resource_id\": \"{7}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_AUTODESK_FBX\", \"root_id\": \"{8}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_BLOCKS\", \"root_id\": \"{9}\" }} ], {10}, {11} }}",
-                  prelude, elementIds["png"],
-                  elementIds["obj"], objFormatComplexity, elementIds["mtl"],
-                  elementIds["triangulated-obj"], triangulatedObjFormatComplexity, elementIds["mtl"],
-                  elementIds["fbx"],
-                  elementIds["blocks"], gltfBlock, remixBlock);
-            }
-            else
-            {
-                json = String.Format(
-                  "{0}" +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_WAVEFRONT_OBJ\", \"root_id\": \"{1}\", {2} \"resource_id\": \"{3}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_WAVEFRONT_OBJ_TRIANGULATED\", \"root_id\": \"{4}\", {5} \"resource_id\": \"{6}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_AUTODESK_FBX\", \"root_id\": \"{7}\" }} ]," +
-                    "\"format\": [ {{ \"format_type\": \"FORMAT_BLOCKS\", \"root_id\": \"{8}\" }} ], {9}, {10} }}",
-                  prelude,
-                  elementIds["obj"], objFormatComplexity, elementIds["mtl"],
-                  elementIds["triangulated-obj"], triangulatedObjFormatComplexity, elementIds["mtl"],
-                  elementIds["fbx"],
-                  elementIds["blocks"], gltfBlock, remixBlock);
+                string remixIdsJson = String.Join(",", remixIds.Select(remixId => $@"""{remixId}"""));
+                json = $@"{{""objPolyCount"": ""{objPolyCount}"", ""triangulatedObjPolyCount"": ""{triangulatedObjPolyCount}"", ""remixIds"": [{remixIdsJson}]}}";
             }
             return json;
         }
@@ -922,43 +1135,49 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private IEnumerator AddResource(string filename, string mimeType, byte[] data, string key)
         {
             elementUploadStates.Add(key, UploadState.IN_PROGRESS);
-            string url = string.Format("{0}/uploads", BaseUrl());
+            string url = $"{ApiBaseUrl}/assets/{assetId}/blocks_format";
             UnityWebRequest request = new UnityWebRequest();
 
-            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
+            // Run this twice so we can re-authorise if access tokens have become stale.
             for (int i = 0; i < 2; i++)
             {
+                compressResourceUpload = false; // TODO remove once we've added support for compressed resources
+
                 request = PostRequest(url, "multipart/form-data; boundary=" + BOUNDARY, data, compressResourceUpload);
-                request.SetRequestHeader("X-Google-Project-Override", "apikey");
                 request.downloadHandler = new DownloadHandlerBuffer();
 
-                yield return request.Send();
+                yield return request.SendWebRequest();
 
                 if (request.responseCode == 401 || request.isNetworkError)
                 {
                     yield return OAuth2Identity.Instance.Reauthorize();
                     continue;
                 }
-                else
+
+                if (request.responseCode >= 200 && request.responseCode <= 299)
                 {
-                    Regex regex = new Regex(ELEMENT_ID_MATCH);
-                    Match match = regex.Match(request.downloadHandler.text);
-                    if (match.Success)
+                    try
                     {
-                        elementIds[key] = match.Groups[1].Captures[0].Value;
+                        elementIds[key] = "some_id"; // match.Groups[1].Captures[0].Value; TODO do we still need this?
                         elementUploadStates[key] = UploadState.SUCCEEDED;
                     }
-                    else
+                    catch (Exception e)
                     {
-                        Debug.Log(GetDebugString(request, "Failed to save " + filename + " to Assets Store."));
+                        Debug.LogError(GetDebugString(request, $"Failed to save {filename} Response {request.responseCode}: {e}"));
                         elementUploadStates[key] = UploadState.FAILED;
                     }
-                    yield break;
                 }
+                else
+                {
+                    Debug.LogError(GetDebugString(request, $"Failed to save {filename} Response {request.responseCode}"));
+                    elementUploadStates[key] = UploadState.FAILED;
+                }
+                yield break;
             }
 
+            // Failed twice
             elementUploadStates[key] = UploadState.FAILED;
-            Debug.Log(GetDebugString(request, "Failed to save " + filename + " to asset store"));
+            Debug.LogError(GetDebugString(request, "Failed to save " + filename + " to asset store"));
         }
 
         /// <summary>
@@ -972,9 +1191,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
               .Append("Response Code: ").AppendLine(request.responseCode.ToString())
               .Append("Error Message: ").AppendLine(request.error);
 
-            foreach (KeyValuePair<string, string> header in request.GetResponseHeaders())
+            var headers = request.GetResponseHeaders();
+            if (headers != null)
             {
-                debugString.Append(header.Key).Append(" : ").AppendLine(header.Value);
+                foreach (KeyValuePair<string, string> header in headers)
+                {
+                    debugString.Append(header.Key).Append(" : ").AppendLine(header.Value);
+                }
             }
             return debugString.ToString();
         }
@@ -990,7 +1213,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             // Write the media part of the request from the data.
             sw.Write("--" + BOUNDARY);
             sw.Write(string.Format(
-              "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{0}\"\r\nContent-Type: {1}\r\n\r\n",
+              "\r\nContent-Disposition: form-data; name=\"files\"; filename=\"{0}\"\r\nContent-Type: {1}\r\n\r\n",
               filename, mimeType));
             sw.Flush();
             stream.Write(data, 0, data.Length);
@@ -1029,7 +1252,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// </summary>
         public IEnumerator DeleteAsset(string assetId)
         {
-            string url = String.Format("{0}/v1/assets/{1}?key={2}", BaseUrl(), assetId, POLY_KEY);
+            string url = String.Format("{0}/assets/{1}", ApiBaseUrl, assetId);
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -1050,18 +1273,22 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
             }
 
-            Debug.Log(GetDebugString(request, "Failed to delete " + assetId));
+            Debug.LogError(GetDebugString(request, "Failed to delete " + assetId));
         }
 
         /// <summary>
         ///   Forms a GET request from a HTTP path.
         /// </summary>
-        public UnityWebRequest GetRequest(string path, string contentType)
+        public UnityWebRequest GetRequest(string path, string contentType, bool requireAuth)
         {
+            if (!path.StartsWith("https://s3."))
+            {
+                Debug.Log($"get: {path}");
+            }
             // The default constructor for a UnityWebRequest gives a GET request.
             UnityWebRequest request = new UnityWebRequest(path);
             request.SetRequestHeader("Content-type", contentType);
-            if (OAuth2Identity.Instance.HasAccessToken)
+            if (requireAuth && OAuth2Identity.Instance.HasAccessToken)
             {
                 OAuth2Identity.Instance.Authenticate(request);
             }
