@@ -77,9 +77,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
     public class LicenseChoices
     {
-        public static string
+        public static readonly string
             ANY = "",
-            CC0 = "CC0",
+            CC0 = "CREATIVE_COMMONS_0",
+            REMIXABLE = "REMIXABLE",
+            ALL_CC = "ALL_CC",
             CREATIVE_COMMONS_BY = "CREATIVE_COMMONS_BY",
             CREATIVE_COMMONS_BY_NC = "CREATIVE_COMMONS_BY_NC",
             CREATIVE_COMMONS_BY_ND = "CREATIVE_COMMONS_BY_ND",
@@ -89,11 +91,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             return licence switch
             {
-                "ANY" => "Any",
-                "CC0" => "CC0",
-                "CREATIVE_COMMONS_BY" => "Creative Commons BY",
-                "CREATIVE_COMMONS_BY_NC" => "Creative Commons BY-NC",
-                "CREATIVE_COMMONS_BY_ND" => "Creative Commons BY-ND",
+                "ANY" => "Any License",
+                "CC0" => "Creative Commons Zero (Public Domain)",
+                "CREATIVE_COMMONS_BY" => "Creative Commons Attribution",
+                "CREATIVE_COMMONS_BY_NC" => "Creative Commons Attribution, Non-Commercial",
+                "CREATIVE_COMMONS_BY_ND" => "Creative Commons Attribution, No Derivatives",
+                "REMIXABLE" => "Any Remixable Licence",
+                "ALL_CC" => "Any Creative Commons License",
                 "ALL_RIGHTS_RESERVED" => "All Rights Reserved",
                 _ => throw new ArgumentOutOfRangeException(nameof(licence), licence, null)
             };
