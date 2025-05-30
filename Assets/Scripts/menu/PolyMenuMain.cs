@@ -1248,6 +1248,8 @@ namespace com.google.apps.peltzer.client.menu
             ApplyMenuChange(menuIndex, true);
             offlineModelsMenu.SetActive(false);
             modelsMenu.SetActive(true);
+            UpdatePreviousQueryParams();
+
         }
 
         public void SetApiSearchText(string text)

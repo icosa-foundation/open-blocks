@@ -478,7 +478,6 @@ namespace com.google.apps.peltzer.client.zandria
                     pendingLoadsByType.Remove(type);
 
                     polyMenu.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
-                    polyMenu.UpdatePreviousQueryParams();
                     // Refresh the PolyMenu now that there are creations available.
                     polyMenu.RefreshPolyMenu();
                 }
@@ -489,7 +488,6 @@ namespace com.google.apps.peltzer.client.zandria
                 {
                     // if the query params have changed and we ended up here it means there are no results for that query
                     polyMenu.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NO_CREATIONS);
-                    polyMenu.UpdatePreviousQueryParams();
                     polyMenu.RefreshPolyMenu();
                     pendingLoadsByType.Remove(type);
                 }
