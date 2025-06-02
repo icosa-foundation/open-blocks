@@ -35,7 +35,7 @@ namespace TiltBrush
             ColorSwatch.material.color = color;
             SetDescriptionText(
                 "Color"
-                // ColorTable.m_Instance.NearestColorTo(color)
+            // ColorTable.m_Instance.NearestColorTo(color)
             );
         }
 

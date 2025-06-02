@@ -1012,7 +1012,7 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         public static MMesh PolyHydraToMMesh(
-                PolyMesh poly, int id, Vector3 center,Vector3 scale,
+                PolyMesh poly, int id, Vector3 center, Vector3 scale,
                 int materialId, bool fitWithinUnitBox = false)
         {
             var faceProperties = new FaceProperties(materialId);

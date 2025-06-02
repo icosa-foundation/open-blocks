@@ -49,7 +49,7 @@ namespace TiltBrush
 
                 // if (bWasToggleActive != m_ToggleActive)
                 // {
-                    // SetButtonActivated(m_ToggleActive);
+                // SetButtonActivated(m_ToggleActive);
                 // }
             }
         }

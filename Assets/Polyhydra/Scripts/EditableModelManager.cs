@@ -111,22 +111,22 @@ namespace TiltBrush
             // Create the widget
 
             // CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                // WidgetManager.m_Instance.EditableModelWidgetPrefab, tr, forceTransform: true);
+            // WidgetManager.m_Instance.EditableModelWidgetPrefab, tr, forceTransform: true);
             // SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             // var widget = createCommand.Widget as EditableModelWidget;
             // if (widget != null)
             // {
-                // var model = new Model(Model.Location.Generated(Guid.NewGuid().ToString()));
-                // model.LoadEditableModel(polyGo);
-                // widget.Model = model;
-                // widget.m_PolyRecipe = polyRecipe.Clone();
-                // widget.m_PolyMesh = poly;
-                // widget.Show(true);
-                // createCommand.SetWidgetCost(widget.GetTiltMeterCost());
+            // var model = new Model(Model.Location.Generated(Guid.NewGuid().ToString()));
+            // model.LoadEditableModel(polyGo);
+            // widget.Model = model;
+            // widget.m_PolyRecipe = polyRecipe.Clone();
+            // widget.m_PolyMesh = poly;
+            // widget.Show(true);
+            // createCommand.SetWidgetCost(widget.GetTiltMeterCost());
             // }
             // else
             // {
-                // Debug.LogWarning("Failed to create EditableModelWidget");
+            // Debug.LogWarning("Failed to create EditableModelWidget");
             // }
             // return widget;
             return null;
