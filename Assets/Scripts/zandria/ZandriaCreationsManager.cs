@@ -442,7 +442,8 @@ namespace com.google.apps.peltzer.client.zandria
         /// <param name="type">The enum type of the load.</param>
         public void StartLoad(PolyMenuMain.CreationType type)
         {
-            pendingLoadsByType.Remove(type);
+            var polyMenu = PeltzerMain.Instance.polyMenuMain;
+            polyMenu.UpdateUserInfoText(PolyMenuMain.CreationInfoState.LOADING);
 
             lock (mutex)
             {
@@ -454,8 +455,6 @@ namespace com.google.apps.peltzer.client.zandria
             delegate (ObjectStoreSearchResult objectStoreResults)
             {
                 if (objectStoreResults.results.Length == 0) { return; }
-
-                loadsByType.Remove(type);
 
                 // We've successfully called back with results from the query. Parse them into actual entries.
                 List<Entry> entries = new List<Entry>();
@@ -478,24 +477,25 @@ namespace com.google.apps.peltzer.client.zandria
                     // The load has completed and is now managed in loadsByType so we can remove it from pendingLoads.
                     pendingLoadsByType.Remove(type);
 
+                    polyMenu.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                     // Refresh the PolyMenu now that there are creations available.
-                    PeltzerMain.Instance.GetPolyMenuMain().RefreshPolyMenu();
+                    polyMenu.RefreshPolyMenu();
                 }
             },
             delegate ()
             {
-                // The query was not successful.
                 lock (mutex)
                 {
+                    // if the query params have changed and we ended up here it means there are no results for that query
+                    polyMenu.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NO_CREATIONS);
+                    polyMenu.RefreshPolyMenu();
                     pendingLoadsByType.Remove(type);
-                    PeltzerMain.Instance.GetPolyMenuMain().RefreshPolyMenu();
                 }
             });
         }
 
         public void Poll(PolyMenuMain.CreationType type)
         {
-
             // TODO this presumes Featured and Liked will only add new items at the front
             // This assumption will sometimes break when orderBy is changes
             // Also - new featured items might be added that don't appear at the front even when ordered by "BEST"
@@ -535,7 +535,7 @@ namespace com.google.apps.peltzer.client.zandria
             },
             delegate ()
             {
-                // The query was not successful. Do nothing.
+                // Nothing has changed since the last time we polled.
             });
         }
 

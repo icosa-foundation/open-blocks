@@ -1398,6 +1398,7 @@ namespace com.google.apps.peltzer.client.model.main
             zandriaCreationsManager.ClearLoad(PolyMenuMain.CreationType.YOUR);
             zandriaCreationsManager.ClearLoad(PolyMenuMain.CreationType.LIKED);
             AssetsServiceClient.mostRecentLikedAssetId = null;
+            AssetsServiceClient.ClearAllRecentAssetIds();
 
             // Try to load any local models.
             zandriaCreationsManager.LoadOfflineModels();

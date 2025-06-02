@@ -189,6 +189,43 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public string Format;
         public string Curated;
         public string Category;
+
+        public override string ToString()
+        {
+            return "SearchText: " + SearchText + "\n" +
+                "TriangleCountMax: " + TriangleCountMax + "\n" +
+                "License: " + License + "\n" +
+                "OrderBy: " + OrderBy + "\n" +
+                "Format: " + Format + "\n" +
+                "Curated: " + Curated + "\n" +
+                "Category: " + Category;
+        }
+
+        public ApiQueryParameters Copy()
+        {
+            return new ApiQueryParameters()
+            {
+                SearchText = SearchText,
+                TriangleCountMax = TriangleCountMax,
+                License = License,
+                OrderBy = OrderBy,
+                Format = Format,
+                Curated = Curated,
+                Category = Category
+            };
+        }
+
+        public bool Equals(ApiQueryParameters other)
+        {
+            if (other == null) { return false; }
+            return SearchText.Equals(other.SearchText) &&
+                TriangleCountMax == other.TriangleCountMax &&
+                License.Equals(other.License) &&
+                OrderBy.Equals(other.OrderBy) &&
+                Format.Equals(other.Format) &&
+                Curated.Equals(other.Curated) &&
+                Category.Equals(other.Category);
+        }
     }
 
     public class AssetsServiceClient : MonoBehaviour
@@ -212,7 +249,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             SearchText = "",
             TriangleCountMax = defaultMaxPolyModelTriangles,
-            License = LicenseChoices.CREATIVE_COMMONS_BY,
+            License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.LIKED_TIME,
             Format = FormatChoices.BLOCKS,
             Curated = CuratedChoices.ANY,
@@ -223,7 +260,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             SearchText = "",
             TriangleCountMax = defaultMaxPolyModelTriangles,
-            License = LicenseChoices.CREATIVE_COMMONS_BY,
+            License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.BEST,
             Format = FormatChoices.BLOCKS,
             Curated = CuratedChoices.ANY,
@@ -329,19 +366,96 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private readonly object deflateMutex = new object();
         private byte[] tempDeflateBuffer = new byte[65536 * 4];
 
-        private static List<string> mostRecentAssetIds = new();
+        // we are using this to check if the assets have changed in any way,
+        // if yes, we update the list of assets, otherwise we do nothing
+        private static List<string> mostRecentFeaturedAssetIds = new();
+        private static List<string> mostRecentLikedAssetIds = new();
+        private static List<string> mostRecentYourAssetIds = new();
 
-        private static void UpdateMostRecentAssetIds(IJEnumerable<JToken> assets)
+        /// <summary>
+        /// Clears all list of most recent asset ids. We use this list to check if assets have changed
+        /// after polling or when the user sends a query. When the user logs out, we want to clear the lists
+        /// in order to start fresh when the user logs in again.
+        /// Also clears the featured assets which we could leave in theory as they also work when the user is not logged in.
+        /// </summary>
+        public static void ClearAllRecentAssetIds()
         {
-            mostRecentAssetIds.Clear();
+            mostRecentFeaturedAssetIds.Clear();
+            mostRecentLikedAssetIds.Clear();
+            mostRecentYourAssetIds.Clear();
+        }
+
+        public static void ClearRecentAssetIdsByType(PolyMenuMain.CreationType type)
+        {
+            switch (type)
+            {
+                case PolyMenuMain.CreationType.FEATURED:
+                    mostRecentFeaturedAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.LIKED:
+                    mostRecentLikedAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.YOUR:
+                    mostRecentYourAssetIds.Clear();
+                    break;
+            }
+        }
+
+        private static void UpdateMostRecentAssetIds(IJEnumerable<JToken> assets, PolyMenuMain.CreationType type)
+        {
+            switch (type)
+            {
+                case PolyMenuMain.CreationType.FEATURED:
+                    mostRecentFeaturedAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.LIKED:
+                    mostRecentLikedAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.YOUR:
+                    mostRecentYourAssetIds.Clear();
+                    break;
+            }
             foreach (JToken asset in assets)
             {
-                string assetId = asset["url"]?.ToString();
+                var assetId = asset["url"]?.ToString();
                 if (assetId != null)
                 {
-                    mostRecentAssetIds.Add(assetId);
+                    switch (type)
+                    {
+                        case PolyMenuMain.CreationType.FEATURED:
+                            mostRecentFeaturedAssetIds.Add(assetId);
+                            break;
+                        case PolyMenuMain.CreationType.LIKED:
+                            mostRecentLikedAssetIds.Add(assetId);
+                            break;
+                        case PolyMenuMain.CreationType.YOUR:
+                            mostRecentYourAssetIds.Add(assetId);
+                            break;
+                    }
                 }
             }
+        }
+
+        private static bool AssetIndexChanged(JToken asset, int index, PolyMenuMain.CreationType type)
+        {
+            return type switch
+            {
+                PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                _ => false
+            };
+        }
+
+        private static bool IsPreviousAssetsEmpty(PolyMenuMain.CreationType type)
+        {
+            return type switch
+            {
+                PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.Count == 0,
+                PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.Count == 0,
+                PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.Count == 0,
+                _ => false
+            };
         }
 
         /// <summary>
@@ -356,16 +470,48 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             // Try and actually parse the string.
             JObject results = JObject.Parse(response);
             IJEnumerable<JToken> assets = results["assets"].AsJEnumerable();
-            if (assets == null)
-            {
-                return false;
-            }
 
             // Then parse the assets.
             List<ObjectStoreEntry> objectStoreEntries = new List<ObjectStoreEntry>();
 
-            string firstAssetId = null;
+            // If anything has changed in LIKED or FEATURED we update the all object store entries
             var i = 0;
+            foreach (JToken asset in assets)
+            {
+                if (AssetIndexChanged(asset, i, type))
+                {
+                    i = -1;
+                    break;
+                }
+                i++;
+            }
+            var polyMenu = PeltzerMain.Instance.polyMenuMain;
+
+            // edge case where someone might change category and not get any assets and then try to change
+            // OrderBy, in that case previous and current assets would be empty, which means nothing changed,
+            // and we wouldn't get the "no creations" notification
+            // and because we exclude the OrderBy from the check below we handle it here separately
+            if (IsPreviousAssetsEmpty(type) && !assets.Any())
+            {
+                objectStoreSearchResult.results = objectStoreEntries.ToArray();
+                return false;
+            }
+
+            if (i == assets.Count()) // nothing has changed, return empty array and leave preview as is
+            {
+                objectStoreSearchResult.results = objectStoreEntries.ToArray();
+
+                // no assets returned either because the search text or category filter
+                // didn't have any assets of that type
+                if (!assets.Any())
+                {
+                    UpdateMostRecentAssetIds(assets, type);
+                    return false;
+                }
+                return true;
+            }
+
+            string firstAssetId = null;
             foreach (JToken asset in assets)
             {
                 ObjectStoreEntry objectStoreEntry;
@@ -379,24 +525,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     }
                 }
 
-                // If the asset is still in the same place we assume nothing has changed
-                if (mostRecentAssetIds.IndexOf(asset["url"]?.ToString()) == i)
-                {
-                    i++;
-                    continue;
-                }
-
                 if (ParseAsset(asset, out objectStoreEntry, hackUrls))
                 {
                     objectStoreEntries.Add(objectStoreEntry);
                 }
-                i++;
             }
 
-            if (objectStoreEntries.Count > 0)
-            {
-                UpdateMostRecentAssetIds(assets);
-            }
+            UpdateMostRecentAssetIds(assets, type);
 
             if (type == PolyMenuMain.CreationType.FEATURED)
             {
@@ -545,11 +680,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     Debug.LogError(GetDebugString(request, "Failed to get featured models"));
                     yield break;
                 }
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
                 GetFeaturedModels(successCallback, failureCallback, /* isRecursion */ true);
             }
             else
             {
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(
                   new ParseAssetsBackgroundWork(Encoding.UTF8.GetString(responseBytes),
                   PolyMenuMain.CreationType.FEATURED, successCallback, failureCallback));
@@ -585,11 +722,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     Debug.LogError(GetDebugString(request, "Failed to get your models"));
                     yield break;
                 }
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
                 GetYourModels(successCallback, failureCallback);
             }
             else
             {
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
                   Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.YOUR, successCallback,
                   failureCallback, hackUrls: true));
@@ -625,11 +764,13 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     Debug.LogError(GetDebugString(request, "Failed to get liked models"));
                     yield break;
                 }
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
                 GetLikedModels(successCallback, failureCallback);
             }
             else
             {
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
                   Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.LIKED, successCallback, failureCallback));
             }
@@ -1140,6 +1281,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// </summary>
         public UnityWebRequest GetRequest(string path, string contentType, bool requireAuth)
         {
+            if (!path.StartsWith("https://s3."))
+            {
+                Debug.Log($"get: {path}");
+            }
             // The default constructor for a UnityWebRequest gives a GET request.
             UnityWebRequest request = new UnityWebRequest(path);
             request.SetRequestHeader("Content-type", contentType);
