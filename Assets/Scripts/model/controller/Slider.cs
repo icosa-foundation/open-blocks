@@ -101,11 +101,24 @@ namespace com.google.apps.peltzer.client.model.controller
             if (m_IsDragging)
             {
                 float normalizedLocalPosition = GetNormalizedLocalPosition(hit);
-                m_Value = Mathf.Lerp(m_Minimum, m_Maximum, normalizedLocalPosition);
-                m_Value = Mathf.Round(m_Value / m_Step) * m_Step;
-                m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, m_Value);
-                m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
+                float val = Mathf.Lerp(m_Minimum, m_Maximum, normalizedLocalPosition);
+                SetInitialValue(val);
             }
+        }
+
+        public void SetInitialValue(float val)
+        {
+            if (val == m_NoLimitSpecialValue && m_MaxMeansNoLimit)
+            {
+                val = m_Maximum;
+            }
+            val = Mathf.Round(val / m_Step) * m_Step;
+            m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, val);
+            if (m_SliderMaterial == null)
+            {
+                m_SliderMaterial = m_SliderRenderer.material;
+            }
+            m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
         }
 
         private void ControllerEventHandler(object sender, ControllerEventArgs args)

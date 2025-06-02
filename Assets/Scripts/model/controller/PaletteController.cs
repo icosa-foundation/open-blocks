@@ -23,9 +23,7 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.tutorial;
-using com.google.apps.peltzer.client.zandria;
 using TiltBrush;
-using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
