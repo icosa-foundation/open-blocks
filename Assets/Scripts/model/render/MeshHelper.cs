@@ -18,10 +18,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
-using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.util;
-using Object = System.Object;
 
 namespace com.google.apps.peltzer.client.model.render
 {
@@ -463,49 +461,45 @@ namespace com.google.apps.peltzer.client.model.render
             });
         }
 
-        /// <summary>
-        /// Create an mmesh from a set of meshes
-        /// </summary>
-        /// <param name="id">id for new mesh</param>
-        /// <param name="meshes">the meshes to construct the mmesh from</param>
-        /// <returns></returns>
-        public static MMesh MMeshFromMeshes(int id, Dictionary<Material, List<MeshVerticesAndTriangles>> materialsAndMeshes)
+        public static List<MMesh> MMeshFromMeshes(List<Mesh> meshes, List<Color> meshBaseColors, float scale = 1.0f)
         {
-            Dictionary<int, Vertex> verticesById = new Dictionary<int, Vertex>();
-            Dictionary<int, Face> facesById = new Dictionary<int, Face>();
-            int vIdx = 0;
-            int faceIdx = 0;
-            foreach (KeyValuePair<Material, List<MeshVerticesAndTriangles>> pair in materialsAndMeshes)
-            {
-                Material material = pair.Key;
-                foreach (MeshVerticesAndTriangles meshVerticesAndTriangles in pair.Value)
-                {
-                    Dictionary<int, Vertex> meshVertices = new Dictionary<int, Vertex>();
-                    for (int i = 0; i < meshVerticesAndTriangles.meshVertices.Length; i++)
-                    {
-                        Vector3 v = meshVerticesAndTriangles.meshVertices[i];
-                        int vertexId = vIdx++;
-                        Vertex vertex = new Vertex(vertexId, v);
-                        verticesById.Add(vertexId, vertex);
-                        meshVertices.Add(i, vertex);
-                    }
-                    for (int triangleIdxIdx = 0; triangleIdxIdx < meshVerticesAndTriangles.triangles.Length; triangleIdxIdx += 3)
-                    {
-                        int idx1 = meshVerticesAndTriangles.triangles[triangleIdxIdx];
-                        int idx2 = meshVerticesAndTriangles.triangles[triangleIdxIdx + 1];
-                        int idx3 = meshVerticesAndTriangles.triangles[triangleIdxIdx + 2];
+            var mmeshes = new List<MMesh>();
 
-                        int newFaceId = faceIdx++;
-                        Face face = new Face(newFaceId, new List<int>() {
-              meshVertices[idx1].id,
-              meshVertices[idx2].id,
-              meshVertices[idx3].id,
-            }.AsReadOnly(), verticesById, new FaceProperties(TryGetMaterialId(material)));
-                        facesById.Add(newFaceId, face);
+            for (var i = 0; i < meshes.Count; i++)
+            {
+                var mesh = meshes[i];
+                var faces = new List<List<int>>();
+                var faceProperties = new List<FaceProperties>();
+                var colors = mesh.colors;
+                for (var vertexIndex = 0; vertexIndex < mesh.triangles.Length - 3; vertexIndex += 3)
+                {
+                    var face = new List<int>
+                    {
+                        mesh.triangles[vertexIndex],
+                        mesh.triangles[vertexIndex + 1],
+                        mesh.triangles[vertexIndex + 2]
+                    };
+                    faces.Add(face);
+
+                    // Grab the base color for this material
+                    Color col = meshBaseColors[i];
+                    // If we have a vertex color, combine it with the base color
+                    if (colors.Length > vertexIndex)
+                    {
+                        col *= colors[vertexIndex];
                     }
+                    faceProperties.Add(new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(col)));
                 }
+                mmeshes.Add(new MMesh(
+                    PeltzerMain.Instance.model.GenerateMeshId(),
+                    Vector3.zero,
+                    Quaternion.identity,
+                    mesh.vertices.Select(v => v * scale).ToList(),
+                    faces,
+                    faceProperties
+                ));
             }
-            return new MMesh(id, Vector3.zero, Quaternion.identity, verticesById, facesById);
+            return mmeshes;
         }
 
         private static int TryGetMaterialId(Material material)

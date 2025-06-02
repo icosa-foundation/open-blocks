@@ -15,7 +15,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Text;
+using com.google.apps.peltzer.client.api_clients.assets_service_client;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.controller;
@@ -61,8 +63,8 @@ namespace com.google.apps.peltzer.client.menu
         // Set in editor.
         public Sprite signedOutIcon;
 
-        private static Color UNSELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 0.117f);
-        private static Color SELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 1f);
+        public static Color UNSELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 0.117f);
+        public static Color SELECTED_ICON_COLOR = new Color(1f, 1f, 1f, 1f);
         private static Color UNSELECTED_AVATAR_COLOR = new Color(1f, 1f, 1f, 150f / 255f);
         private static Color SELECTED_AVATAR_COLOR = new Color(1f, 1f, 1f, 1f);
         private static Vector3 DEFAULT_AVATAR_SCALE = new Vector3(0.1875f, 0.25f, 0.75f);
@@ -70,7 +72,7 @@ namespace com.google.apps.peltzer.client.menu
 
         private static float DETAIL_TILE_SIZE = 0.15f;
 
-        private static string TAKE_HEADSET_OFF_FOR_SIGN_IN_PROMPT = "Take off your headset to sign in";
+        private static string USE_BROWSER_FOR_SIGN_IN_PROMPT = "Continue sign-in using your web browser";
 
         private static StringBuilder BASE_CREATOR = new StringBuilder("by ");
 
@@ -93,7 +95,7 @@ namespace com.google.apps.peltzer.client.menu
 
         private PaletteController paletteController;
         private ControllerMain controllerMain;
-        private ZandriaCreationsManager creationsManager;
+        public ZandriaCreationsManager creationsManager;
         private ZandriaCreationHandler currentCreationHandler;
 
         // The possible menuModes in the order they can be moved through using the palette touchpad.
@@ -152,6 +154,7 @@ namespace com.google.apps.peltzer.client.menu
         private Sprite defaultUserIcon;
         private string defaultDisplayName;
         private TextMesh displayName;
+        private TextMeshPro modelsMenuInfoText; // displays when models are loading/no models available/etc.
 
         // Pop-up dialogs for confirmation.
         private GameObject confirmSaveDialog;
@@ -184,6 +187,18 @@ namespace com.google.apps.peltzer.client.menu
         private static readonly Color BUTTON_LIGHT_OFF_COLOR = new Color(0f, 0f, 0f);
         private static readonly Color BUTTON_EMISSIVE_COLOR = new Color(.5f, .4f, 0.2f);
 
+        private static string loadingCreationsInfo = "Loading models...";
+        private static string noCreationsInfo = "No models available. You either don't have any models yet or your search returned no results.";
+        private static string failedToLoadInfo = "Failed to load models. Please check your internet connection.";
+
+        public enum CreationInfoState
+        {
+            NONE,
+            LOADING,
+            NO_CREATIONS,
+            FAILED_TO_LOAD
+        }
+
         // Use this for initialization
         public void Setup(ZandriaCreationsManager creationsManager, PaletteController paletteController)
         {
@@ -196,6 +211,10 @@ namespace com.google.apps.peltzer.client.menu
 
             // Set the default start up mode for the menu to be Your Models.
             SwitchToYourModelsSection();
+
+            // set previous to be the same as current at startup
+            previousQueryParams = creationsManager.GetQueryParams(CurrentCreationType());
+            previousCreationType = CurrentCreationType();
 
             // Find all the appropriate GameObjects from the scene.
             optionsMenu = polyMenu.transform.Find("Options").gameObject;
@@ -239,6 +258,8 @@ namespace com.google.apps.peltzer.client.menu
 
             displayName = polyMenu.transform.Find("Options/sign_out/bg/txt").GetComponent<TextMesh>();
             defaultDisplayName = polyMenu.transform.Find("Options/sign_out/bg/txt").GetComponent<TextMesh>().text;
+            if (!modelsMenuInfoText)
+                modelsMenuInfoText = polyMenu.transform.Find("Models/txt").GetComponent<TextMeshPro>();
 
             confirmSaveDialog = detailsMenu.transform.Find("ConfirmSave").gameObject;
             confirmDeleteDialog = detailsMenu.transform.Find("ConfirmDelete").gameObject;
@@ -778,11 +799,15 @@ namespace com.google.apps.peltzer.client.menu
             // available creations but we should keep adding creations as they load when the menu is open. This
             // should be implemented with our pagination.
 
+            int from = CurrentPage() * TILE_COUNT;
+            int upToNotIncluding = from + TILE_COUNT;
+            List<GameObject> previews = creationsManager.GetPreviews(type, CurrentPage() * TILE_COUNT, upToNotIncluding);
+
             // First hide any gameObjects on the palette so we can show the correct ones.
             for (int i = 0; i < placeholders.Length; i++)
             {
                 ZandriaCreationHandler[] creationHandlers =
-                  placeholders[i].GetComponentsInChildren<ZandriaCreationHandler>();
+                    placeholders[i].GetComponentsInChildren<ZandriaCreationHandler>();
 
                 for (int j = 0; j < creationHandlers.Length; j++)
                 {
@@ -791,9 +816,15 @@ namespace com.google.apps.peltzer.client.menu
                 }
             }
 
-            int from = CurrentPage() * TILE_COUNT;
-            int upToNotIncluding = from + TILE_COUNT;
-            List<GameObject> previews = creationsManager.GetPreviews(type, CurrentPage() * TILE_COUNT, upToNotIncluding);
+            // when the creation type has changed the query parameters have changed too
+            // this does not necessarily mean assets should be updated, so we make sure
+            // our previous query parameters are set to the current ones
+            if (CreationTypeChanged())
+            {
+                UpdateUserInfoText(CreationInfoState.NONE);
+                UpdatePreviousQueryParams();
+                UpdatePreviousCreationType();
+            }
 
             // If there are available previews load them onto the palette.
             if (previews.Count > 0)
@@ -813,36 +844,37 @@ namespace com.google.apps.peltzer.client.menu
             }
 
             // If there were no valid previews, replace the modelsMenu with a menu panel displaying a prompt to the user.
-            // Unless its the FEATURED menu which has no prompt. We've just failed to load (or are loading) featured
-            // models.
+            // We've just failed to load (or are loading) featured models.
             if (modelsMenu != null)
             {
                 // Even though there are no previews keep the modelsMenu active if there aren't any previews available
                 // but the creationsManager is trying to load that type. The user has signed in, the load is just not ready.
-                modelsMenu.SetActive(
-                  (type == CreationType.FEATURED && creationsManager.HasPendingOrValidLoad(CreationType.FEATURED)) ||
-                  (type == CreationType.YOUR && creationsManager.HasPendingOrValidLoad(CreationType.YOUR)) ||
-                  (type == CreationType.LIKED && creationsManager.HasPendingOrValidLoad(CreationType.LIKED)));
-            }
 
+                // we don't want to switch menu panels when we are logged in and have no models
+                // it could be because our search terms didn't return any results
+                if (!OAuth2Identity.Instance.LoggedIn)
+                {
+                    modelsMenu.SetActive(
+                      (type == CreationType.FEATURED && creationsManager.HasPendingOrValidLoad(CreationType.FEATURED)) ||
+                      (type == CreationType.YOUR && creationsManager.HasPendingOrValidLoad(CreationType.YOUR)) ||
+                      (type == CreationType.LIKED && creationsManager.HasPendingOrValidLoad(CreationType.LIKED)));
+                }
+                else
+                {
+                    modelsMenu.SetActive(true);
+                    // if we are logged in and not waiting for a load and nothing is currently loaded
+                    // we tell the user that they have no creations
+                    if (!((type == CreationType.FEATURED && creationsManager.HasPendingOrValidLoad(CreationType.FEATURED)) ||
+                    (type == CreationType.YOUR && creationsManager.HasPendingOrValidLoad(CreationType.YOUR)) ||
+                    (type == CreationType.LIKED && creationsManager.HasPendingOrValidLoad(CreationType.LIKED))))
+                    {
+                        UpdateUserInfoText(CreationInfoState.NO_CREATIONS);
+                    }
+
+                }
+            }
             bool modelsMenuActive = modelsMenu.activeInHierarchy;
 
-            if (noSavedModelsMenu != null)
-            {
-                // Tell the user that they have no saved models if: The creations manager has tried to load your models
-                // and it's invalid but the user is logged in.
-                noSavedModelsMenu.SetActive(!modelsMenuActive && type == CreationType.YOUR
-                  && !creationsManager.HasValidLoad(CreationType.YOUR)
-                  && OAuth2Identity.Instance.LoggedIn);
-            }
-            if (noLikedModelsMenu != null)
-            {
-                // Tell the user that they have no liked models if: The creations manager has tried to load liked models
-                // and it's invalid but the user is logged in.
-                noLikedModelsMenu.SetActive(!modelsMenuActive && type == CreationType.LIKED
-                  && !creationsManager.HasValidLoad(CreationType.LIKED)
-                  && OAuth2Identity.Instance.LoggedIn);
-            }
             if (signedOutYourModelsMenu != null)
             {
                 // Tell the user to log in if they are not logged in.
@@ -854,12 +886,6 @@ namespace com.google.apps.peltzer.client.menu
                 // Tell the user to log in if the are not logged in.
                 signedOutLikedModelsMenu.SetActive(!modelsMenuActive && type == CreationType.LIKED
                   && !OAuth2Identity.Instance.LoggedIn);
-            }
-            if (offlineModelsMenu != null)
-            {
-                // Tell the user to check their internet connection if we have no featured models.
-                offlineModelsMenu.SetActive(!modelsMenuActive && type == CreationType.FEATURED &&
-                  !creationsManager.HasPendingOrValidLoad(CreationType.FEATURED));
             }
         }
 
@@ -881,6 +907,29 @@ namespace com.google.apps.peltzer.client.menu
             }
         }
 
+        // cannot call set active in coroutine so we do empty string instead
+        public void UpdateUserInfoText(CreationInfoState state)
+        {
+            if (!modelsMenuInfoText)
+                modelsMenuInfoText = polyMenu.transform.Find("Models/txt").GetComponent<TextMeshPro>();
+
+            switch (state)
+            {
+                case CreationInfoState.LOADING:
+                    modelsMenuInfoText.text = loadingCreationsInfo;
+                    break;
+                case CreationInfoState.NO_CREATIONS:
+                    modelsMenuInfoText.text = noCreationsInfo;
+                    break;
+                case CreationInfoState.FAILED_TO_LOAD:
+                    modelsMenuInfoText.text = failedToLoadInfo;
+                    break;
+                default:
+                    modelsMenuInfoText.text = "";
+                    break;
+            }
+        }
+
         /// <summary>
         ///   Opens the Details section of the PolyMenu by setting the UI element active in the scene and loading the
         ///   creation onto the palette.
@@ -891,6 +940,8 @@ namespace com.google.apps.peltzer.client.menu
             SetActiveMenu(Menu.DETAILS_MENU);
             // First close and remove the information for an already open Details panel.
             // The user is able to click on a new creation by clicking under the Details panel before closing.
+
+            // TODO Load the model at this point (at least on Quest)?
 
             if (creation != null)
             {
@@ -1014,7 +1065,7 @@ namespace com.google.apps.peltzer.client.menu
             return menuModes[menuIndex].menuSection;
         }
 
-        private CreationType CurrentCreationType()
+        public CreationType CurrentCreationType()
         {
             return menuModes[menuIndex].creationType;
         }
@@ -1067,7 +1118,7 @@ namespace com.google.apps.peltzer.client.menu
         /// </summary>
         public void PromptUserToSignIn()
         {
-            signInText.text = TAKE_HEADSET_OFF_FOR_SIGN_IN_PROMPT;
+            signInText.text = USE_BROWSER_FOR_SIGN_IN_PROMPT;
         }
 
         /// <summary>
@@ -1087,7 +1138,7 @@ namespace com.google.apps.peltzer.client.menu
             // We ignore the 'bool' output of the below: it it fails, we'll continue with the mesh in its current scale.
             Scaler.TryScalingMeshes(meshes, 1f / PeltzerMain.Instance.worldSpace.scale);
 
-            // We give them new IDs at this point so they won't collide with anything already in the scene or 
+            // We give them new IDs at this point so they won't collide with anything already in the scene or
             // (much more likely) with a previous import of this same creation. We need to store a local list of usedIds
             // to avoid some rare, but potential, cases where the same ID is generated twice during this import.
             List<int> usedIds = new List<int>(meshes.Count);
@@ -1134,6 +1185,97 @@ namespace com.google.apps.peltzer.client.menu
         public bool DetailsMenuIsActive()
         {
             return activeMenu == Menu.DETAILS_MENU;
+        }
+
+        private void _SetModelParam(Action<ApiQueryParameters> modifyQuery)
+        {
+            var q = CurrentQueryParams;
+            modifyQuery(q);
+            creationsManager.SetQueryParams(CurrentCreationType(), q);
+        }
+
+        public ApiQueryParameters CurrentQueryParams => creationsManager.GetQueryParams(CurrentCreationType());
+        private ApiQueryParameters previousQueryParams;
+        private CreationType previousCreationType;
+
+        public bool QueryParamsChanged()
+        {
+            return !CurrentQueryParams.Equals(previousQueryParams);
+        }
+
+        public bool OrderByChanged()
+        {
+            return !CurrentQueryParams.OrderBy.Equals(previousQueryParams.OrderBy);
+        }
+
+        public bool CreationTypeChanged()
+        {
+            return CurrentCreationType() != previousCreationType;
+        }
+
+        public void UpdatePreviousCreationType()
+        {
+            previousCreationType = CurrentCreationType();
+        }
+
+        public void UpdatePreviousQueryParams()
+        {
+            previousQueryParams = CurrentQueryParams.Copy();
+        }
+
+        public void RefreshResults()
+        {
+            var type = CurrentCreationType();
+
+            // we don't want to clear the load when we refresh the result and the query hasn't changed
+            // because then the list of object store results that is returned by ParseReturnedAssets would be empty (since nothing changed)
+            // which means when we call ClearLoad we lose the list of objects we already have and StartLoad will not update the list (since it will be empty)
+            if (QueryParamsChanged())
+            {
+                // when we change OrderBy we always assume the asset order changes
+                // edge case when OrderBy does not actually change the order (e.g. when there is only one asset)
+                // since OrderBy generally changes the order we just clear our most recent saved order
+                // as we optimize in ParseReturnedAssets to not update the order if it doesn't change
+                if (OrderByChanged())
+                {
+                    AssetsServiceClient.ClearRecentAssetIdsByType(type);
+                }
+
+                creationsManager.ClearLoad(type);
+
+            }
+            creationsManager.StartLoad(type);
+            ApplyMenuChange(menuIndex, true);
+            offlineModelsMenu.SetActive(false);
+            modelsMenu.SetActive(true);
+            UpdatePreviousQueryParams();
+
+        }
+
+        public void SetApiSearchText(string text)
+        {
+            _SetModelParam(q => q.SearchText = text);
+        }
+
+        public void SetApiCategoryFilter(string category)
+        {
+            if (ChoicesHelper.IsValidChoice<CategoryChoices>(category))
+            {
+                _SetModelParam(q => q.Category = category);
+            }
+        }
+
+        public void SetApiOrderBy(string orderBy)
+        {
+            if (ChoicesHelper.IsValidChoice<OrderByChoices>(orderBy))
+            {
+                _SetModelParam(q => q.OrderBy = orderBy);
+            }
+        }
+
+        public void SetApiTriangleCountMax(int max)
+        {
+            _SetModelParam(q => q.TriangleCountMax = max);
         }
     }
 }

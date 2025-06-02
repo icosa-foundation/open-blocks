@@ -83,11 +83,6 @@ namespace com.google.apps.peltzer.client.model.util
         public class WebRequestManagerConfig
         {
             /// <summary>
-            /// The API key to use (mandatory).
-            /// </summary>
-            public string apiKey;
-
-            /// <summary>
             /// Whether or not to use caching for web requests (recommended).
             /// </summary>
             public bool cacheEnabled = true;
@@ -108,9 +103,8 @@ namespace com.google.apps.peltzer.client.model.util
             /// </summary>
             public string cachePathOverride = null;
 
-            public WebRequestManagerConfig(string apiKey)
+            public WebRequestManagerConfig()
             {
-                this.apiKey = apiKey;
             }
         }
 
@@ -276,7 +270,21 @@ namespace com.google.apps.peltzer.client.model.util
             // of doing that.
             UnityWebRequest webRequest = request.creationCallback();
 
+            // TODO Set a version number based on our releases
+            webRequest.SetRequestHeader("User-Agent", $"Open Blocks Application.version:{Application.version}");
+
             bool cacheAllowed = cache != null && webRequest.method == "GET" && request.maxAgeMillis != CACHE_NONE;
+
+            // TODO temporary hack for S3/B2 requests - their url contains tokens that break caching
+            if (webRequest.url.StartsWith("https://s3."))
+            {
+                // Strip all query parameters
+                int queryIndex = webRequest.url.IndexOf("?", StringComparison.Ordinal);
+                if (queryIndex != -1)
+                {
+                    webRequest.url = webRequest.url.Substring(0, queryIndex);
+                }
+            }
 
             // Check the cache (if it's a GET request and cache is enabled).
             if (cacheAllowed)
@@ -319,21 +327,29 @@ namespace com.google.apps.peltzer.client.model.util
             AssertOrThrow.True(webRequest.downloadHandler == handler,
               "Couldn't set download handler. It's either disposed of, or the creation callback mistakenly called Send().");
 
+            // Redirects can modify the url so store it as we ned it as a cache key
+            var originalUrl = webRequest.url;
+
             // Start the web request. This will suspend this coroutine until the request is done.
             yield return webRequest.Send();
 
             // Request is finished. Call user-supplied callback.
             request.completionCallback(!webRequest.isNetworkError, (int)webRequest.responseCode, webRequest.downloadHandler.data);
 
+            if (webRequest.responseCode != 200)
+            {
+                Debug.LogError("Web request failed: " + webRequest.error);
+            }
+
             // Cache the result, if applicable.
-            if (!webRequest.isNetworkError && cacheAllowed)
+            if (webRequest.result == UnityWebRequest.Result.Success && cacheAllowed)
             {
                 byte[] data = webRequest.downloadHandler.data;
                 if (data != null && data.Length > 0)
                 {
                     byte[] copy = new byte[data.Length];
                     Buffer.BlockCopy(data, 0, copy, 0, data.Length);
-                    cache.RequestWrite(webRequest.url, copy);
+                    cache.RequestWrite(originalUrl, copy);
                 }
             }
 

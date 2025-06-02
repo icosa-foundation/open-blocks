@@ -13,17 +13,35 @@
 // limitations under the License.
 
 using com.google.apps.peltzer.client.model.main;
+using UnityEngine;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
     public class RadioButtonOption : PolyMenuButton
     {
         private RadioButtonContainer m_RadioButtonContainer;
+        public GameObject m_Background;
+        public bool isCurrentOption;
+        public SpriteRenderer sprite;
+        public string m_Value;
 
         public override void Start()
         {
             base.Start();
+
+            defaultYPosition = transform.localPosition.y;
+            defaultYScale = transform.localScale.y;
+            hoveredYScale = defaultYScale * 3f;
+            hoveredYPosition = defaultYPosition;
+            bumpedYScale = defaultYScale * 2f;
+            bumpedYPosition = defaultYPosition;
+
+            sprite = GetComponentInChildren<SpriteRenderer>();
+
             m_RadioButtonContainer = transform.parent.GetComponent<RadioButtonContainer>();
+            // Scale collider to fit background mesh
+            var boxCollider = GetComponent<BoxCollider>();
+            boxCollider.size = m_Background.GetComponent<MeshRenderer>().transform.localScale;
         }
 
         /// <summary>
@@ -38,7 +56,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public override void ApplyMenuOptions(PeltzerMain main)
         {
             if (!ActionIsAllowed()) return;
-            if (isActive) return;
+            if (!isActive) return;
             m_RadioButtonContainer.ActivateOption(main, this);
             StartBump();
         }
