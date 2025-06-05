@@ -23,6 +23,10 @@ using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.tools;
+using Polyhydra.Core;
+using Polyhydra.Wythoff;
+using UnityEngine.Rendering.Universal;
+using Object = System.Object;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -359,9 +363,9 @@ namespace com.google.apps.peltzer.client.model.controller
 
         }
 
-        public void SetShapeMenuItem(int newItemId, bool showMenu)
+        public void SetShapeMenuItem(int newItemId, bool showMenu, bool forced = false)
         {
-            if (newItemId == currentItemId) return;
+            if (!forced && newItemId == currentItemId) return;
 
             // Lerp the previously-selected shape's scale down from what was showing in Volume Inserter.
             if (!showingShapeMenu)
@@ -536,6 +540,212 @@ namespace com.google.apps.peltzer.client.model.controller
         public IEnumerable<MMesh> GetShapesMenuCustomShapes()
         {
             return currentCustomShapes;
+        }
+
+        public void SetShapesMenuPolyMesh(string polyShapeType, string polyShapeSubtype, Dictionary<string, Object> parameters)
+        {
+            PolyMesh poly = null;
+            if (!string.IsNullOrEmpty(polyShapeType) && !string.IsNullOrEmpty(polyShapeSubtype))
+            {
+                switch (polyShapeType)
+                {
+                    case "JohnsonSolids":
+                        int johnsonNumber = int.Parse(polyShapeSubtype);
+                        {
+                            poly = JohnsonSolids.Build(johnsonNumber);
+                        };
+                        break;
+                    case "Grids":
+                        Enum.TryParse(polyShapeSubtype, out GridEnums.GridTypes gridType);
+                        {
+                            int rows = parameters["rows"] as int? ?? 2;
+                            int cols = parameters["cols"] as int? ?? 2;
+                            poly = Grids.Build(gridType,
+                                gridShape: GridEnums.GridShapes.Plane,
+                                rows, cols
+                            );
+                            poly = poly.Shell(.25f);
+                        };
+                        break;
+                    case "RadialSolids":
+                        Enum.TryParse(polyShapeSubtype, out RadialSolids.RadialPolyType radialType);
+                        {
+                            int sides = parameters["sides"] as int? ?? 6;
+                            poly = RadialSolids.Build(radialType, sides);
+                        };
+                        break;
+                    case "Shapes":
+                        Enum.TryParse(polyShapeSubtype, out ShapeTypes shapeType);
+                        switch (shapeType)
+                        {
+                            case ShapeTypes.Arc:
+                                {
+                                    int sides = parameters["sides"] as int? ?? 3;
+                                    float radius = parameters["radius"] as float? ?? 1f;
+                                    float thickness = parameters["thickness"] as float? ?? 0.5f;
+                                    float angle = parameters["angle"] as float? ?? 270f;
+                                    poly = Shapes.Arc(sides, radius, thickness, angle);
+                                    poly = poly.Shell(.25f);
+                                }
+                                break;
+                            case ShapeTypes.Polygon:
+                                {
+                                    int sides = parameters["sides"] as int? ?? 3;
+                                    poly = Shapes.Polygon(sides);
+                                }
+                                break;
+                            case ShapeTypes.Star:
+                                {
+                                    int sides = parameters["sides"] as int? ?? 12;
+                                    float stellate = parameters["stellate"] as float? ?? 0.5f;
+                                    poly = Shapes.Polygon(sides, false, stellate: stellate);
+                                    poly = poly.Shell(-.25f);
+                                }
+                                break;
+                            case ShapeTypes.C_Shape:
+                                {
+                                    float a = parameters["a"] as float? ?? 1f;
+                                    float b = parameters["b"] as float? ?? 1f;
+                                    poly = Shapes.C_Shape(a, b);
+                                }
+                                break;
+                            case ShapeTypes.L_Shape:
+                                {
+                                    float a = parameters["a"] as float? ?? 1f;
+                                    float b = parameters["b"] as float? ?? 1f;
+                                    float c = parameters["c"] as float? ?? 1f;
+                                    poly = Shapes.L_Shape(a, b, c);
+                                }
+                                break;
+                            case ShapeTypes.H_Shape:
+                                {
+                                    float a = parameters["a"] as float? ?? 1f;
+                                    float b = parameters["b"] as float? ?? 1f;
+                                    float c = parameters["c"] as float? ?? 1f;
+                                    poly = Shapes.H_Shape(a, b, c);
+                                }
+                                break;
+                            case ShapeTypes.Arch:
+                                {
+                                    int sides = parameters["sides"] as int? ?? 3;
+                                    float radius = parameters["radius"] as float? ?? 1f;
+                                    float thickness = parameters["thickness"] as float? ?? 0.5f;
+                                    float height = parameters["angle"] as float? ?? 270f;
+                                    poly = Shapes.Arch(sides, radius, thickness, height);
+                                }
+                                break;
+                            case ShapeTypes.GothicArch:
+                                {
+                                    int sides = parameters["sides"] as int? ?? 3;
+                                    float radius = parameters["radius"] as float? ?? 1f;
+                                    float thickness = parameters["thickness"] as float? ?? 0.5f;
+                                    float height = parameters["angle"] as float? ?? 270f;
+                                    poly = Shapes.GothicArch(sides, radius, thickness, height);
+                                }
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
+                        break;
+                    case "VariousSolids":
+                        {
+                            Enum.TryParse(polyShapeSubtype, out VariousSolidTypes variousType);
+                            switch (variousType)
+                            {
+                                case VariousSolidTypes.UvSphere:
+                                    {
+                                        int verticalLines = parameters["verticalLines"] as int? ?? 16;
+                                        int horizontalLines = parameters["horizontalLines"] as int? ?? 16;
+                                        poly = VariousSolids.UvSphere(verticalLines, horizontalLines);
+                                    }
+                                    break;
+                                case VariousSolidTypes.UvHemisphere:
+                                    {
+                                        int verticalLines = parameters["verticalLines"] as int? ?? 8;
+                                        int horizontalLines = parameters["horizontalLines"] as int? ?? 16;
+                                        poly = VariousSolids.UvHemisphere(verticalLines, horizontalLines);
+                                    }
+                                    break;
+                                case VariousSolidTypes.Box:
+                                    {
+                                        int x = parameters["x"] as int? ?? 3;
+                                        int y = parameters["y"] as int? ?? 3;
+                                        int z = parameters["z"] as int? ?? 3;
+                                        poly = VariousSolids.Box(x, y, z);
+                                    }
+                                    break;
+                                case VariousSolidTypes.Stairs:
+                                    {
+                                        int steps = parameters["steps"] as int? ?? 4;
+                                        float width = parameters["width"] as float? ?? 1;
+                                        float height = parameters["height"] as float? ?? 1;
+                                        poly = VariousSolids.Stairs(steps, width, height);
+                                    }
+                                    break;
+                                case VariousSolidTypes.Torus:
+                                    {
+                                        int pathSteps = parameters["pathSteps"] as int? ?? 16;
+                                        int shapeSides = parameters["shapeSides"] as int? ?? 8;
+                                        float scale = parameters["scale"] as float? ?? 0;
+                                        poly = VariousSolids.Torus(pathSteps, shapeSides, scale);
+                                    }
+                                    break;
+                                default:
+                                    Debug.LogError($"Invalid generator type: {variousType}");
+                                    break;
+                            }
+                        }
+                        break;
+                    case "WatermanPoly":
+                        {
+                            float R = parameters["R"] as float? ?? 1f;
+                            int root = parameters["root"] as int? ?? 2;
+                            int c = parameters["c"] as int? ?? 0;
+                            poly = WatermanPoly.Build(R, root, c);
+                        };
+                        break;
+                    case "Wythoff":
+                        Enum.TryParse(polyShapeSubtype, out UniformTypes wythoffType);
+                        {
+                            WythoffPoly wythoff;
+                            wythoff = new WythoffPoly(wythoffType);
+                            poly = wythoff.Build();
+                        };
+                        break;
+
+                    default:
+                        {
+                            Debug.LogError($"Invalid poly type: {polyShapeType}");
+                            poly = new PolyMesh();
+                        };
+                        break;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Invalid option value format. Expected format: ShapeType:ShapeName");
+                return;
+            }
+
+            int id = PeltzerMain.Instance.model.GenerateMeshId();
+            int matId = MaterialRegistry.WHITE_ID;
+            var mmesh = MMesh.PolyHydraToMMesh(poly, id, Vector3.zero, Vector3.one, matId, true);
+            mmesh.groupId = MMesh.GROUP_NONE;
+            mmesh.offset = Vector3.zero;
+            var meshes = new List<MMesh> { mmesh };
+            // First destroy the previous object hierarchy, if any.
+            if (null != shapesMenu[INDEX_FOR_ID[CUSTOM_SHAPE_ID]])
+            {
+                DestroyImmediate(shapesMenu[INDEX_FOR_ID[CUSTOM_SHAPE_ID]]);
+            }
+            // Now we generate the preview for the custom shapes.
+            GameObject preview = GenerateCustomShapePreview(meshes);
+            preview.transform.localScale = Vector3.one * 0.1f; // Why???
+            // The preview starts out inactive. We will activate it later when the menu gets shown.
+            preview.SetActive(false);
+            shapesMenu[INDEX_FOR_ID[CUSTOM_SHAPE_ID]] = preview;
+            SetShapeMenuItem(CUSTOM_SHAPE_ID, true, forced: true);
+            currentCustomShapes = meshes;
         }
     }
 }
