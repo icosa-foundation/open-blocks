@@ -548,7 +548,7 @@ MonoBehaviour:
   - visibleName: Quest 3
     manifestName: eureka
     enabled: 1
-  forceRemoveInternetPermission: 1
+  forceRemoveInternetPermission: 0
   symmetricProjection: 1
   foveatedRenderingApi: 0
   systemSplashScreen: {fileID: 0}
