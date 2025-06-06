@@ -873,7 +873,7 @@ namespace com.google.apps.peltzer.client.menu
 
                 }
             }
-            bool modelsMenuActive = modelsMenu.activeInHierarchy;
+            bool modelsMenuActive = modelsMenu.activeSelf;
 
             if (signedOutYourModelsMenu != null)
             {
