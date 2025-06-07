@@ -215,6 +215,8 @@ namespace com.google.apps.peltzer.client.menu
             float timeSinceFinish = Time.time - operationFinishTime;
             if (state == State.PENDING_SUCCESS
               && timeSinceStart > MIN_APPARENT_WORK_DURATION_SECONDS
+              // NOTE: if you don't want to wait for a savePreview (see note in Update() ZandriaCreationsManager.cs)
+              // comment out below line and the saving animation will stop immediately after the save is done.
               && PeltzerMain.Instance.savePreview.state == SavePreview.State.WAITING)
             {
                 // PENDING_SUCCESS -> SUCCESS.
