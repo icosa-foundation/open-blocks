@@ -1011,7 +1011,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// </summary>
         private IEnumerator CreateNewAsset(bool saveSelected)
         {
-            string url = $"{ApiBaseUrl}/assets";
+            string url = $"{ApiBaseUrl}/users/me/assets";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -1075,7 +1075,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             string json = CreateJsonForAssetResources(remixIds, objPolyCount, triangulatedObjPolyCount, saveSelected: false);
 
-            string url = $"{ApiBaseUrl}/assets/{assetId}/blocks_finalize";
+            string url = $"{ApiBaseUrl}/users/me/assets/{assetId}/blocks_finalize";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -1135,7 +1135,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private IEnumerator AddResource(string filename, string mimeType, byte[] data, string key)
         {
             elementUploadStates.Add(key, UploadState.IN_PROGRESS);
-            string url = $"{ApiBaseUrl}/assets/{assetId}/blocks_format";
+            string url = $"{ApiBaseUrl}/users/me/assets/{assetId}/blocks_format";
             UnityWebRequest request = new UnityWebRequest();
 
             // Run this twice so we can re-authorise if access tokens have become stale.
