@@ -158,7 +158,6 @@ namespace com.google.apps.peltzer.client.menu
 
         // Pop-up dialogs for confirmation.
         private GameObject confirmSaveDialog;
-        private GameObject confirmDeleteDialog;
 
         // Creation metadata.
         private GameObject creationTitle;
@@ -177,7 +176,6 @@ namespace com.google.apps.peltzer.client.menu
         private TextMeshPro importButtonText;
         private DetailsMenuActionItem importButtonScript;
 
-        private GameObject deleteButton;
         private GameObject yourModelsMenuSpacer;
         private GameObject likedOrFeaturedModelsMenuSpacer;
 
@@ -262,7 +260,6 @@ namespace com.google.apps.peltzer.client.menu
                 modelsMenuInfoText = polyMenu.transform.Find("Models/txt").GetComponent<TextMeshPro>();
 
             confirmSaveDialog = detailsMenu.transform.Find("ConfirmSave").gameObject;
-            confirmDeleteDialog = detailsMenu.transform.Find("ConfirmDelete").gameObject;
 
             creationTitle = detailsMenu.transform.Find("Metadata/txt-title").gameObject;
             creatorName = detailsMenu.transform.Find("Metadata/txt-name").gameObject;
@@ -278,7 +275,6 @@ namespace com.google.apps.peltzer.client.menu
             importButtonText = detailsMenu.transform.Find("Buttons/Import/bg/txt").GetComponent<TextMeshPro>();
             importButtonScript = detailsMenu.transform.Find("Buttons/Import/bg").GetComponent<DetailsMenuActionItem>();
 
-            deleteButton = detailsMenu.transform.Find("Buttons/Delete").gameObject;
             yourModelsMenuSpacer = detailsMenu.transform.Find("Buttons/bg-space").gameObject;
             likedOrFeaturedModelsMenuSpacer = detailsMenu.transform.Find("Buttons/bg-space2").gameObject;
         }
@@ -558,30 +554,6 @@ namespace com.google.apps.peltzer.client.menu
                     // reference to these to avoid any lag in generating a copy. Instead, the lag of generating a copy will
                     // happen the next time the user opens the details page for this model again.
                     currentCreationHandler.detailSizedMeshes.Clear();
-                    break;
-                case DetailsMenuAction.DELETE:
-                    confirmDeleteDialog.SetActive(true);
-                    break;
-                case DetailsMenuAction.CANCEL_DELETE:
-                    confirmDeleteDialog.SetActive(false);
-                    break;
-                case DetailsMenuAction.CONFIRM_DELETE:
-                    confirmDeleteDialog.SetActive(false);
-                    // Remove the asset from the list of creations displayed.
-                    if (currentCreationHandler.creationAssetId != null)
-                    {
-                        creationsManager.RemoveSingleCreationAndRefreshMenu(
-                          CurrentCreationType(), currentCreationHandler.creationAssetId);
-                        // Invoke the RPC that removes the creation from storage
-                        StartCoroutine(creationsManager.assetsServiceClient.DeleteAsset(currentCreationHandler.creationAssetId));
-                    }
-                    if (currentCreationHandler.creationLocalId != null)
-                    {
-                        creationsManager.RemoveSingleCreationAndRefreshMenu(
-                          CurrentCreationType(), currentCreationHandler.creationLocalId);
-                        creationsManager.DeleteOfflineModel(currentCreationHandler.creationLocalId);
-                    }
-                    SetActiveMenu(Menu.POLY_MENU);
                     break;
                 case DetailsMenuAction.CLOSE:
                     SetActiveMenu(Menu.POLY_MENU);
@@ -957,7 +929,6 @@ namespace com.google.apps.peltzer.client.menu
 
                 // Activate or deactivate the Open/Import buttons if the model is loaded.
                 ActivateOpenImportButtons(creation.entry.loadStatus == ZandriaCreationsManager.LoadStatus.SUCCESSFUL);
-                deleteButton.SetActive(CurrentCreationType() == CreationType.YOUR);
                 yourModelsMenuSpacer.SetActive(CurrentCreationType() == CreationType.YOUR);
                 likedOrFeaturedModelsMenuSpacer.SetActive(
                   CurrentCreationType() == CreationType.FEATURED || CurrentCreationType() == CreationType.LIKED);
