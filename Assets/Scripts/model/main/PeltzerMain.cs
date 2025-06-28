@@ -586,11 +586,23 @@ namespace com.google.apps.peltzer.client.model.main
             userPath = GetUserPath();
 
             userPath = Path.Combine(userPath, "Blocks");
+
             if (!Path.IsPathRooted(userPath))
             {
                 Debug.Log("Failed to find Documents folder.");
             }
 
+            if (!Directory.Exists(userPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(userPath);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("Failed to create user path: " + e.Message);
+                }
+            }
             GetUserConfig();
 
             // Set up the authentication.
@@ -798,6 +810,7 @@ namespace com.google.apps.peltzer.client.model.main
         private void GetUserConfig()
         {
             string configPath = Path.Combine(userPath, "OpenBlocks.cfg");
+
             if (!File.Exists(configPath))
             {
                 userConfig = new UserConfig();
