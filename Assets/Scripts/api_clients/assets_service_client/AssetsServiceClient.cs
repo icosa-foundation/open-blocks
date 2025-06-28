@@ -1252,10 +1252,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// </summary>
         public UnityWebRequest GetRequest(string path, string contentType, bool requireAuth)
         {
-            if (!path.StartsWith("https://s3."))
-            {
-                Debug.Log($"get: {path}");
-            }
             // The default constructor for a UnityWebRequest gives a GET request.
             UnityWebRequest request = new UnityWebRequest(path);
             request.SetRequestHeader("Content-type", contentType);
