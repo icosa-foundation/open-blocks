@@ -76,7 +76,7 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// </summary>
         public static float GetVertScaleFactor(WorldSpace worldSpace)
         {
-            return (Mathf.Min(worldSpace.scale, SCALE_THRESH) / SCALE_THRESH) * baseVertexScale;
+            return Mathf.Min(worldSpace.scale, SCALE_THRESH) / SCALE_THRESH * baseVertexScale * (1f / worldSpace.scale * 2);
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// </summary>
         public static float GetEdgeScaleFactor(WorldSpace worldSpace)
         {
-            return (Mathf.Min(worldSpace.scale, SCALE_THRESH) / SCALE_THRESH) * baseEdgeScale;
+            return Mathf.Min(worldSpace.scale, SCALE_THRESH) / SCALE_THRESH * baseEdgeScale  * (1f / worldSpace.scale * 2);
         }
 
         /// <summary>
