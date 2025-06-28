@@ -85,7 +85,7 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// </summary>
         public static float GetEdgeScaleFactor(WorldSpace worldSpace)
         {
-            return Mathf.Min(worldSpace.scale, SCALE_THRESH) / SCALE_THRESH * baseEdgeScale  * (1f / worldSpace.scale * 2);
+            return Mathf.Min(worldSpace.scale, SCALE_THRESH) / SCALE_THRESH * baseEdgeScale * (1f / worldSpace.scale * 2);
         }
 
         /// <summary>
