@@ -406,8 +406,13 @@ namespace com.google.apps.peltzer.client.zandria
                         // Update the progress of the load.
                         creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
                         // Execute the load.
-                        // (We now defer until the user interacts with the thumbnail)
-                        // LoadModelForCreation(creation, pair.Key);
+                        // Note: Calling this will eventually down the line call SetupPreview() in SavePreview.cs
+                        // which is responsible for ending the "Saving..." animation on the controller
+                        // also check Update() in ProgressIndicator.cs where we wait for setting the savePreview state
+                        // to WAITING, which then eventually ends the "Saving..." animation.
+                        // if this will be too costly for some reason, we can comment it out here
+                        // but need to make sure that the ProgressIndicator stops the saving animation on its own.
+                        LoadModelForCreation(creation, pair.Key);
                     }
 
                     // Clear pendingModelLoadRequestIndices. We have made a load request for every pending request.
@@ -601,7 +606,6 @@ namespace com.google.apps.peltzer.client.zandria
                 {
                     Debug.Log("No thumbnail file found in offline directory " + directory.FullName);
                 }
-                thumbnailFiles = new FileInfo[] { null };
 
                 FileInfo[] blocksFiles = directory.GetFiles("*.blocks");
                 if (blocksFiles.Count() == 0)

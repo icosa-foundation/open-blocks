@@ -399,6 +399,23 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 2055044495}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &197705503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 197705495}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0cb9aa70a22847b5925ee5f067c10a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Camera: {fileID: 1361720993}
+  m_OriginBaseGameObject: {fileID: 197705495}
+  m_CameraFloorOffsetObject: {fileID: 0}
+  m_RequestedTrackingOriginMode: 2
+  m_CameraYOffset: 1.1176
 --- !u!1 &240066295
 GameObject:
   m_ObjectHideFlags: 0
@@ -2130,6 +2147,12 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1281188917}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!20 &1361720993 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 20010936846075698, guid: 789375d7cedc38f4bb55fa91d9a97de5,
+    type: 3}
+  m_PrefabInstance: {fileID: 2055044495}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1385413874
 GameObject:
   m_ObjectHideFlags: 0
@@ -2887,6 +2910,10 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1439321291621460, guid: 789375d7cedc38f4bb55fa91d9a97de5,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 197705503}
     - targetCorrespondingSourceObject: {fileID: 4728338858004136056, guid: 789375d7cedc38f4bb55fa91d9a97de5,
         type: 3}
       insertIndex: -1
@@ -2897,7 +2924,6 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 911258151}
-  - {fileID: 2055044495}
   - {fileID: 389088758}
   - {fileID: 2026859544}
   - {fileID: 888765277}
@@ -2913,3 +2939,4 @@ SceneRoots:
   - {fileID: 1425429767}
   - {fileID: 1698470997}
   - {fileID: 879870930}
+  - {fileID: 2055044495}

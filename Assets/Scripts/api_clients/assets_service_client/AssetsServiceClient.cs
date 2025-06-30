@@ -1011,7 +1011,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// </summary>
         private IEnumerator CreateNewAsset(bool saveSelected)
         {
-            string url = $"{ApiBaseUrl}/assets";
+            string url = $"{ApiBaseUrl}/users/me/assets";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -1075,7 +1075,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             string json = CreateJsonForAssetResources(remixIds, objPolyCount, triangulatedObjPolyCount, saveSelected: false);
 
-            string url = $"{ApiBaseUrl}/assets/{assetId}/blocks_finalize";
+            string url = $"{ApiBaseUrl}/users/me/assets/{assetId}/blocks_finalize";
             UnityWebRequest request = new UnityWebRequest();
 
             // We wrap in a for loop so we can re-authorise if access tokens have become stale.
@@ -1135,7 +1135,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private IEnumerator AddResource(string filename, string mimeType, byte[] data, string key)
         {
             elementUploadStates.Add(key, UploadState.IN_PROGRESS);
-            string url = $"{ApiBaseUrl}/assets/{assetId}/blocks_format";
+            string url = $"{ApiBaseUrl}/users/me/assets/{assetId}/blocks_format";
             UnityWebRequest request = new UnityWebRequest();
 
             // Run this twice so we can re-authorise if access tokens have become stale.
@@ -1248,61 +1248,14 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
 
         /// <summary>
-        ///   Delete the specified asset.
-        /// </summary>
-        public IEnumerator DeleteAsset(string assetId)
-        {
-            string url = String.Format("{0}/assets/{1}", ApiBaseUrl, assetId);
-            UnityWebRequest request = new UnityWebRequest();
-
-            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
-            for (int i = 0; i < 2; i++)
-            {
-                request = DeleteRequest(url, "application/json");
-
-                yield return request.Send();
-
-                if (request.responseCode == 401 || request.isNetworkError)
-                {
-                    yield return OAuth2Identity.Instance.Reauthorize();
-                    continue;
-                }
-                else
-                {
-                    yield break;
-                }
-            }
-
-            Debug.LogError(GetDebugString(request, "Failed to delete " + assetId));
-        }
-
-        /// <summary>
         ///   Forms a GET request from a HTTP path.
         /// </summary>
         public UnityWebRequest GetRequest(string path, string contentType, bool requireAuth)
         {
-            if (!path.StartsWith("https://s3."))
-            {
-                Debug.Log($"get: {path}");
-            }
             // The default constructor for a UnityWebRequest gives a GET request.
             UnityWebRequest request = new UnityWebRequest(path);
             request.SetRequestHeader("Content-type", contentType);
             if (requireAuth && OAuth2Identity.Instance.HasAccessToken)
-            {
-                OAuth2Identity.Instance.Authenticate(request);
-            }
-            return request;
-        }
-
-        /// <summary>
-        ///   Forms a DELETE request from a HTTP path.
-        /// </summary>
-        public UnityWebRequest DeleteRequest(string path, string contentType)
-        {
-            UnityWebRequest request = new UnityWebRequest(path, UnityWebRequest.kHttpVerbDELETE);
-            request.SetRequestHeader("Content-type", contentType);
-            if (OAuth2Identity.Instance.HasAccessToken)
             {
                 OAuth2Identity.Instance.Authenticate(request);
             }
