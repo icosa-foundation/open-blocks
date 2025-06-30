@@ -23,9 +23,7 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.tutorial;
-using com.google.apps.peltzer.client.zandria;
 using TiltBrush;
-using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -1332,7 +1330,10 @@ namespace com.google.apps.peltzer.client.model.controller
             m_ToolOptionsPanels = new Dictionary<ControllerMode, ToolOptionsPanel>();
             foreach (var panel in panels)
             {
-                m_ToolOptionsPanels.Add(panel.m_Mode, panel);
+                foreach (var mode in panel.m_Modes)
+                {
+                    m_ToolOptionsPanels.Add(mode, panel);
+                }
             }
         }
 
