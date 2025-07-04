@@ -876,7 +876,9 @@ namespace com.google.apps.peltzer.client.entitlement
                     m_VerificationCode = deviceCode;
                 }
 
-                PeltzerMain.Instance.paletteController.EnableKeyboard(onSubmit);
+                // We are now automatically entering the device code, so we don't need to show the keyboard
+                // TODO Allow optional use of keyboard if people want to enter the code manually
+                //PeltzerMain.Instance.paletteController.EnableKeyboard(onSubmit);
                 PeltzerMain.Instance.paletteController.publishedTakeOffHeadsetPrompt.SetActive(false);
 
                 if (m_WaitingOnAuthorization)
