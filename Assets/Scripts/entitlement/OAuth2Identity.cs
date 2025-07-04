@@ -17,10 +17,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -602,6 +600,10 @@ namespace com.google.apps.peltzer.client.entitlement
         private const string m_ReplaceHeadset = "ReplaceHeadset";
         private string m_CallbackFailedMessage = "Sorry!";
 
+        // Used in device login
+        private static string m_DeviceLoginSecret = null;
+        private static DateTime? m_DeviceLoginSecretCreationTime;
+
         // Encryption key that should be unique per build, user and device
         // Note this is not intrinsically more secure than storing in PlayerPrefs in plain text
         // as if you've got registry access then it's mostly game over anyway.
@@ -714,6 +716,11 @@ namespace com.google.apps.peltzer.client.entitlement
         public void Login(System.Action onSuccess, System.Action onFailure, bool promptUserIfNoToken)
         {
             StartCoroutine(Authorize(onSuccess, onFailure, promptUserIfNoToken));
+        }
+
+        public void ApiSignin(System.Action onSuccess, System.Action onFailure, string deviceCode)
+        {
+            StartCoroutine(Authorize(onSuccess, onFailure, deviceCode));
         }
 
         public void Logout()
@@ -839,6 +846,16 @@ namespace com.google.apps.peltzer.client.entitlement
         /// </param>
         public IEnumerator<object> Authorize(Action onSuccess, Action onFailure, bool promptUserIfNoToken)
         {
+            yield return StartCoroutine(_ManualDeviceCodeEntry(onSuccess, onFailure, promptUserIfNoToken));
+        }
+
+        public IEnumerator<object> Authorize(Action onSuccess, Action onFailure, string deviceCode)
+        {
+            yield return StartCoroutine(_AutoDeviceCodeEntry(onSuccess, onFailure, deviceCode));
+        }
+
+        private IEnumerator _ManualDeviceCodeEntry(Action onSuccess, Action onFailure, bool promptUserIfNoToken)
+        {
             if (String.IsNullOrEmpty(m_RefreshToken) && promptUserIfNoToken)
             {
                 // Something about the url makes OpenURL() not work on OSX, so use a workaround
@@ -848,7 +865,10 @@ namespace com.google.apps.peltzer.client.entitlement
                 }
                 else
                 {
-                    Application.OpenURL(m_DeviceCodeUrl);
+                    var secret = Guid.NewGuid().ToString();
+                    m_DeviceLoginSecret = secret;
+                    m_DeviceLoginSecretCreationTime = DateTime.UtcNow;
+                    Application.OpenURL($"{m_DeviceCodeUrl}?appId=openblocks&secret={secret}");
                 }
 
                 void onSubmit(object sender, string deviceCode)
@@ -856,7 +876,9 @@ namespace com.google.apps.peltzer.client.entitlement
                     m_VerificationCode = deviceCode;
                 }
 
-                PeltzerMain.Instance.paletteController.EnableKeyboard(onSubmit);
+                // We are now automatically entering the device code, so we don't need to show the keyboard
+                // TODO Allow optional use of keyboard if people want to enter the code manually
+                //PeltzerMain.Instance.paletteController.EnableKeyboard(onSubmit);
                 PeltzerMain.Instance.paletteController.publishedTakeOffHeadsetPrompt.SetActive(false);
 
                 if (m_WaitingOnAuthorization)
@@ -873,15 +895,29 @@ namespace com.google.apps.peltzer.client.entitlement
                 {
                     yield return null;
                 }
+            }
 
-                if (m_VerificationError)
-                {
-                    Debug.LogError("Account verification failed");
-                    Debug.LogFormat("Verification error {0}", m_VerificationCode);
-                    m_WaitingOnAuthorization = false;
-                    yield break;
-                }
+            yield return StartCoroutine(FinalizeDeviceLogin(onSuccess, onFailure));
+        }
 
+        private IEnumerator _AutoDeviceCodeEntry(Action onSuccess, Action onFailure, string deviceCode)
+        {
+            m_VerificationCode = deviceCode;
+            yield return StartCoroutine(FinalizeDeviceLogin(onSuccess, onFailure));
+        }
+
+        private IEnumerator FinalizeDeviceLogin(Action onSuccess, Action onFailure)
+        {
+            if (m_VerificationError)
+            {
+                Debug.LogError("Account verification failed");
+                Debug.LogFormat("Verification error {0}", m_VerificationCode);
+                m_WaitingOnAuthorization = false;
+                yield break;
+            }
+
+            if (String.IsNullOrEmpty(m_RefreshToken) && !String.IsNullOrEmpty(m_VerificationCode))
+            {
                 // TODO: For Unity 2021+
                 var www = UnityWebRequest.PostWwwForm($"{m_LoginUrl}?device_code={m_VerificationCode}", "{}");
 
@@ -892,7 +928,8 @@ namespace com.google.apps.peltzer.client.entitlement
                     m_WaitingOnAuthorization = false;
                     yield break;
                 }
-                else if (www.responseCode >= 400)
+
+                if (www.responseCode >= 400)
                 {
                     Debug.LogError("Authorization failed");
                     Debug.LogFormat("Authorization error {0}", www.downloadHandler.text);
@@ -1027,6 +1064,24 @@ namespace com.google.apps.peltzer.client.entitlement
             }
             circleTexture.Apply();
             return circleTexture;
+        }
+
+        public bool ValidateClientSecret(string deviceCodeSecret)
+        {
+            if (string.IsNullOrEmpty(deviceCodeSecret) || string.IsNullOrEmpty(m_ClientSecret)) return false;
+            if (deviceCodeSecret != m_DeviceLoginSecret) return false;
+            // Check the secret is less than 120 seconds old
+            if (!m_DeviceLoginSecretCreationTime.HasValue) return false;
+            if (m_DeviceLoginSecretCreationTime.Value + TimeSpan.FromSeconds(120) < DateTime.UtcNow)
+            {
+                // The secret is too old
+                return false;
+            }
+            // Invalidate the secret so it can't be used again
+            m_DeviceLoginSecret = null;
+            m_DeviceLoginSecretCreationTime = null;
+
+            return true;
         }
     }
 }

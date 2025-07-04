@@ -57,7 +57,11 @@ namespace com.google.apps.peltzer.client.model.export
                 {
                     continue;
                 }
+
                 sw.WriteLine("newmtl mat" + matId);
+                // We parse this comment in Open Brush so don't change it arbitrarily
+                // It must come directly after the newmtl line.
+                sw.WriteLine($"#!openblocks-material:{matId}");
                 if (matId == MaterialRegistry.GLASS_ID || matId == MaterialRegistry.GEM_ID)
                 {
                     if (matId == MaterialRegistry.GLASS_ID)

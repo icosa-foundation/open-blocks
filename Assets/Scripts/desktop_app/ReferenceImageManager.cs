@@ -105,6 +105,41 @@ namespace com.google.apps.peltzer.client.desktop_app
             }
         }
 
+        public MoveableReferenceImage.SetupParams LoadTextureSync(string previewImagePath,
+            Vector3 pos, Quaternion rot, float scale)
+        {
+            MoveableReferenceImage.SetupParams? setupParams = null;
+            previewImagePath = previewImagePath.Replace('\\', '/');
+            string uri = "file:///" + System.Uri.EscapeUriString(previewImagePath);
+            using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(uri))
+            {
+                while (!www.isDone)
+                {// TODO timeout?
+                }
+
+                if (www.isNetworkError || www.isHttpError)
+                {
+                    Debug.LogError("Failed to load texture: " + www.error);
+                    return setupParams.Value;
+                }
+                Texture2D texture = DownloadHandlerTexture.GetContent(www);
+                setupParams = new MoveableReferenceImage.SetupParams()
+                {
+                    attachToController = false,
+                    positionModelSpace = pos,
+                    rotationModelSpace = rot,
+                    scaleModelSpace = Vector3.one * scale,
+                    texture = texture,
+                    refImageId = nextId++,
+                    initialInsertion = true
+                };
+
+                var cmd = new AddReferenceImageCommand(setupParams.Value);
+                PeltzerMain.Instance.model.ApplyCommand(cmd);
+                return setupParams.Value;
+            }
+        }
+
         /// <summary>
         /// Creates a reference image with the specified parameters.
         /// </summary>

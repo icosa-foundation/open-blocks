@@ -14,6 +14,7 @@
 
 using System;
 using com.google.apps.peltzer.client.model.main;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -25,6 +26,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public UnityEvent<float> m_ActionOnFullUpdate;
         public UnityEvent<float> m_ActionEveryUpdate;
         public MeshRenderer m_SliderRenderer;
+        public TextMeshPro m_Label;
         public float m_Minimum = 0;
         public float m_Maximum = 1;
         public float m_Step = 0.1f;
@@ -55,6 +57,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public override void Start()
         {
+            m_SliderMaterial = m_SliderRenderer.material;
             base.Start();
             PeltzerMain.Instance.peltzerController.PeltzerControllerActionHandler += ControllerEventHandler;
         }
@@ -102,6 +105,7 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 float normalizedLocalPosition = GetNormalizedLocalPosition(hit);
                 float val = Mathf.Lerp(m_Minimum, m_Maximum, normalizedLocalPosition);
+                val = Mathf.Round(val / m_Step) * m_Step;
                 SetInitialValue(val);
             }
         }
@@ -114,10 +118,6 @@ namespace com.google.apps.peltzer.client.model.controller
             }
             val = Mathf.Round(val / m_Step) * m_Step;
             m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, val);
-            if (m_SliderMaterial == null)
-            {
-                m_SliderMaterial = m_SliderRenderer.material;
-            }
             m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
         }
 
@@ -150,6 +150,11 @@ namespace com.google.apps.peltzer.client.model.controller
         internal bool ActionIsAllowed()
         {
             return PeltzerMain.Instance.restrictionManager.menuActionsAllowed;
+        }
+
+        public virtual void SetLabelText(string text)
+        {
+            m_Label.text = text;
         }
     }
 }

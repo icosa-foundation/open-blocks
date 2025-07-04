@@ -827,7 +827,7 @@ namespace com.google.apps.peltzer.client.model.controller
             }
 
             Slider slider = menuHit.transform.GetComponent<Slider>();
-            if (slider != null && slider.isActive)
+            if (slider && slider.isActive)
             {
                 slider.SetHitPoint(menuHit);
             }
