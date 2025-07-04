@@ -935,7 +935,10 @@ namespace com.google.apps.peltzer.client.model.main
             referenceImageManager = gameObject.AddComponent<ReferenceImageManager>();
 
             // If the user logged in previously, then load their logged-in state, but don't prompt them to login otherwise.
-            SignIn(/* promptUserIfNoToken */ false);
+            if (OAuth2Identity.Instance.HasAccessToken)
+            {
+                SignIn(/* promptUserIfNoToken */ false);
+            }
 
             // If the user has disabled tooltips according to their player preferences, toggle tooltips to 'off'.
             if (PlayerPrefs.HasKey(DISABLE_TOOLTIPS_KEY) && PlayerPrefs.GetString(DISABLE_TOOLTIPS_KEY) == "true")
@@ -1362,6 +1365,11 @@ namespace com.google.apps.peltzer.client.model.main
         {
             // Sign the user in.
             OAuth2Identity.Instance.Login(SignInSuccess, SignInFailure, promptUserIfNoToken);
+        }
+
+        public void ApiSignIn(string deviceCode)
+        {
+            OAuth2Identity.Instance.ApiSignin(SignInSuccess, SignInFailure, deviceCode);
         }
 
         public void SignInThenSaveModel(bool promptUserIfNoToken)

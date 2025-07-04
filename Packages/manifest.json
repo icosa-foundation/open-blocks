@@ -1,7 +1,5 @@
 {
   "dependencies": {
-    "com.ixxy.polyhydra.core": "file:../../polyhydra-core/packages/Polyhydra",
-    "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.meta.xr.sdk.platform": "74.0.0",
     "com.unity.ide.rider": "3.0.36",
     "com.unity.ide.visualstudio": "2.0.23",
