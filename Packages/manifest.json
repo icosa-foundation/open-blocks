@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.iam1337.extapi": "https://github.com/icosa-mirror/extApi.git#upm",
     "com.meta.xr.sdk.platform": "74.0.0",
     "com.unity.ide.rider": "3.0.36",
     "com.unity.ide.visualstudio": "2.0.23",
@@ -12,7 +13,6 @@
     "com.unity.ugui": "1.0.0",
     "com.unity.xr.management": "4.5.1",
     "com.unity.xr.openxr": "1.11.0",
-    "org.khronos.unitygltf": "https://github.com/KhronosGroup/UnityGLTF.git",
     "org.nuget.sharpziplib": "1.3.1",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
@@ -51,6 +51,7 @@
       "name": "OpenUPM",
       "url": "https://package.openupm.com",
       "scopes": [
+        "com.iam1337.extapi",
         "org.nuget.sharpziplib",
         "org.nuget.system"
       ]
