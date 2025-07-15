@@ -690,8 +690,8 @@ namespace com.google.apps.peltzer.client.zandria
             PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetBackgroundWork(asset,
               delegate (ObjectStoreEntry objectStoreEntry)
               {
-                  UpdateSingleCreationOnYourModels(objectStoreEntry, /* isLocal */ false, /* isSave */ true);
-              }, /* hackUrls */ true));
+                  UpdateSingleCreationOnYourModels(objectStoreEntry, isLocal: false, isSave: true);
+              }));
         }
 
         /// <summary>
