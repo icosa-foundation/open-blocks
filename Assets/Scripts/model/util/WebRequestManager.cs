@@ -251,6 +251,7 @@ namespace com.google.apps.peltzer.client.model.util
                 idleBuffers.RemoveAt(idleBuffers.Count - 1);
                 // Start the coroutine that will handle this web request. When the coroutine is done,
                 // it will return the buffer to the pool.
+                Debug.Log($"Starting web request for {pendingRequest.creationCallback.Method.Name} with max age {pendingRequest.maxAgeMillis} ms.");
                 StartCoroutine(HandleWebRequest(pendingRequest, bufferHolder));
             }
         }
@@ -338,7 +339,7 @@ namespace com.google.apps.peltzer.client.model.util
 
             if (webRequest.responseCode != 200)
             {
-                Debug.LogError("Web request failed: " + webRequest.error);
+                Debug.LogError($"Web request to {webRequest.url} failed: {webRequest.error}");
             }
 
             // Cache the result, if applicable.
