@@ -781,7 +781,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             string url = String.Format("{0}/assets/{1}", ApiBaseUrl, assetId);
             UnityWebRequest request = GetRequest(url, "text/text", true); // Authentication is sometimes required
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
-              () => { return request; },
+              () => {return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
                 ProcessGetAssetResponse(success, responseCode, responseBytes, request, assetId, callback)),
               maxAgeMillis: WebRequestManager.CACHE_NONE);
