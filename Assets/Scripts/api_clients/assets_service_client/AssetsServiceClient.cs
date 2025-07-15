@@ -166,7 +166,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         public void BackgroundWork()
         {
-            success = AssetsServiceClient.ParseAsset(response, out objectStoreEntry, hackUrls);
+            success = AssetsServiceClient.ParseAsset(response, out objectStoreEntry);
         }
 
         public void PostWork()
