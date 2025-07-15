@@ -152,16 +152,14 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
     {
         private string response;
         private System.Action<ObjectStoreEntry> callback;
-        private bool hackUrls;
 
         private bool success;
         private ObjectStoreEntry objectStoreEntry;
 
-        public ParseAssetBackgroundWork(string response, System.Action<ObjectStoreEntry> callback, bool hackUrls = false)
+        public ParseAssetBackgroundWork(string response, System.Action<ObjectStoreEntry> callback)
         {
             this.response = response;
             this.callback = callback;
-            this.hackUrls = hackUrls;
         }
 
         public void BackgroundWork()
@@ -806,7 +804,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             else
             {
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetBackgroundWork(
-                  Encoding.UTF8.GetString(responseBytes), callback, hackUrls: true));
+                  Encoding.UTF8.GetString(responseBytes), callback));
             }
         }
 
