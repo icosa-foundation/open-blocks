@@ -116,25 +116,23 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private PolyMenuMain.CreationType creationType;
         private System.Action<ObjectStoreSearchResult> successCallback;
         private System.Action failureCallback;
-        private bool hackUrls;
 
         private bool success;
         private ObjectStoreSearchResult objectStoreSearchResult;
 
         public ParseAssetsBackgroundWork(string response, PolyMenuMain.CreationType creationType,
           System.Action<ObjectStoreSearchResult> successCallback,
-          System.Action failureCallback, bool hackUrls = false)
+          System.Action failureCallback)
         {
             this.response = response;
             this.creationType = creationType;
             this.successCallback = successCallback;
             this.failureCallback = failureCallback;
-            this.hackUrls = hackUrls;
         }
 
         public void BackgroundWork()
         {
-            success = AssetsServiceClient.ParseReturnedAssets(response, creationType, out objectStoreSearchResult, hackUrls);
+            success = AssetsServiceClient.ParseReturnedAssets(response, creationType, out objectStoreSearchResult);
         }
 
         public void PostWork()
@@ -463,7 +461,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         ///   relevant fields from the response and returns true, if the response is of the expected format.
         /// </summary>
         public static bool ParseReturnedAssets(string response, PolyMenuMain.CreationType type,
-          out ObjectStoreSearchResult objectStoreSearchResult, bool hackUrls = false)
+          out ObjectStoreSearchResult objectStoreSearchResult)
         {
             objectStoreSearchResult = new ObjectStoreSearchResult();
 
@@ -525,7 +523,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     }
                 }
 
-                if (ParseAsset(asset, out objectStoreEntry, hackUrls))
+                if (ParseAsset(asset, out objectStoreEntry))
                 {
                     objectStoreEntries.Add(objectStoreEntry);
                 }
@@ -549,7 +547,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         ///   Parses a single asset as defined in vr/assets/asset.proto
         /// </summary>
         /// <returns></returns>
-        public static bool ParseAsset(JToken asset, out ObjectStoreEntry objectStoreEntry, bool hackUrls)
+        public static bool ParseAsset(JToken asset, out ObjectStoreEntry objectStoreEntry)
         {
             objectStoreEntry = new ObjectStoreEntry();
 
@@ -643,9 +641,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
 
         // As above, accepting a string response (such that we can parse on a background thread).
-        public static bool ParseAsset(string response, out ObjectStoreEntry objectStoreEntry, bool hackUrls)
+        public static bool ParseAsset(string response, out ObjectStoreEntry objectStoreEntry)
         {
-            return ParseAsset(JObject.Parse(response), out objectStoreEntry, hackUrls);
+            return ParseAsset(JObject.Parse(response), out objectStoreEntry);
         }
 
         /// <summary>
@@ -731,7 +729,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
                   Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.YOUR, successCallback,
-                  failureCallback, hackUrls: true));
+                  failureCallback));
             }
         }
 
