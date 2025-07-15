@@ -786,20 +786,22 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         ///   Fetch a specific asset.
         /// </summary>
         /// <param name="callback">A callback to which to pass the results.</param>
-        public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback)
+        public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback, bool isSave)
         {
-            string url = String.Format("{0}/assets/{1}", ApiBaseUrl, assetId);
-            UnityWebRequest request = GetRequest(url, "text/text", true); // Authentication is sometimes required
+            string url;
+            url = String.Format(isSave ? "{0}/users/me/assets/{1}" : "{0}/assets/{1}", ApiBaseUrl, assetId);
+            UnityWebRequest request = GetRequest(url, "text/text", isSave);
+
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => {return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
-                ProcessGetAssetResponse(success, responseCode, responseBytes, request, assetId, callback)),
+                ProcessGetAssetResponse(success, responseCode, responseBytes, request, assetId, callback, false, isSave)),
               maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
         // Deals with the response of a GetAsset request, retrying it if an auth token was stale.
         private IEnumerator ProcessGetAssetResponse(bool success, int responseCode, byte[] responseBytes,
-          UnityWebRequest request, string assetId, System.Action<ObjectStoreEntry> callback, bool isRecursion = false)
+          UnityWebRequest request, string assetId, System.Action<ObjectStoreEntry> callback, bool isRecursion, bool isSave)
         {
             if (!success || responseCode == 401)
             {
@@ -809,7 +811,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
-                GetAsset(assetId, callback);
+                GetAsset(assetId, callback, isSave);
             }
             else
             {

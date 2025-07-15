@@ -827,9 +827,9 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         /// <param name="assetId">An assets service asset id.</param>
         /// <param name="callback">Callback function on successful query.</param>
-        public void GetAssetFromAssetsService(string assetId, Action<ObjectStoreEntry> callback)
+        public void GetAssetFromAssetsService(string assetId, Action<ObjectStoreEntry> callback, bool isSave)
         {
-            assetsServiceClient.GetAsset(assetId, callback);
+            assetsServiceClient.GetAsset(assetId, callback, isSave);
         }
 
         /// <summary>
