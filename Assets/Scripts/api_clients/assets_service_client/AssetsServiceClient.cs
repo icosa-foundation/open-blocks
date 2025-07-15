@@ -547,11 +547,15 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <returns></returns>
         public static bool ParseAsset(JToken asset, out ObjectStoreEntry objectStoreEntry)
         {
+            bool isFinalizeResponse = asset["publishUrl"] != null;
             objectStoreEntry = new ObjectStoreEntry();
 
-            if (asset["visibility"] == null)
+            if (asset["visibility"] == null || isFinalizeResponse)
             {
-                Debug.LogWarning("Asset had no access level set");
+                if (!isFinalizeResponse)
+                {
+                    Debug.LogWarning("Asset had no access level set");
+                }
                 objectStoreEntry.isPrivateAsset = true; // TODO API should set defaults but should we still have our own default?
             }
             else
@@ -569,7 +573,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 return false;
             }
             JToken thumbnailRoot = asset["thumbnail"];
-            if (thumbnailRoot != null && thumbnailRoot["url"] != null)
+            if (!isFinalizeResponse && thumbnailRoot != null && thumbnailRoot["url"] != null)
             {
                 objectStoreEntry.thumbnail = asset["thumbnail"]["url"].ToString();
             }
@@ -585,6 +589,12 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 {
                     objectStoreEntry.tags = tags.ToArray();
                 }
+            }
+            if (isFinalizeResponse)
+            {
+                // All we need to do at this stage
+                // The next GetAsset will fill in the rest of the details.
+                return true;
             }
             var entryAssets = new ObjectStoreObjectAssetsWrapper();
             var blocksAsset = new ObjectStorePeltzerAssets();
