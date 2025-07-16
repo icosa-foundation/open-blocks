@@ -431,8 +431,12 @@ namespace com.google.apps.peltzer.client.zandria
             // manually when the user saves a model.
             if (PeltzerMain.Instance.polyMenuMain.PolyMenuIsActive())
             {
+                if (Time.time - timeLastPolled > POLLING_INTERVAL_SECONDS)
                 {
-                    Poll(PolyMenuMain.CreationType.FEATURED);
+                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.FEATURED))
+                    {
+                        Poll(PolyMenuMain.CreationType.FEATURED);
+                    }
                     if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
                     {
                         Poll(PolyMenuMain.CreationType.LIKED);
@@ -442,6 +446,12 @@ namespace com.google.apps.peltzer.client.zandria
 
                 if (hasNewSave && Time.time - timeLastPolledSavedModels > SAVED_POLLING_INTERVAL_SECONDS)
                 {
+                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.YOUR) && OAuth2Identity.Instance.LoggedIn)
+                    {
+                        Poll(PolyMenuMain.CreationType.YOUR);
+                        hasNewSave = false;
+                    }
+                    timeLastPolledSavedModels = Time.time;
                 }
             }
         }
@@ -694,6 +704,14 @@ namespace com.google.apps.peltzer.client.zandria
         public void UpdateSingleCloudCreationOnYourModels(string asset)
         {
             // Trigger polling after a delay
+            hasNewSave = true;
+            timeLastPolledSavedModels = Time.time;
+
+            // PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetBackgroundWork(asset,
+            //   delegate (ObjectStoreEntry objectStoreEntry)
+            //   {
+            //       UpdateSingleCreationOnYourModels(objectStoreEntry, isLocal: false, isSave: true);
+            //   }));
         }
 
         /// <summary>
