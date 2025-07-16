@@ -412,7 +412,8 @@ namespace com.google.apps.peltzer.client.zandria
                         // to WAITING, which then eventually ends the "Saving..." animation.
                         // if this will be too costly for some reason, we can comment it out here
                         // but need to make sure that the ProgressIndicator stops the saving animation on its own.
-                        LoadModelForCreation(creation, pair.Key);
+                        // TODO: Andy - disabled for now as it was buggy. Also see ProgressIndicator.cs
+                        // LoadModelForCreation(creation, pair.Key);
                     }
 
                     // Clear pendingModelLoadRequestIndices. We have made a load request for every pending request.
