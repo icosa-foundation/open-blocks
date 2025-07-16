@@ -512,8 +512,7 @@ namespace com.google.apps.peltzer.client.zandria
             }
 
             // Start a coroutine which will create a UnityWebRequest and wait for it to send and return with results.
-            GetAssetsServiceSearchResults(type,
-            delegate (ObjectStoreSearchResult objectStoreResults)
+            GetAssetsServiceSearchResults(type, delegate (ObjectStoreSearchResult objectStoreResults)
             {
                 if (objectStoreResults.results.Length == 0) { return; }
 
@@ -529,8 +528,7 @@ namespace com.google.apps.peltzer.client.zandria
 
                     for (int i = 0; i < objectStoreResults.results.Length; i++)
                     {
-                        load.AddEntryToStartOfMenu(new Entry(objectStoreResults.results[i]),
-                    /* isLocal */ false, /* isSave */ false);
+                        load.AddEntryToStartOfMenu(new Entry(objectStoreResults.results[i]), isLocal: false, isSave: false);
 
                         // The load has completed and is now managed in loadsByType so we can remove it from pendingLoads.
                         pendingLoadsByType.Remove(type);
