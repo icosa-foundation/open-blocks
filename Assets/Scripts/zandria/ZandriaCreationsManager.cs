@@ -333,6 +333,7 @@ namespace com.google.apps.peltzer.client.zandria
         // TODO Can we ask the server for a timestamp of the last update and only poll if it's changed?
         // Could the timestamp be specific to each API call?
         private const float POLLING_INTERVAL_SECONDS = 60;
+        private const float SAVED_POLLING_INTERVAL_SECONDS = 5;
 
         // WARNING: All dictionaries in ZandriaCreationsManager are private because they are not threadsafe. They must be
         // accessed from within ZandriaCreationsManager and they must be locked before access.
@@ -349,6 +350,9 @@ namespace com.google.apps.peltzer.client.zandria
 
         // When we last polled for updates to the menu.
         private float timeLastPolled;
+
+        private float timeLastPolledSavedModels;
+        private bool hasNewSave;
 
         public AssetsServiceClient assetsServiceClient;
 
@@ -425,17 +429,20 @@ namespace com.google.apps.peltzer.client.zandria
             // Note: we don't poll the "Your models" section because (1) it's harder to optimize (it's not ordered
             // by modified time) and (2) that flow is already covered in an ad-hoc way: we update the poly menu
             // manually when the user saves a model.
-            if (PeltzerMain.Instance.polyMenuMain.PolyMenuIsActive() && Time.time - timeLastPolled > POLLING_INTERVAL_SECONDS)
+            if (PeltzerMain.Instance.polyMenuMain.PolyMenuIsActive())
             {
-                if (loadsByType.ContainsKey(PolyMenuMain.CreationType.FEATURED))
                 {
                     Poll(PolyMenuMain.CreationType.FEATURED);
+                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
+                    {
+                        Poll(PolyMenuMain.CreationType.LIKED);
+                    }
+                    timeLastPolled = Time.time;
                 }
-                if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
+
+                if (hasNewSave && Time.time - timeLastPolledSavedModels > SAVED_POLLING_INTERVAL_SECONDS)
                 {
-                    Poll(PolyMenuMain.CreationType.LIKED);
                 }
-                timeLastPolled = Time.time;
             }
         }
 
@@ -686,11 +693,7 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         public void UpdateSingleCloudCreationOnYourModels(string asset)
         {
-            PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetBackgroundWork(asset,
-              delegate (ObjectStoreEntry objectStoreEntry)
-              {
-                  UpdateSingleCreationOnYourModels(objectStoreEntry, isLocal: false, isSave: true);
-              }));
+            // Trigger polling after a delay
         }
 
         /// <summary>
