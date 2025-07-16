@@ -1697,8 +1697,8 @@ namespace com.google.apps.peltzer.client.model.main
             zandriaCreationsManager.GetAssetFromAssetsService(assetId, delegate (ObjectStoreEntry objectStoreResult)
             {
                 zandriaCreationsManager.StartSingleCreationLoad(PolyMenuMain.CreationType.YOUR, objectStoreResult,
-                  /* isLocal */ false, /* isSave */ true);
-            });
+                  isLocal: false, isSave: true);
+            }, true);
 
             if (!HasShownMenuTooltipThisSession)
             {
