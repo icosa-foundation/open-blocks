@@ -731,7 +731,6 @@ namespace TiltBrush
                             Slider3.SliderType = SliderTypes.Float;
                             Slider1.SetMin(1, 1);
                             Slider1.SetMax(30, 80);
-
                             Slider2.SetMin(.1f, .1f);
                             Slider2.SetMax(30, 80);
                             Slider3.SetMin(.1f, .1f);
