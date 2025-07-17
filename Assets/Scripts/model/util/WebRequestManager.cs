@@ -338,7 +338,7 @@ namespace com.google.apps.peltzer.client.model.util
 
             if (webRequest.responseCode != 200)
             {
-                Debug.LogError("Web request failed: " + webRequest.error);
+                Debug.LogError($"Web request to {webRequest.url} failed: {webRequest.error}");
             }
 
             // Cache the result, if applicable.

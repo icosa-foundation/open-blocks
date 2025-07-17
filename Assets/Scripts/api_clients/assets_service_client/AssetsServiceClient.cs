@@ -103,6 +103,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
             else
             {
+                // TODO
+                // How do we want to handle updating models?
+                // Can you update a published model?
                 StartCoroutine(assetsServiceClient.UpdateModel(assetId, remixIds, objMultiPartBytes, saveData.objPolyCount,
                   triangulatedObjMultiPartBytes, saveData.triangulatedObjPolyCount, mtlMultiPartBytes, saveData.GLTFfiles,
                   fbxMultiPartBytes, blocksMultiPartBytes, thumbnailMultiPartBytes, publish));
@@ -116,25 +119,23 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private PolyMenuMain.CreationType creationType;
         private System.Action<ObjectStoreSearchResult> successCallback;
         private System.Action failureCallback;
-        private bool hackUrls;
 
         private bool success;
         private ObjectStoreSearchResult objectStoreSearchResult;
 
         public ParseAssetsBackgroundWork(string response, PolyMenuMain.CreationType creationType,
           System.Action<ObjectStoreSearchResult> successCallback,
-          System.Action failureCallback, bool hackUrls = false)
+          System.Action failureCallback)
         {
             this.response = response;
             this.creationType = creationType;
             this.successCallback = successCallback;
             this.failureCallback = failureCallback;
-            this.hackUrls = hackUrls;
         }
 
         public void BackgroundWork()
         {
-            success = AssetsServiceClient.ParseReturnedAssets(response, creationType, out objectStoreSearchResult, hackUrls);
+            success = AssetsServiceClient.ParseReturnedAssets(response, creationType, out objectStoreSearchResult);
         }
 
         public void PostWork()
@@ -154,21 +155,19 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
     {
         private string response;
         private System.Action<ObjectStoreEntry> callback;
-        private bool hackUrls;
 
         private bool success;
         private ObjectStoreEntry objectStoreEntry;
 
-        public ParseAssetBackgroundWork(string response, System.Action<ObjectStoreEntry> callback, bool hackUrls = false)
+        public ParseAssetBackgroundWork(string response, System.Action<ObjectStoreEntry> callback)
         {
             this.response = response;
             this.callback = callback;
-            this.hackUrls = hackUrls;
         }
 
         public void BackgroundWork()
         {
-            success = AssetsServiceClient.ParseAsset(response, out objectStoreEntry, hackUrls);
+            success = AssetsServiceClient.ParseAsset(response, out objectStoreEntry);
         }
 
         public void PostWork()
@@ -180,7 +179,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
     }
 
-    public class ApiQueryParameters
+    public class ApiQueryParameters : IEquatable<ApiQueryParameters>
     {
         public string SearchText;
         public int TriangleCountMax;
@@ -215,16 +214,50 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             };
         }
 
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as ApiQueryParameters);
+        }
+
         public bool Equals(ApiQueryParameters other)
         {
-            if (other == null) { return false; }
-            return SearchText.Equals(other.SearchText) &&
+            if (other is null)
+                return false;
+
+            return string.Equals(SearchText, other.SearchText) &&
                 TriangleCountMax == other.TriangleCountMax &&
-                License.Equals(other.License) &&
-                OrderBy.Equals(other.OrderBy) &&
-                Format.Equals(other.Format) &&
-                Curated.Equals(other.Curated) &&
-                Category.Equals(other.Category);
+                string.Equals(License, other.License) &&
+                string.Equals(OrderBy, other.OrderBy) &&
+                string.Equals(Format, other.Format) &&
+                string.Equals(Curated, other.Curated) &&
+                string.Equals(Category, other.Category);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(
+                SearchText,
+                TriangleCountMax,
+                License,
+                OrderBy,
+                Format,
+                Curated,
+                Category
+            );
+        }
+
+        public static bool operator ==(ApiQueryParameters left, ApiQueryParameters right)
+        {
+            if (ReferenceEquals(left, right))
+                return true;
+            if (left is null || right is null)
+                return false;
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ApiQueryParameters left, ApiQueryParameters right)
+        {
+            return !(left == right);
         }
     }
 
@@ -463,7 +496,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         ///   relevant fields from the response and returns true, if the response is of the expected format.
         /// </summary>
         public static bool ParseReturnedAssets(string response, PolyMenuMain.CreationType type,
-          out ObjectStoreSearchResult objectStoreSearchResult, bool hackUrls = false)
+          out ObjectStoreSearchResult objectStoreSearchResult)
         {
             objectStoreSearchResult = new ObjectStoreSearchResult();
 
@@ -525,7 +558,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     }
                 }
 
-                if (ParseAsset(asset, out objectStoreEntry, hackUrls))
+                if (ParseAsset(asset, out objectStoreEntry))
                 {
                     objectStoreEntries.Add(objectStoreEntry);
                 }
@@ -545,11 +578,28 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return true;
         }
 
+        public static bool ParseFinalize(JToken asset, out ObjectStoreEntry objectStoreEntry)
+        {
+            objectStoreEntry = new ObjectStoreEntry();
+            objectStoreEntry.isPrivateAsset = true;
+
+            if (asset["assetId"] != null)
+            {
+                objectStoreEntry.id = asset["assetId"].ToString();
+            }
+            else
+            {
+                Debug.LogError($"Asset had no ID: {asset}");
+                return false;
+            }
+            return true;
+        }
+
         /// <summary>
         ///   Parses a single asset as defined in vr/assets/asset.proto
         /// </summary>
         /// <returns></returns>
-        public static bool ParseAsset(JToken asset, out ObjectStoreEntry objectStoreEntry, bool hackUrls)
+        public static bool ParseAsset(JToken asset, out ObjectStoreEntry objectStoreEntry)
         {
             objectStoreEntry = new ObjectStoreEntry();
 
@@ -590,6 +640,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     objectStoreEntry.tags = tags.ToArray();
                 }
             }
+
             var entryAssets = new ObjectStoreObjectAssetsWrapper();
             var blocksAsset = new ObjectStorePeltzerAssets();
             // 7 is the enum for Blocks in ElementType
@@ -599,7 +650,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             var blocksEntry = assets?.FirstOrDefault(x => x["formatType"].ToString() == "BLOCKS");
             if (blocksEntry == null)
             {
-                Debug.LogWarning("Asset had no blocks format type");
+                Debug.LogWarning($"Asset had no blocks format type: {asset}");
                 return false;
             }
             blocksAsset.rootUrl = blocksEntry["root"]?["url"]?.ToString();
@@ -642,10 +693,15 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return cameraForward;
         }
 
-        // As above, accepting a string response (such that we can parse on a background thread).
-        public static bool ParseAsset(string response, out ObjectStoreEntry objectStoreEntry, bool hackUrls)
+        public static bool ParseFinalize(string response, out ObjectStoreEntry objectStoreEntry)
         {
-            return ParseAsset(JObject.Parse(response), out objectStoreEntry, hackUrls);
+            return ParseFinalize(JObject.Parse(response), out objectStoreEntry);
+        }
+
+        // As above, accepting a string response (such that we can parse on a background thread).
+        public static bool ParseAsset(string response, out ObjectStoreEntry objectStoreEntry)
+        {
+            return ParseAsset(JObject.Parse(response), out objectStoreEntry);
         }
 
         /// <summary>
@@ -731,7 +787,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
                   Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.YOUR, successCallback,
-                  failureCallback, hackUrls: true));
+                  failureCallback));
             }
         }
 
@@ -780,20 +836,22 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         ///   Fetch a specific asset.
         /// </summary>
         /// <param name="callback">A callback to which to pass the results.</param>
-        public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback)
+        public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback, bool isSave)
         {
-            string url = String.Format("{0}/assets/{1}", ApiBaseUrl, assetId);
-            UnityWebRequest request = GetRequest(url, "text/text", true); // Authentication is sometimes required
+            string url;
+            url = String.Format(isSave ? "{0}/users/me/assets/{1}" : "{0}/assets/{1}", ApiBaseUrl, assetId);
+            UnityWebRequest request = GetRequest(url, "text/text", isSave);
+
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
-                ProcessGetAssetResponse(success, responseCode, responseBytes, request, assetId, callback)),
+                ProcessGetAssetResponse(success, responseCode, responseBytes, request, assetId, callback, false, isSave)),
               maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
         // Deals with the response of a GetAsset request, retrying it if an auth token was stale.
         private IEnumerator ProcessGetAssetResponse(bool success, int responseCode, byte[] responseBytes,
-          UnityWebRequest request, string assetId, System.Action<ObjectStoreEntry> callback, bool isRecursion = false)
+          UnityWebRequest request, string assetId, System.Action<ObjectStoreEntry> callback, bool isRecursion, bool isSave)
         {
             if (!success || responseCode == 401)
             {
@@ -803,12 +861,12 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
-                GetAsset(assetId, callback);
+                GetAsset(assetId, callback, isSave);
             }
             else
             {
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetBackgroundWork(
-                  Encoding.UTF8.GetString(responseBytes), callback, hackUrls: true));
+                  Encoding.UTF8.GetString(responseBytes), callback));
             }
         }
 
