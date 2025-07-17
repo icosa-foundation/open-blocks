@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using com.google.apps.peltzer.client.model.controller;
 namespace TiltBrush
 {

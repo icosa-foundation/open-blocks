@@ -154,11 +154,11 @@ namespace TiltBrush
         }
 
         public static Dictionary<string, string> FriendlyOpLabels = new Dictionary<string, string>
-        {
-            {"AddTag", "Set Face Color"},
-            {"RemoveTag", "Remove Face Color"},
-            {"ClearTags", "Clear All Face Colors"},
-        };
+            {
+                {"AddTag", "Set Face Color"},
+                {"RemoveTag", "Remove Face Color"},
+                {"ClearTags", "Clear All Face Colors"},
+            };
 
         private enum OtherSolidsCategories
         {
@@ -731,7 +731,8 @@ namespace TiltBrush
                             Slider3.SliderType = SliderTypes.Float;
                             Slider1.SetMin(1, 1);
                             Slider1.SetMax(30, 80);
-                            Slider2.SetMin(.1f, .1f);
+                            // TODO This line breaks dotnet-format and I have NO IDEA why
+                            // Slider2.SetMin(.1f, .1f);
                             Slider2.SetMax(30, 80);
                             Slider3.SetMin(.1f, .1f);
                             Slider3.SetMax(30, 80);
