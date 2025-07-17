@@ -553,7 +553,7 @@ namespace com.google.apps.peltzer.client.model.controller
                         int johnsonNumber = int.Parse(polyShapeSubtype);
                         {
                             poly = JohnsonSolids.Build(johnsonNumber);
-                        };
+                        }
                         break;
                     case "Grids":
                         Enum.TryParse(polyShapeSubtype, out GridEnums.GridTypes gridType);
@@ -565,14 +565,14 @@ namespace com.google.apps.peltzer.client.model.controller
                                 rows, cols
                             );
                             poly = poly.Shell(.25f);
-                        };
+                        }
                         break;
                     case "RadialSolids":
                         Enum.TryParse(polyShapeSubtype, out RadialSolids.RadialPolyType radialType);
                         {
                             int sides = parameters["sides"] as int? ?? 6;
                             poly = RadialSolids.Build(radialType, sides);
-                        };
+                        }
                         break;
                     case "Shapes":
                         Enum.TryParse(polyShapeSubtype, out ShapeTypes shapeType);
@@ -702,7 +702,7 @@ namespace com.google.apps.peltzer.client.model.controller
                             int root = parameters["root"] as int? ?? 2;
                             int c = parameters["c"] as int? ?? 0;
                             poly = WatermanPoly.Build(R, root, c);
-                        };
+                        }
                         break;
                     case "Wythoff":
                         Enum.TryParse(polyShapeSubtype, out UniformTypes wythoffType);
@@ -710,14 +710,14 @@ namespace com.google.apps.peltzer.client.model.controller
                             WythoffPoly wythoff;
                             wythoff = new WythoffPoly(wythoffType);
                             poly = wythoff.Build();
-                        };
+                        }
                         break;
 
                     default:
                         {
                             Debug.LogError($"Invalid poly type: {polyShapeType}");
                             poly = new PolyMesh();
-                        };
+                        }
                         break;
                 }
             }
