@@ -448,7 +448,10 @@ namespace com.google.apps.peltzer.client.zandria
                 {
                     if (loadsByType.ContainsKey(PolyMenuMain.CreationType.YOUR) && OAuth2Identity.Instance.LoggedIn)
                     {
-                        Poll(PolyMenuMain.CreationType.YOUR);
+                        AssetsServiceClient.ClearRecentAssetIdsByType(PolyMenuMain.CreationType.YOUR);
+                        AssetsServiceClient.ClearRecentAssetIdsByType(PolyMenuMain.CreationType.YOUR);
+                        ClearLoad(PolyMenuMain.CreationType.YOUR);
+                        StartLoad(PolyMenuMain.CreationType.YOUR);
                         hasNewSave = false;
                     }
                     timeLastPolledSavedModels = Time.time;
@@ -707,11 +710,9 @@ namespace com.google.apps.peltzer.client.zandria
             hasNewSave = true;
             timeLastPolledSavedModels = Time.time;
 
-            // PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetBackgroundWork(asset,
-            //   delegate (ObjectStoreEntry objectStoreEntry)
-            //   {
-            //       UpdateSingleCreationOnYourModels(objectStoreEntry, isLocal: false, isSave: true);
-            //   }));
+            // TODO: This was unreliable so we've switched to polling for now
+            // AssetsServiceClient.ParseFinalize(asset, out ObjectStoreEntry objectStoreEntry);
+            // UpdateSingleCreationOnYourModels(objectStoreEntry, isLocal: false, isSave: true);
         }
 
         /// <summary>

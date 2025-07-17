@@ -103,6 +103,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
             else
             {
+                // TODO
+                // How do we want to handle updating models?
+                // Can you update a published model?
                 StartCoroutine(assetsServiceClient.UpdateModel(assetId, remixIds, objMultiPartBytes, saveData.objPolyCount,
                   triangulatedObjMultiPartBytes, saveData.triangulatedObjPolyCount, mtlMultiPartBytes, saveData.GLTFfiles,
                   fbxMultiPartBytes, blocksMultiPartBytes, thumbnailMultiPartBytes, publish));
@@ -176,7 +179,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
     }
 
-    public class ApiQueryParameters
+    public class ApiQueryParameters : IEquatable<ApiQueryParameters>
     {
         public string SearchText;
         public int TriangleCountMax;
@@ -211,16 +214,50 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             };
         }
 
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as ApiQueryParameters);
+        }
+
         public bool Equals(ApiQueryParameters other)
         {
-            if (other == null) { return false; }
-            return SearchText.Equals(other.SearchText) &&
+            if (other is null)
+                return false;
+
+            return string.Equals(SearchText, other.SearchText) &&
                 TriangleCountMax == other.TriangleCountMax &&
-                License.Equals(other.License) &&
-                OrderBy.Equals(other.OrderBy) &&
-                Format.Equals(other.Format) &&
-                Curated.Equals(other.Curated) &&
-                Category.Equals(other.Category);
+                string.Equals(License, other.License) &&
+                string.Equals(OrderBy, other.OrderBy) &&
+                string.Equals(Format, other.Format) &&
+                string.Equals(Curated, other.Curated) &&
+                string.Equals(Category, other.Category);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(
+                SearchText,
+                TriangleCountMax,
+                License,
+                OrderBy,
+                Format,
+                Curated,
+                Category
+            );
+        }
+
+        public static bool operator ==(ApiQueryParameters left, ApiQueryParameters right)
+        {
+            if (ReferenceEquals(left, right))
+                return true;
+            if (left is null || right is null)
+                return false;
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ApiQueryParameters left, ApiQueryParameters right)
+        {
+            return !(left == right);
         }
     }
 
@@ -541,21 +578,34 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return true;
         }
 
+        public static bool ParseFinalize(JToken asset, out ObjectStoreEntry objectStoreEntry)
+        {
+            objectStoreEntry = new ObjectStoreEntry();
+            objectStoreEntry.isPrivateAsset = true;
+
+            if (asset["assetId"] != null)
+            {
+                objectStoreEntry.id = asset["assetId"].ToString();
+            }
+            else
+            {
+                Debug.LogError($"Asset had no ID: {asset}");
+                return false;
+            }
+            return true;
+        }
+
         /// <summary>
         ///   Parses a single asset as defined in vr/assets/asset.proto
         /// </summary>
         /// <returns></returns>
         public static bool ParseAsset(JToken asset, out ObjectStoreEntry objectStoreEntry)
         {
-            bool isFinalizeResponse = asset["publishUrl"] != null;
             objectStoreEntry = new ObjectStoreEntry();
 
-            if (asset["visibility"] == null || isFinalizeResponse)
+            if (asset["visibility"] == null)
             {
-                if (!isFinalizeResponse)
-                {
-                    Debug.LogWarning("Asset had no access level set");
-                }
+                Debug.LogWarning("Asset had no access level set");
                 objectStoreEntry.isPrivateAsset = true; // TODO API should set defaults but should we still have our own default?
             }
             else
@@ -573,7 +623,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 return false;
             }
             JToken thumbnailRoot = asset["thumbnail"];
-            if (!isFinalizeResponse && thumbnailRoot != null && thumbnailRoot["url"] != null)
+            if (thumbnailRoot != null && thumbnailRoot["url"] != null)
             {
                 objectStoreEntry.thumbnail = asset["thumbnail"]["url"].ToString();
             }
@@ -590,12 +640,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     objectStoreEntry.tags = tags.ToArray();
                 }
             }
-            if (isFinalizeResponse)
-            {
-                // All we need to do at this stage
-                // The next GetAsset will fill in the rest of the details.
-                return true;
-            }
+
             var entryAssets = new ObjectStoreObjectAssetsWrapper();
             var blocksAsset = new ObjectStorePeltzerAssets();
             // 7 is the enum for Blocks in ElementType
@@ -646,6 +691,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             cameraForward.y = float.Parse(cameraMatrix[6].ToString());
             cameraForward.z = float.Parse(cameraMatrix[10].ToString());
             return cameraForward;
+        }
+
+        public static bool ParseFinalize(string response, out ObjectStoreEntry objectStoreEntry)
+        {
+            return ParseFinalize(JObject.Parse(response), out objectStoreEntry);
         }
 
         // As above, accepting a string response (such that we can parse on a background thread).
