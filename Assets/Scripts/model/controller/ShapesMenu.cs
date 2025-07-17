@@ -727,6 +727,21 @@ namespace com.google.apps.peltzer.client.model.controller
                 return;
             }
 
+            int subdiv = 1;
+            if (parameters != null && parameters.ContainsKey("subdiv"))
+            {
+                Debug.Log($"subdiv: {parameters["subdiv"]}");
+                subdiv = parameters["subdiv"] as int? ?? 0;
+            }
+            if (subdiv > 0)
+            {
+                for (int i = 0; i < subdiv; i++)
+                {
+                    poly = poly.Ortho(new OpParams(1f), true);
+                }
+                poly = poly.Ortho(new OpParams(subdiv), true);
+            }
+
             int id = PeltzerMain.Instance.model.GenerateMeshId();
             int matId = MaterialRegistry.WHITE_ID;
             var mmesh = MMesh.PolyHydraToMMesh(poly, id, Vector3.zero, Vector3.one, matId, true);
