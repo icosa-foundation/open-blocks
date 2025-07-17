@@ -15,6 +15,7 @@ using UnityEngine.Networking;
 
 public class ApiManager : MonoBehaviour
 {
+    public const int HTTP_PORT = 40084;
     private Api _api;
 
     void Start()
@@ -22,7 +23,7 @@ public class ApiManager : MonoBehaviour
         _api = new Api(ThreadMode.MainThread);
         var apiController = new ApiController();
         _api.AddController(apiController);
-        _api.Listen(40075);
+        _api.Listen(HTTP_PORT);
     }
 
     void Update()
