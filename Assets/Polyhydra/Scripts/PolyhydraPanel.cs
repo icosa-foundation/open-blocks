@@ -225,15 +225,15 @@ namespace TiltBrush
             {
                 attachPoint = m_PreviewAttachPoint;
             }
-            else
-            {
-                // BasePanel experimentalPanel;
-                // experimentalPanel = PanelManager.m_Instance.GetActivePanelByType(PanelType.Experimental);
-                // if (experimentalPanel != null)
-                // {
-                // attachPoint = experimentalPanel.GetComponentInChildren<PolyhydraModeTray>().m_PreviewPolyAttachPoint;
-                // }
-            }
+            // else
+            // {
+            //     BasePanel experimentalPanel;
+            //     experimentalPanel = PanelManager.m_Instance.GetActivePanelByType(PanelType.Experimental);
+            //     if (experimentalPanel != null)
+            //     {
+            //     attachPoint = experimentalPanel.GetComponentInChildren<PolyhydraModeTray>().m_PreviewPolyAttachPoint;
+            //     }
+            // }
             if (attachPoint != null)
             {
                 PreviewPolyhedron.m_Instance.transform.SetParent(attachPoint, false);
