@@ -843,7 +843,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             UnityWebRequest request = GetRequest(url, "text/text", isSave);
 
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
-              () => {return request; },
+              () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
                 ProcessGetAssetResponse(success, responseCode, responseBytes, request, assetId, callback, false, isSave)),
               maxAgeMillis: WebRequestManager.CACHE_NONE);
