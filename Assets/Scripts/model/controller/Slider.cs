@@ -57,6 +57,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public override void Start()
         {
+            m_SliderMaterial = m_SliderRenderer.material;
             base.Start();
             PeltzerMain.Instance.peltzerController.PeltzerControllerActionHandler += ControllerEventHandler;
         }
@@ -104,6 +105,7 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 float normalizedLocalPosition = GetNormalizedLocalPosition(hit);
                 float val = Mathf.Lerp(m_Minimum, m_Maximum, normalizedLocalPosition);
+                // Quantize to m_Step
                 val = Mathf.Round(val / m_Step) * m_Step;
                 SetInitialValue(val);
             }
@@ -117,10 +119,6 @@ namespace com.google.apps.peltzer.client.model.controller
             }
             val = Mathf.Round(val / m_Step) * m_Step;
             m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, val);
-            if (m_SliderMaterial == null)
-            {
-                m_SliderMaterial = m_SliderRenderer.material;
-            }
             m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
         }
 
@@ -161,3 +159,4 @@ namespace com.google.apps.peltzer.client.model.controller
         }
     }
 }
+

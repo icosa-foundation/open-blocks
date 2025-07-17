@@ -496,7 +496,7 @@ namespace com.google.apps.peltzer.client.tools
         /// Sets up the held meshes.
         /// </summary>
         /// <param name="newMeshes">The new meshes to be held, or null to indicate no held meshes.</param>
-        private void ResetHeldMeshes(IEnumerable<MMesh> newMeshes, Dictionary<int, Vector3> sizes = null)
+        public void ResetHeldMeshes(IEnumerable<MMesh> newMeshes, Dictionary<int, Vector3> sizes = null)
         {
             if (heldMeshes != null)
             {
@@ -843,7 +843,7 @@ namespace com.google.apps.peltzer.client.tools
             else if (IsStartSnapDetectionEvent(args))
             {
                 // Show the snap guides if the trigger is slightly pressed.
-                heldMeshes.DetectSnap();
+                heldMeshes?.DetectSnap();
             }
             else if (IsStopSnapDetectionEvent(args))
             {
