@@ -333,6 +333,7 @@ namespace com.google.apps.peltzer.client.zandria
         // TODO Can we ask the server for a timestamp of the last update and only poll if it's changed?
         // Could the timestamp be specific to each API call?
         private const float POLLING_INTERVAL_SECONDS = 60;
+        private const float SAVED_POLLING_INTERVAL_SECONDS = 5;
 
         // WARNING: All dictionaries in ZandriaCreationsManager are private because they are not threadsafe. They must be
         // accessed from within ZandriaCreationsManager and they must be locked before access.
@@ -349,6 +350,9 @@ namespace com.google.apps.peltzer.client.zandria
 
         // When we last polled for updates to the menu.
         private float timeLastPolled;
+
+        private float timeLastPolledSavedModels;
+        private bool hasNewSave;
 
         public AssetsServiceClient assetsServiceClient;
 
@@ -412,7 +416,8 @@ namespace com.google.apps.peltzer.client.zandria
                         // to WAITING, which then eventually ends the "Saving..." animation.
                         // if this will be too costly for some reason, we can comment it out here
                         // but need to make sure that the ProgressIndicator stops the saving animation on its own.
-                        LoadModelForCreation(creation, pair.Key);
+                        // TODO: Andy - disabled for now as it was buggy. Also see ProgressIndicator.cs
+                        // LoadModelForCreation(creation, pair.Key);
                     }
 
                     // Clear pendingModelLoadRequestIndices. We have made a load request for every pending request.
@@ -424,17 +429,33 @@ namespace com.google.apps.peltzer.client.zandria
             // Note: we don't poll the "Your models" section because (1) it's harder to optimize (it's not ordered
             // by modified time) and (2) that flow is already covered in an ad-hoc way: we update the poly menu
             // manually when the user saves a model.
-            if (PeltzerMain.Instance.polyMenuMain.PolyMenuIsActive() && Time.time - timeLastPolled > POLLING_INTERVAL_SECONDS)
+            if (PeltzerMain.Instance.polyMenuMain.PolyMenuIsActive())
             {
-                if (loadsByType.ContainsKey(PolyMenuMain.CreationType.FEATURED))
+                if (Time.time - timeLastPolled > POLLING_INTERVAL_SECONDS)
                 {
-                    Poll(PolyMenuMain.CreationType.FEATURED);
+                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.FEATURED))
+                    {
+                        Poll(PolyMenuMain.CreationType.FEATURED);
+                    }
+                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
+                    {
+                        Poll(PolyMenuMain.CreationType.LIKED);
+                    }
+                    timeLastPolled = Time.time;
                 }
-                if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
+
+                if (hasNewSave && Time.time - timeLastPolledSavedModels > SAVED_POLLING_INTERVAL_SECONDS)
                 {
-                    Poll(PolyMenuMain.CreationType.LIKED);
+                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.YOUR) && OAuth2Identity.Instance.LoggedIn)
+                    {
+                        AssetsServiceClient.ClearRecentAssetIdsByType(PolyMenuMain.CreationType.YOUR);
+                        AssetsServiceClient.ClearRecentAssetIdsByType(PolyMenuMain.CreationType.YOUR);
+                        ClearLoad(PolyMenuMain.CreationType.YOUR);
+                        StartLoad(PolyMenuMain.CreationType.YOUR);
+                        hasNewSave = false;
+                    }
+                    timeLastPolledSavedModels = Time.time;
                 }
-                timeLastPolled = Time.time;
             }
         }
 
@@ -511,8 +532,7 @@ namespace com.google.apps.peltzer.client.zandria
             }
 
             // Start a coroutine which will create a UnityWebRequest and wait for it to send and return with results.
-            GetAssetsServiceSearchResults(type,
-            delegate (ObjectStoreSearchResult objectStoreResults)
+            GetAssetsServiceSearchResults(type, delegate (ObjectStoreSearchResult objectStoreResults)
             {
                 if (objectStoreResults.results.Length == 0) { return; }
 
@@ -528,8 +548,7 @@ namespace com.google.apps.peltzer.client.zandria
 
                     for (int i = 0; i < objectStoreResults.results.Length; i++)
                     {
-                        load.AddEntryToStartOfMenu(new Entry(objectStoreResults.results[i]),
-                    /* isLocal */ false, /* isSave */ false);
+                        load.AddEntryToStartOfMenu(new Entry(objectStoreResults.results[i]), isLocal: false, isSave: false);
 
                         // The load has completed and is now managed in loadsByType so we can remove it from pendingLoads.
                         pendingLoadsByType.Remove(type);
@@ -687,11 +706,13 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         public void UpdateSingleCloudCreationOnYourModels(string asset)
         {
-            PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetBackgroundWork(asset,
-              delegate (ObjectStoreEntry objectStoreEntry)
-              {
-                  UpdateSingleCreationOnYourModels(objectStoreEntry, /* isLocal */ false, /* isSave */ true);
-              }, /* hackUrls */ true));
+            // Trigger polling after a delay
+            hasNewSave = true;
+            timeLastPolledSavedModels = Time.time;
+
+            // TODO: This was unreliable so we've switched to polling for now
+            // AssetsServiceClient.ParseFinalize(asset, out ObjectStoreEntry objectStoreEntry);
+            // UpdateSingleCreationOnYourModels(objectStoreEntry, isLocal: false, isSave: true);
         }
 
         /// <summary>
@@ -827,9 +848,9 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         /// <param name="assetId">An assets service asset id.</param>
         /// <param name="callback">Callback function on successful query.</param>
-        public void GetAssetFromAssetsService(string assetId, Action<ObjectStoreEntry> callback)
+        public void GetAssetFromAssetsService(string assetId, Action<ObjectStoreEntry> callback, bool isSave)
         {
-            assetsServiceClient.GetAsset(assetId, callback);
+            assetsServiceClient.GetAsset(assetId, callback, isSave);
         }
 
         /// <summary>

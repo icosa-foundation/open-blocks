@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using com.google.apps.peltzer.client.entitlement;
 using com.google.apps.peltzer.client.desktop_app;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.export;
@@ -12,6 +14,13 @@ using Polyhydra.Wythoff;
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.Networking;
+
+[Serializable]
+public class DeviceLoginRequest
+{
+    public string client_secret;
+    public string device_code;
+}
 
 public class ApiManager : MonoBehaviour
 {
@@ -34,7 +43,7 @@ public class ApiManager : MonoBehaviour
 
 }
 
-[ApiRoute("api")]
+[ApiRoute("api/v1")]
 public class ApiController
 {
 
@@ -94,6 +103,17 @@ public class ApiController
         var meshes = PeltzerMain.Instance.model.GetAllMeshes();
         var meshIds = meshes.Select(m => m.id);
         return ApiResult.Ok(meshIds);
+    }
+
+    [ApiPost("device_login")]
+    public ApiResult DeviceLogin([ApiBody] DeviceLoginRequest request)
+    {
+        if (OAuth2Identity.Instance.ValidateClientSecret(request.client_secret) == false)
+        {
+            return ApiResult.BadRequest("Invalid client secret");
+        }
+        PeltzerMain.Instance.ApiSignIn(request.device_code);
+        return ApiResult.Ok("Device login successful");
     }
 
     [ApiGet("mesh/info/{meshId}")]
@@ -223,13 +243,17 @@ public class ApiController
 
     public ApiResult _Insert(string shapeName, Vector3 offset, Vector3 scale)
     {
-        MMesh mesh;
+        MMesh mesh = null;
         int meshId = PeltzerMain.Instance.model.GenerateMeshId();
         // Parse the desired primitive type.
         if (Enum.TryParse(typeof(Primitives.Shape), shapeName, ignoreCase: true, out object result))
         {
             Primitives.Shape shape = (Primitives.Shape)result;
             mesh = Primitives.BuildPrimitive(shape, scale, offset, meshId, material: 0);
+        }
+
+        if (mesh != null)
+        {
             PeltzerMain.Instance.model.AddMesh(mesh);
             return ApiResult.Ok(meshId);
         }

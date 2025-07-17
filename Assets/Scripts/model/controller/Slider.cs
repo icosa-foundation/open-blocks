@@ -152,7 +152,7 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             return PeltzerMain.Instance.restrictionManager.menuActionsAllowed;
         }
-        
+
         public virtual void SetLabelText(string text)
         {
             m_Label.text = text;

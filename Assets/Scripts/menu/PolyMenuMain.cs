@@ -1199,21 +1199,14 @@ namespace com.google.apps.peltzer.client.menu
             var type = CurrentCreationType();
 
             // we don't want to clear the load when we refresh the result and the query hasn't changed
-            // because then the list of object store results that is returned by ParseReturnedAssets would be empty (since nothing changed)
-            // which means when we call ClearLoad we lose the list of objects we already have and StartLoad will not update the list (since it will be empty)
+            // because then the list of object store results that is returned by ParseReturnedAssets
+            // would be empty (since nothing changed) which means when we call ClearLoad we lose
+            // the list of objects we already have and StartLoad will not update the list
+            // (since it will be empty)
             if (QueryParamsChanged())
             {
-                // when we change OrderBy we always assume the asset order changes
-                // edge case when OrderBy does not actually change the order (e.g. when there is only one asset)
-                // since OrderBy generally changes the order we just clear our most recent saved order
-                // as we optimize in ParseReturnedAssets to not update the order if it doesn't change
-                if (OrderByChanged())
-                {
-                    AssetsServiceClient.ClearRecentAssetIdsByType(type);
-                }
-
+                AssetsServiceClient.ClearRecentAssetIdsByType(type);
                 creationsManager.ClearLoad(type);
-
             }
             creationsManager.StartLoad(type);
             ApplyMenuChange(menuIndex, true);
