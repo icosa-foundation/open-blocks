@@ -574,7 +574,7 @@ namespace com.google.apps.peltzer.client.menu
                     {
                         OpenCreation(currentCreationHandler);
                     };
-                    PeltzerMain.Instance.SaveCurrentModel(publish: false, saveSelected: false);
+                    PeltzerMain.Instance.SaveCurrentModel(publish: false, saveSelected: false, cloudSave: false);
                     break;
             }
         }

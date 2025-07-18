@@ -76765,6 +76765,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Menu-Save
       objectReference: {fileID: 0}
+    - target: {fileID: 2394579733236946237, guid: 6e212fcf2751d02469009b7ec4f0dd42,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
