@@ -449,7 +449,6 @@ namespace com.google.apps.peltzer.client.zandria
                     if (loadsByType.ContainsKey(PolyMenuMain.CreationType.YOUR) && OAuth2Identity.Instance.LoggedIn)
                     {
                         AssetsServiceClient.ClearRecentAssetIdsByType(PolyMenuMain.CreationType.YOUR);
-                        AssetsServiceClient.ClearRecentAssetIdsByType(PolyMenuMain.CreationType.YOUR);
                         ClearLoad(PolyMenuMain.CreationType.YOUR);
                         StartLoad(PolyMenuMain.CreationType.YOUR);
                         hasNewSave = false;
