@@ -1253,12 +1253,13 @@ namespace com.google.apps.peltzer.client.menu
                 AssetsServiceClient.ClearRecentAssetIdsByType(type);
                 creationsManager.ClearLoad(type);
             }
+            creationsManager.LoadOfflineModels();
             creationsManager.StartLoad(type);
+
             ApplyMenuChange(menuIndex, true);
             offlineModelsMenu.SetActive(false);
             modelsMenu.SetActive(true);
             UpdatePreviousQueryParams();
-
         }
 
         public void SetApiSearchText(string text)

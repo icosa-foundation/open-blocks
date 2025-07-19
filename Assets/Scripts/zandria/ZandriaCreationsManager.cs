@@ -450,6 +450,7 @@ namespace com.google.apps.peltzer.client.zandria
                     {
                         AssetsServiceClient.ClearRecentAssetIdsByType(PolyMenuMain.CreationType.YOUR);
                         ClearLoad(PolyMenuMain.CreationType.YOUR);
+                        LoadOfflineModels();
                         StartLoad(PolyMenuMain.CreationType.YOUR);
                         hasNewSave = false;
                     }
