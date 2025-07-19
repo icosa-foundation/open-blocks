@@ -159,6 +159,7 @@ namespace com.google.apps.peltzer.client.menu
         // Pop-up dialogs for confirmation.
         private GameObject confirmSaveDialog;
         private GameObject confirmDeleteDialog;
+        private GameObject deleteModelButton;
 
         // Creation metadata.
         private GameObject creationTitle;
@@ -167,15 +168,18 @@ namespace com.google.apps.peltzer.client.menu
 
         // Detail menu buttons.
         // These aren't all the buttons only the ones that need to be changed depending on creationType.
-        private GameObject openButton;
+
         private SpriteRenderer openButtonIcon;
         private TextMeshPro openButtonText;
         private DetailsMenuActionItem openButtonScript;
 
-        private GameObject importButton;
         private SpriteRenderer importButtonIcon;
         private TextMeshPro importButtonText;
         private DetailsMenuActionItem importButtonScript;
+
+        private SpriteRenderer deleteButtonIcon;
+        private TextMeshPro deleteButtonText;
+        private DetailsMenuActionItem deleteButtonScript;
 
         private GameObject yourModelsMenuSpacer;
         private GameObject likedOrFeaturedModelsMenuSpacer;
@@ -267,12 +271,14 @@ namespace com.google.apps.peltzer.client.menu
             creatorName = detailsMenu.transform.Find("Metadata/txt-name").gameObject;
             creationDate = detailsMenu.transform.Find("Metadata/txt-time").gameObject;
 
-            openButton = detailsMenu.transform.Find("Buttons/Open").gameObject;
             openButtonIcon = detailsMenu.transform.Find("Buttons/Open/bg/ic").GetComponent<SpriteRenderer>();
             openButtonText = detailsMenu.transform.Find("Buttons/Open/bg/txt").GetComponent<TextMeshPro>();
             openButtonScript = detailsMenu.transform.Find("Buttons/Open/bg").GetComponent<DetailsMenuActionItem>();
 
-            importButton = detailsMenu.transform.Find("Buttons/Import").gameObject;
+            deleteButtonIcon = detailsMenu.transform.Find("Buttons/Delete/bg/ic").GetComponent<SpriteRenderer>();
+            deleteButtonText = detailsMenu.transform.Find("Buttons/Delete/bg/txt").GetComponent<TextMeshPro>();
+            deleteButtonScript = detailsMenu.transform.Find("Buttons/Delete/bg").GetComponent<DetailsMenuActionItem>();
+
             importButtonIcon = detailsMenu.transform.Find("Buttons/Import/bg/ic").GetComponent<SpriteRenderer>();
             importButtonText = detailsMenu.transform.Find("Buttons/Import/bg/txt").GetComponent<TextMeshPro>();
             importButtonScript = detailsMenu.transform.Find("Buttons/Import/bg").GetComponent<DetailsMenuActionItem>();
@@ -953,6 +959,11 @@ namespace com.google.apps.peltzer.client.menu
 
                 // Activate or deactivate the Open/Import buttons if the model is loaded.
                 ActivateOpenImportButtons(creation.entry.loadStatus == ZandriaCreationsManager.LoadStatus.SUCCESSFUL);
+
+                // TODO also allow deleting cloud creations if they meet certain criteria
+                // (e.g. unpublished)
+                ActivateDeleteButtons(creation.isLocal);
+
                 yourModelsMenuSpacer.SetActive(CurrentCreationType() == CreationType.YOUR);
                 likedOrFeaturedModelsMenuSpacer.SetActive(
                   CurrentCreationType() == CreationType.FEATURED || CurrentCreationType() == CreationType.LIKED);
@@ -995,6 +1006,13 @@ namespace com.google.apps.peltzer.client.menu
             importButtonIcon.color = active ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
             importButtonText.color = active ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
             importButtonScript.isActive = active;
+        }
+
+        private void ActivateDeleteButtons(bool active)
+        {
+            deleteButtonIcon.color = active ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
+            deleteButtonText.color = active ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
+            deleteButtonScript.isActive = active;
         }
 
         /// <summary>
