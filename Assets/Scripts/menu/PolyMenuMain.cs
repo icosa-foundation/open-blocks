@@ -572,12 +572,15 @@ namespace com.google.apps.peltzer.client.menu
                 case DetailsMenuAction.CONFIRM_DELETE:
                     confirmDeleteDialog.SetActive(false);
                     // Remove the asset from the list of creations displayed.
-                    if (currentCreationHandler.creationAssetId != null) {
-                        creationsManager.RemoveSingleCreationAndRefreshMenu(
-                            CurrentCreationType(), currentCreationHandler.creationAssetId);
-                        // Invoke the RPC that removes the creation from storage
-                        StartCoroutine(creationsManager.assetsServiceClient.DeleteAsset(currentCreationHandler.creationAssetId));
-                    }
+                    // TODO disable deleting cloud saves for now
+                    // as the API does not do any checks
+                    // and we probably want to restrict deleting published assets
+                    // if (currentCreationHandler.creationAssetId != null) {
+                    //     creationsManager.RemoveSingleCreationAndRefreshMenu(
+                    //         CurrentCreationType(), currentCreationHandler.creationAssetId);
+                    //     // Invoke the RPC that removes the creation from storage
+                    //     StartCoroutine(creationsManager.assetsServiceClient.DeleteAsset(currentCreationHandler.creationAssetId));
+                    // }
                     if (currentCreationHandler.creationLocalId != null) {
                         creationsManager.RemoveSingleCreationAndRefreshMenu(
                             CurrentCreationType(), currentCreationHandler.creationLocalId);
