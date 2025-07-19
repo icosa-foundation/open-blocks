@@ -158,6 +158,8 @@ namespace com.google.apps.peltzer.client.menu
 
         // Pop-up dialogs for confirmation.
         private GameObject confirmSaveDialog;
+        private GameObject confirmDeleteDialog;
+        private GameObject deleteModelButton;
 
         // Creation metadata.
         private GameObject creationTitle;
@@ -166,15 +168,18 @@ namespace com.google.apps.peltzer.client.menu
 
         // Detail menu buttons.
         // These aren't all the buttons only the ones that need to be changed depending on creationType.
-        private GameObject openButton;
+
         private SpriteRenderer openButtonIcon;
         private TextMeshPro openButtonText;
         private DetailsMenuActionItem openButtonScript;
 
-        private GameObject importButton;
         private SpriteRenderer importButtonIcon;
         private TextMeshPro importButtonText;
         private DetailsMenuActionItem importButtonScript;
+
+        private SpriteRenderer deleteButtonIcon;
+        private TextMeshPro deleteButtonText;
+        private DetailsMenuActionItem deleteButtonScript;
 
         private GameObject yourModelsMenuSpacer;
         private GameObject likedOrFeaturedModelsMenuSpacer;
@@ -260,17 +265,20 @@ namespace com.google.apps.peltzer.client.menu
                 modelsMenuInfoText = polyMenu.transform.Find("Models/txt").GetComponent<TextMeshPro>();
 
             confirmSaveDialog = detailsMenu.transform.Find("ConfirmSave").gameObject;
+            confirmDeleteDialog = detailsMenu.transform.Find("ConfirmDelete").gameObject;
 
             creationTitle = detailsMenu.transform.Find("Metadata/txt-title").gameObject;
             creatorName = detailsMenu.transform.Find("Metadata/txt-name").gameObject;
             creationDate = detailsMenu.transform.Find("Metadata/txt-time").gameObject;
 
-            openButton = detailsMenu.transform.Find("Buttons/Open").gameObject;
             openButtonIcon = detailsMenu.transform.Find("Buttons/Open/bg/ic").GetComponent<SpriteRenderer>();
             openButtonText = detailsMenu.transform.Find("Buttons/Open/bg/txt").GetComponent<TextMeshPro>();
             openButtonScript = detailsMenu.transform.Find("Buttons/Open/bg").GetComponent<DetailsMenuActionItem>();
 
-            importButton = detailsMenu.transform.Find("Buttons/Import").gameObject;
+            deleteButtonIcon = detailsMenu.transform.Find("Buttons/Delete/bg/ic").GetComponent<SpriteRenderer>();
+            deleteButtonText = detailsMenu.transform.Find("Buttons/Delete/bg/txt").GetComponent<TextMeshPro>();
+            deleteButtonScript = detailsMenu.transform.Find("Buttons/Delete/bg").GetComponent<DetailsMenuActionItem>();
+
             importButtonIcon = detailsMenu.transform.Find("Buttons/Import/bg/ic").GetComponent<SpriteRenderer>();
             importButtonText = detailsMenu.transform.Find("Buttons/Import/bg/txt").GetComponent<TextMeshPro>();
             importButtonScript = detailsMenu.transform.Find("Buttons/Import/bg").GetComponent<DetailsMenuActionItem>();
@@ -555,6 +563,31 @@ namespace com.google.apps.peltzer.client.menu
                     // happen the next time the user opens the details page for this model again.
                     currentCreationHandler.detailSizedMeshes.Clear();
                     break;
+                case DetailsMenuAction.DELETE:
+                    confirmDeleteDialog.SetActive(true);
+                    break;
+                case DetailsMenuAction.CANCEL_DELETE:
+                    confirmDeleteDialog.SetActive(false);
+                    break;
+                case DetailsMenuAction.CONFIRM_DELETE:
+                    confirmDeleteDialog.SetActive(false);
+                    // Remove the asset from the list of creations displayed.
+                    // TODO disable deleting cloud saves for now
+                    // as the API does not do any checks
+                    // and we probably want to restrict deleting published assets
+                    // if (currentCreationHandler.creationAssetId != null) {
+                    //     creationsManager.RemoveSingleCreationAndRefreshMenu(
+                    //         CurrentCreationType(), currentCreationHandler.creationAssetId);
+                    //     // Invoke the RPC that removes the creation from storage
+                    //     StartCoroutine(creationsManager.assetsServiceClient.DeleteAsset(currentCreationHandler.creationAssetId));
+                    // }
+                    if (currentCreationHandler.creationLocalId != null) {
+                        creationsManager.RemoveSingleCreationAndRefreshMenu(
+                            CurrentCreationType(), currentCreationHandler.creationLocalId);
+                        creationsManager.DeleteOfflineModel(currentCreationHandler.creationLocalId);
+                    }
+                    SetActiveMenu(Menu.POLY_MENU);
+                    break;
                 case DetailsMenuAction.CLOSE:
                     SetActiveMenu(Menu.POLY_MENU);
                     break;
@@ -574,7 +607,7 @@ namespace com.google.apps.peltzer.client.menu
                     {
                         OpenCreation(currentCreationHandler);
                     };
-                    PeltzerMain.Instance.SaveCurrentModel(publish: false, saveSelected: false);
+                    PeltzerMain.Instance.SaveCurrentModel(publish: false, saveSelected: false, cloudSave: false);
                     break;
             }
         }
@@ -929,6 +962,11 @@ namespace com.google.apps.peltzer.client.menu
 
                 // Activate or deactivate the Open/Import buttons if the model is loaded.
                 ActivateOpenImportButtons(creation.entry.loadStatus == ZandriaCreationsManager.LoadStatus.SUCCESSFUL);
+
+                // TODO also allow deleting cloud creations if they meet certain criteria
+                // (e.g. unpublished)
+                ActivateDeleteButtons(creation.isLocal);
+
                 yourModelsMenuSpacer.SetActive(CurrentCreationType() == CreationType.YOUR);
                 likedOrFeaturedModelsMenuSpacer.SetActive(
                   CurrentCreationType() == CreationType.FEATURED || CurrentCreationType() == CreationType.LIKED);
@@ -971,6 +1009,13 @@ namespace com.google.apps.peltzer.client.menu
             importButtonIcon.color = active ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
             importButtonText.color = active ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
             importButtonScript.isActive = active;
+        }
+
+        private void ActivateDeleteButtons(bool active)
+        {
+            deleteButtonIcon.color = active ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
+            deleteButtonText.color = active ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
+            deleteButtonScript.isActive = active;
         }
 
         /// <summary>
@@ -1208,12 +1253,13 @@ namespace com.google.apps.peltzer.client.menu
                 AssetsServiceClient.ClearRecentAssetIdsByType(type);
                 creationsManager.ClearLoad(type);
             }
+            creationsManager.LoadOfflineModels();
             creationsManager.StartLoad(type);
+
             ApplyMenuChange(menuIndex, true);
             offlineModelsMenu.SetActive(false);
             modelsMenu.SetActive(true);
             UpdatePreviousQueryParams();
-
         }
 
         public void SetApiSearchText(string text)

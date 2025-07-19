@@ -1110,7 +1110,7 @@ namespace com.google.apps.peltzer.client.model.main
                     SetAllPromptsInactive();
                     if (OAuth2Identity.Instance.LoggedIn)
                     {
-                        SaveCurrentModel(publish: false, saveSelected: false);
+                        SaveCurrentModel(publish: false, saveSelected: false, cloudSave: true);
                     }
                     else
                     {
@@ -1133,7 +1133,9 @@ namespace com.google.apps.peltzer.client.model.main
                     }
                     else
                     {
-                        SaveCurrentModel(publish: true, saveSelected: false);
+                        LocalId = null;
+                        AssetId = null;
+                        SaveCurrentModel(publish: true, saveSelected: false, cloudSave: true);
                         paletteController.SetPublishDialogActive();
                     }
                     break;
@@ -1147,7 +1149,7 @@ namespace com.google.apps.peltzer.client.model.main
                         InvokeMenuAction(MenuAction.CLEAR);
                     };
                     // After the model is serialized and we're free to clear it:
-                    SaveCurrentModel(publish: false, saveSelected: false);
+                    SaveCurrentModel(publish: false, saveSelected: false, cloudSave: false);
                     break;
                 case MenuAction.SHARE:
                     break;
@@ -1230,7 +1232,7 @@ namespace com.google.apps.peltzer.client.model.main
                         StartTutorial();
                     };
                     // After the model is serialized and we're free to clear it:
-                    SaveCurrentModel(publish: false, saveSelected: false);
+                    SaveCurrentModel(publish: false, saveSelected: false, cloudSave: false);
                     break;
                 case MenuAction.TUTORIAL_DONT_SAVE_AND_CONFIRM:
                     SetAllPromptsInactive();
@@ -1256,7 +1258,7 @@ namespace com.google.apps.peltzer.client.model.main
                     break;
                 case MenuAction.SAVE_LOCALLY:
                     SetAllPromptsInactive();
-                    SaveCurrentModel(publish: false, saveSelected: false);
+                    SaveCurrentModel(publish: false, saveSelected: false, cloudSave: false);
                     break;
                 case MenuAction.SAVE_LOCAL_SIGN_IN_INSTEAD:
                     SetAllPromptsInactive();
@@ -1403,7 +1405,7 @@ namespace com.google.apps.peltzer.client.model.main
         private void SignInSuccessWithModelSave()
         {
             SignInSuccess();
-            SaveCurrentModel(publish: false, saveSelected: false);
+            SaveCurrentModel(publish: false, saveSelected: false, cloudSave: true);
         }
 
         private void SignInFailure()
@@ -1440,7 +1442,7 @@ namespace com.google.apps.peltzer.client.model.main
         /// <param name="publish">If true, also opens the url to publish the content.</param>
         /// <param name="saveSelected">If true, only saves the current selected content rather than
         /// the whole model.</param>
-        public void SaveCurrentModel(bool publish, bool saveSelected)
+        public void SaveCurrentModel(bool publish, bool saveSelected, bool cloudSave)
         {
             // Don't save empty scenes (the button will already be disabled).
             if (model.GetNumberOfMeshes() == 0)
@@ -1487,7 +1489,7 @@ namespace com.google.apps.peltzer.client.model.main
                     model.writeable = true;
                     saveData.remixIds = model.GetAllRemixIds(meshes);
                     // Now let's save the serialized data. This will be done asynchronously.
-                    SaveSerializedData(saveData, publish, saveSelected);
+                    SaveSerializedData(saveData, publish, saveSelected, cloudSave);
                 }, serializerForManualSave, saveSelected));
 
                 // serWork.BackgroundWork();
@@ -1503,7 +1505,7 @@ namespace com.google.apps.peltzer.client.model.main
         /// </summary>
         public void SaveCurrentModelAsCopy()
         {
-            SaveCurrentModel(publish: false, saveSelected: false);
+            SaveCurrentModel(publish: false, saveSelected: false, cloudSave: false);
             LocalId = null;
             AssetId = null;
             ModelChangedSinceLastSave = true;
@@ -1519,14 +1521,14 @@ namespace com.google.apps.peltzer.client.model.main
         {
             if (selector.selectedMeshes.Count > 0)
             {
-                SaveCurrentModel(publish: false, saveSelected: true);
+                SaveCurrentModel(publish: false, saveSelected: true, cloudSave: false);
             }
         }
 
         /// <summary>
         /// Called (on UI thread) when the model data has been serialized and is ready to save.
         /// </summary>
-        public void SaveSerializedData(SaveData saveData, bool publish, bool saveSelected)
+        public void SaveSerializedData(SaveData saveData, bool publish, bool saveSelected, bool cloudSave)
         {
             // Generate an ID if needed. A new id will be needed if the LocalId is null or we are currently
             // only saving the selected content, otherwise we are just overwriting existing save data and
@@ -1538,7 +1540,7 @@ namespace com.google.apps.peltzer.client.model.main
             string directory = Path.Combine(modelsPath, modelIdForSaving);
             DoPolyMenuBackgroundWork(
               new SaveToDiskWork(saveData, directory, /* isOfflineModelsFolder */ false, isOverwrite));
-            if (OAuth2Identity.Instance.LoggedIn)
+            if (cloudSave && OAuth2Identity.Instance.LoggedIn)
             {
                 // If the user is authenticated, save to the assets service.
                 // This is asynchronous, and will ultimately call HandleSaveComplete to report the result of the
