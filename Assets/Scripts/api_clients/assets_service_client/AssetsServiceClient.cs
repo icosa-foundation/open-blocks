@@ -1306,6 +1306,30 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
 
         /// <summary>
+        ///   Delete the specified asset.
+        /// </summary>
+        public IEnumerator DeleteAsset(string assetId) {
+            string url = $"{ApiBaseUrl}/users/me/assets/{assetId}";
+            UnityWebRequest request = new UnityWebRequest();
+
+            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
+            for (int i = 0; i < 2; i++) {
+                request = DeleteRequest(url, "application/json");
+
+                yield return request.Send();
+
+                if (request.responseCode == 401 || request.isNetworkError) {
+                    yield return OAuth2Identity.Instance.Reauthorize();
+                    continue;
+                } else {
+                    yield break;
+                }
+            }
+
+            Debug.Log(GetDebugString(request, "Failed to delete " + assetId));
+        }
+
+        /// <summary>
         ///   Forms a GET request from a HTTP path.
         /// </summary>
         public UnityWebRequest GetRequest(string path, string contentType, bool requireAuth)
@@ -1315,6 +1339,18 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             request.SetRequestHeader("Content-type", contentType);
             if (requireAuth && OAuth2Identity.Instance.HasAccessToken)
             {
+                OAuth2Identity.Instance.Authenticate(request);
+            }
+            return request;
+        }
+
+        /// <summary>
+        ///   Forms a DELETE request from a HTTP path.
+        /// </summary>
+        public UnityWebRequest DeleteRequest(string path, string contentType) {
+            UnityWebRequest request = new UnityWebRequest(path, UnityWebRequest.kHttpVerbDELETE);
+            request.SetRequestHeader("Content-type", contentType);
+            if (OAuth2Identity.Instance.HasAccessToken) {
                 OAuth2Identity.Instance.Authenticate(request);
             }
             return request;
