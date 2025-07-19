@@ -1079,7 +1079,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Publish
+  m_text: Upload
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
   m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
@@ -1202,7 +1202,7 @@ GameObject:
   - component: {fileID: 2409405458855981217}
   - component: {fileID: 2353178980148620325}
   m_Layer: 10
-  m_Name: Publish
+  m_Name: Upload
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1312,7 +1312,7 @@ MonoBehaviour:
   hoverName: 
   isActive: 1
   isHovered: 0
-  action: 17
+  action: 0
 --- !u!1 &2394716854590205387
 GameObject:
   m_ObjectHideFlags: 0
