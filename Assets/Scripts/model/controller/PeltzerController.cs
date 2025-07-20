@@ -1049,6 +1049,7 @@ namespace com.google.apps.peltzer.client.model.controller
             || menuActionItem.action == MenuAction.SAVE_COPY
             || menuActionItem.action == MenuAction.SAVE_SELECTED
             || menuActionItem.action == MenuAction.PUBLISH
+            || menuActionItem.action == MenuAction.UPLOAD
             || menuActionItem.action == MenuAction.NEW_WITH_SAVE
             || (menuActionItem.action == MenuAction.TUTORIAL_PROMPT && !(
               PeltzerMain.Instance.paletteController.tutorialBeginPrompt.activeInHierarchy ||
@@ -1095,7 +1096,8 @@ namespace com.google.apps.peltzer.client.model.controller
                 if (menuActionItem.action != MenuAction.SAVE_COPY
                     && menuActionItem.action != MenuAction.SAVE_SELECTED
                     && menuActionItem.action != MenuAction.SHOW_SAVE_CONFIRM
-                    && menuActionItem.action != MenuAction.PUBLISH)
+                    && menuActionItem.action != MenuAction.PUBLISH
+                    && menuActionItem.action != MenuAction.UPLOAD)
                 {
                     currentHoveredObject.transform.localScale = new Vector3(currentHoveredObject.transform.localScale.x,
                     0.005f, currentHoveredObject.transform.localScale.z);

@@ -1312,7 +1312,7 @@ MonoBehaviour:
   hoverName: 
   isActive: 1
   isHovered: 0
-  action: 0
+  action: 38
 --- !u!1 &2394716854590205387
 GameObject:
   m_ObjectHideFlags: 0

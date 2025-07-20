@@ -47,7 +47,7 @@ namespace com.google.apps.peltzer.client.model.main
         TUTORIAL_SAVE_AND_CONFIRM, TUTORIAL_DONT_SAVE_AND_CONFIRM, PUBLISH_AFTER_SAVE_DISMISS,
         PUBLISH_SIGN_IN_DISMISS, PUBLISH_AFTER_SAVE_CONFIRM, TUTORIAL_EXIT_YES, TUTORIAL_EXIT_NO,
         SAVE_LOCALLY, SAVE_LOCAL_SIGN_IN_INSTEAD, TOGGLE_LEFT_HANDED, TOGGLE_TOOLTIPS, PLAY_VIDEO,
-        SAVE_SELECTED, TOGGLE_FEATURE, TOGGLE_EXPAND_WIREFRAME_FEATURE,
+        SAVE_SELECTED, TOGGLE_FEATURE, TOGGLE_EXPAND_WIREFRAME_FEATURE, UPLOAD,
     }
 
     public enum Handedness { NONE, LEFT, RIGHT }
@@ -1123,6 +1123,18 @@ namespace com.google.apps.peltzer.client.model.main
                     break;
                 case MenuAction.SAVE_SELECTED:
                     SaveCurrentSelectedModel();
+                    break;
+                case MenuAction.UPLOAD:
+                    SetAllPromptsInactive();
+                    if (OAuth2Identity.Instance.LoggedIn)
+                    {
+                        SaveCurrentModel(publish: false, saveSelected: false, cloudSave: true);
+                    }
+                    else
+                    {
+                        SignIn(promptUserIfNoToken: true);
+                        paletteController.publishSignInPrompt.SetActive(true);
+                    }
                     break;
                 case MenuAction.PUBLISH:
                     SetAllPromptsInactive();
