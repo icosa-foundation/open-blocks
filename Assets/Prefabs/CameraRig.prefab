@@ -61360,9 +61360,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Take off your headset to sign in
+  m_text: 'Please sign in
 
-    and then try publishing again'
+    and then try again'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
   m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
