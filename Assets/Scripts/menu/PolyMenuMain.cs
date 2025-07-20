@@ -600,7 +600,8 @@ namespace com.google.apps.peltzer.client.menu
                     //     // Invoke the RPC that removes the creation from storage
                     //     StartCoroutine(creationsManager.assetsServiceClient.DeleteAsset(currentCreationHandler.creationAssetId));
                     // }
-                    if (currentCreationHandler.creationLocalId != null) {
+                    if (currentCreationHandler.creationLocalId != null)
+                    {
                         creationsManager.RemoveSingleCreationAndRefreshMenu(
                             CurrentCreationType(), currentCreationHandler.creationLocalId);
                         creationsManager.DeleteOfflineModel(currentCreationHandler.creationLocalId);
