@@ -2778,6 +2778,7 @@ MonoBehaviour:
   ungroupLeftTooltip: {fileID: 1201123732990466}
   ungroupRightTooltip: {fileID: 1816637570254028}
   shapeTooltips: {fileID: 1301859559424906}
+  csgTooltips: {fileID: 1970852180743246}
   menuLeftTooltip: {fileID: 1093396275191510}
   menuRightTooltip: {fileID: 1918232281679922}
   menuUpTooltip: {fileID: 1308359774740566}
