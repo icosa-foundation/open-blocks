@@ -833,11 +833,12 @@ namespace com.google.apps.peltzer.client.model.controller
             }
 
             // Reset the hover animation and start time if this is a new item or not a save submenu.
+            // TODO Stop using strings and stop hardcoding every button into the UI logic!
             if ((currentHoveredObject != menuHit.transform.gameObject)
                 && (!menuHit.transform.name.Equals("Save-Copy")
                 && !menuHit.transform.name.Equals("Save-Confirm")
                 && !menuHit.transform.name.Equals("Save-Selected")
-                && !menuHit.transform.name.Equals("Publish")
+                && !menuHit.transform.name.Equals("Upload")
                 && !menuHit.transform.name.Equals("Intro")
                 && !menuHit.transform.name.Equals("SelectingMoving")
                 && !menuHit.transform.name.Equals("ModifyingModels")
