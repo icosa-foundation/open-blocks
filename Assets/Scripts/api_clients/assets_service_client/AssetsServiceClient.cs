@@ -300,6 +300,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             Category = CategoryChoices.ANY
         };
 
+        public static ApiQueryParameters QueryParamsLocal = new();
+
         private static int defaultMaxPolyModelTriangles
         {
             get
@@ -404,6 +406,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private static List<string> mostRecentFeaturedAssetIds = new();
         private static List<string> mostRecentLikedAssetIds = new();
         private static List<string> mostRecentYourAssetIds = new();
+        private static List<string> mostRecentLocalAssetIds = new();
 
         /// <summary>
         /// Clears all list of most recent asset ids. We use this list to check if assets have changed
@@ -431,23 +434,16 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 case PolyMenuMain.CreationType.YOUR:
                     mostRecentYourAssetIds.Clear();
                     break;
+                case PolyMenuMain.CreationType.LOCAL:
+                    mostRecentLocalAssetIds.Clear();
+                    break;
             }
         }
 
         private static void UpdateMostRecentAssetIds(IJEnumerable<JToken> assets, PolyMenuMain.CreationType type)
         {
-            switch (type)
-            {
-                case PolyMenuMain.CreationType.FEATURED:
-                    mostRecentFeaturedAssetIds.Clear();
-                    break;
-                case PolyMenuMain.CreationType.LIKED:
-                    mostRecentLikedAssetIds.Clear();
-                    break;
-                case PolyMenuMain.CreationType.YOUR:
-                    mostRecentYourAssetIds.Clear();
-                    break;
-            }
+            ClearRecentAssetIdsByType(type);
+
             foreach (JToken asset in assets)
             {
                 var assetId = asset["url"]?.ToString();
@@ -464,6 +460,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                         case PolyMenuMain.CreationType.YOUR:
                             mostRecentYourAssetIds.Add(assetId);
                             break;
+                        case PolyMenuMain.CreationType.LOCAL:
+                            mostRecentLocalAssetIds.Add(assetId);
+                            break;
                     }
                 }
             }
@@ -476,6 +475,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 _ => false
             };
         }
@@ -487,6 +487,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.Count == 0,
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.Count == 0,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.Count == 0,
+                PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.Count == 0,
                 _ => false
             };
         }

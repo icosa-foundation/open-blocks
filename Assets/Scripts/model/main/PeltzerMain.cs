@@ -1718,14 +1718,14 @@ namespace com.google.apps.peltzer.client.model.main
             ObjectStoreEntry objectStoreEntry;
             if (zandriaCreationsManager.GetObjectStoreEntryFromLocalDirectory(directory, out objectStoreEntry))
             {
-                zandriaCreationsManager.StartSingleCreationLoad(PolyMenuMain.CreationType.YOUR, objectStoreEntry,
-                  /* isLocal */ true, /* isSave */ true);
+                zandriaCreationsManager.StartSingleCreationLoad(PolyMenuMain.CreationType.LOCAL, objectStoreEntry,
+                  isLocal: true, isSave: true);
             }
 
             if (!HasShownMenuTooltipThisSession)
             {
                 applicationButtonToolTips.TurnOn("ViewSaved");
-                polyMenuMain.SwitchToYourModelsSection();
+                polyMenuMain.SwitchToLocalModelsSection();
                 HasShownMenuTooltipThisSession = true;
             }
         }

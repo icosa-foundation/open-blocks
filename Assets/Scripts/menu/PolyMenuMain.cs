@@ -50,7 +50,7 @@ namespace com.google.apps.peltzer.client.menu
         }
 
         // The types of Zandria creations that can be loaded.
-        public enum CreationType { NONE, YOUR, FEATURED, LIKED }
+        public enum CreationType { NONE, YOUR, FEATURED, LIKED, LOCAL }
         // The different sections of the PolyMenu.
         public enum PolyMenuSection { CREATION, OPTION, DETAIL, ENVIRONMENT, LABS }
         // The different actions available in the Details section.
@@ -82,6 +82,7 @@ namespace com.google.apps.peltzer.client.menu
         public PolyMenuMode yourCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.YOUR, 0);
         public PolyMenuMode featuredCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.FEATURED, 0);
         public PolyMenuMode likedCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.LIKED, 0);
+        public PolyMenuMode localCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.LOCAL, 0);
         public PolyMenuMode options = new PolyMenuMode(PolyMenuSection.OPTION, CreationType.NONE, 0);
         public PolyMenuMode environment = new PolyMenuMode(PolyMenuSection.ENVIRONMENT, CreationType.NONE, 0);
         public PolyMenuMode labs = new PolyMenuMode(PolyMenuSection.LABS, CreationType.NONE, 0);
@@ -123,6 +124,7 @@ namespace com.google.apps.peltzer.client.menu
         // Menu button icons.
         private SpriteRenderer optionsIcon;
         private SpriteRenderer yourModelsIcon;
+        private SpriteRenderer localModelsIcon;
         private SpriteRenderer likedModelsIcon;
         private SpriteRenderer featuredModelsIcon;
         private SpriteRenderer environmentIcon;
@@ -139,6 +141,7 @@ namespace com.google.apps.peltzer.client.menu
         // Menu titles.
         private GameObject optionsTitle;
         private GameObject yourModelsTitle;
+        private GameObject localModelsTitle;
         private GameObject likedModelsTitle;
         private GameObject featuredModelsTitle;
 
@@ -181,7 +184,7 @@ namespace com.google.apps.peltzer.client.menu
         private TextMeshPro deleteButtonText;
         private DetailsMenuActionItem deleteButtonScript;
 
-        private GameObject yourModelsMenuSpacer;
+        private GameObject yourOrLocalModelsMenuSpacer;
         private GameObject likedOrFeaturedModelsMenuSpacer;
 
         // Params for a lighting effect on the menu button when selected.
@@ -210,10 +213,19 @@ namespace com.google.apps.peltzer.client.menu
             controllerMain = PeltzerMain.Instance.controllerMain;
             controllerMain.ControllerActionHandler += ControllerEventHandler;
 
-            menuModes = new PolyMenuMode[6] { options, yourCreations, featuredCreations, likedCreations, environment, labs };
+            menuModes = new PolyMenuMode[7]
+            {
+                options,
+                yourCreations,
+                featuredCreations,
+                likedCreations,
+                environment,
+                labs,
+                localCreations
+            };
 
-            // Set the default start up mode for the menu to be Your Models.
-            SwitchToYourModelsSection();
+            // Set the default start up mode for the menu to be Local Models.
+            SwitchToLocalModelsSection();
 
             // set previous to be the same as current at startup
             previousQueryParams = creationsManager.GetQueryParams(CurrentCreationType());
@@ -234,6 +246,7 @@ namespace com.google.apps.peltzer.client.menu
 
             optionsIcon = polyMenu.transform.Find("NavBar/Options/panel/ic").GetComponent<SpriteRenderer>();
             yourModelsIcon = polyMenu.transform.Find("NavBar/Your-Models/panel/ic").GetComponent<SpriteRenderer>();
+            localModelsIcon = polyMenu.transform.Find("NavBar/Local-Models/panel/ic").GetComponent<SpriteRenderer>();
             likedModelsIcon = polyMenu.transform.Find("NavBar/Liked-Models/panel/ic").GetComponent<SpriteRenderer>();
             featuredModelsIcon = polyMenu.transform.Find("NavBar/Featured-Models/panel/ic").GetComponent<SpriteRenderer>();
             environmentIcon = polyMenu.transform.Find("NavBar/Environments/panel/ic").GetComponent<SpriteRenderer>();
@@ -250,6 +263,7 @@ namespace com.google.apps.peltzer.client.menu
 
             optionsTitle = polyMenu.transform.Find("Titles/options_title").gameObject;
             yourModelsTitle = polyMenu.transform.Find("Titles/your_models_title").gameObject;
+            localModelsTitle = polyMenu.transform.Find("Titles/local_models_title").gameObject;
             likedModelsTitle = polyMenu.transform.Find("Titles/likes_title").gameObject;
             featuredModelsTitle = polyMenu.transform.Find("Titles/featured_title").gameObject;
 
@@ -283,7 +297,7 @@ namespace com.google.apps.peltzer.client.menu
             importButtonText = detailsMenu.transform.Find("Buttons/Import/bg/txt").GetComponent<TextMeshPro>();
             importButtonScript = detailsMenu.transform.Find("Buttons/Import/bg").GetComponent<DetailsMenuActionItem>();
 
-            yourModelsMenuSpacer = detailsMenu.transform.Find("Buttons/bg-space").gameObject;
+            yourOrLocalModelsMenuSpacer = detailsMenu.transform.Find("Buttons/bg-space").gameObject;
             likedOrFeaturedModelsMenuSpacer = detailsMenu.transform.Find("Buttons/bg-space2").gameObject;
         }
 
@@ -476,6 +490,11 @@ namespace com.google.apps.peltzer.client.menu
         public void SwitchToYourModelsSection()
         {
             menuIndex = 1;
+        }
+
+        public void SwitchToLocalModelsSection()
+        {
+            menuIndex = 6;
         }
 
         /// <summary>
@@ -710,6 +729,10 @@ namespace com.google.apps.peltzer.client.menu
             {
                 yourModelsTitle.SetActive(CurrentCreationType() == CreationType.YOUR);
             }
+            if (localModelsTitle != null)
+            {
+                localModelsTitle.SetActive(CurrentCreationType() == CreationType.LOCAL);
+            }
             if (likedModelsTitle != null)
             {
                 likedModelsTitle.SetActive(CurrentCreationType() == CreationType.LIKED);
@@ -728,6 +751,11 @@ namespace com.google.apps.peltzer.client.menu
             {
                 yourModelsIcon.color = CurrentCreationType() ==
                   CreationType.YOUR ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
+            }
+            if (localModelsIcon != null)
+            {
+                localModelsIcon.color = CurrentCreationType() ==
+                    CreationType.LOCAL ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
             }
             if (likedModelsIcon != null)
             {
@@ -862,7 +890,8 @@ namespace com.google.apps.peltzer.client.menu
                     modelsMenu.SetActive(
                       (type == CreationType.FEATURED && creationsManager.HasPendingOrValidLoad(CreationType.FEATURED)) ||
                       (type == CreationType.YOUR && creationsManager.HasPendingOrValidLoad(CreationType.YOUR)) ||
-                      (type == CreationType.LIKED && creationsManager.HasPendingOrValidLoad(CreationType.LIKED)));
+                      (type == CreationType.LIKED && creationsManager.HasPendingOrValidLoad(CreationType.LIKED)) ||
+                      (type == CreationType.LOCAL && creationsManager.HasPendingOrValidLoad(CreationType.LOCAL)));
                 }
                 else
                 {
@@ -871,7 +900,9 @@ namespace com.google.apps.peltzer.client.menu
                     // we tell the user that they have no creations
                     if (!((type == CreationType.FEATURED && creationsManager.HasPendingOrValidLoad(CreationType.FEATURED)) ||
                     (type == CreationType.YOUR && creationsManager.HasPendingOrValidLoad(CreationType.YOUR)) ||
-                    (type == CreationType.LIKED && creationsManager.HasPendingOrValidLoad(CreationType.LIKED))))
+                    (type == CreationType.LIKED && creationsManager.HasPendingOrValidLoad(CreationType.LIKED)) ||
+                    (type == CreationType.LOCAL && creationsManager.HasPendingOrValidLoad(CreationType.LOCAL))
+                    ))
                     {
                         UpdateUserInfoText(CreationInfoState.NO_CREATIONS);
                     }
@@ -954,7 +985,8 @@ namespace com.google.apps.peltzer.client.menu
                 StartCoroutine(AttachPreviewToDetailsHolder(creation));
 
                 // Activate/Deactivate the correct buttons and UI elements for each creation type.
-                creationTitle.SetActive(CurrentCreationType() == CreationType.YOUR);
+                creationTitle.SetActive(CurrentCreationType() == CreationType.YOUR ||
+                    CurrentCreationType() == CreationType.LOCAL);
                 creationDate.SetActive(CurrentCreationType() == CreationType.FEATURED
                   || CurrentCreationType() == CreationType.LIKED);
                 creatorName.SetActive(CurrentCreationType() == CreationType.FEATURED
@@ -967,11 +999,12 @@ namespace com.google.apps.peltzer.client.menu
                 // (e.g. unpublished)
                 ActivateDeleteButtons(creation.isLocal);
 
-                yourModelsMenuSpacer.SetActive(CurrentCreationType() == CreationType.YOUR);
+                yourOrLocalModelsMenuSpacer.SetActive(CurrentCreationType() == CreationType.YOUR ||
+                    CurrentCreationType() == CreationType.LOCAL);
                 likedOrFeaturedModelsMenuSpacer.SetActive(
                   CurrentCreationType() == CreationType.FEATURED || CurrentCreationType() == CreationType.LIKED);
 
-                if (CurrentCreationType() == CreationType.YOUR)
+                if (CurrentCreationType() == CreationType.YOUR || CurrentCreationType() == CreationType.LOCAL)
                 {
                     // Reset the creation title and creator name UI elements.
                     creationTitle.SetActive(false);
@@ -1170,7 +1203,7 @@ namespace com.google.apps.peltzer.client.menu
                 usedIds.Add(newId);
                 mesh.ChangeId(newId);
                 mesh.ChangeGroupId(groupId);
-                if (CurrentCreationType() != CreationType.YOUR)
+                if (CurrentCreationType() != CreationType.YOUR && CurrentCreationType() != CreationType.LOCAL)
                 {
                     // Mark this mesh as being remixed from the selected asset.
                     mesh.ChangeRemixId(selectedAssetId);
