@@ -1038,18 +1038,6 @@ namespace com.google.apps.peltzer.client.model.main
             }
         }
 
-        private void SetUploadButtonState(bool enabled)
-        {
-            if (enabled)
-            {
-                attentionCaller.Recolor(AttentionCaller.Element.UPLOAD_BUTTON_ICON);
-            }
-            else
-            {
-                attentionCaller.GreyOut(AttentionCaller.Element.UPLOAD_BUTTON_ICON, 0f);
-            }
-        }
-
         /// <summary>
         ///   Sets the save button active if the selection is not empty.
         /// </summary>
