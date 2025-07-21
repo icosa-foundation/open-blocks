@@ -739,13 +739,13 @@ namespace com.google.apps.peltzer.client.menu
             likedModelsTitle?.SetActive(isLiked);
             featuredModelsTitle?.SetActive(isFeatured);
 
-            if (optionsIcon) {optionsIcon.color = isOption ? SELECTED_AVATAR_COLOR : UNSELECTED_AVATAR_COLOR;}
-            if (yourModelsIcon) {yourModelsIcon.color = isYour ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;}
-            if (localModelsIcon) {localModelsIcon.color = isLocal ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;}
-            if (likedModelsIcon) {likedModelsIcon.color = isLiked ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;}
-            if (featuredModelsIcon) {featuredModelsIcon.color = isFeatured ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;}
-            if (environmentIcon) {environmentIcon.color = isEnvironment ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;}
-            if (labsIcon) {labsIcon.color = isLabs ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;}
+            if (optionsIcon) { optionsIcon.color = isOption ? SELECTED_AVATAR_COLOR : UNSELECTED_AVATAR_COLOR; }
+            if (yourModelsIcon) { yourModelsIcon.color = isYour ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (localModelsIcon) { localModelsIcon.color = isLocal ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (likedModelsIcon) { likedModelsIcon.color = isLiked ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (featuredModelsIcon) { featuredModelsIcon.color = isFeatured ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (environmentIcon) { environmentIcon.color = isEnvironment ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (labsIcon) { labsIcon.color = isLabs ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
 
             // Activate or deactive the necessary menus.
             optionsMenu?.SetActive(isOption);
