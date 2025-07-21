@@ -300,6 +300,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             Category = CategoryChoices.ANY
         };
 
+        public static ApiQueryParameters QueryParamsLocal = new();
+
         private static int defaultMaxPolyModelTriangles
         {
             get
@@ -404,6 +406,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private static List<string> mostRecentFeaturedAssetIds = new();
         private static List<string> mostRecentLikedAssetIds = new();
         private static List<string> mostRecentYourAssetIds = new();
+        private static List<string> mostRecentLocalAssetIds = new();
 
         /// <summary>
         /// Clears all list of most recent asset ids. We use this list to check if assets have changed
@@ -431,23 +434,16 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 case PolyMenuMain.CreationType.YOUR:
                     mostRecentYourAssetIds.Clear();
                     break;
+                case PolyMenuMain.CreationType.LOCAL:
+                    mostRecentLocalAssetIds.Clear();
+                    break;
             }
         }
 
         private static void UpdateMostRecentAssetIds(IJEnumerable<JToken> assets, PolyMenuMain.CreationType type)
         {
-            switch (type)
-            {
-                case PolyMenuMain.CreationType.FEATURED:
-                    mostRecentFeaturedAssetIds.Clear();
-                    break;
-                case PolyMenuMain.CreationType.LIKED:
-                    mostRecentLikedAssetIds.Clear();
-                    break;
-                case PolyMenuMain.CreationType.YOUR:
-                    mostRecentYourAssetIds.Clear();
-                    break;
-            }
+            ClearRecentAssetIdsByType(type);
+
             foreach (JToken asset in assets)
             {
                 var assetId = asset["url"]?.ToString();
@@ -464,6 +460,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                         case PolyMenuMain.CreationType.YOUR:
                             mostRecentYourAssetIds.Add(assetId);
                             break;
+                        case PolyMenuMain.CreationType.LOCAL:
+                            mostRecentLocalAssetIds.Add(assetId);
+                            break;
                     }
                 }
             }
@@ -476,6 +475,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 _ => false
             };
         }
@@ -487,6 +487,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.Count == 0,
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.Count == 0,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.Count == 0,
+                PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.Count == 0,
                 _ => false
             };
         }
@@ -1306,6 +1307,35 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
 
         /// <summary>
+        ///   Delete the specified asset.
+        /// </summary>
+        public IEnumerator DeleteAsset(string assetId)
+        {
+            string url = $"{ApiBaseUrl}/users/me/assets/{assetId}";
+            UnityWebRequest request = new UnityWebRequest();
+
+            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
+            for (int i = 0; i < 2; i++)
+            {
+                request = DeleteRequest(url, "application/json");
+
+                yield return request.Send();
+
+                if (request.responseCode == 401 || request.isNetworkError)
+                {
+                    yield return OAuth2Identity.Instance.Reauthorize();
+                    continue;
+                }
+                else
+                {
+                    yield break;
+                }
+            }
+
+            Debug.Log(GetDebugString(request, "Failed to delete " + assetId));
+        }
+
+        /// <summary>
         ///   Forms a GET request from a HTTP path.
         /// </summary>
         public UnityWebRequest GetRequest(string path, string contentType, bool requireAuth)
@@ -1314,6 +1344,20 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             UnityWebRequest request = new UnityWebRequest(path);
             request.SetRequestHeader("Content-type", contentType);
             if (requireAuth && OAuth2Identity.Instance.HasAccessToken)
+            {
+                OAuth2Identity.Instance.Authenticate(request);
+            }
+            return request;
+        }
+
+        /// <summary>
+        ///   Forms a DELETE request from a HTTP path.
+        /// </summary>
+        public UnityWebRequest DeleteRequest(string path, string contentType)
+        {
+            UnityWebRequest request = new UnityWebRequest(path, UnityWebRequest.kHttpVerbDELETE);
+            request.SetRequestHeader("Content-type", contentType);
+            if (OAuth2Identity.Instance.HasAccessToken)
             {
                 OAuth2Identity.Instance.Authenticate(request);
             }

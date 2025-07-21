@@ -833,11 +833,12 @@ namespace com.google.apps.peltzer.client.model.controller
             }
 
             // Reset the hover animation and start time if this is a new item or not a save submenu.
+            // TODO Stop using strings and stop hardcoding every button into the UI logic!
             if ((currentHoveredObject != menuHit.transform.gameObject)
                 && (!menuHit.transform.name.Equals("Save-Copy")
                 && !menuHit.transform.name.Equals("Save-Confirm")
                 && !menuHit.transform.name.Equals("Save-Selected")
-                && !menuHit.transform.name.Equals("Publish")
+                && !menuHit.transform.name.Equals("Upload")
                 && !menuHit.transform.name.Equals("Intro")
                 && !menuHit.transform.name.Equals("SelectingMoving")
                 && !menuHit.transform.name.Equals("ModifyingModels")
@@ -1048,6 +1049,7 @@ namespace com.google.apps.peltzer.client.model.controller
             || menuActionItem.action == MenuAction.SAVE_COPY
             || menuActionItem.action == MenuAction.SAVE_SELECTED
             || menuActionItem.action == MenuAction.PUBLISH
+            || menuActionItem.action == MenuAction.UPLOAD
             || menuActionItem.action == MenuAction.NEW_WITH_SAVE
             || (menuActionItem.action == MenuAction.TUTORIAL_PROMPT && !(
               PeltzerMain.Instance.paletteController.tutorialBeginPrompt.activeInHierarchy ||
@@ -1094,7 +1096,8 @@ namespace com.google.apps.peltzer.client.model.controller
                 if (menuActionItem.action != MenuAction.SAVE_COPY
                     && menuActionItem.action != MenuAction.SAVE_SELECTED
                     && menuActionItem.action != MenuAction.SHOW_SAVE_CONFIRM
-                    && menuActionItem.action != MenuAction.PUBLISH)
+                    && menuActionItem.action != MenuAction.PUBLISH
+                    && menuActionItem.action != MenuAction.UPLOAD)
                 {
                     currentHoveredObject.transform.localScale = new Vector3(currentHoveredObject.transform.localScale.x,
                     0.005f, currentHoveredObject.transform.localScale.z);

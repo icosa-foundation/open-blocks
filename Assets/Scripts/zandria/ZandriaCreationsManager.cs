@@ -449,7 +449,6 @@ namespace com.google.apps.peltzer.client.zandria
                     if (loadsByType.ContainsKey(PolyMenuMain.CreationType.YOUR) && OAuth2Identity.Instance.LoggedIn)
                     {
                         AssetsServiceClient.ClearRecentAssetIdsByType(PolyMenuMain.CreationType.YOUR);
-                        AssetsServiceClient.ClearRecentAssetIdsByType(PolyMenuMain.CreationType.YOUR);
                         ClearLoad(PolyMenuMain.CreationType.YOUR);
                         StartLoad(PolyMenuMain.CreationType.YOUR);
                         hasNewSave = false;
@@ -584,7 +583,7 @@ namespace com.google.apps.peltzer.client.zandria
 
                     if (GetObjectStoreEntryFromLocalDirectory(directory, out entry))
                     {
-                        StartSingleCreationLoad(PolyMenuMain.CreationType.YOUR, entry, /* isLocal */ true, /* isSave */ false);
+                        StartSingleCreationLoad(PolyMenuMain.CreationType.LOCAL, entry, isLocal: true, isSave: false);
                     }
                 }
             }
@@ -738,7 +737,8 @@ namespace com.google.apps.peltzer.client.zandria
             lock (mutex)
             {
                 // We update an asset by deleting it then loading it to the front of the menu.
-                Load load = loadsByType[PolyMenuMain.CreationType.YOUR];
+                var type = isLocal ? PolyMenuMain.CreationType.LOCAL : PolyMenuMain.CreationType.YOUR;
+                Load load = loadsByType[type];
                 List<Creation> creations = load.creations;
                 for (int i = 0; i < creations.Count; i++)
                 {
@@ -810,6 +810,9 @@ namespace com.google.apps.peltzer.client.zandria
                 case PolyMenuMain.CreationType.LIKED:
                     assetsServiceClient.GetLikedModels(successCallback, failureCallback);
                     break;
+                case PolyMenuMain.CreationType.LOCAL:
+                    throw new InvalidOperationException(
+                      "Cannot get assets service search results for local creations");
             }
         }
 
@@ -823,6 +826,8 @@ namespace com.google.apps.peltzer.client.zandria
                     return AssetsServiceClient.QueryParamsUser;
                 case PolyMenuMain.CreationType.LIKED:
                     return AssetsServiceClient.QueryParamsLiked;
+                case PolyMenuMain.CreationType.LOCAL:
+                    return AssetsServiceClient.QueryParamsLocal; // Hopefully not used
             }
             throw new InvalidOperationException();
         }
@@ -839,6 +844,9 @@ namespace com.google.apps.peltzer.client.zandria
                     break;
                 case PolyMenuMain.CreationType.LIKED:
                     AssetsServiceClient.QueryParamsLiked = q;
+                    break;
+                case PolyMenuMain.CreationType.LOCAL:
+                    // Shouldn't happen
                     break;
             }
         }

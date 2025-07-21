@@ -114,6 +114,7 @@ namespace com.google.apps.peltzer.client.tutorial
             PELTZER_THUMBSTICK,
             PALETTE_THUMBSTICK,
             SAVE_SELECTED_BUTTON,
+            UPLOAD_BUTTON_ICON
         }
 
         private List<ControllerMode> supportedModes = new List<ControllerMode>() {
@@ -187,6 +188,7 @@ namespace com.google.apps.peltzer.client.tutorial
 
         private const string NEW_BUTTON_PATH = "ID_PanelTools/ToolSide/Actions/New";
         private const string SAVE_BUTTON_ICON_PATH = "ID_PanelTools/ToolSide/Actions/Save";
+        private const string UPLOAD_BUTTON_ICON_PATH = "ID_PanelTools/ToolSide/Actions/Upload";
         private const string SAVE_SELECTED_BUTTON_PATH = "ID_PanelTools/ToolSide/Menu-Save/Save-Selected";
         private const string GRID_BUTTON_PATH = "ID_PanelTools/ToolSide/Actions/Blockmode";
         private const string TUTORIAL_BUTTON_PATH = "ID_PanelTools/ToolSide/Actions/Tutorial";
@@ -302,6 +304,7 @@ namespace com.google.apps.peltzer.client.tutorial
             elements[Element.PALETTE_SECONDARY_BUTTON] = paletteController.controllerGeometry.secondaryButton;
             elements[Element.NEW_BUTTON] = FindOrDie(paletteController.gameObject, NEW_BUTTON_PATH);
             elements[Element.SAVE_BUTTON_ICON] = FindOrDie(paletteController.gameObject, SAVE_BUTTON_ICON_PATH);
+            elements[Element.UPLOAD_BUTTON_ICON] = FindOrDie(paletteController.gameObject, UPLOAD_BUTTON_ICON_PATH);
             elements[Element.GRID_BUTTON] = FindOrDie(paletteController.gameObject, GRID_BUTTON_PATH);
             elements[Element.TUTORIAL_BUTTON] = FindOrDie(paletteController.gameObject, TUTORIAL_BUTTON_PATH);
             elements[Element.TAKE_A_TUTORIAL_BUTTON] = FindOrDie(paletteController.m_Popups, TAKE_A_TUTORIAL_BUTTON_PATH);

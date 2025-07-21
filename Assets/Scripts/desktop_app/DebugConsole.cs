@@ -358,7 +358,7 @@ namespace com.google.apps.peltzer.client.desktop_app
                 PrintLn("If no browser window opens after a minute or so, this might have failed.");
                 PeltzerMain.Instance.CreateNewModel();
                 PeltzerMain.Instance.LoadPeltzerFileIntoModel(peltzerFile);
-                PeltzerMain.Instance.SaveCurrentModel(publish: true, saveSelected: false);
+                PeltzerMain.Instance.SaveCurrentModel(publish: true, saveSelected: false, cloudSave: true);
             }));
         }
 
@@ -371,7 +371,7 @@ namespace com.google.apps.peltzer.client.desktop_app
                 PrintLn("Publishes the current scene");
                 return;
             }
-            PeltzerMain.Instance.SaveCurrentModel(publish: true, saveSelected: false);
+            PeltzerMain.Instance.SaveCurrentModel(publish: true, saveSelected: false, cloudSave: true);
         }
 
         private void CommandFlag(string[] parts)

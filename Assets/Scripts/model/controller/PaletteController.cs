@@ -98,9 +98,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public event UndoActionHandler UndoActionHandler;
 
         public GameObject tutorialButton;
-        public GameObject UIPanels;
         public GameObject addReferenceImageButton;
-        public float speed;
 
         /// <summary>
         ///   List of objects that will change color when the selected color changes.
