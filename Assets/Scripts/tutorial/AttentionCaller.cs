@@ -183,15 +183,7 @@ namespace com.google.apps.peltzer.client.tutorial
         /// <summary>
         /// Elements to highlight with a large glowing green sphere.
         /// </summary>
-        private readonly List<Element> SPHERE_ELEMENTS = new()
-            { };
-
-        private const string NEW_BUTTON_PATH = "ID_PanelTools/ToolSide/Actions/New";
-        private const string SAVE_BUTTON_ICON_PATH = "ID_PanelTools/ToolSide/Actions/Save";
-        private const string SAVE_SELECTED_BUTTON_PATH = "ID_PanelTools/ToolSide/Menu-Save/Save-Selected";
-        private const string GRID_BUTTON_PATH = "ID_PanelTools/ToolSide/Actions/Blockmode";
-        private const string TUTORIAL_BUTTON_PATH = "ID_PanelTools/ToolSide/Actions/Tutorial";
-        private const string TAKE_A_TUTORIAL_BUTTON_PATH = "TutorialPrompt/Btns/YesTutorial";
+        private readonly List<Element> SPHERE_ELEMENTS = new();
 
         private const int RED_MATERIAL_ID = 8;
 
@@ -250,12 +242,12 @@ namespace com.google.apps.peltzer.client.tutorial
         /// <summary>
         /// One-time setup. Call once before using this object.
         /// </summary>
-        /// <param name="peltzerController">The PeltzerController to use.</param>
-        /// <param name="paletteController">The PaletteController to use.</param>
-        public void Setup(PeltzerController peltzerController, PaletteController paletteController)
+        /// <param name="peltzer">The PeltzerController to use.</param>
+        /// <param name="palette">The PaletteController to use.</param>
+        public void Setup(PeltzerController peltzer, PaletteController palette)
         {
-            this.peltzerController = peltzerController;
-            this.paletteController = paletteController;
+            this.peltzerController = peltzer;
+            this.paletteController = palette;
 
             // This only handles the red material as a special case. Ideally we would write this to be robust and allow
             // the greying/recoloring of any swatch given materialId. But that is overkill for what we need right now.
@@ -269,37 +261,42 @@ namespace com.google.apps.peltzer.client.tutorial
                 }
             }
 
-            elements[Element.PELTZER_TOUCHPAD_LEFT] = peltzerController.controllerGeometry.touchpadLeft;
-            elements[Element.PELTZER_TOUCHPAD_RIGHT] = peltzerController.controllerGeometry.touchpadRight;
-            elements[Element.PELTZER_TOUCHPAD_UP] = peltzerController.controllerGeometry.touchpadUp;
-            elements[Element.PELTZER_TOUCHPAD_DOWN] = peltzerController.controllerGeometry.touchpadDown;
-            elements[Element.PALETTE_TOUCHPAD_LEFT] = paletteController.controllerGeometry.touchpadLeft;
-            elements[Element.PALETTE_TOUCHPAD_RIGHT] = paletteController.controllerGeometry.touchpadRight;
-            elements[Element.PALETTE_TOUCHPAD_UP] = paletteController.controllerGeometry.touchpadUp;
-            elements[Element.PALETTE_TOUCHPAD_DOWN] = paletteController.controllerGeometry.touchpadDown;
-            elements[Element.PALETTE_THUMBSTICK] = paletteController.controllerGeometry.thumbstick;
-            elements[Element.PELTZER_THUMBSTICK] = peltzerController.controllerGeometry.thumbstick;
-            elements[Element.PELTZER_TRIGGER] = peltzerController.controllerGeometry.trigger;
-            elements[Element.PALETTE_TRIGGER] = paletteController.controllerGeometry.trigger;
-            elements[Element.PELTZER_GRIP_LEFT] = peltzerController.controllerGeometry.gripLeft;
-            elements[Element.PELTZER_GRIP_RIGHT] = peltzerController.controllerGeometry.gripRight;
-            elements[Element.PALETTE_GRIP_LEFT] = paletteController.controllerGeometry.gripLeft;
-            elements[Element.PALETTE_GRIP_RIGHT] = paletteController.controllerGeometry.gripRight;
-            elements[Element.PELTZER_MENU_BUTTON] = peltzerController.controllerGeometry.appMenuButton;
-            elements[Element.PELTZER_SYSTEM_BUTTON] = peltzerController.controllerGeometry.systemButton;
-            elements[Element.PELTZER_SECONDARY_BUTTON] = peltzerController.controllerGeometry.secondaryButton;
-            elements[Element.PALETTE_MENU_BUTTON] = paletteController.controllerGeometry.appMenuButton;
-            elements[Element.PALETTE_SYSTEM_BUTTON] = paletteController.controllerGeometry.systemButton;
-            elements[Element.PALETTE_SECONDARY_BUTTON] = paletteController.controllerGeometry.secondaryButton;
-            elements[Element.NEW_BUTTON] = FindOrDie(paletteController.gameObject, NEW_BUTTON_PATH);
-            elements[Element.SAVE_BUTTON_ICON] = FindOrDie(paletteController.gameObject, SAVE_BUTTON_ICON_PATH);
-            elements[Element.GRID_BUTTON] = FindOrDie(paletteController.gameObject, GRID_BUTTON_PATH);
-            elements[Element.TUTORIAL_BUTTON] = FindOrDie(paletteController.gameObject, TUTORIAL_BUTTON_PATH);
-            elements[Element.TAKE_A_TUTORIAL_BUTTON] = FindOrDie(paletteController.m_Popups, TAKE_A_TUTORIAL_BUTTON_PATH);
-            elements[Element.SIREN] = ObjectFinder.ObjectById("ID_Siren");
-            elements[Element.SAVE_SELECTED_BUTTON] = FindOrDie(paletteController.gameObject, SAVE_SELECTED_BUTTON_PATH);
+            var pzGeo = peltzer.controllerGeometry;
+            elements[Element.PELTZER_TOUCHPAD_LEFT] = pzGeo.touchpadLeft;
+            elements[Element.PELTZER_TOUCHPAD_RIGHT] = pzGeo.touchpadRight;
+            elements[Element.PELTZER_TOUCHPAD_UP] = pzGeo.touchpadUp;
+            elements[Element.PELTZER_TOUCHPAD_DOWN] = pzGeo.touchpadDown;
+            elements[Element.PELTZER_THUMBSTICK] = pzGeo.thumbstick;
+            elements[Element.PELTZER_TRIGGER] = pzGeo.trigger;
+            elements[Element.PELTZER_GRIP_LEFT] = pzGeo.gripLeft;
+            elements[Element.PELTZER_GRIP_RIGHT] = pzGeo.gripRight;
+            elements[Element.PELTZER_MENU_BUTTON] = pzGeo.appMenuButton;
+            elements[Element.PELTZER_SYSTEM_BUTTON] = pzGeo.systemButton;
+            elements[Element.PELTZER_SECONDARY_BUTTON] = pzGeo.secondaryButton;
 
-            this.spherePrefab = Resources.Load<GameObject>("Prefabs/GlowOrb");
+            var plGeo = palette.controllerGeometry;
+            elements[Element.PALETTE_TOUCHPAD_LEFT] = plGeo.touchpadLeft;
+            elements[Element.PALETTE_TOUCHPAD_RIGHT] = plGeo.touchpadRight;
+            elements[Element.PALETTE_TOUCHPAD_UP] = plGeo.touchpadUp;
+            elements[Element.PALETTE_TOUCHPAD_DOWN] = plGeo.touchpadDown;
+            elements[Element.PALETTE_THUMBSTICK] = plGeo.thumbstick;
+            elements[Element.PALETTE_TRIGGER] = plGeo.trigger;
+            elements[Element.PALETTE_GRIP_LEFT] = plGeo.gripLeft;
+            elements[Element.PALETTE_GRIP_RIGHT] = plGeo.gripRight;
+            elements[Element.PALETTE_MENU_BUTTON] = plGeo.appMenuButton;
+            elements[Element.PALETTE_SYSTEM_BUTTON] = plGeo.systemButton;
+            elements[Element.PALETTE_SECONDARY_BUTTON] = plGeo.secondaryButton;
+
+            var pgo = palette.gameObject;
+            elements[Element.NEW_BUTTON] = FindOrDie(pgo, "ID_PanelTools/ToolSide/Actions/New");
+            elements[Element.SAVE_BUTTON_ICON] = FindOrDie(pgo, "ID_PanelTools/ToolSide/Actions/Save");
+            elements[Element.GRID_BUTTON] = FindOrDie(pgo, "ID_PanelTools/ToolSide/Actions/Blockmode");
+            elements[Element.TUTORIAL_BUTTON] = FindOrDie(pgo, "ID_PanelTools/ToolSide/Actions/Tutorial");
+            elements[Element.TAKE_A_TUTORIAL_BUTTON] = FindOrDie(palette.m_Popups, "TutorialPrompt/Btns/YesTutorial");
+            elements[Element.SIREN] = ObjectFinder.ObjectById("ID_Siren");
+            elements[Element.SAVE_SELECTED_BUTTON] = FindOrDie(pgo, "ID_PanelTools/ToolSide/Menu-Save/Save-Selected");
+
+            spherePrefab = Resources.Load<GameObject>("Prefabs/GlowOrb");
 
             lightBulbs = new List<GameObject>
             {
