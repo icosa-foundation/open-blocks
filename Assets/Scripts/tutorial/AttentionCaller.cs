@@ -114,6 +114,8 @@ namespace com.google.apps.peltzer.client.tutorial
             PELTZER_THUMBSTICK,
             PALETTE_THUMBSTICK,
             SAVE_SELECTED_BUTTON,
+            MODEL_FILTER_BUTTON,
+            MODEL_SEARCH_BUTTON,
         }
 
         private List<ControllerMode> supportedModes = new() {
@@ -295,6 +297,8 @@ namespace com.google.apps.peltzer.client.tutorial
             elements[Element.TAKE_A_TUTORIAL_BUTTON] = FindOrDie(palette.m_Popups, "TutorialPrompt/Btns/YesTutorial");
             elements[Element.SIREN] = ObjectFinder.ObjectById("ID_Siren");
             elements[Element.SAVE_SELECTED_BUTTON] = FindOrDie(pgo, "ID_PanelTools/ToolSide/Menu-Save/Save-Selected");
+            elements[Element.MODEL_FILTER_BUTTON] = FindOrDie(pgo, "Panel-Menu/Models/OpenFiltersBtn");
+            elements[Element.MODEL_SEARCH_BUTTON] = FindOrDie(pgo, "Panel-Menu/Models/OpenSearchBtn");
 
             spherePrefab = Resources.Load<GameObject>("Prefabs/GlowOrb");
 
@@ -340,6 +344,12 @@ namespace com.google.apps.peltzer.client.tutorial
 
             StartGlowing(PeltzerMain.Instance.paletteController.GetToolheadForMode(mode)
               .GetComponent<ToolMaterialManager>().materialObjects, glow);
+        }
+
+        public void ShowModelFilterSearchButtons(bool show)
+        {
+            elements[Element.MODEL_FILTER_BUTTON].SetActive(show);
+            elements[Element.MODEL_SEARCH_BUTTON].SetActive(show);
         }
 
         private void StartGlowing(GameObject[] components, Glow glow = null)

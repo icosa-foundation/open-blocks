@@ -729,6 +729,8 @@ namespace com.google.apps.peltzer.client.menu
             bool isEnvironment = CurrentMenuSection() == PolyMenuSection.ENVIRONMENT;
             bool isLabs = CurrentMenuSection() == PolyMenuSection.LABS;
 
+            // Hide Search/Filter buttons if creation type is local
+            PeltzerMain.Instance.attentionCaller.ShowModelFilterSearchButtons(!isLocal);
 
             // Activate the correct title and deactivate all others.
             optionsTitle?.SetActive(isOption);

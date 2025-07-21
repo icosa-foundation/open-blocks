@@ -63673,7 +63673,7 @@ GameObject:
   - component: {fileID: 6324740472327310735}
   - component: {fileID: 5905729616098055778}
   m_Layer: 10
-  m_Name: SearchBtn
+  m_Name: OpenSearchBtn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -66646,7 +66646,7 @@ GameObject:
   - component: {fileID: 4972449826242108454}
   - component: {fileID: 909112203617776794}
   m_Layer: 10
-  m_Name: ModelFilterPanelBtn
+  m_Name: OpenFiltersBtn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
