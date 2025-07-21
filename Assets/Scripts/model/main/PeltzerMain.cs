@@ -1128,6 +1128,11 @@ namespace com.google.apps.peltzer.client.model.main
                     SetAllPromptsInactive();
                     if (OAuth2Identity.Instance.LoggedIn)
                     {
+                        // Currently we always create a new model when uploading.
+                        // Ideally we'd allow updating/overwriting existing models
+                        // but we need to give some thought to how that affects remixing
+                        // (i.e. users changing / deleting the contents of assets that others rely on)
+                        AssetId = null;
                         SaveCurrentModel(publish: false, saveSelected: false, cloudSave: true);
                     }
                     else
@@ -1145,7 +1150,6 @@ namespace com.google.apps.peltzer.client.model.main
                     }
                     else
                     {
-                        LocalId = null;
                         AssetId = null;
                         SaveCurrentModel(publish: true, saveSelected: false, cloudSave: true);
                         paletteController.SetPublishDialogActive();
