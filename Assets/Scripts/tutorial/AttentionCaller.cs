@@ -116,14 +116,14 @@ namespace com.google.apps.peltzer.client.tutorial
             SAVE_SELECTED_BUTTON,
         }
 
-        private List<ControllerMode> supportedModes = new List<ControllerMode>() {
-      ControllerMode.insertVolume,
-      ControllerMode.insertStroke,
-      ControllerMode.paintMesh,
-      ControllerMode.move,
-      ControllerMode.reshape,
-      ControllerMode.delete
-    };
+        private List<ControllerMode> supportedModes = new() {
+            ControllerMode.insertVolume,
+            ControllerMode.insertStroke,
+            ControllerMode.paintMesh,
+            ControllerMode.move,
+            ControllerMode.reshape,
+            ControllerMode.delete
+        };
 
         /// <summary>
         /// The period of the "glow" animation (the time taken by each repetition of it).
@@ -158,22 +158,22 @@ namespace com.google.apps.peltzer.client.tutorial
         /// <summary>
         /// Override color.
         /// </summary>
-        private readonly Color OVERRIDE_COLOR = new Color(128f / 255f, 128f / 255f, 128f / 255f);
+        private readonly Color OVERRIDE_COLOR = new(128f / 255f, 128f / 255f, 128f / 255f);
 
         /// <summary>
         /// Base color of the glowing sphere animations.
         /// </summary>
-        private readonly Color SPHERE_BASE_COLOR = new Color(0.5f, 1.0f, 0.5f);
+        private readonly Color SPHERE_BASE_COLOR = new(0.5f, 1.0f, 0.5f);
 
         /// <summary>
         /// Color for an icon if it is inactive or "greyed out".
         /// </summary>
-        private readonly Color INACTIVE_ICON_COLOR = new Color(1f, 1f, 1f, 0.117f);
+        private readonly Color INACTIVE_ICON_COLOR = new(1f, 1f, 1f, 0.117f);
 
         /// <summary>
         /// Color for an icon if it is active or "coloured".
         /// </summary>
-        private readonly Color ACTIVE_ICON_COLOR = new Color(1f, 1f, 1f, 1f);
+        private readonly Color ACTIVE_ICON_COLOR = new(1f, 1f, 1f, 1f);
 
         /// <summary>
         /// Name of the emission color variable in the shader.
@@ -183,7 +183,8 @@ namespace com.google.apps.peltzer.client.tutorial
         /// <summary>
         /// Elements to highlight with a large glowing green sphere.
         /// </summary>
-        private readonly List<Element> SPHERE_ELEMENTS = new List<Element> { };
+        private readonly List<Element> SPHERE_ELEMENTS = new()
+            { };
 
         private const string NEW_BUTTON_PATH = "ID_PanelTools/ToolSide/Actions/New";
         private const string SAVE_BUTTON_ICON_PATH = "ID_PanelTools/ToolSide/Actions/Save";
@@ -200,7 +201,7 @@ namespace com.google.apps.peltzer.client.tutorial
         /// <summary>
         /// Maps an Element to the GameObject it represents.
         /// </summary>
-        private Dictionary<Element, GameObject> elements = new Dictionary<Element, GameObject>();
+        private Dictionary<Element, GameObject> elements = new();
 
         ChangeMaterialMenuItem[] allColourSwatches;
 
@@ -209,15 +210,15 @@ namespace com.google.apps.peltzer.client.tutorial
         /// <summary>
         /// Maps Elements to spheres that are currently in the scene.
         /// </summary>
-        private Dictionary<Element, GameObject> currentSpheres = new Dictionary<Element, GameObject>();
+        private Dictionary<Element, GameObject> currentSpheres = new();
 
         /// <summary>
         /// Offsets that adjust attention-calling-spheres to align with their element, because
         /// most controller elements are offcenter.
         /// </summary>
-        private readonly Vector3 TRIGGER_OFFSET = new Vector3(0.0f, -0.04f, -0.03f);
-        private readonly Vector3 LEFT_GRIP_OFFSET = new Vector3(.02f, -.08f, 0.01f);
-        private readonly Vector3 RIGHT_GRIP_OFFSET = new Vector3(-.02f, -.08f, 0.01f);
+        private readonly Vector3 TRIGGER_OFFSET = new(0.0f, -0.04f, -0.03f);
+        private readonly Vector3 LEFT_GRIP_OFFSET = new(.02f, -.08f, 0.01f);
+        private readonly Vector3 RIGHT_GRIP_OFFSET = new(-.02f, -.08f, 0.01f);
 
         /// <summary>
         /// Sizes of the different attention-calling-spheres.
@@ -227,7 +228,7 @@ namespace com.google.apps.peltzer.client.tutorial
         const float GRIP_SPHERE_SIZE_MAX = 0.03f;
         const float GRIP_SPHERE_SIZE_MIN = 0.01f;
 
-        private Dictionary<GameObject, Glow> currentlyGlowing = new Dictionary<GameObject, Glow>();
+        private Dictionary<GameObject, Glow> currentlyGlowing = new();
 
         /// <summary>
         /// Prefab that holds the glowing sphere.
@@ -237,7 +238,7 @@ namespace com.google.apps.peltzer.client.tutorial
         /// <summary>
         /// List of Mesh IDs of meshes that are currently being highlighted with a glow effect.
         /// </summary>
-        private List<int> claimedMeshes = new List<int>();
+        private List<int> claimedMeshes = new();
 
         /// <summary>
         /// Starting value for the interpolation param between sphere sizes.
@@ -268,26 +269,16 @@ namespace com.google.apps.peltzer.client.tutorial
                 }
             }
 
-            elements[Element.PELTZER_TOUCHPAD_LEFT] =
-              peltzerController.controllerGeometry.touchpadLeft;
-            elements[Element.PELTZER_TOUCHPAD_RIGHT] =
-              peltzerController.controllerGeometry.touchpadRight;
-            elements[Element.PELTZER_TOUCHPAD_UP] =
-              peltzerController.controllerGeometry.touchpadUp;
-            elements[Element.PELTZER_TOUCHPAD_DOWN] =
-              peltzerController.controllerGeometry.touchpadDown;
-            elements[Element.PALETTE_TOUCHPAD_LEFT] =
-              paletteController.controllerGeometry.touchpadLeft;
-            elements[Element.PALETTE_TOUCHPAD_RIGHT] =
-              paletteController.controllerGeometry.touchpadRight;
-            elements[Element.PALETTE_TOUCHPAD_UP] =
-              paletteController.controllerGeometry.touchpadUp;
-            elements[Element.PALETTE_TOUCHPAD_DOWN] =
-              paletteController.controllerGeometry.touchpadDown;
-            elements[Element.PALETTE_THUMBSTICK] =
-              paletteController.controllerGeometry.thumbstick;
-            elements[Element.PELTZER_THUMBSTICK] =
-              peltzerController.controllerGeometry.thumbstick;
+            elements[Element.PELTZER_TOUCHPAD_LEFT] = peltzerController.controllerGeometry.touchpadLeft;
+            elements[Element.PELTZER_TOUCHPAD_RIGHT] = peltzerController.controllerGeometry.touchpadRight;
+            elements[Element.PELTZER_TOUCHPAD_UP] = peltzerController.controllerGeometry.touchpadUp;
+            elements[Element.PELTZER_TOUCHPAD_DOWN] = peltzerController.controllerGeometry.touchpadDown;
+            elements[Element.PALETTE_TOUCHPAD_LEFT] = paletteController.controllerGeometry.touchpadLeft;
+            elements[Element.PALETTE_TOUCHPAD_RIGHT] = paletteController.controllerGeometry.touchpadRight;
+            elements[Element.PALETTE_TOUCHPAD_UP] = paletteController.controllerGeometry.touchpadUp;
+            elements[Element.PALETTE_TOUCHPAD_DOWN] = paletteController.controllerGeometry.touchpadDown;
+            elements[Element.PALETTE_THUMBSTICK] = paletteController.controllerGeometry.thumbstick;
+            elements[Element.PELTZER_THUMBSTICK] = peltzerController.controllerGeometry.thumbstick;
             elements[Element.PELTZER_TRIGGER] = peltzerController.controllerGeometry.trigger;
             elements[Element.PALETTE_TRIGGER] = paletteController.controllerGeometry.trigger;
             elements[Element.PELTZER_GRIP_LEFT] = peltzerController.controllerGeometry.gripLeft;
@@ -310,7 +301,8 @@ namespace com.google.apps.peltzer.client.tutorial
 
             this.spherePrefab = Resources.Load<GameObject>("Prefabs/GlowOrb");
 
-            lightBulbs = new List<GameObject>{
+            lightBulbs = new List<GameObject>
+            {
                 ObjectFinder.ObjectById("ID_Light_1"),
                 ObjectFinder.ObjectById("ID_Light_2"),
                 ObjectFinder.ObjectById("ID_Light_3"),
@@ -319,7 +311,8 @@ namespace com.google.apps.peltzer.client.tutorial
                 ObjectFinder.ObjectById("ID_Light_6"),
                 ObjectFinder.ObjectById("ID_Light_7"),
                 ObjectFinder.ObjectById("ID_Light_8"),
-                ObjectFinder.ObjectById("ID_Light_9")};
+                ObjectFinder.ObjectById("ID_Light_9")
+            };
         }
 
         /// <summary>
@@ -352,7 +345,7 @@ namespace com.google.apps.peltzer.client.tutorial
               .GetComponent<ToolMaterialManager>().materialObjects, glow);
         }
 
-        public void StartGlowing(GameObject[] components, Glow glow = null)
+        private void StartGlowing(GameObject[] components, Glow glow = null)
         {
             for (int i = 0; i < components.Length; i++)
             {
@@ -363,7 +356,7 @@ namespace com.google.apps.peltzer.client.tutorial
             }
         }
 
-        public void StartGlowing(GameObject obj, Glow glow = null)
+        private void StartGlowing(GameObject obj, Glow glow = null)
         {
             if (!currentlyGlowing.ContainsKey(obj))
             {
@@ -411,7 +404,7 @@ namespace com.google.apps.peltzer.client.tutorial
             GreyOut(elements[which], greyAmount);
         }
 
-        public void GreyOut(GameObject obj, float greyAmount = GREY_MAX)
+        private void GreyOut(GameObject obj, float greyAmount = GREY_MAX)
         {
             if (obj != null)
             {
@@ -438,11 +431,11 @@ namespace com.google.apps.peltzer.client.tutorial
             }
         }
 
-        public void GreyOut(SpriteRenderer[] icons)
+        private void GreyOut(SpriteRenderer[] icons)
         {
-            for (int i = 0; i < icons.Length; i++)
+            foreach (var t in icons)
             {
-                GreyOut(icons[i]);
+                GreyOut(t);
             }
         }
 
@@ -475,7 +468,7 @@ namespace com.google.apps.peltzer.client.tutorial
             }
         }
 
-        public void GreyOutAllTouchpadIcons()
+        private void GreyOutAllTouchpadIcons()
         {
             GameObject[] peltzerOverlays = PeltzerMain.Instance.peltzerController.controllerGeometry.overlays;
             for (int i = 0; i < peltzerOverlays.Length; i++)
@@ -490,7 +483,7 @@ namespace com.google.apps.peltzer.client.tutorial
             }
         }
 
-        public void GreyOutAllToolheads()
+        private void GreyOutAllToolheads()
         {
             foreach (ControllerMode mode in supportedModes)
             {
@@ -509,11 +502,9 @@ namespace com.google.apps.peltzer.client.tutorial
                 }
             }
 
-            PeltzerMain.Instance.paletteController.GetToolheadForMode(mode).GetComponent<ToolMaterialManager>()
-              .ChangeToEnable();
-
-            PeltzerMain.Instance.paletteController.GetToolheadForMode(mode).GetComponent<SelectableMenuItem>().isActive
-              = true;
+            var toolhead = PeltzerMain.Instance.paletteController.GetToolheadForMode(mode);
+            toolhead.GetComponent<ToolMaterialManager>().ChangeToEnable();
+            toolhead.GetComponent<SelectableMenuItem>().isActive = true;
 
             if (mode == ControllerMode.move)
             {
@@ -530,7 +521,7 @@ namespace com.google.apps.peltzer.client.tutorial
             Recolor(elements[which]);
         }
 
-        public void Recolor(GameObject obj)
+        private void Recolor(GameObject obj)
         {
             if (obj != null)
             {
@@ -555,11 +546,11 @@ namespace com.google.apps.peltzer.client.tutorial
             }
         }
 
-        public void Recolor(SpriteRenderer[] icons)
+        private void Recolor(SpriteRenderer[] icons)
         {
-            for (int i = 0; i < icons.Length; i++)
+            foreach (var t in icons)
             {
-                Recolor(icons[i]);
+                Recolor(t);
             }
         }
 
@@ -571,7 +562,7 @@ namespace com.google.apps.peltzer.client.tutorial
         /// <summary>
         /// Recolors every element.
         /// </summary>
-        public void RecolorAll()
+        private void RecolorAll()
         {
             foreach (Element element in elements.Keys)
             {
@@ -592,7 +583,7 @@ namespace com.google.apps.peltzer.client.tutorial
             }
         }
 
-        public void RecolorAllToolheads()
+        private void RecolorAllToolheads()
         {
             foreach (ControllerMode mode in supportedModes)
             {
@@ -600,7 +591,7 @@ namespace com.google.apps.peltzer.client.tutorial
             }
         }
 
-        public void RecolorAllTouchpadIcons()
+        private void RecolorAllTouchpadIcons()
         {
             GameObject[] peltzerOverlays = PeltzerMain.Instance.peltzerController.controllerGeometry.overlays;
             for (int i = 0; i < peltzerOverlays.Length; i++)
@@ -697,14 +688,14 @@ namespace com.google.apps.peltzer.client.tutorial
               .GetComponent<ToolMaterialManager>().materialObjects);
         }
 
-        public void StopGlowing(GameObject[] components)
+        private void StopGlowing(GameObject[] components)
         {
-            for (int i = 0; i < components.Length; i++)
+            foreach (var t in components)
             {
-                if (currentlyGlowing.ContainsKey(components[i]))
+                if (currentlyGlowing.ContainsKey(t))
                 {
-                    currentlyGlowing.Remove(components[i]);
-                    SetEmissiveFactor(components[i], 0, GLOW_BASE_COLOR);
+                    currentlyGlowing.Remove(t);
+                    SetEmissiveFactor(t, 0, GLOW_BASE_COLOR);
                 }
             }
         }
@@ -740,14 +731,11 @@ namespace com.google.apps.peltzer.client.tutorial
         /// <returns></returns>
         public int ClaimMesh(int meshId, IMeshRenderOwner fosterRenderer)
         {
-            if (claimedMeshes.Contains(meshId))
-            {
-                claimedMeshes.Remove(meshId);
-                PeltzerMain.Instance.highlightUtils.TurnOffMesh(meshId);
-                return meshId;
-            }
-            // Didn't have the mesh.
-            return -1;
+            if (!claimedMeshes.Contains(meshId)) return -1;
+
+            claimedMeshes.Remove(meshId);
+            PeltzerMain.Instance.highlightUtils.TurnOffMesh(meshId);
+            return meshId;
         }
 
         /// <summary>
@@ -796,7 +784,7 @@ namespace com.google.apps.peltzer.client.tutorial
         /// <summary>
         /// Update the interpolater for lerping between max and min sphere sizes.
         /// </summary>
-        private void UpdateT()
+        private static void UpdateT()
         {
             sizePct += 0.8f * Time.deltaTime;
             if (sizePct > 1.0f)
