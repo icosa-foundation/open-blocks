@@ -107,6 +107,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case PolyMenuMain.CreationType.YOUR:
                     titleText += "Your Uploads";
                     break;
+                case PolyMenuMain.CreationType.LOCAL:
+                    titleText += "Your Saved Models";
+                    break;
             }
             m_TitleText.text = titleText;
         }
