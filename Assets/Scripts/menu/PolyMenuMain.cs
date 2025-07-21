@@ -721,106 +721,53 @@ namespace com.google.apps.peltzer.client.menu
             // Start by ensuring Poly Menu is active, to cover the case that 'details' was open and needs to be closed.
             SetActiveMenu(Menu.POLY_MENU);
 
-            // Activate the correct title and deactivate all others.
-            if (optionsTitle != null)
-            {
-                optionsTitle.SetActive(CurrentMenuSection() == PolyMenuSection.OPTION);
-            }
-            if (yourModelsTitle != null)
-            {
-                yourModelsTitle.SetActive(CurrentCreationType() == CreationType.YOUR);
-            }
-            if (localModelsTitle != null)
-            {
-                localModelsTitle.SetActive(CurrentCreationType() == CreationType.LOCAL);
-            }
-            if (likedModelsTitle != null)
-            {
-                likedModelsTitle.SetActive(CurrentCreationType() == CreationType.LIKED);
-            }
-            if (featuredModelsTitle != null)
-            {
-                featuredModelsTitle.SetActive(CurrentCreationType() == CreationType.FEATURED);
-            }
+            bool isYour = CurrentCreationType() == CreationType.YOUR;
+            bool isLocal = CurrentCreationType() == CreationType.LOCAL;
+            bool isLiked = CurrentCreationType() == CreationType.LIKED;
+            bool isFeatured = CurrentCreationType() == CreationType.FEATURED;
+            bool isOption = CurrentMenuSection() == PolyMenuSection.OPTION;
+            bool isEnvironment = CurrentMenuSection() == PolyMenuSection.ENVIRONMENT;
+            bool isLabs = CurrentMenuSection() == PolyMenuSection.LABS;
 
-            if (optionsIcon != null)
-            {
-                optionsIcon.color = CurrentMenuSection() ==
-                  PolyMenuSection.OPTION ? SELECTED_AVATAR_COLOR : UNSELECTED_AVATAR_COLOR;
-            }
-            if (yourModelsIcon != null)
-            {
-                yourModelsIcon.color = CurrentCreationType() ==
-                  CreationType.YOUR ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
-            }
-            if (localModelsIcon != null)
-            {
-                localModelsIcon.color = CurrentCreationType() ==
-                    CreationType.LOCAL ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
-            }
-            if (likedModelsIcon != null)
-            {
-                likedModelsIcon.color = CurrentCreationType() ==
-                  CreationType.LIKED ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
-            }
-            if (featuredModelsIcon != null)
-            {
-                featuredModelsIcon.color = CurrentCreationType() ==
-                  CreationType.FEATURED ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
-            }
-            if (environmentIcon != null)
-            {
-                environmentIcon.color = CurrentMenuSection() == PolyMenuSection.ENVIRONMENT ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
-            }
-            if (labsIcon != null)
-            {
-                labsIcon.color = CurrentMenuSection() == PolyMenuSection.LABS ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR;
-            }
+            // Hide Search/Filter buttons if creation type is local
+            PeltzerMain.Instance.attentionCaller.ShowModelFilterSearchButtons(!isLocal);
+
+            // Activate the correct title and deactivate all others.
+            optionsTitle?.SetActive(isOption);
+            yourModelsTitle?.SetActive(isYour);
+            localModelsTitle?.SetActive(isLocal);
+            likedModelsTitle?.SetActive(isLiked);
+            featuredModelsTitle?.SetActive(isFeatured);
+
+            if (optionsIcon) { optionsIcon.color = isOption ? SELECTED_AVATAR_COLOR : UNSELECTED_AVATAR_COLOR; }
+            if (yourModelsIcon) { yourModelsIcon.color = isYour ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (localModelsIcon) { localModelsIcon.color = isLocal ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (likedModelsIcon) { likedModelsIcon.color = isLiked ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (featuredModelsIcon) { featuredModelsIcon.color = isFeatured ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (environmentIcon) { environmentIcon.color = isEnvironment ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (labsIcon) { labsIcon.color = isLabs ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
 
             // Activate or deactive the necessary menus.
-            if (optionsMenu != null)
-            {
-                optionsMenu.SetActive(CurrentMenuSection() == PolyMenuSection.OPTION);
-            }
+            optionsMenu?.SetActive(isOption);
+            labsMenu?.SetActive(isLabs);
+            environmentMenu?.SetActive(isEnvironment);
 
-            if (labsMenu != null)
-            {
-                labsMenu.SetActive(CurrentMenuSection() == PolyMenuSection.LABS);
-            }
-            if (environmentMenu != null)
-            {
-                environmentMenu.SetActive(CurrentMenuSection() == PolyMenuSection.ENVIRONMENT);
-            }
             // Deactivate all the user prompt menus. If they need to be activated they will be in PopulateZandriaMenu().
-            if (noSavedModelsMenu != null)
-            {
-                noSavedModelsMenu.SetActive(false);
-            }
-            if (noLikedModelsMenu != null)
-            {
-                noLikedModelsMenu.SetActive(false);
-            }
-            if (signedOutYourModelsMenu != null)
-            {
-                signedOutYourModelsMenu.SetActive(false);
-            }
-            if (signedOutLikedModelsMenu != null)
-            {
-                signedOutLikedModelsMenu.SetActive(false);
-            }
-            if (offlineModelsMenu != null)
-            {
-                offlineModelsMenu.SetActive(false);
-            }
+            noSavedModelsMenu?.SetActive(false);
+            noLikedModelsMenu?.SetActive(false);
+            signedOutYourModelsMenu?.SetActive(false);
+            signedOutLikedModelsMenu?.SetActive(false);
+            offlineModelsMenu?.SetActive(false);
+
             // Activate or deactivate the models menu.
-            if (modelsMenu != null)
+            if (modelsMenu)
             {
-                modelsMenu.SetActive(CurrentMenuSection() == PolyMenuSection.CREATION);
-                if (CurrentMenuSection() == PolyMenuSection.CREATION)
+                bool isCreation = CurrentMenuSection() == PolyMenuSection.CREATION;
+                modelsMenu.SetActive(isCreation);
+                if (isCreation)
                 {
                     // Update the pagination icons.
                     ChangePaginationButtons();
-
                     // Populate the menu with Zandria creations.
                     PopulateZandriaMenu(CurrentCreationType());
                 }

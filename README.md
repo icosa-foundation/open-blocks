@@ -43,15 +43,6 @@ For more information, read the
 [Blocks Brand Guidelines](BRAND_GUIDELINES.md).
 
 ---
-
-# Building the application
-
-Get the Open Blocks open-source application running on your own devices.
-
-### Prerequisites
-
-*   [Unity 2019.4.25f1](unityhub://2019.4.25f1/01a0494af254)
-
 ### Changing the application name
 
 _Blocks_ is a Google trademark. If you intend to publish a cloned version of
@@ -69,16 +60,3 @@ open-source licensing issues. These are:
 * AnimatedGifEncoder32
 * LZWEncoder
 
-## Known issues
-
-OculusVR mode and reference image insertion are not currently functional in this
-branch.
-
-## Google service API support
-
-Legacy code is included to connect to Google APIs for People and Drive
-integrations. This is not critical to the Blocks experience, but is left
-as a convenience for any forks that wish to make use of it with a new backend.
-
-You must register new projects and obtain new keys and credentials from the
-Google Cloud Console to make use of these features.
