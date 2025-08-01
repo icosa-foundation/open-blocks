@@ -271,6 +271,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
+      propertyPath: m_InitialValue
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
       propertyPath: m_UpdateInterval
       value: 10
       objectReference: {fileID: 0}
@@ -374,7 +379,7 @@ PrefabInstance:
     - target: {fileID: 5501061831439391173, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_text
-      value: 8 horizontal slices
+      value: 12 horizontal slices
       objectReference: {fileID: 0}
     - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
@@ -568,6 +573,11 @@ PrefabInstance:
       propertyPath: m_Minimum
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 181303830207113934, guid: e941fc87482d0d24f92eb9796b0f8f44,
+        type: 3}
+      propertyPath: m_InitialValue
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 268145116255469245, guid: e941fc87482d0d24f92eb9796b0f8f44,
         type: 3}
       propertyPath: m_LocalPosition.z
@@ -623,6 +633,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1577347988828404604, guid: e941fc87482d0d24f92eb9796b0f8f44,
+        type: 3}
+      propertyPath: m_text
+      value: 12 slices
+      objectReference: {fileID: 0}
     - target: {fileID: 1826693984149201105, guid: e941fc87482d0d24f92eb9796b0f8f44,
         type: 3}
       propertyPath: m_Name
@@ -633,6 +648,11 @@ PrefabInstance:
       propertyPath: m_Label
       value: 
       objectReference: {fileID: 4870831699685830814}
+    - target: {fileID: 4060826835910311832, guid: e941fc87482d0d24f92eb9796b0f8f44,
+        type: 3}
+      propertyPath: m_InitialValue
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 4060826835910311832, guid: e941fc87482d0d24f92eb9796b0f8f44,
         type: 3}
       propertyPath: m_SliderRenderer
@@ -656,17 +676,32 @@ PrefabInstance:
     - target: {fileID: 5689903728704181972, guid: e941fc87482d0d24f92eb9796b0f8f44,
         type: 3}
       propertyPath: m_Maximum
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5689903728704181972, guid: e941fc87482d0d24f92eb9796b0f8f44,
         type: 3}
       propertyPath: m_Minimum
-      value: -2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5845832215643658889, guid: e941fc87482d0d24f92eb9796b0f8f44,
         type: 3}
       propertyPath: m_text
       value: 0 iterations
+      objectReference: {fileID: 0}
+    - target: {fileID: 6304924070284131378, guid: e941fc87482d0d24f92eb9796b0f8f44,
+        type: 3}
+      propertyPath: m_InitialValue
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 8723827721309300370, guid: e941fc87482d0d24f92eb9796b0f8f44,
+        type: 3}
+      propertyPath: m_InitialValue
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8846968348653517014, guid: e941fc87482d0d24f92eb9796b0f8f44,
+        type: 3}
+      propertyPath: m_text
+      value: 12 slices
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 2622587814545225027, guid: e941fc87482d0d24f92eb9796b0f8f44, type: 3}
@@ -1688,6 +1723,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
+      propertyPath: m_InitialValue
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
       propertyPath: m_SliderRenderer
       value: 
       objectReference: {fileID: 3230171455226134870}
@@ -1796,7 +1836,7 @@ PrefabInstance:
     - target: {fileID: 5501061831439391173, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_text
-      value: 'Inner: 8 slices'
+      value: 'Inner: 12 slices'
       objectReference: {fileID: 0}
     - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
@@ -1924,6 +1964,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
+      propertyPath: m_InitialValue
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
       propertyPath: m_SliderRenderer
       value: 
       objectReference: {fileID: 2478916423202659276}
@@ -2032,7 +2077,7 @@ PrefabInstance:
     - target: {fileID: 5501061831439391173, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_text
-      value: 'Outer: 8 slices'
+      value: 'Outer: 12 slices'
       objectReference: {fileID: 0}
     - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}

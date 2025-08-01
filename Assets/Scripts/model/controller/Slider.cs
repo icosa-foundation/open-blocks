@@ -51,6 +51,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public int IntValue => Mathf.FloorToInt(Value);
 
         [NonSerialized] private float m_NormalizedValue;
+        public float m_InitialValue = 0;
 
         private bool m_IsDragging;
         private Material m_SliderMaterial;
@@ -61,6 +62,7 @@ namespace com.google.apps.peltzer.client.model.controller
             m_SliderMaterial = m_SliderRenderer.material;
             base.Start();
             PeltzerMain.Instance.peltzerController.PeltzerControllerActionHandler += ControllerEventHandler;
+            SetInitialValue(m_InitialValue);
         }
 
         public override void Update()

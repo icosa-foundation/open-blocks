@@ -41,11 +41,18 @@ namespace com.google.apps.peltzer.client.model.controller
 
         private void ShapeChangedEventHandler(int menuItemId)
         {
-            foreach (var panel in m_OptionPanels)
+            foreach (var p in m_OptionPanels)
             {
-                panel.SetActive(false);
+                p.SetActive(false);
             }
-            m_OptionPanels[menuItemId + 2].SetActive(true);
+            var optionPanel = m_OptionPanels[menuItemId + 2];
+            optionPanel.SetActive(true);
+            var sliders = optionPanel.GetComponentsInChildren<Slider>();
+            // Set the labels
+            foreach (var slider in sliders)
+            {
+                slider.m_ActionEveryUpdate.Invoke(slider.Value);
+            }
         }
 
         public override void Enable(ControllerMode mode)

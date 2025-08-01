@@ -38,19 +38,9 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
         slider.SetLabelText($"Subdiv: {slider.Value}");
     }
 
-    public void HandleTorusOuterRadius(Slider slider)
-    {
-        slider.m_Label.text = $"Outer radius: {slider.Value}";
-        if (PrimitiveParams.TorusOuterRadius != slider.Value)
-        {
-            PrimitiveParams.TorusOuterRadius = slider.Value;
-            m_VolumeInserter.CreateNewVolumeMesh();
-        }
-    }
-
     public void HandleTorusInnerRadius(Slider slider)
     {
-        slider.m_Label.text = $"Inner radius: {slider.Value}";
+        slider.m_Label.text = $"Hole: {slider.Value}";
         if (PrimitiveParams.TorusInnerRadius != slider.Value)
         {
             PrimitiveParams.TorusInnerRadius = slider.Value;
@@ -121,7 +111,7 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
 
     public void HandleTorusInnerSlices(Slider slider)
     {
-        slider.m_Label.text = $"{slider.IntValue} slices";
+        slider.m_Label.text = $"Inner: {slider.IntValue} slices";
         if (PrimitiveParams.TorusInnerSlices != slider.IntValue)
         {
             PrimitiveParams.TorusInnerSlices = slider.IntValue;
@@ -131,7 +121,7 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
 
     public void HandleTorusOuterSlices(Slider slider)
     {
-        slider.m_Label.text = $"{slider.IntValue} slices";
+        slider.m_Label.text = $"Outer: {slider.IntValue} slices";
         if (PrimitiveParams.TorusOuterSlices != slider.IntValue)
         {
             PrimitiveParams.TorusOuterSlices = slider.IntValue;
