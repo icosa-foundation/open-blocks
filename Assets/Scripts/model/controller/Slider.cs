@@ -48,6 +48,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 return val;
             }
         }
+        public int IntValue => Mathf.FloorToInt(Value);
 
         [NonSerialized] private float m_NormalizedValue;
 

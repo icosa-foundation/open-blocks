@@ -4129,12 +4129,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!4 &4558501937925816 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1638286738356686170, guid: fdac69e31b1922e4d9cc7d61ce17122a,
-    type: 3}
-  m_PrefabInstance: {fileID: 1633800565279163362}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1073095662846008
 GameObject:
   m_ObjectHideFlags: 0
@@ -61267,12 +61261,6 @@ Transform:
   - {fileID: 4413161031017050}
   m_Father: {fileID: 4105516359155430}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &4658016164609366 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2390624996220422577, guid: 6e212fcf2751d02469009b7ec4f0dd42,
-    type: 3}
-  m_PrefabInstance: {fileID: 2395273662148785383}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1966798084364844
 GameObject:
   m_ObjectHideFlags: 0
@@ -64027,9 +64015,9 @@ MonoBehaviour:
       m_Calls: []
   m_text: '<b>Early Access</b>
 
-    We are excited to share the first version of Open Blocks for standalone headsets.
-    Our next release will focus on improving performance and memory usage in more
-    complex scenes. '
+    We are excited to share the first version of
+    Open Blocks for standalone headsets. Our next release will focus on improving
+    performance and memory usage in more complex scenes. '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
   m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
@@ -65037,8 +65025,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "LOW MEMORY \r\nMax number of vertices reached!\r\nPerformance will be impacted
-    and the app could crash!\r\nSave your work to avoid losing it!"
+  m_text: "LOW MEMORY \r\nMax number of vertices reached!\r\nPerformance will be
+    impacted and the app could crash!\r\nSave your work to avoid losing it!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
   m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
@@ -67742,6 +67730,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fdac69e31b1922e4d9cc7d61ce17122a, type: 3}
+--- !u!4 &4558501937925816 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1638286738356686170, guid: fdac69e31b1922e4d9cc7d61ce17122a,
+    type: 3}
+  m_PrefabInstance: {fileID: 1633800565279163362}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1886449865878036910
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -68058,6 +68052,12 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6e212fcf2751d02469009b7ec4f0dd42, type: 3}
+--- !u!4 &4658016164609366 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2390624996220422577, guid: 6e212fcf2751d02469009b7ec4f0dd42,
+    type: 3}
+  m_PrefabInstance: {fileID: 2395273662148785383}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5260360757963664758
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -68485,35 +68485,7 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 2106375039126207755, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 4541635187528346596, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 623067242303174229, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 853644587414569000, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 1083961797149963369, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 6754040829364261524, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 9191931659536273844, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 4627797446765307280, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 9210544633013045109, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 1812655663295887983, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 6222967990299667247, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 8308608811936942665, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 1613963863759747683, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 7711759176639438575, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 1648595536915515810, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 1311458298105740771, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 4648578502530882334, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 7109056230700652606, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 6701638405476117530, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 7127597690832850687, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 297208324795593701, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 5432556900679099045, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 7959591640149885891, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 819037517945009129, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 8520126330544641893, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 955670551524481, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 2467723001113191022, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
-    - {fileID: 1557587440503013343, guid: 9d12e6c8a14b7a24e8ffc926ed203565, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -68651,16 +68623,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Actions (No tool options)
-      objectReference: {fileID: 0}
-    - target: {fileID: 2170627608553439912, guid: 5dac744749868004ab4365c89ca2fab6,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2170627608553439912, guid: 5dac744749868004ab4365c89ca2fab6,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2170627608553439912, guid: 5dac744749868004ab4365c89ca2fab6,
         type: 3}

@@ -13,19 +13,24 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
-using com.google.apps.peltzer.client.tools;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
     public class InsertVolumeOptionsPanel : ToolOptionsPanel
     {
+        public List<GameObject> m_OptionPanels;
 
-        void Start()
+        void Awake()
         {
+            if (PeltzerMain.Instance.peltzerController.shapesMenu == null)
+            {
+                Debug.LogError("ShapesMenu is not initialized in InsertVolumeOptionsPanel.");
+                return;
+            }
             PeltzerMain.Instance.peltzerController.shapesMenu.ShapeMenuItemChangedHandler += ShapeChangedEventHandler;
         }
 
@@ -34,27 +39,13 @@ namespace com.google.apps.peltzer.client.model.controller
             PeltzerMain.Instance.peltzerController.shapesMenu.ShapeMenuItemChangedHandler -= ShapeChangedEventHandler;
         }
 
-        private void ShapeChangedEventHandler(int newMenuItemId)
+        private void ShapeChangedEventHandler(int menuItemId)
         {
-            Primitives.Shape selectedVolumeShape = (Primitives.Shape)newMenuItemId;
-            switch (selectedVolumeShape)
+            foreach (var panel in m_OptionPanels)
             {
-
-                case Primitives.Shape.CONE:
-                    break;
-                case Primitives.Shape.SPHERE:
-                    break;
-                case Primitives.Shape.CUBE:
-                    break;
-                case Primitives.Shape.CYLINDER:
-                    break;
-                case Primitives.Shape.TORUS:
-                    break;
-                case Primitives.Shape.ICOSAHEDRON:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                panel.SetActive(false);
             }
+            m_OptionPanels[menuItemId + 2].SetActive(true);
         }
 
         public override void Enable(ControllerMode mode)

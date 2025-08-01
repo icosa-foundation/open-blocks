@@ -357,7 +357,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         /// <param name="oldScaleDeltaToAnimateFrom">If not null, this indicates the previous scaleDelta from
         /// which to animate from. Note: this is only honored when there is a single held mesh.</param>
-        private void CreateNewVolumeMesh(int? oldScaleDeltaToAnimateFrom = null)
+        public void CreateNewVolumeMesh(int? oldScaleDeltaToAnimateFrom = null)
         {
             Vector3? oldPosToAnimateFrom = null;
             Vector3? oldScaleToAnimateFrom = null;

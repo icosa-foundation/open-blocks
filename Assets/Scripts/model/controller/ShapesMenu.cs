@@ -390,12 +390,7 @@ namespace com.google.apps.peltzer.client.model.controller
             }
 
             UpdateShapesMenu();
-
-            // Notify listeners.
-            if (ShapeMenuItemChangedHandler != null)
-            {
-                ShapeMenuItemChangedHandler(newItemId);
-            }
+            ShapeMenuItemChangedHandler?.Invoke(newItemId);
         }
 
         /// <summary>
