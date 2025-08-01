@@ -1050,5 +1050,12 @@ namespace com.google.apps.peltzer.client.model.core
             }
             return new MMesh(id, Vector3.zero, Quaternion.identity, vertices, faces.ToDictionary(f => f.id));
         }
+
+        public static PolyMesh MMeshToPolyHydra(MMesh mmesh)
+        {
+            var vertices = mmesh.GetVertices().Select(v => v.loc).ToList();
+            var faces = mmesh.GetFaces().Select(f => f.vertexIds.ToList()).ToList();
+            return new PolyMesh(vertices, faces);
+        }
     }
 }

@@ -141,6 +141,18 @@ public class ApiController
         return ApiResult.Ok("Success");
     }
 
+    [ApiGet("mesh/applyOp/{meshId}")]
+    public ApiResult ApplyOpToMesh(int meshId, string op, float a, float b)
+    {
+        if (Enum.TryParse(op, true, out PolyMesh.Operation operation))
+        {
+            var cmd = new ApplyOpToMeshCommand(meshId, operation, a, b, FilterTypes.All, 0);
+            PeltzerMain.Instance.model.ApplyCommand(cmd);
+            return ApiResult.Ok("Success");
+        }
+        return ApiResult.BadRequest("Unknown operation: " + op);
+    }
+
     // [ApiGet("addmesh/{foo}/{id}")]
     // public ApiResult AddMesh()
     // {
