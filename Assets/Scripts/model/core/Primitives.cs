@@ -175,11 +175,8 @@ namespace com.google.apps.peltzer.client.model.core
             Dictionary<int, Vertex> vertices = new Dictionary<int, Vertex>();
             Dictionary<int, Face> faces = new Dictionary<int, Face>();
 
-            // Here we force 'height' to the y axis around the center.
             Vector3 startLocation = new Vector3(0, -1, 0);
             Vector3 endLocation = new Vector3(0, 1, 0);
-
-            // This'll be useful when we want to add cylinders aligned to X or Z axes.
             Vector3 ray = endLocation - startLocation;
 
             Vector3 axisZ = ray.normalized;
@@ -187,97 +184,101 @@ namespace com.google.apps.peltzer.client.model.core
             Vector3 axisX = Vector3.Cross(new Vector3(isY ? 1 : 0, !isY ? 1 : 0, 0), axisZ).normalized;
             Vector3 axisY = Vector3.Cross(axisX, axisZ).normalized;
 
-            // Go around the cylinder and create all the vertices
             for (int i = 0; i < slices; i++)
             {
                 float radians = (i / (float)slices) * 2 * Mathf.PI;
 
                 Vector3 outt = axisX * Mathf.Cos(radians) + axisY * Mathf.Sin(radians);
-                Vector3 start = startLocation + ray + outt;
-                Vector3 end = startLocation + outt;
+
+                // Outer circle vertices
+                Vector3 start = endLocation + outt; // Top circle
+                Vector3 end = startLocation + outt; // Bottom circle
 
                 vertices[i + START_OFFSET] = new Vertex(i + START_OFFSET, start);
                 vertices[i + END_OFFSET] = new Vertex(i + END_OFFSET, end);
 
                 if (holeRadius > 0)
                 {
-                    start = startLocation + ray + outt * holeRadius;
-                    end = startLocation + outt * holeRadius;
-                    vertices[i + INNER_START_OFFSET] = new Vertex(i + INNER_START_OFFSET, start);
-                    vertices[i + INNER_END_OFFSET] = new Vertex(i + INNER_END_OFFSET, end);
+                    // Inner circle vertices
+                    Vector3 innerStart = endLocation + outt * holeRadius; // Top inner circle
+                    Vector3 innerEnd = startLocation + outt * holeRadius; // Bottom inner circle
+
+                    vertices[i + INNER_START_OFFSET] = new Vertex(i + INNER_START_OFFSET, innerStart);
+                    vertices[i + INNER_END_OFFSET] = new Vertex(i + INNER_END_OFFSET, innerEnd);
                 }
             }
 
-            vertices =
-              new Dictionary<int, Vertex>(Math3d.ScaleVertices(vertices.Values, scale).ToDictionary(v => v.id));
+            vertices = new Dictionary<int, Vertex>(Math3d.ScaleVertices(vertices.Values, scale).ToDictionary(v => v.id));
 
-            // Go around the cylinder again and create the outside and inside faces.
+            // Outer side faces - PRESERVE ORIGINAL WINDING
             for (int i = 0; i < slices; i++)
             {
                 List<int> faceVerts = new List<int> {
-          i + START_OFFSET,
-          (i + 1) % slices + START_OFFSET,
-          (i + 1) % slices + END_OFFSET,
-          i + END_OFFSET };
-
+                    i + START_OFFSET,
+                    (i + 1) % slices + START_OFFSET,
+                    (i + 1) % slices + END_OFFSET,
+                    i + END_OFFSET
+                };
                 faces[i] = new Face(i, faceVerts.AsReadOnly(), vertices, faceProperties);
-
-                if (holeRadius > 0)
-                {
-                    faceVerts = new List<int> {
-            i + INNER_START_OFFSET,
-            i + INNER_END_OFFSET,
-            (i + 1) % slices + INNER_END_OFFSET,
-            (i + 1) % slices + INNER_START_OFFSET };
-
-                    faces[i + slices] =
-                      new Face(i + slices, faceVerts.AsReadOnly(), vertices, faceProperties);
-                }
             }
 
-            // Go around one last time and create the caps.
-            List<int> startVerts = new List<int>();
-            List<Vector3> startNorms = new List<Vector3>();
-            List<int> startHole = new List<int>();
-            List<Vector3> startHoleNorms = new List<Vector3>();
-            List<int> endVerts = new List<int>();
-            List<Vector3> endNorms = new List<Vector3>();
-            List<int> endHole = new List<int>();
-            List<Vector3> endHoleNorms = new List<Vector3>();
-            for (int i = 0; i < slices; i++)
-            {
-                startVerts.Add(slices - i - 1 + START_OFFSET);   // Reverse-order.
-                startNorms.Add(ray.normalized);
-                endVerts.Add(i + END_OFFSET);
-                endNorms.Add(-ray.normalized);
-
-                if (holeRadius > 0)
-                {
-                    startHole.Add(i + INNER_START_OFFSET);
-                    startHoleNorms.Add(ray.normalized);
-                    endHole.Add(slices - i - 1 + INNER_END_OFFSET);  // Reverse-order.
-                    endHoleNorms.Add(-ray.normalized);
-                }
-            }
-
-            List<Hole> startHoles = new List<Hole>();
-            List<Hole> endHoles = new List<Hole>();
+            int faceIdOff = slices;
 
             if (holeRadius > 0)
             {
-                startHoles.Add(new Hole(startHole.AsReadOnly(), startHoleNorms.AsReadOnly()));
-                endHoles.Add(new Hole(endHole.AsReadOnly(), endHoleNorms.AsReadOnly()));
-            }
+                // Inner side faces - PRESERVE ORIGINAL WINDING (reversed for inward-facing)
+                for (int i = 0; i < slices; i++)
+                {
+                    List<int> faceVerts = new List<int> {
+                        i + INNER_START_OFFSET,
+                        i + INNER_END_OFFSET,
+                        (i + 1) % slices + INNER_END_OFFSET,
+                        (i + 1) % slices + INNER_START_OFFSET
+                    };
+                    faces[faceIdOff++] = new Face(faceIdOff, faceVerts.AsReadOnly(), vertices, faceProperties);
+                }
 
-            int faceIdOff = faces.Count;
-            faces[faceIdOff] = new Face(
-              faceIdOff, startVerts.AsReadOnly(), vertices, faceProperties);
-            faces[faceIdOff + 1] = new Face(
-              faceIdOff + 1, endVerts.AsReadOnly(), vertices, faceProperties);
+                // Top cap with hole - PRESERVE ORIGINAL WINDING
+                for (int i = 0; i < slices; i++)
+                {
+                    List<int> capVerts = new List<int> {
+                        i + START_OFFSET,
+                        i + INNER_START_OFFSET,
+                        (i + 1) % slices + INNER_START_OFFSET,
+                        (i + 1) % slices + START_OFFSET
+                    };
+                    faces[faceIdOff++] = new Face(faceIdOff, capVerts.AsReadOnly(), vertices, faceProperties);
+                }
+
+                // Bottom cap with hole - PRESERVE ORIGINAL WINDING
+                for (int i = 0; i < slices; i++)
+                {
+                    List<int> capVerts = new List<int> {
+                        i + END_OFFSET,
+                        (i + 1) % slices + END_OFFSET,
+                        (i + 1) % slices + INNER_END_OFFSET,
+                        i + INNER_END_OFFSET
+                    };
+                    faces[faceIdOff++] = new Face(faceIdOff, capVerts.AsReadOnly(), vertices, faceProperties);
+                }
+            }
+            else
+            {
+                // Solid caps (no hole) - PRESERVE ORIGINAL WINDING
+                List<int> startVerts = new List<int>();
+                List<int> endVerts = new List<int>();
+                for (int i = 0; i < slices; i++)
+                {
+                    startVerts.Add(slices - i - 1 + START_OFFSET);
+                    endVerts.Add(i + END_OFFSET);
+                }
+                faces[faceIdOff] = new Face(faceIdOff, startVerts.AsReadOnly(), vertices, faceProperties);
+                faces[faceIdOff + 1] = new Face(faceIdOff + 1, endVerts.AsReadOnly(), vertices, faceProperties);
+            }
 
             return new MMesh(id, center, Quaternion.identity, vertices, faces);
         }
-
+        
         /// <summary>
         ///   Create an axis-aligned icosphere.
         /// </summary>
