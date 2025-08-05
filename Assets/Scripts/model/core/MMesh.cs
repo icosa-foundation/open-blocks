@@ -1012,7 +1012,8 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         public static MMesh PolyHydraToMMesh(
-                PolyMesh poly, int id, Vector3 center, Vector3 scale,
+                PolyMesh poly, int id,
+                Vector3 center, Vector3 scale, Quaternion rotation,
                 int materialId, bool fitWithinUnitBox = false)
         {
             var faceProperties = new FaceProperties(materialId);
@@ -1039,7 +1040,8 @@ namespace com.google.apps.peltzer.client.model.core
             {
                 Vector3 v = points[i];
                 v.Scale(scale);
-                vertices[i] = new Vertex(i, v + center);
+                Vector3 pos = (rotation * v) + center;
+                vertices[i] = new Vertex(i, pos);
             }
 
             List<Face> faces = new List<Face>();

@@ -930,7 +930,7 @@ namespace com.google.apps.peltzer.client.desktop_app
                         PrintInsertCommandHelp();
                         return;
                 }
-                mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, 0);
+                mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, Quaternion.identity, 0);
             }
             PeltzerMain.Instance.model.AddMesh(mesh);
         }

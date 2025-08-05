@@ -23,14 +23,11 @@ namespace com.google.apps.peltzer.client.model.core
         public const string COMMAND_NAME = "applyOp";
 
         internal readonly int meshId;
-        internal Vector3 positionDelta;
-        internal Quaternion rotDelta = Quaternion.identity;
         private PolyMesh.Operation op;
         private float paramA;
         private float paramB;
         private FilterTypes filterType;
         private float filterParam;
-        private MMesh prevMesh;
 
         public ApplyOpToMeshCommand(int meshId, PolyMesh.Operation op, float paramA, float paramB,
                                     FilterTypes filterType, float filterParam)
@@ -45,22 +42,21 @@ namespace com.google.apps.peltzer.client.model.core
 
         public void ApplyToModel(Model model)
         {
-            prevMesh = model.GetMesh(meshId);
-            model.DeleteMesh(meshId);
+            var prevMesh = model.GetMesh(meshId);
             PolyMesh polyMesh = MMesh.MMeshToPolyHydra(prevMesh);
             Filter opFilter = Filter.GetFilter(filterType, filterParam, 0, false);
             OpParams opParams = new OpParams(paramA, paramB, filter: opFilter);
             polyMesh = polyMesh.AppyOperation(op, opParams);
             int matId = 0; // TODO
-            var newMMesh = MMesh.PolyHydraToMMesh(polyMesh, meshId, Vector3.zero, Vector3.one, matId);
+            var newMMesh = MMesh.PolyHydraToMMesh(polyMesh, meshId, prevMesh.offset, Vector3.one, prevMesh.rotation, matId);
+            model.DeleteMesh(meshId);
             model.AddMesh(newMMesh);
         }
 
         public Command GetUndoCommand(Model model)
         {
-            // TODO
-            return new MoveMeshCommand(meshId, Vector3.zero, Quaternion.identity);
-            return new ReplaceMeshCommand(meshId, prevMesh);
+           var prevMesh = model.GetMesh(meshId);
+           return new ReplaceMeshCommand(meshId, prevMesh);
         }
     }
 }

@@ -58,6 +58,35 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
         }
     }
 
+    public void HandleCubeXSlices(Slider slider)
+    {
+        slider.m_Label.text = $"{slider.IntValue} X slices";
+        if (PrimitiveParams.CubeXSegments != slider.IntValue)
+        {
+            PrimitiveParams.CubeXSegments = slider.IntValue;
+            m_VolumeInserter.CreateNewVolumeMesh();
+        }
+    }
+
+    public void HandleCubeYSlices(Slider slider)
+    {
+        slider.m_Label.text = $"{slider.IntValue} Y slices";
+        if (PrimitiveParams.CubeYSegments != slider.IntValue)
+        {
+            PrimitiveParams.CubeYSegments = slider.IntValue;
+            m_VolumeInserter.CreateNewVolumeMesh();
+        }
+    }
+
+    public void HandleCubeZSlices(Slider slider)
+    {
+        slider.m_Label.text = $"{slider.IntValue} Z slices";
+        if (PrimitiveParams.CubeZSegments != slider.IntValue)
+        {
+            PrimitiveParams.CubeZSegments = slider.IntValue;
+            m_VolumeInserter.CreateNewVolumeMesh();
+        }
+    }
 
     public void HandleSphereUSlices(Slider slider)
     {

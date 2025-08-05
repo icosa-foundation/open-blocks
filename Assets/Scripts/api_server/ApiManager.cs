@@ -195,7 +195,7 @@ public class ApiController
         var recipe = GenerateRecipe(kwargs);
 
         var poly = PolyBuilder.BuildPolyMesh(recipe);
-        mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, 0);
+        mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, Quaternion.identity, 0);
         if (mesh != null)
         {
             PeltzerMain.Instance.model.AddMesh(mesh);

@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Polyhydra.Core;
 
 namespace com.google.apps.peltzer.client.model.core
 {
@@ -120,34 +121,48 @@ namespace com.google.apps.peltzer.client.model.core
         public static MMesh AxisAlignedBox(
           int id, Vector3 center, Vector3 scale, int materialId)
         {
+
+            int xSegments = PrimitiveParams.CubeXSegments;
+            int ySegments = PrimitiveParams.CubeYSegments;
+            int zSegments = PrimitiveParams.CubeZSegments;
+
             FaceProperties faceProperties = new FaceProperties(materialId);
 
-            List<Vertex> corners = new List<Vertex>(8);
-
-            // First make the vertices.  Use the first 3 binary bits of an int
-            // for the direction on each axis.
-            for (int i = 0; i < /* Corners in a cube. */ 8; i++)
+            if (xSegments == 1 && ySegments == 1 && zSegments == 1)
             {
-                float x = (i & 1) == 0 ? -1 : 1;
-                float y = (i & 2) == 0 ? -1 : 1;
-                float z = (i & 4) == 0 ? -1 : 1;
-                corners.Add(new Vertex(i, new Vector3(x, y, z)));
-            }
+                List<Vertex> corners = new List<Vertex>(8);
 
-            corners = new List<Vertex>(Math3d.ScaleVertices(corners, scale));
-            Dictionary<int, Vertex> vertices = corners.ToDictionary(c => c.id);
-            // Create the faces based on our template.
-            List<Face> faces = new List<Face>();
-            for (int i = 0; i < /* Faces in a cube. */ 6; i++)
-            {
-                List<int> verts = new List<int>();
-                for (int j = 0; j < /* Verts per face (i.e. rectangle). */ 4; j++)
+                // First make the vertices.  Use the first 3 binary bits of an int
+                // for the direction on each axis.
+                for (int i = 0; i < /* Corners in a cube. */ 8; i++)
                 {
-                    verts.Add(CUBE_POINTS[i, j]);
+                    float x = (i & 1) == 0 ? -1 : 1;
+                    float y = (i & 2) == 0 ? -1 : 1;
+                    float z = (i & 4) == 0 ? -1 : 1;
+                    corners.Add(new Vertex(i, new Vector3(x, y, z)));
                 }
-                faces.Add(new Face(i, verts.AsReadOnly(), vertices, faceProperties));
+
+                corners = new List<Vertex>(Math3d.ScaleVertices(corners, scale));
+                Dictionary<int, Vertex> vertices = corners.ToDictionary(c => c.id);
+                // Create the faces based on our template.
+                List<Face> faces = new List<Face>();
+                for (int i = 0; i < /* Faces in a cube. */ 6; i++)
+                {
+                    List<int> verts = new List<int>();
+                    for (int j = 0; j < /* Verts per face (i.e. rectangle). */ 4; j++)
+                    {
+                        verts.Add(CUBE_POINTS[i, j]);
+                    }
+                    faces.Add(new Face(i, verts.AsReadOnly(), vertices, faceProperties));
+                }
+                return new MMesh(id, center, Quaternion.identity, vertices, faces.ToDictionary(f => f.id));
             }
-            return new MMesh(id, center, Quaternion.identity, vertices, faces.ToDictionary(f => f.id));
+            else
+            {
+                var poly = VariousSolids.Box(xSegments, ySegments, zSegments);
+                scale.Scale(new Vector3(1f/xSegments, 1f/ySegments, 1f/zSegments));
+                return MMesh.PolyHydraToMMesh(poly, id, center, scale, Quaternion.identity, materialId);
+            }
         }
 
         /// <summary>
@@ -278,7 +293,7 @@ namespace com.google.apps.peltzer.client.model.core
 
             return new MMesh(id, center, Quaternion.identity, vertices, faces);
         }
-        
+
         /// <summary>
         ///   Create an axis-aligned icosphere.
         /// </summary>
@@ -683,5 +698,8 @@ namespace com.google.apps.peltzer.client.model.core
         public static int IcosphereIterations = 0;
         public static int CylinderSlices = 12;
         public static int ConeSlices = 12;
+        public static int CubeXSegments = 1;
+        public static int CubeYSegments = 1;
+        public static int CubeZSegments = 1;
     }
 }
