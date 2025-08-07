@@ -60,7 +60,7 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
 
     public void HandleCubeXSlices(Slider slider)
     {
-        slider.m_Label.text = $"{slider.IntValue} X slices";
+        slider.m_Label.text = $"{slider.IntValue} horizontal slice{(slider.IntValue > 1 ? "s" : "")}";
         if (PrimitiveParams.CubeXSegments != slider.IntValue)
         {
             PrimitiveParams.CubeXSegments = slider.IntValue;
@@ -70,7 +70,7 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
 
     public void HandleCubeYSlices(Slider slider)
     {
-        slider.m_Label.text = $"{slider.IntValue} Y slices";
+        slider.m_Label.text = $"{slider.IntValue} vertical slice{(slider.IntValue > 1 ? "s" : "")}";
         if (PrimitiveParams.CubeYSegments != slider.IntValue)
         {
             PrimitiveParams.CubeYSegments = slider.IntValue;
@@ -80,7 +80,7 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
 
     public void HandleCubeZSlices(Slider slider)
     {
-        slider.m_Label.text = $"{slider.IntValue} Z slices";
+        slider.m_Label.text = $"{slider.IntValue} depth slice{(slider.IntValue > 1 ? "s" : "")}";
         if (PrimitiveParams.CubeZSegments != slider.IntValue)
         {
             PrimitiveParams.CubeZSegments = slider.IntValue;
