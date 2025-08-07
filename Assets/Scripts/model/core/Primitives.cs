@@ -161,6 +161,7 @@ namespace com.google.apps.peltzer.client.model.core
             {
                 var poly = VariousSolids.Box(xSegments, ySegments, zSegments);
                 scale.Scale(new Vector3(1f/xSegments, 1f/ySegments, 1f/zSegments));
+                poly.Recenter();
                 return MMesh.PolyHydraToMMesh(poly, id, center, scale, Quaternion.identity, materialId);
             }
         }
