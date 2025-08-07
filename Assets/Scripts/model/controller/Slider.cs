@@ -80,24 +80,16 @@ namespace com.google.apps.peltzer.client.model.controller
 
         private static float GetNormalizedLocalPosition(RaycastHit hit)
         {
-            // Convert the hit point to the local space of the hit object.
             Transform hitTransform = hit.transform;
             Vector3 localHitPoint = hitTransform.InverseTransformPoint(hit.point);
 
-            // Get the collider component.
             Collider collider = hitTransform.GetComponent<Collider>();
+            var localBounds = collider is BoxCollider box ? box.size : hitTransform.InverseTransformVector(collider.bounds.size);
 
-            // Convert the collider's bounds center and size into local space.
-            Vector3 localCenter = hitTransform.InverseTransformPoint(collider.bounds.center);
-            Vector3 localSize = hitTransform.InverseTransformVector(collider.bounds.size);
-            localSize.x *= 0.8f;
-            float halfWidth = Mathf.Abs(localSize.x) / 2f;
+            float halfWidth = Mathf.Abs(localBounds.x) * 0.4f; // 0.8f / 2
+            float minX = -halfWidth;
+            float maxX = halfWidth;
 
-            // Compute the minimum and maximum x values based on the local center and half width.
-            float minX = localCenter.x - halfWidth;
-            float maxX = localCenter.x + halfWidth;
-
-            // Calculate and return the normalized value.
             float normalized = Mathf.InverseLerp(minX, maxX, localHitPoint.x);
             return normalized;
         }
