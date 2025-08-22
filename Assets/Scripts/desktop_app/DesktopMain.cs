@@ -17,6 +17,7 @@ using com.google.apps.peltzer.client.api_clients.objectstore_client;
 using com.google.apps.peltzer.client.model.main;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace com.google.apps.peltzer.client.desktop_app
 {
@@ -82,6 +83,19 @@ namespace com.google.apps.peltzer.client.desktop_app
         ///  URL user is taken to when selecting 'About Blocks' from menu
         /// </summary>
         private const string ABOUT_BLOCKS_URL = "https://openblocks.app";
+
+        private void Awake()
+        {
+#if UNITY_STANDALONE || UNITY_EDITOR
+            Cursor.visible = true;
+#endif
+
+            Camera cam = Camera.main;
+            if (cam != null && cam.GetComponent<PhysicsRaycaster>() == null)
+            {
+                cam.gameObject.AddComponent<PhysicsRaycaster>();
+            }
+        }
 
         public void Setup()
         {

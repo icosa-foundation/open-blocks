@@ -25909,6 +25909,8 @@ GameObject:
   - component: {fileID: 124158705867986396}
   - component: {fileID: 2055044497}
   - component: {fileID: 905784776662675014}
+  - component: {fileID: 905784776662675016}
+  - component: {fileID: 905784776662675018}
   m_Layer: 10
   m_Name: ID_Camera (eye)
   m_TagString: MainCamera
@@ -26054,8 +26056,123 @@ MonoBehaviour:
     m_FrameInfluence: 0.1
     m_JitterScale: 1
     m_MipBias: 0
-    m_VarianceClampScale: 0.9
-    m_ContrastAdaptiveSharpening: 0
+  m_VarianceClampScale: 0.9
+  m_ContrastAdaptiveSharpening: 0
+--- !u!114 &905784776662675016
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1389873695960628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b241ed5e61f44392ad859b0c3cd6978, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  defaultRotation: {x: 45, y: 0, z: 0}
+  defaultDistance: 5
+  farFocusFactor: 2
+  moveSpeed: 5
+  moveFasterFactor: 2
+  rotateSpeed: 100
+  zoomStep: 0.2
+  inputMoveAxis:
+    m_UseReference: 0
+    m_Action:
+      m_Name:
+      m_Type: 0
+      m_ExpectedControlType:
+      m_Id: 00000000-0000-0000-0000-000000000000
+      m_Processors:
+      m_Interactions:
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  inputLookAxis:
+    m_UseReference: 0
+    m_Action:
+      m_Name:
+      m_Type: 0
+      m_ExpectedControlType:
+      m_Id: 00000000-0000-0000-0000-000000000000
+      m_Processors:
+      m_Interactions:
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  inputZoomAxis:
+    m_UseReference: 0
+    m_Action:
+      m_Name:
+      m_Type: 0
+      m_ExpectedControlType:
+      m_Id: 00000000-0000-0000-0000-000000000000
+      m_Processors:
+      m_Interactions:
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  inputMoveButton:
+    m_UseReference: 0
+    m_Action:
+      m_Name:
+      m_Type: 0
+      m_ExpectedControlType:
+      m_Id: 00000000-0000-0000-0000-000000000000
+      m_Processors:
+      m_Interactions:
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  inputPanningButton:
+    m_UseReference: 0
+    m_Action:
+      m_Name:
+      m_Type: 0
+      m_ExpectedControlType:
+      m_Id: 00000000-0000-0000-0000-000000000000
+      m_Processors:
+      m_Interactions:
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  inputRotateButton:
+    m_UseReference: 0
+    m_Action:
+      m_Name:
+      m_Type: 0
+      m_ExpectedControlType:
+      m_Id: 00000000-0000-0000-0000-000000000000
+      m_Processors:
+      m_Interactions:
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  inputMoveFasterButton:
+    m_UseReference: 0
+    m_Action:
+      m_Name:
+      m_Type: 0
+      m_ExpectedControlType:
+      m_Id: 00000000-0000-0000-0000-000000000000
+      m_Processors:
+      m_Interactions:
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+--- !u!114 &905784776662675018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1389873695960628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 900b9fa2e1fa423ca7b2b22fe2a591ee, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &1390375767157118
 GameObject:
   m_ObjectHideFlags: 0
