@@ -2313,6 +2313,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 114361530198420042, guid: 755103fd682e3c34da0b854314395912,
         type: 3}
+      propertyPath: appName
+      value: "\u5199\u610F\u5EFA\u6A21"
+      objectReference: {fileID: 0}
+    - target: {fileID: 114361530198420042, guid: 755103fd682e3c34da0b854314395912,
+        type: 3}
       propertyPath: cameraRigGameObject
       value: 
       objectReference: {fileID: 197705495}

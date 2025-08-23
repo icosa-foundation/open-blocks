@@ -15,5 +15,6 @@ MonoBehaviour:
   Keys: 0100000007000000
   Values:
   - featureSets: []
-  - featureSets: []
+  - featureSets:
+    - com.picoxr.openxr.features
   m_vulkanAdditionalGraphicsQueue: 0

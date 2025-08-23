@@ -7,15 +7,6 @@
       "dependencies": {},
       "hash": "08d807daceffa2bfa698e8a11e469bb7dc7f2e9c"
     },
-    "com.meta.xr.sdk.platform": {
-      "version": "74.0.0",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.ugui": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
-    },
     "com.unity.burst": {
       "version": "1.8.17",
       "depth": 1,
@@ -212,6 +203,15 @@
         "com.unity.xr.legacyinputhelpers": "2.1.2"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.unity.xr.openxr.picoxr": {
+      "version": "file:C:/Code/vender/PICO_Unity_OpenXR_SDK",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.xr.core-utils": "2.2.0",
+        "com.unity.xr.openxr": "1.8.2"
+      }
     },
     "org.nuget.sharpziplib": {
       "version": "1.3.1",
