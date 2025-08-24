@@ -261,7 +261,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
+  - {fileID: 2979193228837331801, guid: eb8bacd46357fb4418b3d529965e7b08, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -303,10 +303,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Category:'
+  m_text: "\u5206\u7C7B\uFF1A"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
-  m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
+  m_fontAsset: {fileID: 11400000, guid: eb8bacd46357fb4418b3d529965e7b08, type: 2}
+  m_sharedMaterial: {fileID: 2979193228837331801, guid: eb8bacd46357fb4418b3d529965e7b08,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -465,7 +465,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
+  - {fileID: 2979193228837331801, guid: eb8bacd46357fb4418b3d529965e7b08, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -507,10 +507,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Listing: '
+  m_text: "\u5217\u8868\uFF1A"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
-  m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
+  m_fontAsset: {fileID: 11400000, guid: eb8bacd46357fb4418b3d529965e7b08, type: 2}
+  m_sharedMaterial: {fileID: 2979193228837331801, guid: eb8bacd46357fb4418b3d529965e7b08,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -637,7 +637,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
+  - {fileID: 2979193228837331801, guid: eb8bacd46357fb4418b3d529965e7b08, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -679,10 +679,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Order By:'
+  m_text: "\u6392\u5E8F\uFF1A"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 820855f59355eb94a931aaedf8016ddc, type: 2}
-  m_sharedMaterial: {fileID: 21265816696331314, guid: 820855f59355eb94a931aaedf8016ddc,
+  m_fontAsset: {fileID: 11400000, guid: eb8bacd46357fb4418b3d529965e7b08, type: 2}
+  m_sharedMaterial: {fileID: 2979193228837331801, guid: eb8bacd46357fb4418b3d529965e7b08,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -2890,8 +2890,31 @@ PrefabInstance:
     - target: {fileID: 5501061831439391173, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_text
-      value: Complexity
+      value: "\u590D\u6742\u5EA6"
       objectReference: {fileID: 0}
+    - target: {fileID: 5501061831439391173, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: eb8bacd46357fb4418b3d529965e7b08,
+        type: 2}
+    - target: {fileID: 5501061831439391173, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 2979193228837331801, guid: eb8bacd46357fb4418b3d529965e7b08,
+        type: 2}
+    - target: {fileID: 5501061831439391173, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7373951454273769059, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2979193228837331801, guid: eb8bacd46357fb4418b3d529965e7b08,
+        type: 2}
     - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_LocalScale.y

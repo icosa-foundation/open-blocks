@@ -65,10 +65,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Open Blocks
+  m_text: "\u5199\u610F\u5EFA\u6A21"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: f75b9865142673242bbbf0a68d855c77, type: 2}
-  m_sharedMaterial: {fileID: -2334796486016951813, guid: f75b9865142673242bbbf0a68d855c77,
+  m_fontAsset: {fileID: 11400000, guid: eb8bacd46357fb4418b3d529965e7b08, type: 2}
+  m_sharedMaterial: {fileID: 2979193228837331801, guid: eb8bacd46357fb4418b3d529965e7b08,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
