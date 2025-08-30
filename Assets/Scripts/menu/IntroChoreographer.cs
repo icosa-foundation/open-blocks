@@ -34,7 +34,7 @@ namespace com.google.apps.peltzer.client.menu
         /// <summary>
         /// Duration of introduction animation (Blocks logo assembling together).
         /// </summary>
-        private const float INTRO_ANIMATION_DURATION = 10.0f;
+        private const float INTRO_ANIMATION_DURATION = 8.0f;
 
         /// <summary>
         /// Speed scale of the intro animation (tweaked to match it with the intro sound).
