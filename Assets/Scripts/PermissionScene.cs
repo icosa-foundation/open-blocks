@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.Android;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.SceneManagement;
 
@@ -17,13 +18,13 @@ namespace TiltBrush
         {
 
 #if UNITY_ANDROID
-            if (!UserHasManageExternalStoragePermission())
+            if (!Permission.HasUserAuthorizedPermission(Permission.ExternalStorageWrite))
             {
-                AskForManageStoragePermission();
-                while (!UserHasManageExternalStoragePermission())
-                {
-                    yield return new WaitForEndOfFrame();
-                }
+                Permission.RequestUserPermission(Permission.ExternalStorageWrite);
+            }
+            if (!Permission.HasUserAuthorizedPermission(Permission.ExternalStorageRead))
+            {
+                Permission.RequestUserPermission(Permission.ExternalStorageRead);
             }
 
 #endif
