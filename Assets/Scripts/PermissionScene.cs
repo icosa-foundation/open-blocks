@@ -27,6 +27,16 @@ namespace TiltBrush
                 Permission.RequestUserPermission(Permission.ExternalStorageRead);
             }
 
+            // make pico 4u compatible
+            if (!UserHasManageExternalStoragePermission())
+            {
+                AskForManageStoragePermission();
+                while (!UserHasManageExternalStoragePermission())
+                {
+                    yield return new WaitForEndOfFrame();
+                }
+            }
+
 #endif
             yield return null;
             SceneManager.LoadScene("MainScene", LoadSceneMode.Single);

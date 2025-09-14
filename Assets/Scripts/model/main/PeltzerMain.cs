@@ -603,7 +603,16 @@ namespace com.google.apps.peltzer.client.model.main
                     Debug.LogError("Failed to create user path: " + e.Message);
                 }
             }
-            GetUserConfig();
+
+            try
+            {
+                GetUserConfig();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Failed to get user config: " + e.Message);
+            }
+            
 
             // Set up the authentication.
             gameObject.AddComponent<OAuth2Identity>();
