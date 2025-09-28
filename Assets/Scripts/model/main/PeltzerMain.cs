@@ -829,6 +829,15 @@ namespace com.google.apps.peltzer.client.model.main
                 {
                     AssetsServiceClient.WebBaseUrl = userConfig.GalleryUrl;
                 }
+
+                if (userConfig.ApiUrl == "")
+                {
+                    PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
+                }
+                else
+                {
+                    AssetsServiceClient.ApiBaseUrl = userConfig.ApiUrl;
+                }
             }
         }
 

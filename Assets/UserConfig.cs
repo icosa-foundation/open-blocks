@@ -7,4 +7,5 @@ using UnityEngine;
 public class UserConfig
 {
     public string GalleryUrl;
+    public string ApiUrl;
 }
