@@ -250,7 +250,7 @@ namespace com.google.apps.peltzer.client.model.export
             // context.triangles is a list of the vertices in the triangles. Each triple
             // of elements is one triangle, so the total number of triangles in this mesh
             // is one third the size of the triangles list.
-            triangleCount += meshInfo.triangles.Count / 3;
+            triangleCount += meshInfo.numTriangles / 3;
 
             // The actual geometry is exported in the .bin file for efficiency
             // This sets up the structure of the vertex data in the .bin file

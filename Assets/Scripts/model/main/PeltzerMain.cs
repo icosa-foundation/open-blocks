@@ -580,9 +580,6 @@ namespace com.google.apps.peltzer.client.model.main
                 PlayerPrefs.Save();
             }
 
-            // Initializes static buffers we're using for optimizing setting of list values.
-            ReMesher.InitBufferCaches();
-
             userPath = GetUserPath();
 
             userPath = Path.Combine(userPath, "Blocks");

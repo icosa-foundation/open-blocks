@@ -13,122 +13,153 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.main;
+using Unity.Collections;
 using UnityEditor;
+using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
 namespace com.google.apps.peltzer.client.model.render
 {
 
     /// <summary>
+    /// Should slowly replace the MeshGenContext.
+    /// Stores information about where the mesh is located in the Unity mesh buffers
+    /// </summary>
+    public readonly struct BetterMeshGenContext
+    {
+        public readonly int meshId;
+        public readonly int transformIndex;
+        public readonly int numVertices;
+        public readonly int numIndices;
+        public readonly int startVertexBuffer;
+        public readonly int startIndexBuffer;
+
+        public BetterMeshGenContext(int meshId, int transformIndex, int numVertices, int numIndices, int startVertexBuffer, int startIndexBuffer)
+        {
+            this.meshId = meshId;
+            this.transformIndex = transformIndex;
+            this.numVertices = numVertices;
+            this.numIndices = numIndices;
+            this.startVertexBuffer = startVertexBuffer;
+            this.startIndexBuffer = startIndexBuffer;
+        }
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct VertexData
+    {
+        public Vector3 position;
+        public Vector3 normal;
+        public Color32 color;
+        public Vector2 transformIndex;
+    }
+
+    /// <summary>
     ///   Generates, maintains and renders a collection of Unity Meshes based on a collection of MMeshes.
     ///
     ///   Multiple MMeshes can be coalesced into a single Unity Mesh.  MMeshes that have multiple
-    ///   different materials will be divided between multiple Unity Meshes.  (Meaning that you end up with
+    ///   different materials (with different shaders) will be divided between multiple Unity Meshes. (Meaning that you end up with
     ///   a many-to-many relationship between MMeshes and Unity Meshes.)
     ///
-    ///   Every time a MMesh is added, we first retrieve its triangles from the cache (potentially calculating them on a
-    ///   cache miss.  We then add those triangles to a Unity Mesh of the same material.  When that mesh is "full" (in 
-    ///   this case, has MAX_VERTS_PER_MESH vertices), we create a new Unity Mesh for that material.  Each time we add 
-    ///   triangles to a Unity Mesh, we need to regenerate that mesh.
+    ///   Every time a MMesh is added, we retrieve its mesh data.  We then add it to a Unity Mesh of the same material.  When that mesh is "full" (in 
+    ///   this case, has MAX_VERTS_PER_MESH vertices), we create a new Unity Mesh for that material.
     /// </summary>
     /// TODO(bug): Support meshes with more than 65k verts.
     public class ReMesher
     {
+        private static readonly int RemesherMeshTransforms = Shader.PropertyToID("_RemesherMeshTransforms");
+
         // Maximum number of vertices we'd put into a coalesced Mesh.
         public const int MAX_VERTS_PER_MESH = 20000;
 
-        // Maximum number of vertices we allow for any mesh.
-        private const int MAX_VERTS_PER_MMESH = 20000;
+        // Maximum number of vertices we allow for any context.
+        private const int MAX_VERTS_PER_CONTEXT = 20000;
 
-        // Maximum number of MMeshes in a single MeshInfo.
-        private const int MAX_MMESH_PER_MESHINFO = 128;
+        // Maximum number of MMesh contexts in a single MeshInfo.
+        private const int MAX_CONTEXTS_PER_MESHINFO = 128;
 
-        // A number of static Vector2 arrays, each of which is filled with the same constant Vector2 - ie, the first array
-        // is all Vector2(0,0), the second is Vector2(1, 0) and so on.  This allows us to use cheap Array.Copy() calls to
-        // fill an array with the same value.
-        private static List<Vector2[]> BufferCaches;
+        // For each MMesh, the set of MeshInfos that MMesh contributes triangles to.
+        private Dictionary<int, HashSet<MeshInfo>> meshInfosByMesh = new();
+
+        // All MeshInfos that we need to render.
+        private HashSet<MeshInfo> allMeshInfos = new();
+
+        // IDs of meshes that we have yet to add-to/remove- from the ReMesher, and haven't gotten around to doing yet.
+        // We only add when ReMesher.Flush() is called so that a bunch of those operations can be batched.
+        private HashSet<int> meshesPendingAdd = new();
+        private HashSet<int> meshesPendingRemove = new();
+        private HashSet<MeshInfo> meshInfosPendingRegeneration = new();
 
         /// <summary>
-        ///   Info about a Unity Mesh that will be drawn at render time.  MeshInfo batches a number of meshes together, and
+        ///   Info about a Unity Mesh that will be drawn at render time.  MeshInfo batches a number of MMeshes together, and
         ///   renders them in a single draw call, passing an array of transform matrix uniforms to position them correctly.
         /// </summary>
         public class MeshInfo
         {
+            // The Unity Mesh, itself.
+            public Mesh mesh = new();
+
+            // stores simplified contexts for each MMesh so we know where they are located in the Unity mesh buffers
+            // if an MMesh has multiple contexts they should be after each other in the buffer as they should be added at the same time!
+            public List<BetterMeshGenContext> mMeshContexts = new();
+
             // The material we draw this mesh with.
             public MaterialAndColor materialAndColor;
 
-            // All MMeshes that contribute to this mesh.
-            private HashSet<int> mmeshes = new HashSet<int>();
+            // because the transform of an individual MMesh is passed as a uniform to the shader, we can't
+            // use the mesh bounds for culling. Instead of recalculating the bounds every time we add a mesh
+            // or someone scales the scene, etc., we just set the bounds to something big.
+            // (This is how the initial implementation handled it too.)
+            private Bounds bounds = new Bounds(new Vector3(0f, 0f, 0f), new Vector3(999999f, 999999f, 999999f));
 
-            // It's cheaper to render extra data in the form of degenerate triangles than it is to resize our vertex array,
-            // so all of these are preallocated.
-            public Vector3[] verts = new Vector3[MAX_VERTS_PER_MESH];
-            public Color32[] colors = new Color32[MAX_VERTS_PER_MESH];
-            public Vector3[] normals = new Vector3[MAX_VERTS_PER_MESH];
-            // List here because the number of triangles isn't predictable based on the number of vertices, so we may need
-            // to eventually resize.
-            public List<int> triangles = new List<int>(3 * MAX_VERTS_PER_MESH);
+            // layout of our vertex buffer
+            private VertexAttributeDescriptor[] layout = {
+                new(VertexAttribute.Position), // default is float32 x3
+                new(VertexAttribute.Normal),   // default is float32 x3
+                new(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
+                new(VertexAttribute.TexCoord2, VertexAttributeFormat.Float32, 2)
+            };
 
-            // Buffer that holds the transform index each vertex should use.
-            public Vector2[] transformIndexBuffer = new Vector2[MAX_VERTS_PER_MESH];
+            private MeshUpdateFlags updateFlags = MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices;
 
-            // The number of vertices tracked by this MeshInfo - defaults to 2, because we start with 2 vertices due to a
-            // hack to avoid the mesh being view frustum culled.
-            public int numVerts = 2;
+            public int numVerts = 0;
+            public int numTriangles = 0;
 
-            // The number of vertices that are waiting to be added to number of vertices tracked by this MeshInfo when
-            // Regenerate is called.
-            public int numPendingVerts;
-
-            // The Unity Mesh, itself.
-            public Mesh mesh = new Mesh();
-
-            // Whether anything has been deleted from this meshInfo, causing it to need regeneration.
-            public bool needsRegeneration = false;
-
-            // Each mesh needs a transformation matrix when we render.  In order to batch meshes with different transforms,
-            // we pass the transforms as an array of uniforms, and supply each vertex with the index of the transform it
-            // should use.
-            public Dictionary<int, int> mmeshToTransformIndex = new Dictionary<int, int>();
-
-            // One available per MAX_MMESH_PER_MESHINFO
-            private Queue<int> availableTransformIndices = new Queue<int>();
-
-            // Transform uniforms.
-            public Matrix4x4[] xformMats = new Matrix4x4[MAX_MMESH_PER_MESHINFO];
-
-            // Map from MMesh id to the set of MeshGenContexts contained in this MeshInfo that are associated with it.
-            private Dictionary<int, HashSet<MeshGenContext>> meshGenContexts
-              = new Dictionary<int, HashSet<MeshGenContext>>();
+            // Transform uniforms for each context which are passed to the shader.
+            private Matrix4x4[] xformMats = new Matrix4x4[MAX_CONTEXTS_PER_MESHINFO];
+            private Stack<int> freeXformMatIndices = new(MAX_CONTEXTS_PER_MESHINFO);
 
             /// <summary>
-            /// Gets the mesh ids of all meshes in this MeshInfo
+            /// Gets the mesh ids of all meshes in this MeshInfo (only used for debugging)
             /// </summary>
-            public HashSet<int> GetMeshIds()
+            public List<int> GetMeshIds()
             {
+                List<int> mmeshes = new List<int>();
+                int previousId = -1;
+                for (int i = 0; i < mMeshContexts.Count; i++)
+                {
+                    if (previousId != mMeshContexts[i].meshId)
+                    {
+                        mmeshes.Add(mMeshContexts[i].meshId);
+                    }
+                    previousId = mMeshContexts[i].meshId;
+                }
                 return mmeshes;
             }
 
             /// <summary>
             /// Gets the number of meshes in this MeshInfo
             /// </summary>
-            public int GetNumMeshes()
+            public int GetNumContexts()
             {
-                return mmeshes.Count;
-            }
-
-            /// <summary>
-            /// Returns whether this MeshInfo contains the specified mesh
-            /// </summary>
-            public bool HasMesh(int meshId)
-            {
-                return mmeshes.Contains(meshId);
+                return mMeshContexts.Count;
             }
 
             /// <summary>
@@ -139,84 +170,203 @@ namespace com.google.apps.peltzer.client.model.render
             {
                 Mesh exportableMesh = new Mesh();
 
-                // We need to work around the 2 extra verts we hack into the MeshInfo mesh to work around frustrum culling.
-                // These verts exist in the first two indices of the verts array.
-                int numVertsInMesh = meshInfo.numVerts - 2;
-                int indexOfFirstVert = 2;
-
-                // Generate a new list of vertices in their correct world-space positions.
-                Vector3[] newLocs = new Vector3[numVertsInMesh];
-                for (int i = 0; i < numVertsInMesh; i++)
+                using (var meshData = Mesh.AcquireReadOnlyMeshData(meshInfo.mesh))
                 {
-                    int transformIndex = (int)meshInfo.transformIndexBuffer[i + indexOfFirstVert].x;
-                    newLocs[i] = meshInfo.xformMats[transformIndex].MultiplyPoint(meshInfo.verts[i + indexOfFirstVert]);
+                    var vertexData = meshData[0].GetVertexData<VertexData>();
+                    var tempVertexData = new NativeArray<VertexData>(vertexData.Length, Allocator.Temp);
+                    var indexData = meshData[0].GetIndexData<short>();
+
+                    exportableMesh.SetVertexBufferParams(vertexData.Length, meshInfo.layout);
+                    exportableMesh.SetIndexBufferParams(indexData.Length, IndexFormat.UInt16);
+
+                    // Put vertices into world space.
+                    for (int i = 0; i < vertexData.Length; i++)
+                    {
+                        int transformIndex = (int)vertexData[i].transformIndex.x;
+                        tempVertexData[i] = new VertexData()
+                        {
+                            position = meshInfo.xformMats[transformIndex].MultiplyPoint(vertexData[i].position),
+                            normal = meshInfo.xformMats[transformIndex].MultiplyVector(vertexData[i].normal).normalized, // TODO is that right?
+                            color = vertexData[i].color,
+                            transformIndex = vertexData[i].transformIndex
+                        };
+                    }
+
+                    exportableMesh.SetVertexBufferData(vertexData, 0, 0, vertexData.Length, flags: meshInfo.updateFlags);
+                    exportableMesh.SetIndexBufferData(indexData, 0, 0, indexData.Length, flags: meshInfo.updateFlags);
+                    exportableMesh.subMeshCount = 1;
+                    var desc = new SubMeshDescriptor(0, indexData.Length, MeshTopology.Triangles)
+                    {
+                        firstVertex = 0,
+                        vertexCount = vertexData.Length
+                    };
+                    exportableMesh.SetSubMesh(0, desc);
+                    exportableMesh.RecalculateNormals();
                 }
-                exportableMesh.vertices = newLocs;
-
-                // Copy Colors.
-                Color32[] copiedColors = new Color32[numVertsInMesh];
-                Array.Copy(meshInfo.colors, indexOfFirstVert, copiedColors, 0, numVertsInMesh);
-                exportableMesh.colors32 = copiedColors;
-
-                // Copy Triangles.
-                int[] copiedTriangles = new int[meshInfo.triangles.Count];
-                for (int i = 0; i < meshInfo.triangles.Count; i++)
-                {
-                    copiedTriangles[i] = meshInfo.triangles[i] - indexOfFirstVert;
-                }
-                exportableMesh.triangles = copiedTriangles;
-
-                // Copy Normals
-                // TODO(bug): Get rid of this recalculation and just rely on the normals when they are fixed.
-                exportableMesh.RecalculateNormals();
-                // Vector3[] copiedNormals = new Vector3[numVertsInMesh];
-                // Array.Copy(meshInfo.normals, indexOfFirstVert, copiedNormals, 0, numVertsInMesh);
-                // exportableMesh.normals = copiedNormals;
 
                 return exportableMesh;
             }
 
-            /// <summary>
-            /// Adds the supplied MeshGenContext to this mesh under the supplied id.  Multiple contexts with the same mesh id
-            /// can be supplied (Different mats that use the same shader to render)
-            /// </summary>
-            public void AddMesh(int meshId, MeshGenContext context)
+            public bool ContainsMesh(int meshId)
             {
-                if (mmeshes.Add(meshId))
+                for (int i = 0; i < mMeshContexts.Count; i++)
                 {
-                    // Since we're only allocating one index per mmesh and have indices up to MAX_MMESH_PER_MESHINFO we're
-                    // guaranteed to have enough.
-                    int availableTransformIndex = availableTransformIndices.Dequeue();
-                    mmeshToTransformIndex.Add(meshId, availableTransformIndex);
+                    if (mMeshContexts[i].meshId == meshId)
+                    {
+                        return true;
+                    }
                 }
-                HashSet<MeshGenContext> contextSet;
-                // Append the triangles, add to the set of MeshInfos to regenerate and other bookeeping.
-                if (!meshGenContexts.TryGetValue(meshId, out contextSet))
-                {
-                    contextSet = new HashSet<MeshGenContext>();
-                    meshGenContexts[meshId] = contextSet;
-                }
-                contextSet.Add(context);
-                if (!needsRegeneration)
-                {
-                    AddContext(meshId, context);
-                }
-                else
-                {
-                    numPendingVerts += context.verts.Count;
-                }
+                return false;
             }
 
             /// <summary>
-            /// Removes a mesh from this MeshInfo.
+            /// Adds a BetterMeshGenContext to this Unity mesh. Multiple contexts with the same mesh id
+            /// can be supplied (Different mats that use the same shader to render)
+            /// TODO: This will likely change once we remove the MeshGenContext and only use BetterMeshGenContext
             /// </summary>
-            public void RemoveMesh(int meshId)
+            public void AddMesh(MMesh mMesh, MeshGenContext context)
             {
-                mmeshes.Remove(meshId);
-                availableTransformIndices.Enqueue(mmeshToTransformIndex[meshId]);
-                mmeshToTransformIndex.Remove(meshId);
-                meshGenContexts.Remove(meshId);
-                needsRegeneration = true;
+                AddContext(mMesh.id, context);
+            }
+
+            /// <summary>
+            /// When meshes are removed from this MeshInfo, we update the mesh buffers and move data in
+            /// vertex and index buffers to account for the removed data.
+            /// We iterate through all our contexts which should be in the order they were added to the mesh.
+            /// We keep track of chunks of data inbetween removed contexts and offset those chunks once we know how big they are,
+            /// to close the gaps left by removed contexts.
+            ///
+            /// // Sadly, we need to offset each index individually otherwise they'll point to the wrong vertex data.
+            /// TODO: Use jobs in the future and this should not be a problem.
+            /// TODO: Later, instead of copying data around, we could set the indices of removed contexts to 0 which makes them invisible.
+            /// Then we can do a combined cleanup of the mesh buffers every couple of seconds.
+            /// <param name="meshesPendingRemove"> mesh ids of the MMeshes we want to remove from the Unity mesh</param>
+            /// </summary>
+            public void UpdateMeshBuffer(HashSet<int> meshesPendingRemove)
+            {
+                int offsetVB = 0; // the offset we need to apply to the start indices of later contexts after previous ones were removed
+                int offsetIB = 0; // same as above for index buffers
+                int startChunkVB = 0; // the start of a chunk that we need to offset after deleting contexts
+                int endChunkVB = 0; // the end of the chunk to offset (which can also be the start of a new context to be removed)
+                int startChunkIB = 0; // same as above but for index buffers
+                int endChunkIB = 0; // same as above but for index buffers
+                int listOffset = 0; // we shift our contexts in the list as we go along and remove the flagged ones
+
+                BetterMeshGenContext previousContext = default;
+
+                NativeArray<VertexData> newVertexData;
+                NativeArray<short> newIndexData;
+                using (var meshData = Mesh.AcquireReadOnlyMeshData(mesh))
+                {
+                    var vertexData = meshData[0].GetVertexData<VertexData>();
+                    var indexData = meshData[0].GetIndexData<short>();
+
+                    newVertexData = new NativeArray<VertexData>(vertexData.Length, Allocator.Temp);
+                    newIndexData = new NativeArray<short>(indexData.Length, Allocator.Temp);
+                    vertexData.CopyTo(newVertexData);
+                    indexData.CopyTo(newIndexData);
+
+                    for (int i = 0; i < mMeshContexts.Count; i++)
+                    {
+                        var context = mMeshContexts[i];
+
+                        // check if flagged for removal
+                        if (meshesPendingRemove.Contains(context.meshId))
+                        {
+                            listOffset += 1;
+                            freeXformMatIndices.Push(context.transformIndex); // free up the transform index
+
+                            // this is the first context to be removed any data before that we can leave as is
+                            // we start counting where the first chunk to copy should start
+                            if (startChunkVB == 0)
+                            {
+                                startChunkVB = context.startVertexBuffer + context.numVertices;
+                                startChunkIB = context.startIndexBuffer + context.numIndices;
+                            }
+                            else
+                            {
+                                if (!meshesPendingRemove.Contains(previousContext.meshId)) // previous context should never be null as the first removed context is handled above
+                                {
+                                    // if the previous context was a part of the chunk we need to offset, we know that with the current context
+                                    // we ended a chunk and can now offset it before computing the start of the next chunk
+                                    endChunkVB = context.startVertexBuffer; // exclusive
+                                    endChunkIB = context.startIndexBuffer;
+
+                                    NativeArray<VertexData>.Copy(vertexData, startChunkVB, newVertexData, startChunkVB - offsetVB, endChunkVB - startChunkVB);
+                                    // NativeArray<short>.Copy(indexData, startChunkIB, newIndexData, startChunkIB - offsetIB, endChunkIB - startChunkIB);
+                                    for (int j = 0; j < endChunkIB - startChunkIB; j++)
+                                    {
+                                        newIndexData[startChunkIB - offsetIB + j] = (short)(indexData[startChunkIB + j] - offsetVB);
+                                    }
+
+                                    startChunkVB = context.startVertexBuffer + context.numVertices;
+                                    startChunkIB = context.startIndexBuffer + context.numIndices;
+                                }
+                                else
+                                {
+                                    // if we keep going and we still have a context to remove, update the start of the chunk
+                                    // we will end up here as long as there are multiple contexts to remove after each other
+                                    startChunkVB += context.numVertices;
+                                    startChunkIB += context.numIndices;
+                                }
+                            }
+                            offsetVB += context.numVertices;
+                            offsetIB += context.numIndices;
+                        }
+                        else
+                        {
+                            // we add the context with updated buffer offsets in the list accounting for the removed contexts before
+                            mMeshContexts[i - listOffset] = new BetterMeshGenContext(
+                                context.meshId, context.transformIndex, context.numVertices, context.numIndices,
+                                context.startVertexBuffer - offsetVB, context.startIndexBuffer - offsetIB);
+                        }
+                        previousContext = context;
+                    }
+
+                    // after we went through all contexts, we might still have a chunk to offset at the end of the buffers
+                    if (startChunkVB < numVerts)
+                    {
+                        NativeArray<VertexData>.Copy(vertexData, startChunkVB, newVertexData, startChunkVB - offsetVB, numVerts - startChunkVB);
+                        // NativeArray<short>.Copy(indexData, startChunkIB, newIndexData, startChunkIB - offsetIB, numTriangles - startChunkIB);
+                        for (int j = 0; j < numTriangles - startChunkIB; j++)
+                        {
+                            newIndexData[startChunkIB - offsetIB + j] = (short)(indexData[startChunkIB + j] - offsetVB);
+                        }
+                    }
+                } // end of "using"-block for read-only meshData
+
+                // after we moved all remaining contexts up in the list we trim the end 
+                var from = mMeshContexts.Count - 1;
+                var to = mMeshContexts.Count - listOffset;
+                for (int i = from; i >= to; i--)
+                {
+                    mMeshContexts.RemoveAt(i);
+                }
+
+                numVerts -= offsetVB;
+                numTriangles -= offsetIB;
+
+                mesh.SetVertexBufferData(newVertexData, 0, 0, numVerts, flags: updateFlags);
+                mesh.SetIndexBufferData(newIndexData, 0, 0, numTriangles, flags: updateFlags);
+
+                var desc = new SubMeshDescriptor(0, numTriangles)
+                {
+                    firstVertex = 0,
+                    vertexCount = numVerts
+                };
+                mesh.SetSubMesh(0, desc);
+            }
+
+            // for debugging only
+            private void PrintContexts()
+            {
+                string s = "";
+                for (int i = 0; i < mMeshContexts.Count; i++)
+                {
+                    s += "[" + i + "] id: " + mMeshContexts[i].meshId + "trafoIndex: " + mMeshContexts[i].transformIndex + " startVB: " + mMeshContexts[i].startVertexBuffer + " numVB: " + mMeshContexts[i].numVertices +
+                         " startIB: " + mMeshContexts[i].startIndexBuffer + " numIB: " + mMeshContexts[i].numIndices + "\n";
+                }
+                Debug.Log(s);
             }
 
             /// <summary>
@@ -224,31 +374,56 @@ namespace com.google.apps.peltzer.client.model.render
             ///   MeshInfo for the new components.
             /// </summary>
             /// <param name="meshId">The id of the mesh whose context we are adding.</param>
-            /// <param name="source">The MehGenContext whose data we're adding to this MeshInfo.</param>
+            /// <param name="source">The MehGenContext whose data we're adding to this MeshInfo. TODO should be replaced by BetterMeshGenContext in future.</param>
             public void AddContext(int meshId, MeshGenContext source)
             {
-                int transformIndex = mmeshToTransformIndex[meshId];
-                Array.Copy(source.verts.ToArray(), 0, verts, numVerts, source.verts.Count);
-                Array.Copy(source.normals.ToArray(), 0, normals, numVerts, source.verts.Count);
-                Array.Copy(source.colors.ToArray(), 0, colors, numVerts, source.verts.Count);
-                Array.Copy(BufferCaches[transformIndex], 0, transformIndexBuffer, numVerts, source.verts.Count);
-                int triCount = source.triangles.Count;
-                for (int i = 0; i < triCount; i++)
+                int transformIndex = freeXformMatIndices.Pop();
+                var betterContext = new BetterMeshGenContext(
+                    meshId, transformIndex, source.verts.Count,
+                    source.triangles.Count, numVerts, numTriangles);
+
+                var tempVertexBuffer = new NativeArray<VertexData>(source.verts.Count, Allocator.Temp);
+                var tempIndexBuffer = new NativeArray<short>(source.triangles.Count, Allocator.Temp);
+
+                for (int i = 0; i < source.verts.Count; i++)
                 {
-                    triangles.Add(source.triangles[i] + numVerts);
+                    tempVertexBuffer[i] = new VertexData()
+                    {
+                        position = source.verts[i],
+                        normal = source.normals[i],
+                        color = source.colors[i],
+                        transformIndex = new Vector2(transformIndex, 0)
+                    };
                 }
-                numVerts += source.verts.Count;
+
+                for (int i = 0; i < source.triangles.Count; i++)
+                {
+                    tempIndexBuffer[i] = (short)(source.triangles[i] + numVerts);
+                }
+                mesh.SetVertexBufferData(tempVertexBuffer, 0, numVerts, tempVertexBuffer.Length, flags: updateFlags);
+                mesh.SetIndexBufferData(tempIndexBuffer, 0, numTriangles, tempIndexBuffer.Length, flags: updateFlags);
+
+                numVerts += tempVertexBuffer.Length;
+                numTriangles += tempIndexBuffer.Length;
+
+                var desc = new SubMeshDescriptor(0, numTriangles, MeshTopology.Triangles)
+                {
+                    firstVertex = 0,
+                    vertexCount = numVerts
+                };
+                mesh.SetSubMesh(0, desc);
+
+                mMeshContexts.Add(betterContext);
             }
 
-
             /// <summary>
-            /// Updates the array of transform mats for the meshes this info renders.
+            /// Updates the array of transform mats for the MMeshes this info renders.
             /// </summary>
             public void UpdateTransforms(Model model)
             {
-                foreach (int meshId in mmeshes)
+                for (int i = 0; i < mMeshContexts.Count; i++)
                 {
-                    xformMats[mmeshToTransformIndex[meshId]] = model.GetMesh(meshId).GetJitteredTransform();
+                    xformMats[mMeshContexts[i].transformIndex] = model.GetMesh(mMeshContexts[i].meshId).GetJitteredTransform();
                 }
             }
 
@@ -257,60 +432,23 @@ namespace com.google.apps.peltzer.client.model.render
             /// </summary>
             public void SetTransforms(Material mat)
             {
-                mat.SetMatrixArray("_RemesherMeshTransforms", xformMats);
-            }
-
-            /// <summary>
-            /// Regenerates the buffers used for constructing meshes.  We need to do this when meshes are removed from the
-            /// info, as doing that invalidates our triangle indices (because they are calculated based on offset).
-            /// </summary>
-            public void Regenerate()
-            {
-                // Every vert we don't care about will form a degenerate triangle.  Keeps our first two verts.
-                triangles.Clear();
-                Array.Clear(verts, 2, verts.Length - 2);
-                numVerts = 2;
-
-                foreach (int meshId in mmeshes)
-                {
-                    foreach (MeshGenContext context in meshGenContexts[meshId])
-                    {
-                        AddContext(meshId, context);
-                    }
-                }
-                needsRegeneration = false;
-                numPendingVerts = 0;
+                mat.SetMatrixArray(RemesherMeshTransforms, xformMats);
             }
 
             public MeshInfo()
             {
-                // This is a really undesirable hack.  Since we're passing an additional transform matrix into the shader, it breaks
-                // Unity's view frustum culling, and the meshinfo will disappear at various angles.  By adding these two extreme
-                // vertices, it causes the mesh to never be culled because it has an enormous bounding box.
-                // While setting the bounds on the Unity mesh directly should in theory work, in practice it seems not to.
-                verts[0] = new Vector3(999999f, 999999f, 999999f);
-                verts[1] = new Vector3(-999999f, -999999f, -999999f);
-                numVerts = 2;
+                mesh.SetVertexBufferParams(MAX_VERTS_PER_MESH, layout);
+                mesh.SetIndexBufferParams(3 * MAX_VERTS_PER_MESH, IndexFormat.UInt16);
+                mesh.subMeshCount = 1;
+                mesh.bounds = bounds;
 
-                for (int i = 0; i < MAX_MMESH_PER_MESHINFO; i++)
+                for (int i = 0; i < MAX_CONTEXTS_PER_MESHINFO; i++)
                 {
                     xformMats[i] = Matrix4x4.identity;
-                    availableTransformIndices.Enqueue(i);
+                    freeXformMatIndices.Push(MAX_CONTEXTS_PER_MESHINFO - 1 - i);
                 }
             }
         }
-
-        // For each MMesh, the set of MeshInfos that MMesh contributes triangles to.
-        private Dictionary<int, HashSet<MeshInfo>> meshInfosByMesh = new Dictionary<int, HashSet<MeshInfo>>();
-
-        // All MeshInfos that we need to render.
-        private HashSet<MeshInfo> allMeshInfos = new HashSet<MeshInfo>();
-
-        // IDs of meshes that we have yet to add-to/remove- from the ReMesher, and haven't gotten around to doing yet.
-        // We only add when ReMesher.Flush() is called so that a bunch of those operations can be batched.
-        private HashSet<int> meshesPendingAdd = new HashSet<int>();
-        private HashSet<int> meshesPendingRemove = new HashSet<int>();
-        private HashSet<MeshInfo> meshInfosPendingRegeneration = new HashSet<MeshInfo>();
 
         // Meshinfos should not be modified outside of remesher.
         // This exists to enable exporting coalesced meshes.
@@ -320,27 +458,13 @@ namespace com.google.apps.peltzer.client.model.render
             return allMeshInfos;
         }
 
-        /// <summary>
-        /// Initializes a set of buffers that are used to efficiently add multiples of the same value to a list.
-        /// Each of these lists contains an array of identical Vector2 values, which lets us efficiently use Array.Copy
-        /// to set a large range to the same value.
-        /// </summary>
-        public static void InitBufferCaches()
+        public HashSet<MeshInfo> GetMeshInfosForMMesh(int meshId)
         {
-            BufferCaches = new List<Vector2[]>(MAX_MMESH_PER_MESHINFO);
-            for (int i = 0; i < MAX_MMESH_PER_MESHINFO; i++)
-            {
-                BufferCaches.Add(new Vector2[MAX_VERTS_PER_MESH]);
-                Vector2 val = new Vector2(i, 0f);
-                for (int j = 0; j < MAX_VERTS_PER_MESH; j++)
-                {
-                    BufferCaches[i][j] = val;
-                }
-            }
+            return meshInfosByMesh.GetValueOrDefault(meshId);
         }
 
         // All MeshInfos that have room for more triangles to be added, by material.
-        private Dictionary<Material, List<MeshInfo>> meshInfosByMaterial = new Dictionary<Material, List<MeshInfo>>();
+        private Dictionary<Material, List<MeshInfo>> meshInfosByMaterial = new();
 
         public void Clear()
         {
@@ -353,7 +477,6 @@ namespace com.google.apps.peltzer.client.model.render
             meshInfosByMaterial.Clear();
             meshInfosByMesh.Clear();
             meshesPendingAdd.Clear();
-            meshesPendingRemove.Clear();
             meshInfosPendingRegeneration.Clear();
         }
 
@@ -379,14 +502,6 @@ namespace com.google.apps.peltzer.client.model.render
         {
             ActuallyRemoveMeshes();
             GenerateMeshesForMMeshes();
-
-            // For all the MeshInfos that have had triangles modified, regenerate their Unity Meshes.
-            foreach (MeshInfo meshInfo in meshInfosPendingRegeneration)
-            {
-                RegenerateMesh(meshInfo);
-            }
-
-            meshInfosPendingRegeneration.Clear();
         }
 
         /// <summary>
@@ -394,65 +509,51 @@ namespace com.google.apps.peltzer.client.model.render
         ///   Actual removal will happen in batch the next time Flush is called.
         /// </summary>
         /// <param name="meshId">The mesh id.</param>
-        /// <exception cref="System.Exception">
-        ///   If the given mesh is not actually being rendered.
-        /// </exception>
         public void RemoveMesh(int meshId)
         {
             meshesPendingAdd.Remove(meshId);
             meshesPendingRemove.Add(meshId);
+            if (!meshInfosByMesh.TryGetValue(meshId, out var meshInfos)) return;
+
+            foreach (var info in meshInfos)
+            {
+                meshInfosPendingRegeneration.Add(info);
+            }
+            meshInfosByMesh.Remove(meshId);
         }
 
         /// <summary>
         ///   Removes the given meshes from ReMesher immediately.
-        ///   Note that this will update meshesPendingAdd with the IDs of meshes who contributed to the same
-        ///   MeshInfo as a mesh being removed.
         /// </summary>
         private void ActuallyRemoveMeshes()
         {
-            // The meshinfos affected by removing this mesh.
-            foreach (int meshId in meshesPendingRemove)
+            foreach (var meshInfo in meshInfosPendingRegeneration)
             {
-                HashSet<MeshInfo> affectedMeshInfos;
-                if (!meshInfosByMesh.TryGetValue(meshId, out affectedMeshInfos))
-                {
-                    continue; // Nothing to do here.
-                }
-
-                // Recursively find the transitive closure of all MeshInfos we need to re-add after
-                // removing this mesh.
-                foreach (MeshInfo info in affectedMeshInfos)
-                {
-                    info.RemoveMesh(meshId);
-                    meshInfosPendingRegeneration.Add(info);
-                }
-
-                // Remove this mesh's entry from the list of mesh infos per mesh.
-                meshInfosByMesh.Remove(meshId);
+                meshInfo.UpdateMeshBuffer(meshesPendingRemove);
             }
-
+            meshInfosPendingRegeneration.Clear();
             meshesPendingRemove.Clear();
         }
 
         /// <summary>
         ///   For a list of MMeshes, add their triangles to "unfull" MeshInfos.  When any of those
-        ///   MeshInfos becomes full, create a new MeshInfo.  Once we've added all the triangles to MeshInfos,
-        ///   we need to regenerate all of the Unity Meshes for those MeshInfos.
+        ///   MeshInfos becomes full, create a new MeshInfo.
         /// </summary>
         /// <param name="mmeshIds"></param>
         private void GenerateMeshesForMMeshes()
         {
             Model model = PeltzerMain.Instance.model;
             HashSet<int> meshesStillPendingAdd = new HashSet<int>();
-
             foreach (int meshId in meshesPendingAdd)
             {
                 // Since this method is called lazily on Flush(), we may have an out of date mesh ID that no longer
                 // exists in the model. In that case, skip it.
                 if (!model.HasMesh(meshId)) continue;
 
+                var mMesh = model.GetMesh(meshId);
+
                 Dictionary<int, MeshGenContext> components =
-                  model.meshRepresentationCache.FetchMeshSpaceComponentsForMesh(meshId, /* abortOnTooManyCacheMisses */ false);
+                MeshHelper.MeshComponentsFromMMesh(mMesh, false);
                 if (components == null)
                 {
                     meshesStillPendingAdd.Add(meshId);
@@ -464,17 +565,16 @@ namespace com.google.apps.peltzer.client.model.render
                 {
                     // Doing the Assert within an if statement to prevent the string concatenation from occurring unless the
                     // condition has failed.  The concatenation was expensive enough to show up in profiling for large models.
-                    if (pair.Value.verts.Count >= MAX_VERTS_PER_MMESH)
+                    if (pair.Value.verts.Count >= MAX_VERTS_PER_CONTEXT)
                     {
-                        AssertOrThrow.True(pair.Value.verts.Count < MAX_VERTS_PER_MMESH,
-                          "MMesh has too many vertices ( " + pair.Value.verts.Count + " vs a max of " + MAX_VERTS_PER_MMESH);
+                        AssertOrThrow.True(pair.Value.verts.Count < MAX_VERTS_PER_CONTEXT,
+                          "MMesh has too many vertices ( " + pair.Value.verts.Count + " vs a max of " + MAX_VERTS_PER_CONTEXT);
                     }
                     // Find or create an unfull MeshInfo for the given material
-                    MeshInfo infoForMaterial = GetInfoForMaterialAndVertCount(pair.Key, pair.Value.verts.Count);
+                    MeshInfo infoForMaterial = GetInfoForMaterialAndVertCount(pair.Key, pair.Value.verts.Count, pair.Value.triangles.Count);
 
-                    infoForMaterial.AddMesh(meshId, pair.Value);
+                    infoForMaterial.AddMesh(mMesh, pair.Value);
 
-                    meshInfosPendingRegeneration.Add(infoForMaterial);
                     meshInfos.Add(infoForMaterial);
                 }
                 meshInfosByMesh[meshId] = meshInfos;
@@ -486,7 +586,7 @@ namespace com.google.apps.peltzer.client.model.render
         /// <summary>
         /// Gets a MeshInfo with sufficient space for the given material, or creates a new one if none currently exists.
         /// </summary>
-        private MeshInfo GetInfoForMaterialAndVertCount(int materialId, int spaceNeeded)
+        private MeshInfo GetInfoForMaterialAndVertCount(int materialId, int spaceNeededVerts, int spaceNeededTris)
         {
             List<MeshInfo> infosForMaterial;
             MaterialAndColor materialAndColor = MaterialRegistry.GetMaterialAndColorById(materialId);
@@ -500,8 +600,9 @@ namespace com.google.apps.peltzer.client.model.render
             for (int i = 0; i < infosForMaterial.Count; i++)
             {
                 MeshInfo curInfo = infosForMaterial[i];
-                if (curInfo.numVerts + curInfo.numPendingVerts + spaceNeeded < MAX_VERTS_PER_MESH
-                  && curInfo.GetNumMeshes() + 1 < MAX_MMESH_PER_MESHINFO)
+                if (curInfo.numVerts + spaceNeededVerts < MAX_VERTS_PER_MESH
+                    && curInfo.numTriangles + spaceNeededTris < 3 * MAX_VERTS_PER_MESH
+                  && curInfo.GetNumContexts() + 1 < MAX_CONTEXTS_PER_MESHINFO)
                 {
                     return curInfo;
                 }
@@ -514,24 +615,6 @@ namespace com.google.apps.peltzer.client.model.render
             allMeshInfos.Add(newInfoForMaterial);
             meshInfosByMaterial[materialAndColor.material].Add(newInfoForMaterial);
             return newInfoForMaterial;
-        }
-
-
-        /// <summary>
-        ///   Generate the Unity Mesh for a given MeshInfo.
-        /// </summary>
-        private void RegenerateMesh(MeshInfo meshInfo)
-        {
-            if (meshInfo.needsRegeneration)
-            {
-                meshInfo.Regenerate();
-            }
-            meshInfo.mesh.Clear();
-            meshInfo.mesh.vertices = meshInfo.verts;
-            meshInfo.mesh.SetTriangles(meshInfo.triangles, /* Submesh */ 0);
-            meshInfo.mesh.colors32 = meshInfo.colors;
-            meshInfo.mesh.normals = meshInfo.normals;
-            meshInfo.mesh.uv2 = meshInfo.transformIndexBuffer;
         }
 
         /// <summary>
@@ -549,6 +632,8 @@ namespace com.google.apps.peltzer.client.model.render
                 meshInfo.UpdateTransforms(model);
                 meshInfo.SetTransforms(meshInfo.materialAndColor.material);
                 Graphics.DrawMesh(meshInfo.mesh, worldSpace.modelToWorld, meshInfo.materialAndColor.material, /* Layer */ 0);
+                // Graphics.RenderMesh(new RenderParams(meshInfo.materialAndColor.material), meshInfo.mesh, 0, worldSpace.modelToWorld);
+
                 if (meshInfo.materialAndColor.material2)
                 {
                     Matrix4x4 matrix = worldSpace.modelToWorld;
@@ -561,6 +646,7 @@ namespace com.google.apps.peltzer.client.model.render
 
                     meshInfo.SetTransforms(meshInfo.materialAndColor.material2);
                     Graphics.DrawMesh(meshInfo.mesh, matrix, meshInfo.materialAndColor.material2, /* Layer */ 0);
+                    // Graphics.RenderMesh(new RenderParams(meshInfo.materialAndColor.material2), meshInfo.mesh, 0, matrix);
                 }
             }
         }
@@ -588,7 +674,7 @@ namespace com.google.apps.peltzer.client.model.render
             int count = 0;
             foreach (MeshInfo meshInfo in allMeshInfos)
             {
-                if (meshInfo.HasMesh(meshId))
+                if (meshInfo.ContainsMesh(meshId))
                 {
                     count++;
                 }
