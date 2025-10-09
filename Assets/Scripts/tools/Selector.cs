@@ -701,6 +701,48 @@ namespace com.google.apps.peltzer.client.tools
             }
         }
 
+        /// <summary>
+        /// Converts the currently selected meshes into a selection of all their faces.
+        /// Clears the mesh selection and populates the face selection.
+        /// </summary>
+        public void ConvertMeshSelectionToFaceSelection()
+        {
+            if (selectedMeshes.Count == 0)
+            {
+                return; // Nothing to convert
+            }
+
+            // Store the selected mesh IDs before clearing
+            HashSet<int> meshesToConvert = new HashSet<int>(selectedMeshes);
+
+            // Clear current mesh selection
+            Deselect(MESHES_ONLY, deselectSelectedHighlights: true, deselectHoveredHighlights: true);
+
+            // Clear any existing face selection and undo/redo stacks
+            ClearMultiSelectUndoState(Type.FACE);
+            ClearMultiSelectRedoState();
+
+            // Convert each mesh to its constituent faces
+            foreach (int meshId in meshesToConvert)
+            {
+                MMesh mesh = model.GetMesh(meshId);
+                if (mesh == null) continue;
+
+                // Get all faces in the mesh
+                for (int faceId = 0; faceId < mesh.faceCount; faceId++)
+                {
+                    FaceKey faceKey = new FaceKey(meshId, faceId);
+                    Face face = mesh.GetFace(faceId);
+
+                    // Calculate face center for highlighting
+                    Vector3 centerOfFace = MeshMath.CalculateGeometricCenter(face, mesh);
+
+                    // Select the face (this will handle highlighting and bounds calculation)
+                    SelectFace(faceKey, centerOfFace);
+                }
+            }
+        }
+
 
         /// <summary>
         /// Reset state to prepare for the given controller mode.
@@ -712,13 +754,21 @@ namespace com.google.apps.peltzer.client.tools
               (oldMode == ControllerMode.reshape && newMode == ControllerMode.extrude))
             {
                 // The user is switching between reshape/extrude: preserve any selected faces.
-                Deselect(NOT_FACES, /*deselectSelectedHighlights*/ true, /*deselectHoveredhighlights*/ true);
+                Deselect(NOT_FACES, deselectSelectedHighlights: true, deselectHoveredHighlights: true);
+            }
+            else if (oldMode == ControllerMode.move &&
+                (newMode == ControllerMode.reshape || newMode == ControllerMode.extrude))
+            {
+                // The user is switching from move to reshape/extrude: preserve any selected meshes
+                ConvertMeshSelectionToFaceSelection();
             }
             else
             {
                 // The user is switching between any other modes: remove any existing selections or highlights.
-                Deselect(ALL, /*deselectSelectedHighlights*/ true, /*deselectHoveredhighlights*/ true);
+                Deselect(ALL, deselectSelectedHighlights: true, deselectHoveredHighlights: true);
             }
+
+
             multiSelectEnabled = selectModes.Contains(newMode);
         }
 
@@ -831,7 +881,7 @@ namespace com.google.apps.peltzer.client.tools
         /// Deselects a mesh. Handles grouped meshes as well.
         /// </summary>
         /// (meshes in the same group).</param>
-        private void DeselectMesh(int meshIdToDeselect)
+        public void DeselectMesh(int meshIdToDeselect)
         {
             // Add the mesh to touched meshes.
             HashSet<int> meshIds = new HashSet<int> { meshIdToDeselect };

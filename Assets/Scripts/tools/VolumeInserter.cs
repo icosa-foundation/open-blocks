@@ -357,7 +357,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         /// <param name="oldScaleDeltaToAnimateFrom">If not null, this indicates the previous scaleDelta from
         /// which to animate from. Note: this is only honored when there is a single held mesh.</param>
-        private void CreateNewVolumeMesh(int? oldScaleDeltaToAnimateFrom = null)
+        public void CreateNewVolumeMesh(int? oldScaleDeltaToAnimateFrom = null)
         {
             Vector3? oldPosToAnimateFrom = null;
             Vector3? oldScaleToAnimateFrom = null;
@@ -496,7 +496,7 @@ namespace com.google.apps.peltzer.client.tools
         /// Sets up the held meshes.
         /// </summary>
         /// <param name="newMeshes">The new meshes to be held, or null to indicate no held meshes.</param>
-        private void ResetHeldMeshes(IEnumerable<MMesh> newMeshes, Dictionary<int, Vector3> sizes = null)
+        public void ResetHeldMeshes(IEnumerable<MMesh> newMeshes, Dictionary<int, Vector3> sizes = null)
         {
             if (heldMeshes != null)
             {
@@ -843,7 +843,7 @@ namespace com.google.apps.peltzer.client.tools
             else if (IsStartSnapDetectionEvent(args))
             {
                 // Show the snap guides if the trigger is slightly pressed.
-                heldMeshes.DetectSnap();
+                heldMeshes?.DetectSnap();
             }
             else if (IsStopSnapDetectionEvent(args))
             {
