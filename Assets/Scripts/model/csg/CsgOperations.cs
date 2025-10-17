@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Text;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
@@ -172,9 +174,8 @@ namespace com.google.apps.peltzer.client.model.csg
             ClassifyPolygons(leftObj, rightObj);
             ClassifyPolygons(rightObj, leftObj);
 
-            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
             List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.OUTSIDE, PolygonStatus.OPPOSITE);
-            polys.AddRange(SelectPolygons(rightObj, true, facePropertiesForNewFaces, PolygonStatus.INSIDE));
+            polys.AddRange(SelectPolygons(rightObj, true, null, PolygonStatus.INSIDE));
 
             return polys;
         }
@@ -190,9 +191,8 @@ namespace com.google.apps.peltzer.client.model.csg
             ClassifyPolygons(leftObj, rightObj);
             ClassifyPolygons(rightObj, leftObj);
 
-            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
             List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.OUTSIDE, PolygonStatus.SAME);
-            polys.AddRange(SelectPolygons(rightObj, false, facePropertiesForNewFaces, PolygonStatus.OUTSIDE));
+            polys.AddRange(SelectPolygons(rightObj, false, null, PolygonStatus.OUTSIDE));
 
             return polys;
         }
@@ -208,11 +208,82 @@ namespace com.google.apps.peltzer.client.model.csg
             ClassifyPolygons(leftObj, rightObj);
             ClassifyPolygons(rightObj, leftObj);
 
-            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
-            List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.INSIDE, PolygonStatus.SAME);
-            polys.AddRange(SelectPolygons(rightObj, false, facePropertiesForNewFaces, PolygonStatus.INSIDE));
+            List<CsgPolygon> leftInside = SelectPolygons(leftObj, false, null, PolygonStatus.INSIDE);
+            List<CsgPolygon> rightInside = SelectPolygons(rightObj, false, null, PolygonStatus.INSIDE);
+            List<CsgPolygon> leftCoplanar = SelectPolygons(leftObj, false, null, PolygonStatus.SAME);
+            List<CsgPolygon> rightCoplanar = SelectPolygons(rightObj, false, null, PolygonStatus.SAME);
+
+            List<CsgPolygon> polys = new List<CsgPolygon>(
+              leftInside.Count + rightInside.Count + Mathf.Max(leftCoplanar.Count, rightCoplanar.Count));
+            polys.AddRange(leftInside);
+            polys.AddRange(rightInside);
+            polys.AddRange(MergeCoplanarPolygonsFavoringSecond(leftCoplanar, rightCoplanar));
 
             return polys;
+        }
+
+        private static List<CsgPolygon> MergeCoplanarPolygonsFavoringSecond(
+          List<CsgPolygon> primary, List<CsgPolygon> secondary)
+        {
+            if (primary.Count == 0 && secondary.Count == 0)
+            {
+                return new List<CsgPolygon>();
+            }
+
+            if (primary.Count == 0)
+            {
+                return new List<CsgPolygon>(secondary);
+            }
+
+            if (secondary.Count == 0)
+            {
+                return new List<CsgPolygon>(primary);
+            }
+
+            Dictionary<string, CsgPolygon> merged =
+              new Dictionary<string, CsgPolygon>(primary.Count + secondary.Count);
+
+            foreach (CsgPolygon polygon in primary)
+            {
+                merged[BuildPolygonKey(polygon)] = polygon;
+            }
+
+            foreach (CsgPolygon polygon in secondary)
+            {
+                merged[BuildPolygonKey(polygon)] = polygon;
+            }
+
+            return new List<CsgPolygon>(merged.Values);
+        }
+
+        private static string BuildPolygonKey(CsgPolygon polygon)
+        {
+            int vertexCount = polygon.vertices.Count;
+            int[] vertexIds = new int[vertexCount];
+
+            for (int i = 0; i < vertexCount; i++)
+            {
+                vertexIds[i] = RuntimeHelpers.GetHashCode(polygon.vertices[i]);
+            }
+
+            int startIndex = 0;
+            for (int i = 1; i < vertexCount; i++)
+            {
+                if (vertexIds[i] < vertexIds[startIndex])
+                {
+                    startIndex = i;
+                }
+            }
+
+            StringBuilder builder = new StringBuilder(vertexCount * 12);
+            for (int i = 0; i < vertexCount; i++)
+            {
+                int index = (startIndex + i) % vertexCount;
+                builder.Append(vertexIds[index]);
+                builder.Append(',');
+            }
+
+            return builder.ToString();
         }
 
         /// <summary>
