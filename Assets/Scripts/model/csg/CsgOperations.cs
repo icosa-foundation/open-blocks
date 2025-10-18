@@ -18,6 +18,7 @@ using System.Text;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
+using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.util;
 
 namespace com.google.apps.peltzer.client.model.csg
@@ -33,7 +34,7 @@ namespace com.google.apps.peltzer.client.model.csg
             UNION,
             INTERSECT,
             SUBTRACT,
-            PAINT
+            PAINT_INTERSECT
         }
 
         /// <summary>
@@ -90,7 +91,9 @@ namespace com.google.apps.peltzer.client.model.csg
                     case CsgOperation.INTERSECT:
                         return null;
                     case CsgOperation.SUBTRACT:
-                        return brush.Clone();
+                        MMesh clone = brush.Clone();
+                        CoplanarFaceMerger.MergeCoplanarFaces(clone);
+                        return clone;
                 }
             }
 
@@ -137,8 +140,8 @@ namespace com.google.apps.peltzer.client.model.csg
                 case CsgOperation.SUBTRACT:
                     result = CsgSubtract(ctx, leftObj, rightObj);
                     break;
-                case CsgOperation.PAINT:
-                    result = CsgPaintIntersection(ctx, leftObj, rightObj);
+                case CsgOperation.PAINT_INTERSECT:
+                    result = CsgPaintIntersect(ctx, leftObj, rightObj);
                     break;
             }
 
@@ -151,7 +154,7 @@ namespace com.google.apps.peltzer.client.model.csg
                     if (brush.remixIds != null) combinedRemixIds.UnionWith(brush.remixIds);
                     if (target.remixIds != null) combinedRemixIds.UnionWith(target.remixIds);
                 }
-                return FromPolys(
+                MMesh resultMesh = FromPolys(
                   brush.id,
                   brush.offset,
                   brush.rotation,
@@ -159,6 +162,8 @@ namespace com.google.apps.peltzer.client.model.csg
                   operationOffset,
                   operationScale,
                   combinedRemixIds);
+                CoplanarFaceMerger.MergeCoplanarFaces(resultMesh);
+                return resultMesh;
             }
             else
             {
@@ -226,7 +231,11 @@ namespace com.google.apps.peltzer.client.model.csg
             return polys;
         }
 
-        private static List<CsgPolygon> CsgPaintIntersection(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
+        /// <summary>
+        ///   Keep the left object geometry but recolor intersecting faces with the dominant
+        ///   material from the right object.
+        /// </summary>
+        private static List<CsgPolygon> CsgPaintIntersect(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
         {
             SplitObject(ctx, leftObj, rightObj);
             SplitObject(ctx, rightObj, leftObj);
@@ -234,23 +243,32 @@ namespace com.google.apps.peltzer.client.model.csg
             ClassifyPolygons(leftObj, rightObj);
             ClassifyPolygons(rightObj, leftObj);
 
-            FaceProperties defaultPaintProperties = rightObj.polygons.Count > 0
-              ? rightObj.polygons[0].faceProperties
-              : default(FaceProperties);
+            FaceProperties? paintProperties = DetermineDominantFaceProperties(rightObj);
 
-            List<CsgPolygon> polys = new List<CsgPolygon>(leftObj.polygons.Count);
-            foreach (CsgPolygon poly in leftObj.polygons)
-            {
-                if (poly.status == PolygonStatus.INSIDE
-                  || poly.status == PolygonStatus.SAME
-                  || poly.status == PolygonStatus.OPPOSITE)
-                {
-                    poly.faceProperties = DeterminePaintFaceProperties(poly, rightObj, defaultPaintProperties);
-                }
-                polys.Add(poly);
-            }
+            List<CsgPolygon> recolored = SelectPolygons(
+              leftObj,
+              invert: false,
+              overwriteFaceProperties: paintProperties,
+              PolygonStatus.INSIDE,
+              PolygonStatus.SAME,
+              PolygonStatus.OPPOSITE);
+            List<CsgPolygon> untouched = SelectPolygons(
+              leftObj,
+              invert: false,
+              overwriteFaceProperties: null,
+              PolygonStatus.OUTSIDE);
 
-            return polys;
+            recolored.AddRange(untouched);
+
+            // Include any polygons that remain unclassified to preserve original geometry.
+            List<CsgPolygon> unknown = SelectPolygons(
+              leftObj,
+              invert: false,
+              overwriteFaceProperties: null,
+              PolygonStatus.UNKNOWN);
+            recolored.AddRange(unknown);
+
+            return recolored;
         }
 
         private static List<CsgPolygon> MergeCoplanarPolygonsFavoringSecond(
@@ -345,6 +363,42 @@ namespace com.google.apps.peltzer.client.model.csg
             return polys;
         }
 
+        private static FaceProperties? DetermineDominantFaceProperties(CsgObject obj)
+        {
+            if (obj.polygons.Count == 0)
+            {
+                return null;
+            }
+
+            Dictionary<int, int> materialUsageCounts = new Dictionary<int, int>();
+            foreach (CsgPolygon polygon in obj.polygons)
+            {
+                int materialId = polygon.faceProperties.materialId;
+                int existingCount;
+                if (materialUsageCounts.TryGetValue(materialId, out existingCount))
+                {
+                    materialUsageCounts[materialId] = existingCount + 1;
+                }
+                else
+                {
+                    materialUsageCounts[materialId] = 1;
+                }
+            }
+
+            int selectedMaterialId = obj.polygons[0].faceProperties.materialId;
+            int selectedCount = 0;
+            foreach (KeyValuePair<int, int> kvp in materialUsageCounts)
+            {
+                if (kvp.Value > selectedCount)
+                {
+                    selectedMaterialId = kvp.Key;
+                    selectedCount = kvp.Value;
+                }
+            }
+
+            return new FaceProperties(selectedMaterialId);
+        }
+
         // Section 7:  Classify all polygons in the object.
         private static void ClassifyPolygons(CsgObject obj, CsgObject wrt)
         {
@@ -433,18 +487,10 @@ namespace com.google.apps.peltzer.client.model.csg
             }
         }
 
-        private static FaceProperties DeterminePaintFaceProperties(
-          CsgPolygon poly, CsgObject rightObj, FaceProperties fallback)
-        {
-            float closestPolyDist;
-            CsgPolygon closest = FindClosestPolygonUsingRaycast(poly, rightObj, out closestPolyDist);
-            if (closest != null)
-            {
-                return closest.faceProperties;
-            }
-            return fallback;
-        }
-
+        /// <summary>
+        ///   Helper method to find the closest polygon to the given polygon using raycasting.
+        ///   Extracted for reuse in paint operations.
+        /// </summary>
         private static CsgPolygon FindClosestPolygonUsingRaycast(
           CsgPolygon poly, CsgObject wrt, out float closestPolyDist)
         {

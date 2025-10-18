@@ -586,7 +586,7 @@ namespace com.google.apps.peltzer.client.tools
                     CsgOperations.CsgOperation.UNION => audioLibrary.insertVolumeSound,
                     CsgOperations.CsgOperation.INTERSECT => audioLibrary.deleteSound,
                     CsgOperations.CsgOperation.SUBTRACT => audioLibrary.deleteSound,
-                    CsgOperations.CsgOperation.PAINT => audioLibrary.paintSound,
+                    CsgOperations.CsgOperation.PAINT_INTERSECT => audioLibrary.paintSound,
                     _ => null
                 };
 
@@ -758,9 +758,9 @@ namespace com.google.apps.peltzer.client.tools
                         peltzerController.controllerGeometry.csgTooltips.SetActive(true);
                         textMesh.text = "Merge Shape";
                         break;
-                    case CsgOperations.CsgOperation.PAINT:
+                    case CsgOperations.CsgOperation.PAINT_INTERSECT:
                         peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Paint Intersection";
+                        textMesh.text = "Paint Shape";
                         break;
                 }
             }
@@ -956,9 +956,9 @@ namespace com.google.apps.peltzer.client.tools
                             csgOperation = CsgOperations.CsgOperation.UNION;
                             break;
                         case CsgOperations.CsgOperation.UNION:
-                            csgOperation = CsgOperations.CsgOperation.PAINT;
+                            csgOperation = CsgOperations.CsgOperation.PAINT_INTERSECT;
                             break;
-                        case CsgOperations.CsgOperation.PAINT:
+                        case CsgOperations.CsgOperation.PAINT_INTERSECT:
                             peltzerController.ChangeMode(ControllerMode.insertVolume);
                             peltzerController.shapesMenu.ChangeShapesMenuMaterial(peltzerController.currentMaterial);
                             csgOperation = CsgOperations.CsgOperation.INACTIVE;
