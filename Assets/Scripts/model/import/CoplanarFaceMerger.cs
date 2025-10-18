@@ -83,8 +83,9 @@ namespace com.google.apps.peltzer.client.model.import
                 Plane plane = new Plane(normalizedNormal, planePoint);
 
                 Dictionary<int, Color32> regionVertexColors = BuildInitialVertexColorMap(seedFace);
+                List<int> regionList = new List<int>();
                 HashSet<int> region = CollectCoplanarRegion(mesh, faceId, seedFace.properties.materialId,
-                    plane, normalizedNormal, adjacency, removedFaces, regionVertexColors);
+                    plane, normalizedNormal, adjacency, removedFaces, regionVertexColors, regionList);
 
                 processedFaces.UnionWith(region);
 
@@ -93,12 +94,26 @@ namespace com.google.apps.peltzer.client.model.import
                     continue;
                 }
 
-                if (!TryBuildMergedPolygon(mesh, region, normalizedNormal, out List<int> mergedLoop))
+                // Try to build a merged polygon, iteratively removing the last face added if it fails
+                // This handles O-shaped rings by breaking them into C-shapes
+                HashSet<int> facesToMerge = null;
+                List<int> mergedLoop = null;
+                for (int attemptSize = regionList.Count; attemptSize >= 2; attemptSize--)
+                {
+                    facesToMerge = new HashSet<int>(regionList.GetRange(0, attemptSize));
+                    if (TryBuildMergedPolygon(mesh, facesToMerge, normalizedNormal, out mergedLoop))
+                    {
+                        break;
+                    }
+                    facesToMerge = null;
+                }
+
+                if (facesToMerge == null || mergedLoop == null)
                 {
                     continue;
                 }
 
-                foreach (int regionFaceId in region)
+                foreach (int regionFaceId in facesToMerge)
                 {
                     operation.DeleteFace(regionFaceId);
                     removedFaces.Add(regionFaceId);
@@ -432,7 +447,7 @@ namespace com.google.apps.peltzer.client.model.import
 
         private static HashSet<int> CollectCoplanarRegion(MMesh mesh, int startFaceId, int materialId, Plane plane,
             Vector3 normalizedNormal, Dictionary<int, HashSet<int>> adjacency, HashSet<int> removedFaces,
-            Dictionary<int, Color32> regionVertexColors)
+            Dictionary<int, Color32> regionVertexColors, List<int> regionList)
         {
             HashSet<int> region = new HashSet<int>();
             Queue<int> queue = new Queue<int>();
@@ -473,6 +488,7 @@ namespace com.google.apps.peltzer.client.model.import
                 }
 
                 region.Add(currentFaceId);
+                regionList.Add(currentFaceId);
 
                 if (!adjacency.TryGetValue(currentFaceId, out HashSet<int> neighbors))
                 {
