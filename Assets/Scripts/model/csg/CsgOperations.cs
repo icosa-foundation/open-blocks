@@ -461,10 +461,38 @@ namespace com.google.apps.peltzer.client.model.csg
         // Public for testing.
         public static void ClassifyPolygonUsingRaycast(CsgPolygon poly, CsgObject wrt)
         {
+            float closestPolyDist;
+            CsgPolygon closest = FindClosestPolygonUsingRaycast(poly, wrt, out closestPolyDist);
+
+            if (closest == null)
+            {
+                // Didn't hit any polys, we are outside.
+                poly.status = PolygonStatus.OUTSIDE;
+                return;
+            }
+
+            float dot = Vector3.Dot(poly.plane.normal, closest.plane.normal);
+            if (Mathf.Abs(closestPolyDist) < CsgMath.EPSILON)
+            {
+                poly.status = dot < 0 ? PolygonStatus.OPPOSITE : PolygonStatus.SAME;
+            }
+            else
+            {
+                poly.status = dot < 0 ? PolygonStatus.OUTSIDE : PolygonStatus.INSIDE;
+            }
+        }
+
+        /// <summary>
+        ///   Helper method to find the closest polygon to the given polygon using raycasting.
+        ///   Extracted for reuse in paint operations.
+        /// </summary>
+        private static CsgPolygon FindClosestPolygonUsingRaycast(
+          CsgPolygon poly, CsgObject wrt, out float closestPolyDist)
+        {
             Vector3 rayStart = poly.baryCenter;
             Vector3 rayNormal = poly.plane.normal;
             CsgPolygon closest = null;
-            float closestPolyDist = float.MaxValue;
+            closestPolyDist = float.MaxValue;
 
             bool done;
             int count = 0;
@@ -535,23 +563,7 @@ namespace com.google.apps.peltzer.client.model.csg
                 count++;
             } while (!done && count < 5);
 
-            if (closest == null)
-            {
-                // Didn't hit any polys, we are outside.
-                poly.status = PolygonStatus.OUTSIDE;
-            }
-            else
-            {
-                float dot = Vector3.Dot(poly.plane.normal, closest.plane.normal);
-                if (Mathf.Abs(closestPolyDist) < CsgMath.EPSILON)
-                {
-                    poly.status = dot < 0 ? PolygonStatus.OPPOSITE : PolygonStatus.SAME;
-                }
-                else
-                {
-                    poly.status = dot < 0 ? PolygonStatus.OUTSIDE : PolygonStatus.INSIDE;
-                }
-            }
+            return closest;
         }
 
         private static bool HasUnknown(CsgPolygon poly)

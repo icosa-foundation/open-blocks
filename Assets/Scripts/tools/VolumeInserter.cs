@@ -586,7 +586,7 @@ namespace com.google.apps.peltzer.client.tools
                     CsgOperations.CsgOperation.UNION => audioLibrary.insertVolumeSound,
                     CsgOperations.CsgOperation.INTERSECT => audioLibrary.deleteSound,
                     CsgOperations.CsgOperation.SUBTRACT => audioLibrary.deleteSound,
-                    CsgOperations.CsgOperation.PAINT_INTERSECT => audioLibrary.insertVolumeSound,
+                    CsgOperations.CsgOperation.PAINT_INTERSECT => audioLibrary.paintSound,
                     _ => null
                 };
 
