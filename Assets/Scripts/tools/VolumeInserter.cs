@@ -586,6 +586,7 @@ namespace com.google.apps.peltzer.client.tools
                     CsgOperations.CsgOperation.UNION => audioLibrary.insertVolumeSound,
                     CsgOperations.CsgOperation.INTERSECT => audioLibrary.deleteSound,
                     CsgOperations.CsgOperation.SUBTRACT => audioLibrary.deleteSound,
+                    CsgOperations.CsgOperation.PAINT => audioLibrary.paintSound,
                     _ => null
                 };
 
@@ -756,6 +757,10 @@ namespace com.google.apps.peltzer.client.tools
                     case CsgOperations.CsgOperation.UNION:
                         peltzerController.controllerGeometry.csgTooltips.SetActive(true);
                         textMesh.text = "Merge Shape";
+                        break;
+                    case CsgOperations.CsgOperation.PAINT:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
+                        textMesh.text = "Paint Intersection";
                         break;
                 }
             }
@@ -951,6 +956,9 @@ namespace com.google.apps.peltzer.client.tools
                             csgOperation = CsgOperations.CsgOperation.UNION;
                             break;
                         case CsgOperations.CsgOperation.UNION:
+                            csgOperation = CsgOperations.CsgOperation.PAINT;
+                            break;
+                        case CsgOperations.CsgOperation.PAINT:
                             peltzerController.ChangeMode(ControllerMode.insertVolume);
                             peltzerController.shapesMenu.ChangeShapesMenuMaterial(peltzerController.currentMaterial);
                             csgOperation = CsgOperations.CsgOperation.INACTIVE;

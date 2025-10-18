@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Text;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
@@ -30,7 +32,8 @@ namespace com.google.apps.peltzer.client.model.csg
             INACTIVE,
             UNION,
             INTERSECT,
-            SUBTRACT
+            SUBTRACT,
+            PAINT
         }
 
         /// <summary>
@@ -134,6 +137,9 @@ namespace com.google.apps.peltzer.client.model.csg
                 case CsgOperation.SUBTRACT:
                     result = CsgSubtract(ctx, leftObj, rightObj);
                     break;
+                case CsgOperation.PAINT:
+                    result = CsgPaintIntersection(ctx, leftObj, rightObj);
+                    break;
             }
 
             if (result != null && result.Count > 0)
@@ -172,9 +178,8 @@ namespace com.google.apps.peltzer.client.model.csg
             ClassifyPolygons(leftObj, rightObj);
             ClassifyPolygons(rightObj, leftObj);
 
-            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
             List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.OUTSIDE, PolygonStatus.OPPOSITE);
-            polys.AddRange(SelectPolygons(rightObj, true, facePropertiesForNewFaces, PolygonStatus.INSIDE));
+            polys.AddRange(SelectPolygons(rightObj, true, null, PolygonStatus.INSIDE));
 
             return polys;
         }
@@ -190,9 +195,8 @@ namespace com.google.apps.peltzer.client.model.csg
             ClassifyPolygons(leftObj, rightObj);
             ClassifyPolygons(rightObj, leftObj);
 
-            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
             List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.OUTSIDE, PolygonStatus.SAME);
-            polys.AddRange(SelectPolygons(rightObj, false, facePropertiesForNewFaces, PolygonStatus.OUTSIDE));
+            polys.AddRange(SelectPolygons(rightObj, false, null, PolygonStatus.OUTSIDE));
 
             return polys;
         }
@@ -208,11 +212,109 @@ namespace com.google.apps.peltzer.client.model.csg
             ClassifyPolygons(leftObj, rightObj);
             ClassifyPolygons(rightObj, leftObj);
 
-            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
-            List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.INSIDE, PolygonStatus.SAME);
-            polys.AddRange(SelectPolygons(rightObj, false, facePropertiesForNewFaces, PolygonStatus.INSIDE));
+            List<CsgPolygon> leftInside = SelectPolygons(leftObj, false, null, PolygonStatus.INSIDE);
+            List<CsgPolygon> rightInside = SelectPolygons(rightObj, false, null, PolygonStatus.INSIDE);
+            List<CsgPolygon> leftCoplanar = SelectPolygons(leftObj, false, null, PolygonStatus.SAME);
+            List<CsgPolygon> rightCoplanar = SelectPolygons(rightObj, false, null, PolygonStatus.SAME);
+
+            List<CsgPolygon> polys = new List<CsgPolygon>(
+              leftInside.Count + rightInside.Count + Mathf.Max(leftCoplanar.Count, rightCoplanar.Count));
+            polys.AddRange(leftInside);
+            polys.AddRange(rightInside);
+            polys.AddRange(MergeCoplanarPolygonsFavoringSecond(leftCoplanar, rightCoplanar));
 
             return polys;
+        }
+
+        private static List<CsgPolygon> CsgPaintIntersection(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
+        {
+            SplitObject(ctx, leftObj, rightObj);
+            SplitObject(ctx, rightObj, leftObj);
+            SplitObject(ctx, leftObj, rightObj);
+            ClassifyPolygons(leftObj, rightObj);
+            ClassifyPolygons(rightObj, leftObj);
+
+            FaceProperties defaultPaintProperties = rightObj.polygons.Count > 0
+              ? rightObj.polygons[0].faceProperties
+              : default(FaceProperties);
+
+            List<CsgPolygon> polys = new List<CsgPolygon>(leftObj.polygons.Count);
+            foreach (CsgPolygon poly in leftObj.polygons)
+            {
+                if (poly.status == PolygonStatus.INSIDE
+                  || poly.status == PolygonStatus.SAME
+                  || poly.status == PolygonStatus.OPPOSITE)
+                {
+                    poly.faceProperties = DeterminePaintFaceProperties(poly, rightObj, defaultPaintProperties);
+                }
+                polys.Add(poly);
+            }
+
+            return polys;
+        }
+
+        private static List<CsgPolygon> MergeCoplanarPolygonsFavoringSecond(
+          List<CsgPolygon> primary, List<CsgPolygon> secondary)
+        {
+            if (primary.Count == 0 && secondary.Count == 0)
+            {
+                return new List<CsgPolygon>();
+            }
+
+            if (primary.Count == 0)
+            {
+                return new List<CsgPolygon>(secondary);
+            }
+
+            if (secondary.Count == 0)
+            {
+                return new List<CsgPolygon>(primary);
+            }
+
+            Dictionary<string, CsgPolygon> merged =
+              new Dictionary<string, CsgPolygon>(primary.Count + secondary.Count);
+
+            foreach (CsgPolygon polygon in primary)
+            {
+                merged[BuildPolygonKey(polygon)] = polygon;
+            }
+
+            foreach (CsgPolygon polygon in secondary)
+            {
+                merged[BuildPolygonKey(polygon)] = polygon;
+            }
+
+            return new List<CsgPolygon>(merged.Values);
+        }
+
+        private static string BuildPolygonKey(CsgPolygon polygon)
+        {
+            int vertexCount = polygon.vertices.Count;
+            int[] vertexIds = new int[vertexCount];
+
+            for (int i = 0; i < vertexCount; i++)
+            {
+                vertexIds[i] = RuntimeHelpers.GetHashCode(polygon.vertices[i]);
+            }
+
+            int startIndex = 0;
+            for (int i = 1; i < vertexCount; i++)
+            {
+                if (vertexIds[i] < vertexIds[startIndex])
+                {
+                    startIndex = i;
+                }
+            }
+
+            StringBuilder builder = new StringBuilder(vertexCount * 12);
+            for (int i = 0; i < vertexCount; i++)
+            {
+                int index = (startIndex + i) % vertexCount;
+                builder.Append(vertexIds[index]);
+                builder.Append(',');
+            }
+
+            return builder.ToString();
         }
 
         /// <summary>
@@ -310,10 +412,46 @@ namespace com.google.apps.peltzer.client.model.csg
         // Public for testing.
         public static void ClassifyPolygonUsingRaycast(CsgPolygon poly, CsgObject wrt)
         {
+            float closestPolyDist;
+            CsgPolygon closest = FindClosestPolygonUsingRaycast(poly, wrt, out closestPolyDist);
+
+            if (closest == null)
+            {
+                // Didn't hit any polys, we are outside.
+                poly.status = PolygonStatus.OUTSIDE;
+                return;
+            }
+
+            float dot = Vector3.Dot(poly.plane.normal, closest.plane.normal);
+            if (Mathf.Abs(closestPolyDist) < CsgMath.EPSILON)
+            {
+                poly.status = dot < 0 ? PolygonStatus.OPPOSITE : PolygonStatus.SAME;
+            }
+            else
+            {
+                poly.status = dot < 0 ? PolygonStatus.OUTSIDE : PolygonStatus.INSIDE;
+            }
+        }
+
+        private static FaceProperties DeterminePaintFaceProperties(
+          CsgPolygon poly, CsgObject rightObj, FaceProperties fallback)
+        {
+            float closestPolyDist;
+            CsgPolygon closest = FindClosestPolygonUsingRaycast(poly, rightObj, out closestPolyDist);
+            if (closest != null)
+            {
+                return closest.faceProperties;
+            }
+            return fallback;
+        }
+
+        private static CsgPolygon FindClosestPolygonUsingRaycast(
+          CsgPolygon poly, CsgObject wrt, out float closestPolyDist)
+        {
             Vector3 rayStart = poly.baryCenter;
             Vector3 rayNormal = poly.plane.normal;
             CsgPolygon closest = null;
-            float closestPolyDist = float.MaxValue;
+            closestPolyDist = float.MaxValue;
 
             bool done;
             int count = 0;
@@ -384,23 +522,7 @@ namespace com.google.apps.peltzer.client.model.csg
                 count++;
             } while (!done && count < 5);
 
-            if (closest == null)
-            {
-                // Didn't hit any polys, we are outside.
-                poly.status = PolygonStatus.OUTSIDE;
-            }
-            else
-            {
-                float dot = Vector3.Dot(poly.plane.normal, closest.plane.normal);
-                if (Mathf.Abs(closestPolyDist) < CsgMath.EPSILON)
-                {
-                    poly.status = dot < 0 ? PolygonStatus.OPPOSITE : PolygonStatus.SAME;
-                }
-                else
-                {
-                    poly.status = dot < 0 ? PolygonStatus.OUTSIDE : PolygonStatus.INSIDE;
-                }
-            }
+            return closest;
         }
 
         private static bool HasUnknown(CsgPolygon poly)
