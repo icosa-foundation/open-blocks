@@ -18,6 +18,7 @@ using System.Text;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
+using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.util;
 
 namespace com.google.apps.peltzer.client.model.csg
@@ -90,7 +91,9 @@ namespace com.google.apps.peltzer.client.model.csg
                     case CsgOperation.INTERSECT:
                         return null;
                     case CsgOperation.SUBTRACT:
-                        return brush.Clone();
+                        MMesh clone = brush.Clone();
+                        CoplanarFaceMerger.MergeCoplanarFaces(clone);
+                        return clone;
                 }
             }
 
@@ -151,7 +154,7 @@ namespace com.google.apps.peltzer.client.model.csg
                     if (brush.remixIds != null) combinedRemixIds.UnionWith(brush.remixIds);
                     if (target.remixIds != null) combinedRemixIds.UnionWith(target.remixIds);
                 }
-                return FromPolys(
+                MMesh resultMesh = FromPolys(
                   brush.id,
                   brush.offset,
                   brush.rotation,
@@ -159,6 +162,8 @@ namespace com.google.apps.peltzer.client.model.csg
                   operationOffset,
                   operationScale,
                   combinedRemixIds);
+                CoplanarFaceMerger.MergeCoplanarFaces(resultMesh);
+                return resultMesh;
             }
             else
             {
