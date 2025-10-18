@@ -1627,6 +1627,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case CsgOperations.CsgOperation.INTERSECT:
                     sprite = CsgIntersectSprite;
                     break;
+                case CsgOperations.CsgOperation.PAINT:
+                    sprite = CsgIntersectSprite;
+                    break;
                 default:
                     sprite = CsgInactiveSprite;
                     break;
