@@ -296,6 +296,7 @@ namespace com.google.apps.peltzer.client.model.import
                     } // foreach face
                 } // foreach facelist
                 mmesh = new MMesh(id, Vector3.zero, Quaternion.identity, verticesById, facesById);
+                CoplanarFaceMerger.MergeCoplanarFaces(mmesh);
             }
             return true;
         }
