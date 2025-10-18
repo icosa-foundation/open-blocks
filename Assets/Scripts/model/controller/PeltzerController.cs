@@ -320,6 +320,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public Sprite CsgUnionSprite;
         public Sprite CsgSubtractSprite;
         public Sprite CsgIntersectSprite;
+        public Sprite CsgPaintSprite;
         public Sprite CsgInactiveSprite;
 
         private VolumeInserter volumeInserterInstance;
@@ -1626,6 +1627,9 @@ namespace com.google.apps.peltzer.client.model.controller
                     break;
                 case CsgOperations.CsgOperation.INTERSECT:
                     sprite = CsgIntersectSprite;
+                    break;
+                case CsgOperations.CsgOperation.PAINT_INTERSECT:
+                    sprite = CsgPaintSprite != null ? CsgPaintSprite : CsgIntersectSprite;
                     break;
                 default:
                     sprite = CsgInactiveSprite;

@@ -32,7 +32,8 @@ namespace com.google.apps.peltzer.client.model.csg
             INACTIVE,
             UNION,
             INTERSECT,
-            SUBTRACT
+            SUBTRACT,
+            PAINT_INTERSECT
         }
 
         /// <summary>
@@ -136,6 +137,9 @@ namespace com.google.apps.peltzer.client.model.csg
                 case CsgOperation.SUBTRACT:
                     result = CsgSubtract(ctx, leftObj, rightObj);
                     break;
+                case CsgOperation.PAINT_INTERSECT:
+                    result = CsgPaintIntersect(ctx, leftObj, rightObj);
+                    break;
             }
 
             if (result != null && result.Count > 0)
@@ -220,6 +224,46 @@ namespace com.google.apps.peltzer.client.model.csg
             polys.AddRange(MergeCoplanarPolygonsFavoringSecond(leftCoplanar, rightCoplanar));
 
             return polys;
+        }
+
+        /// <summary>
+        ///   Keep the left object geometry but recolor intersecting faces with the dominant
+        ///   material from the right object.
+        /// </summary>
+        private static List<CsgPolygon> CsgPaintIntersect(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
+        {
+            SplitObject(ctx, leftObj, rightObj);
+            SplitObject(ctx, rightObj, leftObj);
+            SplitObject(ctx, leftObj, rightObj);
+            ClassifyPolygons(leftObj, rightObj);
+            ClassifyPolygons(rightObj, leftObj);
+
+            FaceProperties? paintProperties = DetermineDominantFaceProperties(rightObj);
+
+            List<CsgPolygon> recolored = SelectPolygons(
+              leftObj,
+              invert: false,
+              overwriteFaceProperties: paintProperties,
+              PolygonStatus.INSIDE,
+              PolygonStatus.SAME,
+              PolygonStatus.OPPOSITE);
+            List<CsgPolygon> untouched = SelectPolygons(
+              leftObj,
+              invert: false,
+              overwriteFaceProperties: null,
+              PolygonStatus.OUTSIDE);
+
+            recolored.AddRange(untouched);
+
+            // Include any polygons that remain unclassified to preserve original geometry.
+            List<CsgPolygon> unknown = SelectPolygons(
+              leftObj,
+              invert: false,
+              overwriteFaceProperties: null,
+              PolygonStatus.UNKNOWN);
+            recolored.AddRange(unknown);
+
+            return recolored;
         }
 
         private static List<CsgPolygon> MergeCoplanarPolygonsFavoringSecond(
@@ -312,6 +356,42 @@ namespace com.google.apps.peltzer.client.model.csg
             }
 
             return polys;
+        }
+
+        private static FaceProperties? DetermineDominantFaceProperties(CsgObject obj)
+        {
+            if (obj.polygons.Count == 0)
+            {
+                return null;
+            }
+
+            Dictionary<int, int> materialUsageCounts = new Dictionary<int, int>();
+            foreach (CsgPolygon polygon in obj.polygons)
+            {
+                int materialId = polygon.faceProperties.materialId;
+                int existingCount;
+                if (materialUsageCounts.TryGetValue(materialId, out existingCount))
+                {
+                    materialUsageCounts[materialId] = existingCount + 1;
+                }
+                else
+                {
+                    materialUsageCounts[materialId] = 1;
+                }
+            }
+
+            int selectedMaterialId = obj.polygons[0].faceProperties.materialId;
+            int selectedCount = 0;
+            foreach (KeyValuePair<int, int> kvp in materialUsageCounts)
+            {
+                if (kvp.Value > selectedCount)
+                {
+                    selectedMaterialId = kvp.Key;
+                    selectedCount = kvp.Value;
+                }
+            }
+
+            return new FaceProperties(selectedMaterialId);
         }
 
         // Section 7:  Classify all polygons in the object.
