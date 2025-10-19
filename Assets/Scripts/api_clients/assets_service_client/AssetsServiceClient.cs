@@ -596,6 +596,41 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return true;
         }
 
+        private static void ParseFormatPaths(JToken formatRoot, out string rootUrl, out string baseFile, out string[] supportingFiles)
+        {
+            rootUrl = formatRoot?["root"]?["url"]?.ToString();
+            baseFile = formatRoot?["root"]?["relativePath"]?.ToString()
+              ?? formatRoot?["root"]?["relative_path"]?.ToString()
+              ?? string.Empty;
+
+            supportingFiles = null;
+            JToken resourcesToken = formatRoot?["resources"] ?? formatRoot?["resource"];
+            if (resourcesToken == null)
+            {
+                return;
+            }
+
+            if (resourcesToken.Type == JTokenType.Array)
+            {
+                supportingFiles = resourcesToken
+                  .Select(res => res?["relativePath"]?.ToString()
+                    ?? res?["relative_path"]?.ToString()
+                    ?? res?["url"]?.ToString())
+                  .Where(path => !string.IsNullOrEmpty(path))
+                  .ToArray();
+            }
+            else if (resourcesToken.Type == JTokenType.Object)
+            {
+                string path = resourcesToken?["relativePath"]?.ToString()
+                  ?? resourcesToken?["relative_path"]?.ToString()
+                  ?? resourcesToken?["url"]?.ToString();
+                if (!string.IsNullOrEmpty(path))
+                {
+                    supportingFiles = new[] { path };
+                }
+            }
+        }
+
         /// <summary>
         ///   Parses a single asset as defined in vr/assets/asset.proto
         /// </summary>
@@ -643,25 +678,83 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
 
             var entryAssets = new ObjectStoreObjectAssetsWrapper();
-            var blocksAsset = new ObjectStorePeltzerAssets();
-            // 7 is the enum for Blocks in ElementType
-            // A bit ugly: we simply take one arbitrary entry (we assume only one entry exists, as we only ever upload one).
-            //blocksAsset.rootUrl = asset["formats"]["7"]["format"][0]["root"]["dataUrl"].ToString();
-            var assets = asset["formats"].AsJEnumerable();
-            var blocksEntry = assets?.FirstOrDefault(x => x["formatType"].ToString() == "BLOCKS");
-            if (blocksEntry == null)
+            bool hasSupportedFormat = false;
+
+            var formats = asset["formats"].AsJEnumerable();
+            if (formats != null)
             {
-                Debug.LogWarning($"Asset had no blocks format type: {asset}");
+                foreach (JToken format in formats)
+                {
+                    string formatType = format?["formatType"]?.ToString();
+                    if (string.IsNullOrEmpty(formatType))
+                    {
+                        continue;
+                    }
+
+                    switch (formatType)
+                    {
+                        case "BLOCKS":
+                            ParseFormatPaths(format, out string blocksRootUrl, out string blocksBaseFile,
+                              out string[] blocksSupportingFiles);
+                            if (!string.IsNullOrEmpty(blocksRootUrl))
+                            {
+                                entryAssets.peltzer = new ObjectStorePeltzerAssets
+                                {
+                                    rootUrl = blocksRootUrl,
+                                    baseFile = blocksBaseFile ?? string.Empty,
+                                    supportingFiles = blocksSupportingFiles
+                                };
+                                hasSupportedFormat = true;
+                            }
+                            break;
+                        case "OBJ":
+                        case "OBJECT":
+                            ParseFormatPaths(format, out string objRootUrl, out string objBaseFile,
+                              out string[] objSupportingFiles);
+                            if (!string.IsNullOrEmpty(objRootUrl))
+                            {
+                                var objAssets = new ObjectStoreObjectAssets
+                                {
+                                    rootUrl = objRootUrl,
+                                    baseFile = objBaseFile ?? string.Empty,
+                                    supportingFiles = objSupportingFiles
+                                };
+                                entryAssets.obj = entryAssets.obj ?? objAssets;
+                                entryAssets.object_package = new ObjectStoreObjMtlPackageAssets
+                                {
+                                    rootUrl = objRootUrl,
+                                    baseFile = objBaseFile ?? string.Empty,
+                                    supportingFiles = objSupportingFiles
+                                };
+                                hasSupportedFormat = true;
+                            }
+                            break;
+                        case "GLTF":
+                        case "GLTF1":
+                        case "GLTF2":
+                            ParseFormatPaths(format, out string gltfRootUrl, out string gltfBaseFile,
+                              out string[] gltfSupportingFiles);
+                            if (!string.IsNullOrEmpty(gltfRootUrl))
+                            {
+                                entryAssets.gltf_package = new ObjectStoreGltfPackageAssets
+                                {
+                                    rootUrl = gltfRootUrl,
+                                    baseFile = gltfBaseFile ?? string.Empty,
+                                    supportingFiles = gltfSupportingFiles
+                                };
+                                hasSupportedFormat = true;
+                            }
+                            break;
+                    }
+                }
+            }
+
+            if (!hasSupportedFormat)
+            {
+                Debug.LogWarning($"Asset had no supported formats: {asset}");
                 return false;
             }
-            blocksAsset.rootUrl = blocksEntry["root"]?["url"]?.ToString();
-            if (string.IsNullOrEmpty(blocksAsset.rootUrl))
-            {
-                Debug.LogWarning("Asset had no blocks root URL");
-                return false;
-            }
-            blocksAsset.baseFile = "";
-            entryAssets.peltzer = blocksAsset;
+
             objectStoreEntry.assets = entryAssets;
             objectStoreEntry.title = asset["displayName"].ToString();
             objectStoreEntry.author = asset["authorName"].ToString();
@@ -1347,6 +1440,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 OAuth2Identity.Instance.Authenticate(request);
             }
+            Debug.Log($"request: {request.url}");
             return request;
         }
 

@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -20,9 +22,12 @@ using UnityEngine.Networking;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.export;
+using com.google.apps.peltzer.client.model.import;
+using com.google.apps.peltzer.client.model.core;
 using System.Text;
 using com.google.apps.peltzer.client.entitlement;
 using ICSharpCode.SharpZipLib.Zip;
+using System.Linq;
 
 namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 {
@@ -95,10 +100,10 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             {
                 callback(File.ReadAllBytes(entry.localPeltzerFile));
             }
-            // Doesn't seem to be used currently for .blocks files
-            else if (entry.assets.peltzer_package != null
-                      && !string.IsNullOrEmpty(entry.assets.peltzer_package.rootUrl)
-                      && !string.IsNullOrEmpty(entry.assets.peltzer_package.baseFile))
+            else if (entry.assets != null
+              && entry.assets.peltzer_package != null
+              && !string.IsNullOrEmpty(entry.assets.peltzer_package.rootUrl)
+              && !string.IsNullOrEmpty(entry.assets.peltzer_package.baseFile))
             {
                 StringBuilder zipUrl = new StringBuilder(entry.assets.peltzer_package.rootUrl)
                   .Append(entry.assets.peltzer_package.baseFile);
@@ -117,7 +122,9 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       }
                   });
             }
-            else
+            else if (entry.assets != null
+              && entry.assets.peltzer != null
+              && !string.IsNullOrEmpty(entry.assets.peltzer.rootUrl))
             {
                 StringBuilder url = new StringBuilder(entry.assets.peltzer.rootUrl)
                   .Append(entry.assets.peltzer.baseFile);
@@ -135,6 +142,69 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                           callback(responseBytes);
                       }
                   });
+            }
+            else if (entry.assets != null
+              && entry.assets.object_package != null
+              && !string.IsNullOrEmpty(entry.assets.object_package.rootUrl))
+            {
+                StringBuilder zipUrl = new StringBuilder(entry.assets.object_package.rootUrl)
+                  .Append(entry.assets.object_package.baseFile ?? string.Empty);
+
+                PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+                  () => { return GetNewGetRequest(zipUrl, "application/octet-stream"); },
+                  (bool success, int responseCode, byte[] responseBytes) =>
+                  {
+                      if (!success)
+                      {
+                          callback(null);
+                      }
+                      else
+                      {
+                          PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjPackageWork(responseBytes, callback));
+                      }
+                  });
+            }
+            else if (entry.assets != null
+              && entry.assets.obj != null
+              && !string.IsNullOrEmpty(entry.assets.obj.rootUrl))
+            {
+                StringBuilder objUrl = new StringBuilder(entry.assets.obj.rootUrl)
+                  .Append(entry.assets.obj.baseFile ?? string.Empty);
+
+                PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+                  () => { return GetNewGetRequest(objUrl, "text/plain"); },
+                  (bool success, int responseCode, byte[] objBytes) =>
+                  {
+                      if (!success)
+                      {
+                          callback(null);
+                          return;
+                      }
+
+                      string objContents = Encoding.UTF8.GetString(objBytes);
+                      string mtlPath = entry.assets.obj.supportingFiles?.FirstOrDefault(f => f != null && f.EndsWith(".mtl"));
+                      if (!string.IsNullOrEmpty(mtlPath))
+                      {
+                          StringBuilder mtlUrl = new StringBuilder(entry.assets.obj.rootUrl).Append(mtlPath);
+                          PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+                            () => { return GetNewGetRequest(mtlUrl, "text/plain"); },
+                            (bool mtlSuccess, int mtlResponseCode, byte[] mtlBytes) =>
+                            {
+                                string mtlContents = mtlSuccess ? Encoding.UTF8.GetString(mtlBytes) : null;
+                                PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                                  new ConvertObjStringsWork(objContents, mtlContents, callback));
+                            });
+                      }
+                      else
+                      {
+                          PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                            new ConvertObjStringsWork(objContents, null, callback));
+                      }
+                  });
+            }
+            else
+            {
+                callback(null);
             }
         }
 
@@ -287,6 +357,98 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         peltzerFileCallback(peltzerFile);
                     }
                 }
+            }
+        }
+
+        private class ConvertObjStringsWork : BackgroundWork
+        {
+            private readonly string objContents;
+            private readonly string mtlContents;
+            private readonly System.Action<byte[]> callback;
+            private byte[] outputBytes;
+
+            public ConvertObjStringsWork(string objContents, string mtlContents, System.Action<byte[]> callback)
+            {
+                this.objContents = objContents;
+                this.mtlContents = mtlContents;
+                this.callback = callback;
+            }
+
+            public void BackgroundWork()
+            {
+                if (string.IsNullOrEmpty(objContents))
+                {
+                    return;
+                }
+
+                if (ObjImporter.MMeshFromObjFile(objContents, mtlContents, 0, out MMesh mesh))
+                {
+                    outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
+                }
+            }
+
+            public void PostWork()
+            {
+                callback(outputBytes);
+            }
+        }
+
+        private class ConvertObjPackageWork : BackgroundWork
+        {
+            private readonly byte[] zipBytes;
+            private readonly System.Action<byte[]> callback;
+            private byte[] outputBytes;
+
+            public ConvertObjPackageWork(byte[] zipBytes, System.Action<byte[]> callback)
+            {
+                this.zipBytes = zipBytes;
+                this.callback = callback;
+            }
+
+            public void BackgroundWork()
+            {
+                using (ZipFile zipFile = new ZipFile(new MemoryStream(zipBytes)))
+                {
+                    string objContents = null;
+                    string mtlContents = null;
+
+                    foreach (ZipEntry entry in zipFile)
+                    {
+                        if (!entry.IsFile)
+                        {
+                            continue;
+                        }
+
+                        using (Stream entryStream = zipFile.GetInputStream(entry))
+                        using (StreamReader reader = new StreamReader(entryStream))
+                        {
+                            if (entry.Name.EndsWith(".obj", StringComparison.OrdinalIgnoreCase))
+                            {
+                                objContents = reader.ReadToEnd();
+                            }
+                            else if (entry.Name.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase))
+                            {
+                                mtlContents = reader.ReadToEnd();
+                            }
+                        }
+
+                        if (!string.IsNullOrEmpty(objContents) && !string.IsNullOrEmpty(mtlContents))
+                        {
+                            break;
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(objContents)
+                      && ObjImporter.MMeshFromObjFile(objContents, mtlContents, 0, out MMesh mesh))
+                    {
+                        outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
+                    }
+                }
+            }
+
+            public void PostWork()
+            {
+                callback(outputBytes);
             }
         }
     }

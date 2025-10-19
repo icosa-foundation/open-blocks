@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
+using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.util;
 
@@ -490,14 +491,16 @@ namespace com.google.apps.peltzer.client.model.render
                     }
                     faceProperties.Add(new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(col)));
                 }
-                mmeshes.Add(new MMesh(
+                MMesh importedMesh = new MMesh(
                     PeltzerMain.Instance.model.GenerateMeshId(),
                     Vector3.zero,
                     Quaternion.identity,
                     mesh.vertices.Select(v => v * scale).ToList(),
                     faces,
                     faceProperties
-                ));
+                );
+                CoplanarFaceMerger.MergeCoplanarFaces(importedMesh);
+                mmeshes.Add(importedMesh);
             }
             return mmeshes;
         }

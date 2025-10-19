@@ -870,8 +870,7 @@ namespace com.google.apps.peltzer.client.zandria
         public void LoadModelForCreation(Creation creation, PolyMenuMain.CreationType type)
         {
             ObjectStoreEntry entry = creation.entry.queryEntry;
-            if (entry == null || (entry.localPeltzerFile == null &&
-              (entry.assets == null || (entry.assets.peltzer == null && entry.assets.peltzer_package == null))))
+            if (!EntryHasLoadableAsset(entry))
             {
                 OnLoadFailure(creation, type);
                 return;
@@ -946,6 +945,30 @@ namespace com.google.apps.peltzer.client.zandria
                     ProcessGetThumbnailTexture(success, responseCode, responseBytes, request, entry,
                     thumbnailTextureCallback, isRecursion)));
             }
+        }
+
+        private static bool EntryHasLoadableAsset(ObjectStoreEntry entry)
+        {
+            if (entry == null)
+            {
+                return false;
+            }
+
+            if (entry.localPeltzerFile != null)
+            {
+                return true;
+            }
+
+            if (entry.assets == null)
+            {
+                return false;
+            }
+
+            return entry.assets.peltzer != null
+              || entry.assets.peltzer_package != null
+              || entry.assets.object_package != null
+              || entry.assets.obj != null
+              || entry.assets.gltf_package != null;
         }
 
         // Deals with the response of a GetThumbnailTexture request, retrying it if an auth token was stale.
