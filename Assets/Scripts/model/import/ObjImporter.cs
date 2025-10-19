@@ -239,34 +239,67 @@ namespace com.google.apps.peltzer.client.model.import
                             return false;
                         }
                         FFace face = new FFace();
+                        bool validFace = true;
                         for (int i = 1; i < parts.Length; i++)
                         {
-                            if (parts[i].Contains(sep4[0]))
+                            int vertexId = 0;
+                            bool parsed = false;
+
+                            if (parts[i].Contains(sep4[0])) // "//":  v//vn
                             {
-                                // -1 as vertices are 0-indexed when read but 1-indexed when referenced.
-                                face.vertexIds.Add(int.Parse(parts[i].Split(sep4, StringSplitOptions.RemoveEmptyEntries)[0]) - 1);
+                                string[] splitParts = parts[i].Split(sep4, StringSplitOptions.RemoveEmptyEntries);
+                                if (splitParts.Length > 0)
+                                {
+                                    parsed = int.TryParse(splitParts[0], out vertexId);
+                                }
                             }
-                            else if (parts[i].Contains(sep3[0]))
+                            else if (parts[i].Contains(sep3[0])) // "/": v/vt or v/vt/vn
                             {
-                                // -1 as vertices are 0-indexed when read but 1-indexed when referenced.
-                                face.vertexIds.Add(int.Parse(parts[i].Split(sep3, StringSplitOptions.RemoveEmptyEntries)[0]) - 1);
-                                //face.uvIds.Add(int.Parse(vIds[1]));
+                                string[] splitParts = parts[i].Split(sep3, StringSplitOptions.RemoveEmptyEntries);
+                                if (splitParts.Length > 0)
+                                {
+                                    parsed = int.TryParse(splitParts[0], out vertexId);
+                                }
                             }
                             else
                             {
-                                // -1 as vertices are 0-indexed when read but 1-indexed when referenced.
-                                string vIndex = parts[i].Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)[0]; // Ignore texture and normal indices.
-                                face.vertexIds.Add(int.Parse(vIndex) - 1);
+                                string vIndex = parts[i].Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)[0];
+                                parsed = int.TryParse(vIndex, out vertexId);
+                            }
+
+                            if (parsed)
+                            {
+                                // Handle negative indices or convert to 0-based index
+                                vertexId = vertexId > 0 ? vertexId - 1 : verticesById.Count + vertexId;
+                                if (vertexId >= 0 && vertexId < verticesById.Count)
+                                {
+                                    face.vertexIds.Add(vertexId);
+                                }
+                                else
+                                {
+                                    validFace = false;
+                                }
+                            }
+                            else
+                            {
+                                validFace = false;
                             }
                         }
-                        if (!allFaces.ContainsKey(currentMaterial))
+
+                        if (validFace)
                         {
-                            allFaces.Add(currentMaterial, new List<FFace>());
+                            if (!allFaces.ContainsKey(currentMaterial))
+                            {
+                                allFaces.Add(currentMaterial, new List<FFace>());
+                            }
+
+                            allFaces[currentMaterial].Add(face);
                         }
-                        allFaces[currentMaterial].Add(face);
                     }
                     line = reader.ReadLine();
                 }
+
+                bool allTriangularFaces = true;
 
                 // Create one mesh per entry in faceList, as all faces will have the same material.
                 foreach (KeyValuePair<string, List<FFace>> faceList in allFaces)
@@ -274,7 +307,6 @@ namespace com.google.apps.peltzer.client.model.import
                     int newFaceIndex = 0;
                     // A list of triangles in this mesh.
                     var faceIndices = new List<List<int>>();
-
 
                     foreach (FFace face in faceList.Value)
                     {
@@ -293,10 +325,18 @@ namespace com.google.apps.peltzer.client.model.import
                         );
                         facesById.Add(newFaceIndex++, newFace);
                         faceIndices.Add(singleFaceIndices);
+                        if (singleFaceIndices.Count > 3) allTriangularFaces = false;
                     } // foreach face
                 } // foreach facelist
+
                 mmesh = new MMesh(id, Vector3.zero, Quaternion.identity, verticesById, facesById);
-                CoplanarFaceMerger.MergeCoplanarFaces(mmesh);
+
+                // If all faces are triangular, presume it's been triangulated already
+                // and try to merge coplanar faces to ngons
+                if (allTriangularFaces)
+                {
+                    CoplanarFaceMerger.MergeCoplanarFaces(mmesh);
+                }
             }
             return true;
         }
