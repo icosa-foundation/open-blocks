@@ -99,7 +99,7 @@ namespace com.google.apps.peltzer.client.model.csg
                 return false;
             }
             float[] distBtoA = DistanceFromVertsToPlane(polyB, polyA.plane);
-            if (!CrossesPlane(distAtoB))
+            if (!CrossesPlane(distBtoA))
             {
                 // All verts on one side of plane, no intersection.
                 return false;

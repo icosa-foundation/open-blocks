@@ -19,6 +19,7 @@ using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.import;
+using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.model.util;
 
 namespace com.google.apps.peltzer.client.model.csg
@@ -542,16 +543,10 @@ namespace com.google.apps.peltzer.client.model.csg
                         if (signedDist < closestPolyDist)
                         {
                             int isInside = CsgMath.IsInside(otherPoly, projectedToOtherPlane);
-                            if (isInside > 0)
+                            if (isInside >= 0)  // Accept both inside (>0) and on boundary (==0)
                             {
                                 closest = otherPoly;
                                 closestPolyDist = signedDist;
-                            }
-                            else if (isInside == 0)
-                            {
-                                // On segment, perturb and try again.
-                                done = false;
-                                break;
                             }
                         }
                     }
@@ -724,21 +719,31 @@ namespace com.google.apps.peltzer.client.model.csg
         }
 
         // Generate CsgPolygons for a Face.  CsgPolygons should be convex and have no holes.
+        // Triangulate the face to ensure all resulting polygons are convex, which is required
+        // for the CSG algorithm to work correctly (especially for faces that were merged and may be concave).
         private static void GeneratePolygonsForFace(
             List<CsgPolygon> polys, Dictionary<int, CsgVertex> idToVert, MMesh mesh, Face face)
         {
-            List<CsgVertex> vertices = new List<CsgVertex>();
             if (face.vertexIds.Count < 3)
             {
                 Debug.LogWarning($"Invalid Face {face}: {face.vertexIds.Count} verts");
                 return;
             }
-            foreach (int vertexId in face.vertexIds)
+
+            // Triangulate the face to ensure all polygons are convex
+            List<Triangle> triangles = FaceTriangulator.TriangulateFace(mesh, face);
+
+            // Create a CsgPolygon for each triangle, preserving the original face normal
+            // to ensure consistent orientation regardless of triangle vertex order
+            foreach (Triangle tri in triangles)
             {
-                vertices.Add(idToVert[vertexId]);
+                List<CsgVertex> vertices = new List<CsgVertex>(3);
+                vertices.Add(idToVert[tri.vertId0]);
+                vertices.Add(idToVert[tri.vertId1]);
+                vertices.Add(idToVert[tri.vertId2]);
+                CsgPolygon poly = new CsgPolygon(vertices, face.properties, face.normal);
+                polys.Add(poly);
             }
-            CsgPolygon poly = new CsgPolygon(vertices, face.properties);
-            polys.Add(poly);
         }
     }
 }
