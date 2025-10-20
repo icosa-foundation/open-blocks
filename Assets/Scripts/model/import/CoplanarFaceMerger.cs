@@ -30,7 +30,7 @@ namespace com.google.apps.peltzer.client.model.import
         private const float PLANE_DISTANCE_TOLERANCE = 0.0005f;
         private const float VERTEX_WELD_TOLERANCE = 0.0005f;
 
-        public static void MergeCoplanarFaces(MMesh mesh)
+        public static void MergeCoplanarFaces(MMesh mesh, bool requireConvexResult = false)
         {
             if (mesh == null || mesh.faceCount == 0)
             {
@@ -101,7 +101,8 @@ namespace com.google.apps.peltzer.client.model.import
                 for (int attemptSize = regionList.Count; attemptSize >= 2; attemptSize--)
                 {
                     facesToMerge = new HashSet<int>(regionList.GetRange(0, attemptSize));
-                    if (TryBuildMergedPolygon(mesh, facesToMerge, normalizedNormal, out mergedLoop))
+                    if (TryBuildMergedPolygon(mesh, facesToMerge, normalizedNormal, requireConvexResult,
+                            out mergedLoop))
                     {
                         break;
                     }
@@ -544,7 +545,7 @@ namespace com.google.apps.peltzer.client.model.import
         }
 
         private static bool TryBuildMergedPolygon(MMesh mesh, HashSet<int> region, Vector3 expectedNormal,
-            out List<int> mergedLoop)
+            bool requireConvexResult, out List<int> mergedLoop)
         {
             List<OrientedEdge> orientedEdges = new List<OrientedEdge>();
             Dictionary<EdgeKey, int> edgeUseCounts = new Dictionary<EdgeKey, int>();
@@ -597,6 +598,43 @@ namespace com.google.apps.peltzer.client.model.import
             }
 
             EnsureOrientation(mesh, mergedLoop, expectedNormal);
+
+            if (requireConvexResult && !IsConvexPolygon(mesh, mergedLoop, expectedNormal))
+            {
+                mergedLoop = null;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsConvexPolygon(MMesh mesh, List<int> polygon, Vector3 expectedNormal)
+        {
+            if (polygon == null || polygon.Count < 3)
+            {
+                return false;
+            }
+
+            Vector3 normalizedNormal = expectedNormal.normalized;
+            const float concaveTolerance = -1e-5f;
+
+            for (int i = 0; i < polygon.Count; i++)
+            {
+                Vector3 a = mesh.VertexPositionInMeshCoords(polygon[i]);
+                Vector3 b = mesh.VertexPositionInMeshCoords(polygon[(i + 1) % polygon.Count]);
+                Vector3 c = mesh.VertexPositionInMeshCoords(polygon[(i + 2) % polygon.Count]);
+
+                Vector3 ab = b - a;
+                Vector3 bc = c - b;
+                Vector3 cross = Vector3.Cross(ab, bc);
+                float dot = Vector3.Dot(cross, normalizedNormal);
+
+                if (dot < concaveTolerance)
+                {
+                    return false;
+                }
+            }
+
             return true;
         }
 
