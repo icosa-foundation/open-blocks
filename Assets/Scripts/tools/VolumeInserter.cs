@@ -586,6 +586,7 @@ namespace com.google.apps.peltzer.client.tools
                     CsgOperations.CsgOperation.UNION => audioLibrary.insertVolumeSound,
                     CsgOperations.CsgOperation.INTERSECT => audioLibrary.deleteSound,
                     CsgOperations.CsgOperation.SUBTRACT => audioLibrary.deleteSound,
+                    CsgOperations.CsgOperation.SPLIT => audioLibrary.deleteSound,
                     CsgOperations.CsgOperation.PAINT_INTERSECT => audioLibrary.paintSound,
                     _ => null
                 };
@@ -753,6 +754,10 @@ namespace com.google.apps.peltzer.client.tools
                     case CsgOperations.CsgOperation.INTERSECT:
                         peltzerController.controllerGeometry.csgTooltips.SetActive(true);
                         textMesh.text = "Intersect Shape";
+                        break;
+                    case CsgOperations.CsgOperation.SPLIT:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
+                        textMesh.text = "Split Shape";
                         break;
                     case CsgOperations.CsgOperation.UNION:
                         peltzerController.controllerGeometry.csgTooltips.SetActive(true);
@@ -950,6 +955,9 @@ namespace com.google.apps.peltzer.client.tools
                     switch (csgOperation)
                     {
                         case CsgOperations.CsgOperation.SUBTRACT:
+                            csgOperation = CsgOperations.CsgOperation.SPLIT;
+                            break;
+                        case CsgOperations.CsgOperation.SPLIT:
                             csgOperation = CsgOperations.CsgOperation.INTERSECT;
                             break;
                         case CsgOperations.CsgOperation.INTERSECT:
