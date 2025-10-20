@@ -192,6 +192,8 @@ namespace com.google.apps.peltzer.client.tools
 
         private InactiveSelectionHighlighter inactiveSelectionHighlighter;
 
+        private bool coplanarFaceSelectionMode = false;
+
         private Bounds boundingBoxOfAllSelections;
 
         // Cached results of lookups from the spatial index.
@@ -314,6 +316,34 @@ namespace com.google.apps.peltzer.client.tools
             // this.pointRadiusWorld = materialLibrary.pointHighlightMaterial.GetFloat("_PointSphereRadius");
             this.edgeRadiusWorld = 0.002f;
             this.pointRadiusWorld = 0.002f;
+        }
+
+        public bool CoplanarFaceSelectionModeEnabled
+        {
+            get { return coplanarFaceSelectionMode; }
+        }
+
+        public bool ToggleCoplanarFaceSelectionMode()
+        {
+            coplanarFaceSelectionMode = !coplanarFaceSelectionMode;
+            if (coplanarFaceSelectionMode)
+            {
+                ExpandExistingFaceSelectionsToCoplanar();
+            }
+            return coplanarFaceSelectionMode;
+        }
+
+        public void SetCoplanarFaceSelectionMode(bool enabled)
+        {
+            if (coplanarFaceSelectionMode == enabled)
+            {
+                return;
+            }
+            coplanarFaceSelectionMode = enabled;
+            if (coplanarFaceSelectionMode)
+            {
+                ExpandExistingFaceSelectionsToCoplanar();
+            }
         }
 
         void Update()
@@ -938,10 +968,41 @@ namespace com.google.apps.peltzer.client.tools
 
         private void SelectFace(FaceKey faceKey, Vector3 position)
         {
-            selectedFaces.Add(faceKey);
+            if (coplanarFaceSelectionMode)
+            {
+                foreach (FaceKey coplanarFace in FindCoplanarFaces(faceKey))
+                {
+                    Vector3 selectionPosition;
+                    if (coplanarFace.Equals(faceKey))
+                    {
+                        selectionPosition = position;
+                    }
+                    else
+                    {
+                        MMesh mesh = model.GetMesh(coplanarFace.meshId);
+                        Face additionalFace = mesh.GetFace(coplanarFace.faceId);
+                        selectionPosition = MeshMath.CalculateGeometricCenter(additionalFace, mesh);
+                    }
+                    SelectFaceInternal(coplanarFace, selectionPosition);
+                }
+            }
+            else
+            {
+                SelectFaceInternal(faceKey, position);
+            }
+        }
+
+        private void SelectFaceInternal(FaceKey faceKey, Vector3 position)
+        {
+            if (!selectedFaces.Add(faceKey))
+            {
+                return;
+            }
+
             undoFaceMultiSelect.Push(faceKey);
 
-            Bounds faceBounds = model.GetMesh(faceKey.meshId).CalculateFaceBoundsInModelSpace(faceKey.faceId);
+            MMesh mesh = model.GetMesh(faceKey.meshId);
+            Bounds faceBounds = mesh.CalculateFaceBoundsInModelSpace(faceKey.faceId);
             if (boundingBoxOfAllSelections == null)
             {
                 boundingBoxOfAllSelections = faceBounds;
@@ -952,9 +1013,199 @@ namespace com.google.apps.peltzer.client.tools
             }
 
             highlightUtils.TurnOn(faceKey, position);
-            if (hoverFace != null && hoverFace == faceKey)
+            if (hoverFace != null && hoverFace.Equals(faceKey))
             {
                 hoverFace = null;
+            }
+
+            PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
+        }
+
+        private void ExpandExistingFaceSelectionsToCoplanar()
+        {
+            if (selectedFaces.Count == 0)
+            {
+                return;
+            }
+
+            List<FaceKey> existingSelections = new List<FaceKey>(selectedFaces);
+            foreach (FaceKey selectedFace in existingSelections)
+            {
+                foreach (FaceKey coplanarFace in FindCoplanarFaces(selectedFace))
+                {
+                    if (selectedFaces.Contains(coplanarFace))
+                    {
+                        continue;
+                    }
+
+                    MMesh mesh = model.GetMesh(coplanarFace.meshId);
+                    Face face = mesh.GetFace(coplanarFace.faceId);
+                    Vector3 centerOfFace = MeshMath.CalculateGeometricCenter(face, mesh);
+                    SelectFaceInternal(coplanarFace, centerOfFace);
+                }
+            }
+        }
+
+        private IEnumerable<FaceKey> FindCoplanarFaces(FaceKey seedFaceKey)
+        {
+            MMesh mesh = model.GetMesh(seedFaceKey.meshId);
+            Face seedFace = mesh.GetFace(seedFaceKey.faceId);
+
+            Plane plane;
+            int indexOfThirdVertex;
+            if (!MeshUtil.CalculateCommonPlane(mesh, seedFace.vertexIds, out plane, out indexOfThirdVertex))
+            {
+                yield return seedFaceKey;
+                yield break;
+            }
+
+            Vector3 planeNormal = plane.normal;
+            if (planeNormal.sqrMagnitude < Mathf.Epsilon && seedFace.normal.sqrMagnitude > Mathf.Epsilon)
+            {
+                planeNormal = seedFace.normal.normalized;
+            }
+            Vector3 normalizedPlaneNormal = planeNormal.sqrMagnitude > Mathf.Epsilon ? planeNormal.normalized : planeNormal;
+
+            Dictionary<EdgeVertices, List<int>> facesByEdge = BuildFacesByEdge(mesh);
+            HashSet<int> visitedFaces = new HashSet<int>();
+            Queue<int> facesToVisit = new Queue<int>();
+            facesToVisit.Enqueue(seedFace.id);
+            visitedFaces.Add(seedFace.id);
+
+            while (facesToVisit.Count > 0)
+            {
+                int currentFaceId = facesToVisit.Dequeue();
+                Face currentFace = mesh.GetFace(currentFaceId);
+                if (!IsFaceCoplanarToPlane(mesh, currentFace, plane, normalizedPlaneNormal))
+                {
+                    continue;
+                }
+
+                FaceKey resultKey = currentFaceId == seedFaceKey.faceId ? seedFaceKey :
+                  new FaceKey(seedFaceKey.meshId, currentFaceId);
+                yield return resultKey;
+
+                foreach (int adjacentFaceId in GetAdjacentFaceIds(currentFace, facesByEdge))
+                {
+                    if (visitedFaces.Add(adjacentFaceId))
+                    {
+                        facesToVisit.Enqueue(adjacentFaceId);
+                    }
+                }
+            }
+        }
+
+        private static Dictionary<EdgeVertices, List<int>> BuildFacesByEdge(MMesh mesh)
+        {
+            Dictionary<EdgeVertices, List<int>> facesByEdge = new Dictionary<EdgeVertices, List<int>>();
+            foreach (Face face in mesh.GetFaces())
+            {
+                var vertexIds = face.vertexIds;
+                for (int i = 0; i < vertexIds.Count; i++)
+                {
+                    int firstVertex = vertexIds[i];
+                    int secondVertex = vertexIds[(i + 1) % vertexIds.Count];
+                    EdgeVertices edge = new EdgeVertices(firstVertex, secondVertex);
+                    List<int> facesForEdge;
+                    if (!facesByEdge.TryGetValue(edge, out facesForEdge))
+                    {
+                        facesForEdge = new List<int>();
+                        facesByEdge[edge] = facesForEdge;
+                    }
+                    if (!facesForEdge.Contains(face.id))
+                    {
+                        facesForEdge.Add(face.id);
+                    }
+                }
+            }
+            return facesByEdge;
+        }
+
+        private static IEnumerable<int> GetAdjacentFaceIds(Face face, Dictionary<EdgeVertices, List<int>> facesByEdge)
+        {
+            var vertexIds = face.vertexIds;
+            for (int i = 0; i < vertexIds.Count; i++)
+            {
+                int firstVertex = vertexIds[i];
+                int secondVertex = vertexIds[(i + 1) % vertexIds.Count];
+                EdgeVertices edge = new EdgeVertices(firstVertex, secondVertex);
+                List<int> faces;
+                if (!facesByEdge.TryGetValue(edge, out faces))
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < faces.Count; j++)
+                {
+                    int faceId = faces[j];
+                    if (faceId != face.id)
+                    {
+                        yield return faceId;
+                    }
+                }
+            }
+        }
+
+        private static bool IsFaceCoplanarToPlane(MMesh mesh, Face face, Plane plane, Vector3 normalizedPlaneNormal)
+        {
+            if (face.normal.sqrMagnitude > Mathf.Epsilon && normalizedPlaneNormal.sqrMagnitude > Mathf.Epsilon)
+            {
+                Vector3 normalizedFaceNormal = face.normal.normalized;
+                float alignment = Mathf.Abs(Vector3.Dot(normalizedFaceNormal, normalizedPlaneNormal));
+                if (alignment < 0.999f)
+                {
+                    return false;
+                }
+            }
+
+            var vertexIds = face.vertexIds;
+            for (int i = 0; i < vertexIds.Count; i++)
+            {
+                Vector3 vertexPosition = mesh.VertexPositionInMeshCoords(vertexIds[i]);
+                if (Mathf.Abs(plane.GetDistanceToPoint(vertexPosition)) > MeshUtil.MAX_COPLANAR_DISTANCE)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private struct EdgeVertices : IEquatable<EdgeVertices>
+        {
+            private readonly int first;
+            private readonly int second;
+
+            public EdgeVertices(int vertexA, int vertexB)
+            {
+                if (vertexA <= vertexB)
+                {
+                    first = vertexA;
+                    second = vertexB;
+                }
+                else
+                {
+                    first = vertexB;
+                    second = vertexA;
+                }
+            }
+
+            public bool Equals(EdgeVertices other)
+            {
+                return first == other.first && second == other.second;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is EdgeVertices other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (first * 397) ^ second;
+                }
             }
         }
 

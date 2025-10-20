@@ -323,6 +323,14 @@ namespace com.google.apps.peltzer.client.tools
               && args.Action == ButtonAction.NONE;
         }
 
+        private bool IsToggleCoplanarSelectionModeEvent(ControllerEventArgs args)
+        {
+            return args.ControllerType == ControllerType.PELTZER
+              && args.ButtonId == ButtonId.ApplicationMenu
+              && args.Action == ButtonAction.DOWN
+              && !IsExtrudingFace();
+        }
+
         /// <summary>
         ///   Grab all hovered/selected faces for extrusion, if any.
         /// </summary>
@@ -564,6 +572,13 @@ namespace com.google.apps.peltzer.client.tools
               && PeltzerMain.Instance.restrictionManager.touchpadRightAllowed)
             {
                 SetHoverTooltip(peltzerController.controllerGeometry.modifyTooltipRight, TouchpadHoverState.RIGHT);
+            }
+            else if (IsToggleCoplanarSelectionModeEvent(args))
+            {
+                bool enabled = selector.ToggleCoplanarFaceSelectionMode();
+                peltzerController.ChangeModifyOverlayCoplanarSprite(true, enabled);
+                audioLibrary.PlayClip(audioLibrary.swipeRightSound);
+                peltzerController.TriggerHapticFeedback();
             }
             else if (IsUnsetAllHoverTooltipsEvent(args))
             {
