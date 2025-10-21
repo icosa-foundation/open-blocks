@@ -952,18 +952,19 @@ namespace com.google.apps.peltzer.client.tools
                 // Cycle CSG Mode or return to normal mode
                 else if (peltzerController.mode == ControllerMode.csg)
                 {
+                    // SUBTRACT > INTERSECT > UNION > SPLIT > PAINT_INTERSECT > INACTIVE (back to insert mode)
                     switch (csgOperation)
                     {
                         case CsgOperations.CsgOperation.SUBTRACT:
-                            csgOperation = CsgOperations.CsgOperation.SPLIT;
-                            break;
-                        case CsgOperations.CsgOperation.SPLIT:
                             csgOperation = CsgOperations.CsgOperation.INTERSECT;
                             break;
                         case CsgOperations.CsgOperation.INTERSECT:
                             csgOperation = CsgOperations.CsgOperation.UNION;
                             break;
                         case CsgOperations.CsgOperation.UNION:
+                            csgOperation = CsgOperations.CsgOperation.SPLIT;
+                            break;
+                        case CsgOperations.CsgOperation.SPLIT:
                             csgOperation = CsgOperations.CsgOperation.PAINT_INTERSECT;
                             break;
                         case CsgOperations.CsgOperation.PAINT_INTERSECT:
