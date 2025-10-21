@@ -18,6 +18,7 @@ using System.Text;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
+using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.util;
 
 namespace com.google.apps.peltzer.client.model.csg
@@ -100,17 +101,30 @@ namespace com.google.apps.peltzer.client.model.csg
 
             List<MMesh> meshes = new List<MMesh>();
 
-            // If the objects don't overlap, we have two fast paths:
+            // If the objects don't overlap, we have fast paths:
             if (!brush.bounds.Intersects(target.bounds))
             {
                 switch (csgOp)
                 {
                     case CsgOperation.INTERSECT:
+                        // No intersection when bounds don't overlap
                         return meshes;
                     case CsgOperation.SUBTRACT:
+                        // Subtracting non-overlapping object returns the original
                         MMesh clone = brush.Clone();
                         meshes.Add(clone);
                         return meshes;
+                    case CsgOperation.UNION:
+                        // Union of non-overlapping objects is both objects
+                        MMesh brushClone = brush.Clone();
+                        MMesh targetClone = target.Clone();
+                        meshes.Add(brushClone);
+                        meshes.Add(targetClone);
+                        return meshes;
+                    case CsgOperation.PAINT_INTERSECT:
+                        // No intersection when bounds don't overlap
+                        return meshes;
+
                 }
             }
 
