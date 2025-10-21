@@ -1085,7 +1085,8 @@ namespace com.google.apps.peltzer.client.tools
                   new FaceKey(seedFaceKey.meshId, currentFaceId);
                 yield return resultKey;
 
-                foreach (int adjacentFaceId in GetAdjacentFaceIds(currentFace, facesByEdge))
+                var adjacentFaceIds = GetAdjacentFaceIds(currentFace, facesByEdge).ToList();
+                foreach (int adjacentFaceId in adjacentFaceIds)
                 {
                     if (visitedFaces.Add(adjacentFaceId))
                     {
@@ -1162,7 +1163,8 @@ namespace com.google.apps.peltzer.client.tools
             for (int i = 0; i < vertexIds.Count; i++)
             {
                 Vector3 vertexPosition = mesh.VertexPositionInMeshCoords(vertexIds[i]);
-                if (Mathf.Abs(plane.GetDistanceToPoint(vertexPosition)) > MeshUtil.MAX_COPLANAR_DISTANCE)
+                float distance = Mathf.Abs(plane.GetDistanceToPoint(vertexPosition));
+                if (distance > MeshUtil.MAX_COPLANAR_DISTANCE)
                 {
                     return false;
                 }

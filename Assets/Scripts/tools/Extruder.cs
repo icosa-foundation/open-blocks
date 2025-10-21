@@ -359,12 +359,18 @@ namespace com.google.apps.peltzer.client.tools
             Dictionary<int, Dictionary<int, FaceProperties>> newFaceProperties =
               new Dictionary<int, Dictionary<int, FaceProperties>>();
 
+            // Identify shared edges between contiguous coplanar faces
+            Dictionary<FaceKey, HashSet<(int, int)>> edgesToSkipPerFace = IdentifySharedCoplanarEdges(selectedFaces);
+
             // Set up an extrusion per face.
             foreach (FaceKey faceKey in selectedFaces)
             {
                 MMesh selectedMesh = model.GetMesh(faceKey.meshId);
                 Face selectedFace = selectedMesh.GetFace(faceKey.faceId);
-                ExtrusionOperation newOperation = new ExtrusionOperation(worldSpace, selectedMesh, selectedFace);
+                HashSet<(int, int)> edgesToSkip = edgesToSkipPerFace.ContainsKey(faceKey)
+                    ? edgesToSkipPerFace[faceKey]
+                    : new HashSet<(int, int)>();
+                ExtrusionOperation newOperation = new ExtrusionOperation(worldSpace, selectedMesh, selectedFace, edgesToSkip);
                 extrusions.Add(newOperation);
                 if (!newFaceProperties.ContainsKey(faceKey.meshId))
                 {
@@ -391,6 +397,143 @@ namespace com.google.apps.peltzer.client.tools
         }
 
         /// <summary>
+        /// Identifies edges that are shared between contiguous coplanar faces.
+        /// </summary>
+        /// <param name="selectedFaces">The faces being extruded.</param>
+        /// <returns>A dictionary mapping each face to the set of edges that should not have side faces created.</returns>
+        private Dictionary<FaceKey, HashSet<(int, int)>> IdentifySharedCoplanarEdges(IEnumerable<FaceKey> selectedFaces)
+        {
+            Dictionary<FaceKey, HashSet<(int, int)>> result = new Dictionary<FaceKey, HashSet<(int, int)>>();
+
+            // Group faces by mesh ID for efficient processing
+            Dictionary<int, List<FaceKey>> facesByMesh = new Dictionary<int, List<FaceKey>>();
+            foreach (FaceKey faceKey in selectedFaces)
+            {
+                if (!facesByMesh.ContainsKey(faceKey.meshId))
+                {
+                    facesByMesh[faceKey.meshId] = new List<FaceKey>();
+                }
+                facesByMesh[faceKey.meshId].Add(faceKey);
+            }
+
+            // For each mesh, find shared edges between coplanar faces
+            foreach (KeyValuePair<int, List<FaceKey>> meshFaces in facesByMesh)
+            {
+                int meshId = meshFaces.Key;
+                List<FaceKey> faces = meshFaces.Value;
+                MMesh mesh = model.GetMesh(meshId);
+
+                // Build a map of edges to faces for this mesh
+                Dictionary<(int, int), List<FaceKey>> edgeToFaces = new Dictionary<(int, int), List<FaceKey>>();
+                foreach (FaceKey faceKey in faces)
+                {
+                    Face face = mesh.GetFace(faceKey.faceId);
+                    for (int i = 0; i < face.vertexIds.Count; i++)
+                    {
+                        int v1 = face.vertexIds[i];
+                        int v2 = face.vertexIds[(i + 1) % face.vertexIds.Count];
+                        int minV = Mathf.Min(v1, v2);
+                        int maxV = Mathf.Max(v1, v2);
+                        (int, int) edge = (minV, maxV);
+
+                        if (!edgeToFaces.ContainsKey(edge))
+                        {
+                            edgeToFaces[edge] = new List<FaceKey>();
+                        }
+                        edgeToFaces[edge].Add(faceKey);
+                    }
+                }
+
+                // Check each edge that's shared by exactly two faces
+                foreach (KeyValuePair<(int, int), List<FaceKey>> edgeFaces in edgeToFaces)
+                {
+                    if (edgeFaces.Value.Count == 2)
+                    {
+                        FaceKey face1Key = edgeFaces.Value[0];
+                        FaceKey face2Key = edgeFaces.Value[1];
+                        Face face1 = mesh.GetFace(face1Key.faceId);
+                        Face face2 = mesh.GetFace(face2Key.faceId);
+
+                        // Check if the two faces are coplanar
+                        if (AreFacesCoplanar(mesh, face1, face2))
+                        {
+                            // Add this edge to the skip list for both faces
+                            if (!result.ContainsKey(face1Key))
+                            {
+                                result[face1Key] = new HashSet<(int, int)>();
+                            }
+                            if (!result.ContainsKey(face2Key))
+                            {
+                                result[face2Key] = new HashSet<(int, int)>();
+                            }
+                            result[face1Key].Add(edgeFaces.Key);
+                            result[face2Key].Add(edgeFaces.Key);
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Checks if two faces are coplanar.
+        /// </summary>
+        private bool AreFacesCoplanar(MMesh mesh, Face face1, Face face2)
+        {
+            // Calculate plane for face1
+            if (face1.vertexIds.Count < 3 || face2.vertexIds.Count < 3)
+            {
+                return false;
+            }
+
+            List<Vector3> face1Positions = new List<Vector3>();
+            for (int i = 0; i < Mathf.Min(3, face1.vertexIds.Count); i++)
+            {
+                face1Positions.Add(mesh.VertexPositionInMeshCoords(face1.vertexIds[i]));
+            }
+
+            Plane plane1;
+            int indexOfThirdVertex;
+            if (!MeshUtil.CalculateCommonPlane(mesh, face1.vertexIds, out plane1, out indexOfThirdVertex))
+            {
+                return false;
+            }
+
+            // Get normalized normal
+            Vector3 normal1 = plane1.normal;
+            if (normal1.sqrMagnitude < Mathf.Epsilon && face1.normal.sqrMagnitude > Mathf.Epsilon)
+            {
+                normal1 = face1.normal.normalized;
+            }
+            Vector3 normalizedNormal1 = normal1.sqrMagnitude > Mathf.Epsilon ? normal1.normalized : normal1;
+
+            // Check normal alignment
+            Vector3 normal2 = face2.normal.sqrMagnitude > Mathf.Epsilon ? face2.normal.normalized : Vector3.zero;
+            if (normalizedNormal1.sqrMagnitude > Mathf.Epsilon && normal2.sqrMagnitude > Mathf.Epsilon)
+            {
+                float alignment = Mathf.Abs(Vector3.Dot(normalizedNormal1, normal2));
+                if (alignment < 0.999f)
+                {
+                    return false;
+                }
+            }
+
+            // Check if all vertices of face2 lie on the plane of face1
+            foreach (int vertexId in face2.vertexIds)
+            {
+                Vector3 vertexPos = mesh.VertexPositionInMeshCoords(vertexId);
+                float distance = Mathf.Abs(plane1.GetDistanceToPoint(vertexPos));
+                if (distance > MeshUtil.MAX_COPLANAR_DISTANCE)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
         ///   Undoes the hack of making the selected faces transparent.
         /// </summary>
         private void UndoTemporaryHeldFaceMaterialCommands()
@@ -414,6 +557,8 @@ namespace com.google.apps.peltzer.client.tools
             List<Command> commands = new List<Command>();
             Dictionary<int, MMesh> modifiedMeshes = new Dictionary<int, MMesh>();
             Dictionary<int, HashSet<Vertex>> newVerticesInModifiedMeshes = new Dictionary<int, HashSet<Vertex>>();
+            // Shared vertex map per mesh to ensure vertices are unified along coplanar edges
+            Dictionary<int, Dictionary<Vector3, Vertex>> sharedVertexMapPerMesh = new Dictionary<int, Dictionary<Vector3, Vertex>>();
 
             bool towards = true;
             if (nearestFace != null)
@@ -429,15 +574,18 @@ namespace com.google.apps.peltzer.client.tools
                 if (modifiedMeshes.ContainsKey(extrusion.mesh.id))
                 {
                     HashSet<Vertex> newVertices = newVerticesInModifiedMeshes[extrusion.mesh.id];
+                    Dictionary<Vector3, Vertex> sharedVertexMap = sharedVertexMapPerMesh[extrusion.mesh.id];
                     modifiedMeshes[extrusion.mesh.id] = extrusion.DoExtrusion(modifiedMeshes[extrusion.mesh.id],
-                      extrusionParams, ref newVertices);
+                      extrusionParams, ref newVertices, sharedVertexMap);
                 }
                 else
                 {
                     MMesh clonedMesh = extrusion.mesh.Clone();
                     HashSet<Vertex> newVertices = new HashSet<Vertex>();
-                    modifiedMeshes.Add(extrusion.mesh.id, extrusion.DoExtrusion(clonedMesh, extrusionParams, ref newVertices));
+                    Dictionary<Vector3, Vertex> sharedVertexMap = new Dictionary<Vector3, Vertex>(new Vector3EpsilonComparer());
+                    modifiedMeshes.Add(extrusion.mesh.id, extrusion.DoExtrusion(clonedMesh, extrusionParams, ref newVertices, sharedVertexMap));
                     newVerticesInModifiedMeshes.Add(extrusion.mesh.id, newVertices);
+                    sharedVertexMapPerMesh.Add(extrusion.mesh.id, sharedVertexMap);
                 }
             }
 
