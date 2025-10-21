@@ -992,12 +992,28 @@ namespace com.google.apps.peltzer.client.tools
                 peltzerController.shapesMenu.Hide();
                 UnsetAllHoverTooltips();
                 // Reset CSG mode when entering insert mode.
-                csgOperation = CsgOperations.CsgOperation.INACTIVE;
+                // Only reset CSG mode when explicitly switching from csg to insertVolume mode
+                // (which happens when cycling through modes with the app menu button).
+                // This preserves the CSG mode when switching to other tools and back.
+                if (oldMode == ControllerMode.csg && newMode == ControllerMode.insertVolume)
+                {
+                    csgOperation = CsgOperations.CsgOperation.INACTIVE;
+                }
                 peltzerController.ChangeTouchpadCsgSprite(csgOperation);
             }
 
             if (newMode == ControllerMode.insertVolume || newMode == ControllerMode.csg)
             {
+                // If entering insertVolume mode but csgOperation indicates we should be in CSG mode,
+                // switch to CSG mode to restore the previous state
+                if (newMode == ControllerMode.insertVolume && csgOperation != CsgOperations.CsgOperation.INACTIVE)
+                {
+                    peltzerController.ChangeMode(ControllerMode.csg);
+                    peltzerController.shapesMenu.ChangeShapesMenuMaterial(MaterialRegistry.PINK_WIREFRAME_ID);
+                    peltzerController.ChangeTouchpadCsgSprite(csgOperation);
+                    return; // ModeChangeEventHandler will be called again with the new mode
+                }
+
                 CreateNewVolumeMesh();
 
                 if (completedSnaps < SNAP_KNOW_HOW_COUNT)
