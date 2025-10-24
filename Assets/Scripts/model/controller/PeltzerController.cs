@@ -320,8 +320,13 @@ namespace com.google.apps.peltzer.client.model.controller
         public Sprite CsgUnionSprite;
         public Sprite CsgSubtractSprite;
         public Sprite CsgIntersectSprite;
+        public Sprite CsgSplitSprite;
         public Sprite CsgPaintSprite;
         public Sprite CsgInactiveSprite;
+
+        [Header("Modify Overlay Sprites")]
+        public Sprite CoplanarSelectionOnSprite;
+        public Sprite CoplanarSelectionOffSprite;
 
         private VolumeInserter volumeInserterInstance;
         private Freeform freeformInstance;
@@ -1628,6 +1633,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case CsgOperations.CsgOperation.INTERSECT:
                     sprite = CsgIntersectSprite;
                     break;
+                case CsgOperations.CsgOperation.SPLIT:
+                    sprite = CsgSplitSprite != null ? CsgSplitSprite : CsgSubtractSprite;
+                    break;
                 case CsgOperations.CsgOperation.PAINT_INTERSECT:
                     sprite = CsgPaintSprite != null ? CsgPaintSprite : CsgIntersectSprite;
                     break;
@@ -1636,6 +1644,41 @@ namespace com.google.apps.peltzer.client.model.controller
                     break;
             }
             controllerGeometry.volumeInserterOverlay.GetComponent<Overlay>().centerIcon.sprite = sprite;
+        }
+
+        public void ChangeModifyOverlayCoplanarSprite(bool show, bool isEnabled)
+        {
+            if (controllerGeometry == null || controllerGeometry.modifyOverlay == null)
+            {
+                return;
+            }
+
+            Overlay overlay = controllerGeometry.modifyOverlay.GetComponent<Overlay>();
+            if (overlay == null)
+            {
+                return;
+            }
+
+            bool hasSprites = CoplanarSelectionOnSprite != null && CoplanarSelectionOffSprite != null;
+            bool shouldShow = show && hasSprites;
+
+            if (overlay.center != null)
+            {
+                overlay.center.SetActive(shouldShow);
+            }
+
+            if (overlay.centerIcon != null)
+            {
+                overlay.centerIcon.gameObject.SetActive(shouldShow);
+                if (shouldShow)
+                {
+                    overlay.centerIcon.sprite = isEnabled ? CoplanarSelectionOnSprite : CoplanarSelectionOffSprite;
+                }
+                else
+                {
+                    overlay.centerIcon.sprite = null;
+                }
+            }
         }
 
         /// <summary>
@@ -1776,6 +1819,19 @@ namespace com.google.apps.peltzer.client.model.controller
                     }
                     break;
             }
+
+            bool showCoplanarToggle = currentOverlay == TouchpadOverlay.MODIFY
+              && (mode == ControllerMode.reshape || mode == ControllerMode.extrude);
+            bool coplanarEnabled = false;
+            if (showCoplanarToggle && PeltzerMain.Instance != null)
+            {
+                Selector selector = PeltzerMain.Instance.GetSelector();
+                if (selector != null)
+                {
+                    coplanarEnabled = selector.CoplanarFaceSelectionModeEnabled;
+                }
+            }
+            ChangeModifyOverlayCoplanarSprite(showCoplanarToggle, coplanarEnabled);
 
             GameObject currentOverlayGO;
             // Get reference to current overlay.

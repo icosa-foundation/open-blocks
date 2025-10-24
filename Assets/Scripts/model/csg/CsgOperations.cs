@@ -34,6 +34,7 @@ namespace com.google.apps.peltzer.client.model.csg
             UNION,
             INTERSECT,
             SUBTRACT,
+            SPLIT,
             PAINT_INTERSECT
         }
 
@@ -52,20 +53,27 @@ namespace com.google.apps.peltzer.client.model.csg
                 foreach (int meshId in intersectingMeshIds)
                 {
                     MMesh mesh = model.GetMesh(meshId);
-                    MMesh result = DoCsgOperation(mesh, brush, csgOp);
+                    List<MMesh> results = DoCsgOperation(mesh, brush, csgOp);
                     commands.Add(new DeleteMeshCommand(mesh.id));
-                    // If the result is null, it means the mesh was entirely erased.  No need to add a new version back.
-                    if (result != null)
+                    bool isFirstResult = true;
+                    foreach (MMesh result in results)
                     {
-                        if (model.CanAddMesh(result))
+                        MMesh meshToAdd = result;
+                        if (!isFirstResult)
                         {
-                            commands.Add(new AddMeshCommand(result));
+                            meshToAdd = result.CloneWithNewId(model.GenerateMeshId());
+                        }
+
+                        if (model.CanAddMesh(meshToAdd))
+                        {
+                            commands.Add(new AddMeshCommand(meshToAdd));
                         }
                         else
                         {
                             // Abort everything if an invalid mesh would be generated.
                             return false;
                         }
+                        isFirstResult = false;
                     }
                 }
             }
@@ -78,22 +86,45 @@ namespace com.google.apps.peltzer.client.model.csg
         }
 
         /// <summary>
-        ///   Performs CSG on two meshes.  Returns a new MMesh that is the result of the operation.
-        ///   If the result is an empty space, returns null.
+        ///   Performs CSG on two meshes.  Returns any resulting meshes for the operation.
+        ///   If the result is an empty space, returns an empty list.
         /// </summary>
-        public static MMesh DoCsgOperation(MMesh brush, MMesh target, CsgOperation csgOp = CsgOperation.SUBTRACT)
+        public static List<MMesh> DoCsgOperation(MMesh brush, MMesh target, CsgOperation csgOp = CsgOperation.SUBTRACT)
         {
-            // If the objects don't overlap, we have two fast paths:
+            if (csgOp == CsgOperation.SPLIT)
+            {
+                List<MMesh> splitResults = new List<MMesh>();
+                splitResults.AddRange(DoCsgOperation(brush, target, CsgOperation.SUBTRACT));
+                splitResults.AddRange(DoCsgOperation(brush, target, CsgOperation.INTERSECT));
+                return splitResults;
+            }
+
+            List<MMesh> meshes = new List<MMesh>();
+
+            // If the objects don't overlap, we have fast paths:
             if (!brush.bounds.Intersects(target.bounds))
             {
                 switch (csgOp)
                 {
                     case CsgOperation.INTERSECT:
-                        return null;
+                        // No intersection when bounds don't overlap
+                        return meshes;
                     case CsgOperation.SUBTRACT:
+                        // Subtracting non-overlapping object returns the original
                         MMesh clone = brush.Clone();
-                        CoplanarFaceMerger.MergeCoplanarFaces(clone);
-                        return clone;
+                        meshes.Add(clone);
+                        return meshes;
+                    case CsgOperation.UNION:
+                        // Union of non-overlapping objects is both objects
+                        MMesh brushClone = brush.Clone();
+                        MMesh targetClone = target.Clone();
+                        meshes.Add(brushClone);
+                        meshes.Add(targetClone);
+                        return meshes;
+                    case CsgOperation.PAINT_INTERSECT:
+                        // No intersection when bounds don't overlap
+                        return meshes;
+
                 }
             }
 
@@ -162,13 +193,10 @@ namespace com.google.apps.peltzer.client.model.csg
                   operationOffset,
                   operationScale,
                   combinedRemixIds);
-                CoplanarFaceMerger.MergeCoplanarFaces(resultMesh);
-                return resultMesh;
+                meshes.Add(resultMesh);
             }
-            else
-            {
-                return null;
-            }
+
+            return meshes;
         }
 
         /// <summary>
