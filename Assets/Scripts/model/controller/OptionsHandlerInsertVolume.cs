@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using com.google.apps.peltzer.client.model.controller;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
@@ -11,15 +13,40 @@ using Object = System.Object;
 
 public class OptionsHandlerInsertVolume : OptionsHandlerBase
 {
+    internal const string DEFAULT_CUSTOM_SHAPE_OPTION = "RadialSolids:Dipyramid";
+
     private PolyRecipe m_CurrentRecipe;
     private Dictionary<string, Object> m_Parameters; //// TODO
     private ShapesMenu m_ShapesMenu;
     private VolumeInserter m_VolumeInserter;
+    private RadioButtonContainer m_CustomShapeContainer;
+    private Coroutine m_CustomShapeInitializationRoutine;
 
     private void Awake()
     {
-        m_ShapesMenu = PeltzerMain.Instance.peltzerController.shapesMenu;
-        m_VolumeInserter = PeltzerMain.Instance.GetVolumeInserter();
+        TryEnsureDependencies();
+    }
+
+    private void OnEnable()
+    {
+        TryEnsureDependencies();
+        if (TryInitializeCustomShapeImmediately())
+        {
+            return;
+        }
+
+        m_CustomShapeInitializationRoutine = StartCoroutine(EnsureCustomShapePreviewInitialized());
+    }
+
+    private void OnDisable()
+    {
+        if (m_CustomShapeInitializationRoutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(m_CustomShapeInitializationRoutine);
+        m_CustomShapeInitializationRoutine = null;
     }
 
     public void HandleModifierButtonToggle(ActionButton btn)
@@ -171,6 +198,11 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
         {
             case "Grids:Square":
             case "Grids:Hexagonal":
+                m_Parameters = new Dictionary<string, Object>
+                {
+                    { "rows", 2 },
+                    { "cols", 2 },
+                };
                 m_CurrentRecipe.generatorParams = new Dictionary<string, Object>
                 {
                     { "rows", 2 },
@@ -234,5 +266,158 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
         {
             m_ShapesMenu.SetShapesMenuPolyMesh(optionParts[0], optionParts[1], m_Parameters);
         }
+    }
+
+    private bool TryInitializeCustomShapeImmediately()
+    {
+        if (!TryEnsureDependencies())
+        {
+            return false;
+        }
+
+        string optionValue = GetInitialCustomShapeValue();
+        if (TryApplyCustomShape(optionValue))
+        {
+            return true;
+        }
+
+        if (optionValue != DEFAULT_CUSTOM_SHAPE_OPTION && TryApplyCustomShape(DEFAULT_CUSTOM_SHAPE_OPTION))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private string GetInitialCustomShapeValue()
+    {
+        RadioButtonOption defaultOption = null;
+        RadioButtonContainer container = m_CustomShapeContainer;
+        if (container != null)
+        {
+            var options = container.GetComponentsInChildren<RadioButtonOption>(true);
+            foreach (var option in options)
+            {
+                if (!string.IsNullOrEmpty(option.m_Value) && option.isCurrentOption)
+                {
+                    defaultOption = option;
+                    break;
+                }
+            }
+
+            if (defaultOption == null)
+            {
+                defaultOption = options.FirstOrDefault(opt => !string.IsNullOrEmpty(opt.m_Value));
+            }
+        }
+
+        if (defaultOption == null)
+        {
+            var allOptions = GetComponentsInChildren<RadioButtonOption>(true);
+            defaultOption = allOptions.FirstOrDefault(opt => !string.IsNullOrEmpty(opt.m_Value) && opt.isCurrentOption)
+                ?? allOptions.FirstOrDefault(opt => !string.IsNullOrEmpty(opt.m_Value));
+        }
+
+        if (defaultOption != null && !string.IsNullOrEmpty(defaultOption.m_Value))
+        {
+            return defaultOption.m_Value;
+        }
+
+        return DEFAULT_CUSTOM_SHAPE_OPTION;
+    }
+
+    private RadioButtonContainer FindCustomShapeContainer()
+    {
+        var containers = GetComponentsInChildren<RadioButtonContainer>(true);
+        foreach (var container in containers)
+        {
+            var action = container.m_Action;
+            if (action == null)
+            {
+                continue;
+            }
+
+            int listeners = action.GetPersistentEventCount();
+            for (int i = 0; i < listeners; i++)
+            {
+                if (action.GetPersistentTarget(i) == this &&
+                    action.GetPersistentMethodName(i) == nameof(HandleCustomShapeRadioButton))
+                {
+                    return container;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private bool TryApplyCustomShape(string optionValue)
+    {
+        if (string.IsNullOrEmpty(optionValue))
+        {
+            return false;
+        }
+
+        tempDefaultParams(optionValue);
+        string[] optionParts = optionValue.Split(':');
+        if (optionParts.Length != 2)
+        {
+            return false;
+        }
+
+        try
+        {
+            m_ShapesMenu.SetShapesMenuPolyMesh(optionParts[0], optionParts[1], m_Parameters);
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to set custom shape '{optionValue}' for shapes menu: {e.Message}");
+            return false;
+        }
+    }
+
+    private bool TryEnsureDependencies()
+    {
+        if (m_ShapesMenu == null)
+        {
+            var controller = PeltzerMain.Instance?.peltzerController;
+            if (controller != null)
+            {
+                m_ShapesMenu = controller.shapesMenu;
+            }
+        }
+
+        if (m_VolumeInserter == null)
+        {
+            m_VolumeInserter = PeltzerMain.Instance?.GetVolumeInserter();
+        }
+
+        if (m_CustomShapeContainer == null)
+        {
+            m_CustomShapeContainer = FindCustomShapeContainer();
+        }
+
+        return m_ShapesMenu != null;
+    }
+
+    private IEnumerator EnsureCustomShapePreviewInitialized()
+    {
+        const int maxFrames = 60;
+        int attemptsRemaining = maxFrames;
+        while (attemptsRemaining-- > 0)
+        {
+            if (TryInitializeCustomShapeImmediately())
+            {
+                m_CustomShapeInitializationRoutine = null;
+                yield break;
+            }
+
+            yield return null;
+        }
+
+        Debug.LogWarning("OptionsHandlerInsertVolume could not initialize custom shape preview after waiting for dependencies.");
+
+        m_CustomShapeInitializationRoutine = null;
     }
 }
