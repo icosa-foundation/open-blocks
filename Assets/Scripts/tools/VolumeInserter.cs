@@ -1026,6 +1026,7 @@ namespace com.google.apps.peltzer.client.tools
         private void MaterialChangeHandler(int newMaterialId)
         {
             FaceProperties newFaceProperties = new FaceProperties(newMaterialId);
+            if (!heldMeshes || heldMeshes.heldMeshes == null) return;
             foreach (HeldMeshes.HeldMesh heldMesh in heldMeshes.heldMeshes)
             {
                 foreach (Face face in heldMesh.Mesh.GetFaces())
