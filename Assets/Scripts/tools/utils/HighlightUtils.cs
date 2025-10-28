@@ -82,8 +82,8 @@ namespace com.google.apps.peltzer.client.tools.utils
             private float animationDurationOut;
 
             //Exposed for renderers to optimize against.
-            public HashSet<T> newlyAdded;
-            public HashSet<T> newlyRemoved;
+            public HashSet<T> newlyAdded; // TODO remove that, doesn't seem to get used
+            public HashSet<T> newlyRemoved; // TODO same here
             // Custom channels which may need to be used for various effects, containing data such as effect origin point and
             // color.
             // A given effect should use these in order - ie, customChannel1 should not be used unless customChannel0 is
@@ -312,7 +312,6 @@ namespace com.google.apps.peltzer.client.tools.utils
         private TrackedHighlightSet<EdgeKey> edgeHighlights;
         private TrackedHighlightSet<EdgeTemporaryStyle.TemporaryEdge> temporaryEdgeHighlights;
         private TrackedHighlightSet<FaceKey> faceHighlights;
-        private TrackedHighlightSet<int> meshHighlights;
         public InactiveRenderer inactiveRenderer;
         private bool isSetup = false;
 
@@ -320,14 +319,9 @@ namespace com.google.apps.peltzer.client.tools.utils
         public const float VERT_EDGE_ANIMATION_DURATION_OUT = 0.08f;
         public const float FACE_ANIMATION_DURATION_IN = 0.4f;
         public const float FACE_ANIMATION_DURATION_OUT = 0.15f;
-        public const float MESH_ANIMATION_DURATION_IN = 0.4f;
-        public const float MESH_ANIMATION_DURATION_OUT = 0.15f;
         // Face highlight animation durations are (inversely) correlated with face size.
         // This is the base for that calculation.
         private const float BASE_FACE_HIGHLIGHT_DURATION = 0.1125f;
-        // Mesh highlight animation durations are (inversely) correlated with face size.
-        // This is the base for that calculation.
-        private const float MESH_FACE_HIGHLIGHT_DURATION = 0.225f;
         // offset for additional face highlight/paint faces 
         private static float offset = 0.0009f;
 
@@ -360,16 +354,7 @@ namespace com.google.apps.peltzer.client.tools.utils
             FacePaintStyle.offset = offset;
             FaceExtrudeStyle.material = new Material(materialLibrary.faceExtrudeMaterial);
             FaceExtrudeStyle.offset = offset;
-            MeshSelectStyle.silhouetteMaterial = new Material(materialLibrary.meshSelectMaterial);
-            // MeshPaintStyle.material = new Material(materialLibrary.meshSelectMaterial);
             VertexSelectStyle.material = new Material(materialLibrary.pointEdgeHighlightMaterial);
-            // VertexInactiveStyle.material = new Material(materialLibrary.pointEdgeInactiveMaterial);
-            // TutorialHighlightStyle.material = materialLibrary.meshSelectMaterial;
-
-            MeshSelectStyle.Setup();
-            MeshPaintStyle.Setup();
-            MeshDeleteStyle.Setup();
-            TutorialHighlightStyle.Setup();
 
             inactiveRenderer = new InactiveRenderer(model, worldSpace, materialLibrary);
             inactiveRenderer.edgeMesh = cubeMesh;
@@ -393,11 +378,6 @@ namespace com.google.apps.peltzer.client.tools.utils
            (int)FaceStyles.PAINT,
            (int)FaceStyles.EXTRUDE
                });
-
-            meshHighlights = new TrackedHighlightSet<int>(MESH_ANIMATION_DURATION_IN,
-              MESH_ANIMATION_DURATION_OUT,
-              new[] {(int)MeshStyles.MESH_SELECT, (int)MeshStyles.MESH_DELETE, (int)MeshStyles.MESH_PAINT,
-        (int)MeshStyles.TUTORIAL_HIGHLIGHT});
         }
 
         // Turns the highlight on for the edge with the supplied key, optionally over the given duration.
@@ -555,61 +535,13 @@ namespace com.google.apps.peltzer.client.tools.utils
             faceHighlights.ClearAll();
         }
 
-        // Turns the highlight on for the mesh with the supplied key.
-        public void TurnOnMesh(int meshId, Vector3 selectionPos)
-        {
-            MMesh mesh = model.GetMesh(meshId);
-
-            // On our standard cube in grid mode with default zoom, each scale-up operation
-            // increases this magnitude by ~0.0145. The magnitude of the default cube is ~0.0565
-            float magnitude = Mathf.Max(0.5f, mesh.bounds.size.magnitude * worldSpace.scale);
-
-            meshHighlights.TurnOn(meshId, MESH_FACE_HIGHLIGHT_DURATION * magnitude);
-        }
-
-        // Turns the highlight on for the mesh with the supplied key.
-        public void TurnOnMesh(int meshId)
-        {
-            TurnOnMesh(meshId, Vector4.zero);
-        }
-
-        // Turns the highlight off for the mesh with the supplied key.
-        public void TurnOffMesh(int meshId)
-        {
-            meshHighlights.TurnOffImmediate(meshId);
-        }
-
-        // Turns highlighting off immediately for all meshes (no fade-out).
-        public void ClearMeshes()
-        {
-            meshHighlights.ClearAll();
-        }
-
-        // Sets the style for the specified mesh highlight to Delete.
-        public void SetMeshStyleToDelete(int meshId)
-        {
-            meshHighlights.SetStyle(meshId, (int)MeshStyles.MESH_DELETE);
-        }
-
-        // Sets the style for the specified mesh highlight to Delete.
-        public void SetMeshStyleToPaint(int meshId)
-        {
-            meshHighlights.SetStyle(meshId, (int)MeshStyles.MESH_PAINT);
-        }
-
-        // Sets the style for the specified mesh highlight to Tutorial.
-        public void SetMeshStyleToTutorial(int meshId)
-        {
-            meshHighlights.SetStyle(meshId, (int)MeshStyles.TUTORIAL_HIGHLIGHT);
-        }
-
         // Clears all highlight state managed here.
         public void ClearAll()
         {
             vertexHighlights.ClearAll();
             edgeHighlights.ClearAll();
             ClearFaces();
-            ClearMeshes();
+            // ClearMeshes();
             MeshCycler.ResetCycler();
         }
 
@@ -619,7 +551,6 @@ namespace com.google.apps.peltzer.client.tools.utils
             RenderVertices();
             RenderEdges();
             RenderFaces();
-            RenderMeshes();
             inactiveRenderer.RenderEdges();
             inactiveRenderer.RenderPoints();
         }
@@ -651,19 +582,6 @@ namespace com.google.apps.peltzer.client.tools.utils
             FacePaintStyle.RenderFaces(model, faceHighlights, worldSpace);
             FaceExtrudeStyle.RenderFaces(model, faceHighlights, worldSpace);
             faceHighlights.ClearExpired();
-        }
-
-        // Renders mesh highlights.
-        private void RenderMeshes()
-        {
-            MeshSelectStyle.RenderMeshes(model, meshHighlights, worldSpace);
-            MeshDeleteStyle.RenderMeshes(model, meshHighlights, worldSpace);
-            MeshPaintStyle.RenderMeshes(model, meshHighlights, worldSpace);
-            if (PeltzerMain.Instance.tutorialManager.TutorialOccurring())
-            {
-                TutorialHighlightStyle.RenderMeshes(model, meshHighlights, worldSpace);
-            }
-            meshHighlights.ClearExpired();
         }
     }
 }
