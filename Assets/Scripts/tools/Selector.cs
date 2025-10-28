@@ -29,7 +29,7 @@ namespace com.google.apps.peltzer.client.tools
     /// <summary>
     ///   A tool that handles the hovering and selection of meshes, faces, or vertices.
     /// </summary>
-    public class Selector : MonoBehaviour, IBaseTool, IMeshRenderOwner
+    public class Selector : MonoBehaviour, IBaseTool
     {
         /// <summary>
         /// Options to customize the selector's selection logic.
@@ -145,6 +145,10 @@ namespace com.google.apps.peltzer.client.tools
         ///   A reference to the overall model being built.
         /// </summary>
         private Model model;
+        /// <summary>
+        /// Reference to the remesher for updating mesh materials/colors when hovered over.
+        /// </summary>
+        private ReMesher remesher;
         /// <summary>
         ///   The spatial index of the model.
         /// </summary>
@@ -289,6 +293,8 @@ namespace com.google.apps.peltzer.client.tools
 
             controllerMain.ControllerActionHandler += ControllerEventHandler;
             peltzerController.ModeChangedHandler += ModeChangeEventHandler;
+
+            remesher = model.GetReMesher();
 
             DOTSmesh = Resources.Load("Models/IcosphereSmall") as Mesh;
 
@@ -791,20 +797,17 @@ namespace com.google.apps.peltzer.client.tools
 
             // In single-select mode, create highlights for every newlyHoveredMesh. You can only hover a single element, but
             // if we hover a single mesh in a group of meshes we need to treat them like one element.
+
             foreach (int meshId in touchedMeshIds)
             {
                 if (!hoverMeshes.Contains(meshId))
                 {
-                    int canClaimMesh = model.ClaimMesh(meshId, this);
-                    if (canClaimMesh != -1)
+                    hoverMeshes.Add(meshId);
+                    remesher.SetOverrideMaterial(new HashSet<int>() { meshId }, GetSelectorOverrideMaterialId());
+                    if (Features.vibrateOnHover)
                     {
-                        hoverMeshes.Add(meshId);
-                        highlightUtils.TurnOnMesh(meshId);
-                        if (Features.vibrateOnHover)
-                        {
-                            peltzerController.TriggerHapticFeedback(HapticFeedback.HapticFeedbackType.FEEDBACK_1,
-                              /* durationSeconds */ 0.02f, /* strength */ 0.15f);
-                        }
+                        peltzerController.TriggerHapticFeedback(HapticFeedback.HapticFeedbackType.FEEDBACK_1,
+                          /* durationSeconds */ 0.02f, /* strength */ 0.15f);
                     }
                 }
             }
@@ -815,8 +818,7 @@ namespace com.google.apps.peltzer.client.tools
             {
                 if (!touchedMeshIds.Contains(meshId))
                 {
-                    highlightUtils.TurnOffMesh(meshId);
-                    model.RelinquishMesh(meshId, this);
+                    remesher.ClearOverrideMaterial(new HashSet<int> { meshId });
                     tempRemovalHashset.Add(meshId);
                 }
             }
@@ -849,35 +851,11 @@ namespace com.google.apps.peltzer.client.tools
             }
         }
 
-        /// <summary>
-        /// Claim responsibility for rendering a mesh from this class.
-        /// This should only be called by Model, as otherwise Model's knowledge of current ownership will be incorrect.
-        /// </summary>
-        public int ClaimMesh(int meshId, IMeshRenderOwner fosterRenderer)
-        {
-            if (selectedMeshes.Contains(meshId))
-            {
-                highlightUtils.TurnOffMesh(meshId);
-                selectedMeshes.Remove(meshId);
-                PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
-                return meshId;
-            }
-            if (hoverMeshes.Contains(meshId))
-            {
-                highlightUtils.TurnOffMesh(meshId);
-                hoverMeshes.Remove(meshId);
-                return meshId;
-            }
-            // Didn't have it, can't relinquish ownership.
-            return -1;
-        }
-
         public void SelectMesh(int meshId)
         {
             MMesh mesh = model.GetMesh(meshId);
 
-            model.ClaimMesh(meshId, this);
-            highlightUtils.TurnOnMesh(meshId);
+            remesher.SetOverrideMaterial(new HashSet<int>() { meshId }, GetSelectorOverrideMaterialId());
             selectedMeshes.Add(meshId);
             PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
 
@@ -1173,6 +1151,26 @@ namespace com.google.apps.peltzer.client.tools
             return false;
         }
 
+        /// <summary>
+        /// Gets the appropriate override material ID for the current controller mode,
+        /// when user is hovering over meshes.
+        /// </summary>
+        /// <returns></returns>
+        private int GetSelectorOverrideMaterialId()
+        {
+            switch (PeltzerMain.Instance.peltzerController.mode)
+            {
+                case ControllerMode.move:
+                    return MaterialRegistry.GetHighlightSilhouetteMaterial().matId;
+                case ControllerMode.delete:
+                    return MaterialRegistry.GetDeleteMaterial().matId;
+                case ControllerMode.paintMesh:
+                    return peltzerController.currentMaterial;
+                default:
+                    return MaterialRegistry.GetHighlightSilhouetteMaterial().matId;
+            }
+        }
+
         public void DeselectAll()
         {
             Deselect(Selector.ALL, true, true);
@@ -1185,8 +1183,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private void DeselectOneMesh(int meshId)
         {
-            model.RelinquishMesh(meshId, this);
-            highlightUtils.TurnOffMesh(meshId);
+            remesher.ClearOverrideMaterial(new HashSet<int> { meshId });
             selectedMeshes.Remove(meshId);
             PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
         }
@@ -1235,8 +1232,7 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     foreach (int meshId in selectedMeshes)
                     {
-                        model.RelinquishMesh(meshId, this);
-                        highlightUtils.TurnOffMesh(meshId);
+                        remesher.ClearOverrideMaterial(new HashSet<int> { meshId });
                     }
                     selectedMeshes.Clear();
                     PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
@@ -1246,8 +1242,7 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     foreach (int meshId in hoverMeshes)
                     {
-                        model.RelinquishMesh(meshId, this);
-                        highlightUtils.TurnOffMesh(meshId);
+                        remesher.ClearOverrideMaterial(new HashSet<int> { meshId });
                     }
                 }
                 hoverMeshes.Clear();
