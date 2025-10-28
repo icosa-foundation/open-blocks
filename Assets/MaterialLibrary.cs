@@ -27,6 +27,8 @@ public class MaterialLibrary : MonoBehaviour
     private static readonly int ZTest = Shader.PropertyToID("_ZTest");
     private static readonly int OverrideColor = Shader.PropertyToID("_OverrideColor");
     private static readonly int OverrideAmount = Shader.PropertyToID("_OverrideAmount");
+    private static readonly Color ERASE_COLOR = new(249f / 255f, 105f / 255f, 191f / 255f, 1f);
+
     // gem shader
     private static readonly int RefractionTexture = Shader.PropertyToID("_RefractTex");
     private static readonly int FacetSize = Shader.PropertyToID("_FacetSize");
@@ -34,6 +36,7 @@ public class MaterialLibrary : MonoBehaviour
 
     public Material baseMaterial;
     public Material transparentMaterial;
+    public Material deleteMaterial;
     // public Material highlightMaterial;
     // public Material highlightMaterial2;
     [FormerlySerializedAs("highlightSilhouetteMaterial")] public Material meshSelectMaterial;
@@ -75,6 +78,12 @@ public class MaterialLibrary : MonoBehaviour
         // baseMaterial.EnableKeyword("_REMESHER");
         // transparentMaterial.EnableKeyword("_REMESHER");
         // glassMaterial.EnableKeyword("_REMESHER");
+
+        // deleteMaterial.EnableKeyword("_REMESHER");
+        // deleteMaterial.SetFloat(OverrideAmount, 0.5f);
+        // deleteMaterial.SetColor(OverrideColor, ERASE_COLOR);
+        //
+        // meshSelectMaterial.EnableKeyword("_REMESHER");
 
         // gridMaterial.EnableKeyword("_BLEND_TRANSPARENCY");
 

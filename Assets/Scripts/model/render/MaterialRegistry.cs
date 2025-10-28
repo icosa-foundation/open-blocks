@@ -62,16 +62,18 @@ namespace com.google.apps.peltzer.client.model.render
         // Our custom MaterialAndColor, with albedo unset, as we use vertex colours.
         private static MaterialAndColor[] materials = null;
         private static MaterialAndColor[] previewMaterials = null;
-        private static MaterialAndColor[] highlightMaterials = null;
+        private static MaterialAndColor[] highlightMaterials = null; // TODO never used I think (remove?)
         private static Color32[] color32s = null;
 
         private static MaterialAndColor highlightSilhouetteMaterial;
+        private static MaterialAndColor deleteMaterial;
 
         public static int GLASS_ID = rawColors.Length;
         public static int GEM_ID = rawColors.Length + 1;
         public static int PINK_WIREFRAME_ID = rawColors.Length + 2;
         public static int GREEN_WIREFRAME_ID = rawColors.Length + 3;
         public static int HIGHLIGHT_SILHOUETTE_ID = rawColors.Length + 4;
+        public static int DELETE_MATERIAL_ID = rawColors.Length + 5;
 
         public static readonly int RED_ID = 8;
         public static readonly int DEEP_ORANGE_ID = 14;
@@ -95,10 +97,10 @@ namespace com.google.apps.peltzer.client.model.render
             Material gemMaterialBack = materialLibrary.gemMaterialBack;
             Material subtractMaterial = materialLibrary.subtractMaterial;
             Material copyMaterial = materialLibrary.copyMaterial;
-            materials = new MaterialAndColor[rawColors.Length + 4];
-            materialsWithAlbedo = new Material[rawColors.Length + 4];
-            previewMaterials = new MaterialAndColor[rawColors.Length + 4];
-            color32s = new Color32[rawColors.Length + 4];
+            materials = new MaterialAndColor[rawColors.Length + 6];
+            materialsWithAlbedo = new Material[rawColors.Length + 6];
+            previewMaterials = new MaterialAndColor[rawColors.Length + 6];
+            color32s = new Color32[rawColors.Length + 6];
             Material templateMaterial =
               baseMaterial == null ? new Material(Shader.Find(BASE_SHADER)) : new Material(baseMaterial);
             for (int i = 0; i < rawColors.Length; i++)
@@ -124,6 +126,9 @@ namespace com.google.apps.peltzer.client.model.render
             materialsWithAlbedo[PINK_WIREFRAME_ID] = subtractMaterial;
             materials[GREEN_WIREFRAME_ID] = new MaterialAndColor(copyMaterial, GREEN_WIREFRAME_ID);
             materialsWithAlbedo[GREEN_WIREFRAME_ID] = copyMaterial;
+            materials[HIGHLIGHT_SILHOUETTE_ID] = new MaterialAndColor(materialLibrary.meshSelectMaterial,
+                new Color32(255, 255, 255, 255), HIGHLIGHT_SILHOUETTE_ID);
+            materials[DELETE_MATERIAL_ID] = new MaterialAndColor(materialLibrary.deleteMaterial, DELETE_MATERIAL_ID);
 
             previewMaterials[GLASS_ID] = new MaterialAndColor(new Material(glassMaterial), GLASS_ID);
             previewMaterials[GEM_ID] = new MaterialAndColor(new Material(gemMaterialFront), GEM_ID);
@@ -140,8 +145,8 @@ namespace com.google.apps.peltzer.client.model.render
                 highlightedVersion.color = originalColor * (4.5f - originalColor.maxColorComponent * 3);
                 highlightMaterials[i] = highlightedVersion;
             }
-            highlightSilhouetteMaterial = new MaterialAndColor(materialLibrary.meshSelectMaterial,
-              new Color32(255, 255, 255, 255), HIGHLIGHT_SILHOUETTE_ID);
+            highlightSilhouetteMaterial = materials[HIGHLIGHT_SILHOUETTE_ID];
+            deleteMaterial = materials[DELETE_MATERIAL_ID];
         }
 
         private static float r(int raw)
@@ -318,6 +323,11 @@ namespace com.google.apps.peltzer.client.model.render
         public static MaterialAndColor GetHighlightSilhouetteMaterial()
         {
             return highlightSilhouetteMaterial;
+        }
+
+        public static MaterialAndColor GetDeleteMaterial()
+        {
+            return deleteMaterial;
         }
 
         /// <summary>
