@@ -91,11 +91,6 @@ namespace com.google.apps.peltzer.client.tools
                 // delete. If we aren't deleting yet we want to hide meshes and show their highlights.
                 selector.SelectMeshAtPosition(peltzerController.LastPositionModel, Selector.MESHES_ONLY);
 
-                foreach (int meshId in selector.hoverMeshes)
-                {
-                    PeltzerMain.Instance.highlightUtils.SetMeshStyleToDelete(meshId);
-                }
-
                 if (!isDeleting || selector.hoverMeshes.Count == 0)
                 {
                     return;
@@ -109,7 +104,6 @@ namespace com.google.apps.peltzer.client.tools
                     if (meshIdsToDelete.Add(meshId))
                     {
                         model.MarkMeshForDeletion(meshId);
-                        PeltzerMain.Instance.highlightUtils.TurnOffMesh(meshId);
                         if (Time.time - timeLastDeletionFeedbackPlayed > INTERVAL_BETWEEN_DELETION_FEEDBACKS)
                         {
                             timeLastDeletionFeedbackPlayed = Time.time;

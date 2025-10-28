@@ -154,13 +154,6 @@ namespace com.google.apps.peltzer.client.tools
                     PeltzerMain.Instance.highlightUtils.SetFaceStyleToPaint(selector.hoverFace, selector.selectorPosition,
                       MaterialRegistry.GetMaterialAndColorById(peltzerController.currentMaterial).color);
                 }
-                else if (peltzerController.mode == ControllerMode.paintMesh && selector.hoverMeshes != null)
-                {
-                    foreach (int meshId in selector.hoverMeshes)
-                    {
-                        PeltzerMain.Instance.highlightUtils.SetMeshStyleToPaint(meshId);
-                    }
-                }
             }
         }
 
