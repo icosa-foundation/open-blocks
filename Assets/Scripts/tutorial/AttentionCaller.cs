@@ -720,8 +720,6 @@ namespace com.google.apps.peltzer.client.tutorial
             if (PeltzerMain.Instance.model.ClaimMesh(meshId, this) != -1)
             {
                 claimedMeshes.Add(meshId);
-                PeltzerMain.Instance.highlightUtils.TurnOnMesh(meshId);
-                PeltzerMain.Instance.highlightUtils.SetMeshStyleToTutorial(meshId);
             }
             else
             {
@@ -741,7 +739,6 @@ namespace com.google.apps.peltzer.client.tutorial
             if (!claimedMeshes.Contains(meshId)) return -1;
 
             claimedMeshes.Remove(meshId);
-            PeltzerMain.Instance.highlightUtils.TurnOffMesh(meshId);
             return meshId;
         }
 
@@ -755,8 +752,6 @@ namespace com.google.apps.peltzer.client.tutorial
             if (!claimedMeshes.Contains(meshId) && PeltzerMain.Instance.model.ClaimMeshIfUnowned(meshId, this) != -1)
             {
                 claimedMeshes.Add(meshId);
-                PeltzerMain.Instance.highlightUtils.TurnOnMesh(meshId);
-                PeltzerMain.Instance.highlightUtils.SetMeshStyleToTutorial(meshId);
             }
         }
 
@@ -770,7 +765,6 @@ namespace com.google.apps.peltzer.client.tutorial
             {
                 claimedMeshes.Remove(meshId);
                 PeltzerMain.Instance.model.RelinquishMesh(meshId, this);
-                PeltzerMain.Instance.highlightUtils.TurnOffMesh(meshId);
             }
         }
 

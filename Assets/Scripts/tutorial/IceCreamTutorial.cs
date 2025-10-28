@@ -898,7 +898,6 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("PAINT_COLOR");
                 PeltzerMain.Instance.attentionCaller.Recolor(AttentionCaller.Element.PELTZER_TRIGGER);
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
-                PeltzerMain.Instance.attentionCaller.StartMeshGlowing(tutorial.newCherryMeshId);
                 PeltzerMain.Instance.restrictionManager.onlySelectableMeshIdForTutorial = tutorial.newCherryMeshId;
             }
 
@@ -947,8 +946,6 @@ namespace com.google.apps.peltzer.client.tutorial
 
             public bool OnValidate()
             {
-                // Make sure the new cherry is always glowing to call attention to it.
-                PeltzerMain.Instance.attentionCaller.MakeSureMeshIsGlowing(tutorial.newCherryMeshId);
                 return cherryPainted;
             }
 
@@ -966,7 +963,6 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.attentionCaller.GreyOut(ControllerMode.paintMesh);
                 PeltzerMain.Instance.attentionCaller.GreyOut(AttentionCaller.Element.PELTZER_TRIGGER);
                 PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
-                PeltzerMain.Instance.attentionCaller.StopMeshGlowing(tutorial.newCherryMeshId);
                 PeltzerMain.Instance.GetFloatingMessage().ShowHeader("");
                 PeltzerMain.Instance.GetFloatingMessage()
                   .Show("Your friend wants one.\nLet's make a copy!", TextPosition.CENTER_NO_TITLE, true);
@@ -1427,7 +1423,6 @@ namespace com.google.apps.peltzer.client.tutorial
                 PeltzerMain.Instance.GetFloatingMessage().ShowGIF("ERASE");
                 PeltzerMain.Instance.attentionCaller.Recolor(AttentionCaller.Element.PELTZER_TRIGGER);
                 PeltzerMain.Instance.attentionCaller.StartGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
-                PeltzerMain.Instance.attentionCaller.StartMeshGlowing(tutorial.clonedCherryMeshId);
                 PeltzerMain.Instance.restrictionManager.onlySelectableMeshIdForTutorial = tutorial.clonedCherryMeshId;
             }
 
@@ -1472,8 +1467,6 @@ namespace com.google.apps.peltzer.client.tutorial
                 {
                     return true;
                 }
-                // Make sure the cherry stays glowing.
-                PeltzerMain.Instance.attentionCaller.MakeSureMeshIsGlowing(tutorial.clonedCherryMeshId);
                 return false;
             }
 
@@ -1491,7 +1484,6 @@ namespace com.google.apps.peltzer.client.tutorial
                 // Hide the placeholder.
                 PeltzerMain.Instance.attentionCaller.GreyOut(AttentionCaller.Element.PELTZER_TRIGGER);
                 PeltzerMain.Instance.attentionCaller.StopGlowing(AttentionCaller.Element.PELTZER_TRIGGER);
-                PeltzerMain.Instance.attentionCaller.StopMeshGlowing(tutorial.clonedCherryMeshId);
                 PeltzerMain.Instance.GetFloatingMessage().ShowHeader("");
                 PeltzerMain.Instance.GetFloatingMessage().Show("That's better.", TextPosition.CENTER_NO_TITLE, true);
                 PeltzerMain.Instance.GetFloatingMessage().HideAllGIFs();
