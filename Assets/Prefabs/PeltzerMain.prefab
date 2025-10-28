@@ -143,6 +143,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseMaterial: {fileID: 2100000, guid: 0f79d4ce1aba22f4294df2a16ca5465e, type: 2}
   transparentMaterial: {fileID: 2100000, guid: 672ba6f8726123a4098460641f9f2fe3, type: 2}
+  deleteMaterial: {fileID: 2100000, guid: 4b9b2294efb5d4b4cb7e5142028027ef, type: 2}
   meshSelectMaterial: {fileID: 2100000, guid: 67ab1a035849e4249836f31881bf03c9, type: 2}
   gemMaterialFront: {fileID: 2100000, guid: 2fc408224ab06a64a84a07353e776f18, type: 2}
   gemMaterialBack: {fileID: 2100000, guid: 5577a787f10c0c0479415300dcd8544c, type: 2}
