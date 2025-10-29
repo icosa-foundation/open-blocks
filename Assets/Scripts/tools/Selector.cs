@@ -175,7 +175,7 @@ namespace com.google.apps.peltzer.client.tools
         /// <summary>
         /// Temporary hashset - maintained as a global to avoid it getting GCed.  Instead should manually clear after use.
         /// </summary>
-        private HashSet<int> tempRemovalHashset = new HashSet<int>();
+        private HashSet<int> tempHashset = new();
 
         /// <summary>
         ///   The vertices selected in the most recent multi-select operation.
@@ -803,7 +803,7 @@ namespace com.google.apps.peltzer.client.tools
                 if (!hoverMeshes.Contains(meshId))
                 {
                     hoverMeshes.Add(meshId);
-                    remesher.SetOverrideMaterial(new HashSet<int>() { meshId }, GetSelectorOverrideMaterialId());
+                    tempHashset.Add(meshId);
                     if (Features.vibrateOnHover)
                     {
                         peltzerController.TriggerHapticFeedback(HapticFeedback.HapticFeedbackType.FEEDBACK_1,
@@ -811,22 +811,23 @@ namespace com.google.apps.peltzer.client.tools
                     }
                 }
             }
-
+            remesher.SetOverrideMaterial(tempHashset, GetSelectorOverrideMaterialId());
+            tempHashset.Clear();
 
             // In single-select mode, destroy highlights for, and unhide, any unhovered meshes.
             foreach (int meshId in hoverMeshes)
             {
                 if (!touchedMeshIds.Contains(meshId))
                 {
-                    remesher.ClearOverrideMaterial(new HashSet<int> { meshId });
-                    tempRemovalHashset.Add(meshId);
+                    tempHashset.Add(meshId);
                 }
+                remesher.ClearOverrideMaterial(tempHashset);
             }
-            foreach (int meshId in tempRemovalHashset)
+            foreach (int meshId in tempHashset)
             {
                 hoverMeshes.Remove(meshId);
             }
-            tempRemovalHashset.Clear();
+            tempHashset.Clear();
         }
 
         /// <summary>
@@ -1230,20 +1231,14 @@ namespace com.google.apps.peltzer.client.tools
                 MeshCycler.ResetCycler();
                 if (deselectSelectedHighlights)
                 {
-                    foreach (int meshId in selectedMeshes)
-                    {
-                        remesher.ClearOverrideMaterial(new HashSet<int> { meshId });
-                    }
+                    remesher.ClearOverrideMaterial(selectedMeshes);
                     selectedMeshes.Clear();
                     PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
                 }
 
                 if (deselectHoveredHighlights)
                 {
-                    foreach (int meshId in hoverMeshes)
-                    {
-                        remesher.ClearOverrideMaterial(new HashSet<int> { meshId });
-                    }
+                    remesher.ClearOverrideMaterial(hoverMeshes);
                 }
                 hoverMeshes.Clear();
             }
