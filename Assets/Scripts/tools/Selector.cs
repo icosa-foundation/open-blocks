@@ -803,7 +803,8 @@ namespace com.google.apps.peltzer.client.tools
                 if (!hoverMeshes.Contains(meshId))
                 {
                     hoverMeshes.Add(meshId);
-                    tempHashset.Add(meshId);
+                    remesher.RemoveMesh(meshId);
+                    remesher.AddMesh(meshId, GetSelectorOverrideMaterialId());
                     if (Features.vibrateOnHover)
                     {
                         peltzerController.TriggerHapticFeedback(HapticFeedback.HapticFeedbackType.FEEDBACK_1,
@@ -811,8 +812,6 @@ namespace com.google.apps.peltzer.client.tools
                     }
                 }
             }
-            remesher.SetOverrideMaterial(tempHashset, GetSelectorOverrideMaterialId());
-            tempHashset.Clear();
 
             // In single-select mode, destroy highlights for, and unhide, any unhovered meshes.
             foreach (int meshId in hoverMeshes)
@@ -820,8 +819,9 @@ namespace com.google.apps.peltzer.client.tools
                 if (!touchedMeshIds.Contains(meshId))
                 {
                     tempHashset.Add(meshId);
+                    remesher.RemoveMesh(meshId);
+                    remesher.AddMesh(model.GetMesh(meshId));
                 }
-                remesher.ClearOverrideMaterial(tempHashset);
             }
             foreach (int meshId in tempHashset)
             {
@@ -856,7 +856,8 @@ namespace com.google.apps.peltzer.client.tools
         {
             MMesh mesh = model.GetMesh(meshId);
 
-            remesher.SetOverrideMaterial(new HashSet<int>() { meshId }, GetSelectorOverrideMaterialId());
+            remesher.RemoveMesh(meshId);
+            remesher.AddMesh(meshId, GetSelectorOverrideMaterialId());
             selectedMeshes.Add(meshId);
             PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
 
@@ -1174,7 +1175,7 @@ namespace com.google.apps.peltzer.client.tools
 
         public void DeselectAll()
         {
-            Deselect(Selector.ALL, true, true);
+            Deselect(Selector.ALL, true, true, false);
             TurnOffSelectIndicator();
             ResetInactive();
         }
@@ -1184,7 +1185,8 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private void DeselectOneMesh(int meshId)
         {
-            remesher.ClearOverrideMaterial(new HashSet<int> { meshId });
+            remesher.RemoveMesh(meshId);
+            remesher.AddMesh(model.GetMesh(meshId));
             selectedMeshes.Remove(meshId);
             PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
         }
@@ -1219,7 +1221,7 @@ namespace com.google.apps.peltzer.client.tools
         /// <summary>
         ///   Removes all items from all lists of selected items and deletes their highlighting GameObjects.
         /// </summary>
-        private void Deselect(SelectorOptions options, bool deselectSelectedHighlights, bool deselectHoveredHighlights)
+        private void Deselect(SelectorOptions options, bool deselectSelectedHighlights, bool deselectHoveredHighlights, bool removeMeshes = true)
         {
             if (!PeltzerMain.Instance.restrictionManager.deselectAllowed)
             {
@@ -1228,17 +1230,30 @@ namespace com.google.apps.peltzer.client.tools
 
             if (options.includeMeshes)
             {
-                MeshCycler.ResetCycler();
                 if (deselectSelectedHighlights)
                 {
-                    remesher.ClearOverrideMaterial(selectedMeshes);
+                    if (removeMeshes)
+                    {
+                        foreach (var meshId in selectedMeshes)
+                        {
+                            remesher.RemoveMesh(meshId);
+                            remesher.AddMesh(model.GetMesh(meshId));
+                        }
+                    }
                     selectedMeshes.Clear();
                     PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
                 }
 
                 if (deselectHoveredHighlights)
                 {
-                    remesher.ClearOverrideMaterial(hoverMeshes);
+                    if (removeMeshes)
+                    {
+                        foreach (var meshId in hoverMeshes)
+                        {
+                            remesher.RemoveMesh(meshId);
+                            remesher.AddMesh(model.GetMesh(meshId));
+                        }
+                    }
                 }
                 hoverMeshes.Clear();
             }

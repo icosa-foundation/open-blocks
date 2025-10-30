@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.main;
-using Unity.Android.Types;
 using Unity.Collections;
-using UnityEditor;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
@@ -100,10 +96,13 @@ namespace com.google.apps.peltzer.client.model.render
         // All MeshInfos that we need to render.
         private HashSet<MeshInfo> allMeshInfos = new();
 
-        // IDs of meshes that we have yet to add-to/remove- from the ReMesher, and haven't gotten around to doing yet.
+        // IDs of meshes that we have yet to add-to/remove-from the ReMesher, and haven't gotten around to doing yet.
         // We only add when ReMesher.Flush() is called so that a bunch of those operations can be batched.
         private HashSet<int> meshesPendingAdd = new();
         private HashSet<MeshInfo> meshInfosPendingRegeneration = new();
+        // When hovering over a mesh, depending on the tool, we might want to render the mesh with a specific material.
+        private Dictionary<int, int> meshIdToMaterialId = new();
+
 
         /// <summary>
         ///   Info about a Unity Mesh that will be drawn at render time.  MeshInfo batches a number of MMeshes together, and
@@ -387,7 +386,7 @@ namespace com.google.apps.peltzer.client.model.render
             /// </summary>
             /// <param name="meshId">The id of the mesh whose context we are adding.</param>
             /// <param name="source">The MehGenContext whose data we're adding to this MeshInfo. TODO should be replaced by BetterMeshGenContext in future.</param>
-            public void AddContext(int meshId, MeshGenContext source)
+            public void AddContext(int meshId, MeshGenContext source, Color32 color, bool overrideColor = false)
             {
                 int transformIndex = freeXformMatIndices.Pop();
                 var betterContext = new BetterMeshGenContext(
@@ -398,13 +397,15 @@ namespace com.google.apps.peltzer.client.model.render
                 var tempVertexBuffer = new NativeArray<VertexData>(source.verts.Count, Allocator.Temp);
                 var tempIndexBuffer = new NativeArray<short>(source.triangles.Count, Allocator.Temp);
 
+                Color32 col = (materialAndColor.matId < MaterialRegistry.rawColors.Length) ? (overrideColor ? color : source.colors[0]) : source.colors[0];
+
                 for (int i = 0; i < source.verts.Count; i++)
                 {
                     tempVertexBuffer[i] = new VertexData()
                     {
                         position = source.verts[i],
                         normal = source.normals[i],
-                        color = source.colors[i],
+                        color = col,
                         transformIndex = new Vector2(transformIndex, 0)
                     };
                 }
@@ -470,22 +471,6 @@ namespace com.google.apps.peltzer.client.model.render
                 mMeshContexts.Add(betterContext);
             }
 
-            public void OverrideColor(int startVertexBuffer, NativeArray<VertexData> vertexData, Color32 overrideColor)
-            {
-                Debug.Log("OverrideColor");
-                for (int i = 0; i < vertexData.Length; i++)
-                {
-                    vertexData[i] = new VertexData()
-                    {
-                        position = vertexData[i].position,
-                        normal = vertexData[i].normal,
-                        color = overrideColor,
-                        transformIndex = vertexData[i].transformIndex,
-                    };
-                }
-                mesh.SetVertexBufferData(vertexData, 0, startVertexBuffer, vertexData.Length, flags: updateFlags);
-            }
-
             /// <summary>
             /// Updates the array of transform mats for the MMeshes this info renders.
             /// </summary>
@@ -516,176 +501,6 @@ namespace com.google.apps.peltzer.client.model.render
                 {
                     xformMats[i] = Matrix4x4.identity;
                     freeXformMatIndices.Push(MAX_CONTEXTS_PER_MESHINFO - 1 - i);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Clears the override material on the given meshes, restoring their original material using stored mesh buffer data from MeshInfos.
-        /// </summary>
-        /// <param name="meshIds"></param> The ids of the meshes we want to clear the override material for
-        public void ClearOverrideMaterial(HashSet<int> meshIds)
-        {
-            OverrideMaterial(meshIds);
-        }
-
-        /// <summary>
-        /// Overrides the material of certain meshes with an override material using stored mesh buffer data from MeshInfos.
-        /// </summary>
-        /// <param name="meshIds"></param> The ids of the meshes we want to override the material for
-        /// <param name="overrideMaterialId"></param> The material id we want to override with (e.g. for highlighting)
-        public void SetOverrideMaterial(HashSet<int> meshIds, int overrideMaterialId)
-        {
-            OverrideMaterial(meshIds, overrideMaterialId);
-        }
-
-        /// <summary>
-        /// Certain mesh operations require us to temporarily override the material of a mesh (e.g. highlighting the mesh when hovering close to it).
-        /// When hovering over a mesh, e.g. before moving, or deleting a mesh, we move the mesh to a different MeshInfo with the override material.
-        /// When hovering over a mesh for changing its color, we can just change the vertex colors in place without moving the mesh to a different MeshInfo.
-        /// When the operation is done, we move the mesh back to a MeshInfo with its original material (or in case of color change, we just restore the original vertex colors).
-        /// Ids and colors for the original and override materials are stored in the BetterMeshGenContext.
-        /// </summary>
-        /// <param name="meshIds"></param> The ids of the meshes we want to override the material for
-        /// <param name="overrideMaterialId"></param> The material id we want to override with, -1 means we want to go back to the original material
-        private void OverrideMaterial(HashSet<int> meshIds, int overrideMaterialId = -1)
-        {
-            HashSet<MeshInfo> meshInfosPendingUpdate = new HashSet<MeshInfo>();
-            foreach (int meshId in meshIds)
-            {
-                if (meshInfosByMesh.TryGetValue(meshId, out var meshInfos))
-                {
-                    foreach (var meshInfo in meshInfos)
-                    {
-                        meshInfosPendingUpdate.Add(meshInfo);
-                    }
-                }
-            }
-
-            foreach (var info in meshInfosPendingUpdate)
-            {
-                // get the contexts we need to swap over to the new mesh info
-                using var meshData = Mesh.AcquireReadOnlyMeshData(info.mesh);
-                var vertexData = meshData[0].GetVertexData<VertexData>();
-                var indexData = meshData[0].GetIndexData<short>();
-
-                MeshInfo newInfo = null;
-
-                for (var i = 0; i < info.mMeshContexts.Count; i++)
-                {
-                    if (meshIds.Contains(info.mMeshContexts[i].meshId))
-                    {
-                        var context = info.mMeshContexts[i];
-                        Debug.Log("Override with mat " + overrideMaterialId + " for mesh " + context.meshId + " in meshInfo with mat " + info.materialAndColor.matId);
-
-                        var tempVertexBuffer = new NativeArray<VertexData>(context.numVertices, Allocator.Temp);
-                        var tempIndexBuffer = new NativeArray<short>(context.numIndices, Allocator.Temp);
-
-                        // TODO potentially move lower because we don't need to copy index buffer if we only change vertex colors
-                        NativeArray<VertexData>.Copy(vertexData, context.startVertexBuffer, tempVertexBuffer, 0, context.numVertices);
-                        NativeArray<short>.Copy(indexData, context.startIndexBuffer, tempIndexBuffer, 0, context.numIndices);
-
-                        // we override the current material with the override material given by "overrideMaterialId"
-                        if (overrideMaterialId >= 0)
-                        {
-                            Color32 overrideColor = MaterialRegistry.GetMaterialColor32ById(overrideMaterialId);
-
-                            // override was with another raw color material, so we don't need to swap the mesh info
-                            if (overrideMaterialId < MaterialRegistry.rawColors.Length && context.materialId < MaterialRegistry.rawColors.Length)
-                            {
-                                if (overrideMaterialId != context.materialId)
-                                {
-                                    newInfo = info;
-                                    newInfo.OverrideColor(context.startVertexBuffer, tempVertexBuffer, overrideColor);
-                                }
-
-                                // update context to reflect that we are now using an override material
-                                info.mMeshContexts[i] = new BetterMeshGenContext(
-                                    context.meshId, context.materialId, context.color, overrideMaterialId, overrideColor,
-                                    context.transformIndex, context.numVertices, context.numIndices, context.startVertexBuffer, context.startIndexBuffer);
-                            }
-                            // override with a different material, need to swap the mesh info
-                            else
-                            {
-                                if (overrideMaterialId != context.materialId)
-                                {
-                                    RemoveMesh(context.meshId); // mark for removal from the old mesh info
-                                    if (newInfo == null || !newInfo.HasSpace(context.numVertices, context.numIndices))
-                                    {
-                                        newInfo = GetInfoForMaterialAndVertCount(overrideMaterialId, context.numVertices, context.numIndices);
-
-                                    }
-
-                                    if (!meshInfosByMesh.ContainsKey(context.meshId))
-                                    {
-                                        meshInfosByMesh[context.meshId] = new HashSet<MeshInfo>();
-                                    }
-                                    meshInfosByMesh[context.meshId].Add(newInfo);
-
-                                    newInfo.AddContext(context.meshId, context.materialId, overrideMaterialId,
-                                        tempVertexBuffer, tempIndexBuffer, context.startVertexBuffer,
-                                        context.color, overrideColor, true);
-                                }
-                                else
-                                {
-                                    // update context to reflect that we are now using an override material
-                                    info.mMeshContexts[i] = new BetterMeshGenContext(
-                                        context.meshId, context.materialId, context.color, overrideMaterialId, overrideColor,
-                                        context.transformIndex, context.numVertices, context.numIndices, context.startVertexBuffer, context.startIndexBuffer);
-                                }
-                            }
-                        }
-                        // we are not highlighting anymore and go back to the original material (overrideMaterialId = -1)
-                        else
-                        {
-                            // override was with another raw color material, so we don't need to swap the mesh info
-                            if (context.overrideId < MaterialRegistry.rawColors.Length && context.materialId < MaterialRegistry.rawColors.Length)
-                            {
-                                if (context.materialId != context.overrideId)
-                                {
-                                    newInfo = info;
-                                    newInfo.OverrideColor(context.startVertexBuffer, tempVertexBuffer, context.color);
-                                }
-                                // update context and set overrideId to -1 to reflect that we are back to the original material
-                                info.mMeshContexts[i] = new BetterMeshGenContext(
-                                    context.meshId, context.materialId, context.color, -1, context.color,
-                                    context.transformIndex, context.numVertices, context.numIndices, context.startVertexBuffer, context.startIndexBuffer);
-
-                            }
-                            // override was potentially with a different material, need to swap mesh info
-                            else
-                            {
-                                var originalMaterial = MaterialRegistry.GetMaterialAndColorById(context.materialId).material;
-
-                                if (context.materialId != context.overrideId)
-                                {
-                                    RemoveMesh(context.meshId); // mark for removal from the old mesh info
-
-                                    if (newInfo == null || !newInfo.HasSpace(context.numVertices, context.numIndices)
-                                        || newInfo.materialAndColor.material != originalMaterial)
-                                    {
-                                        newInfo = GetInfoForMaterialAndVertCount(context.materialId, context.numVertices, context.numIndices);
-                                    }
-
-                                    if (!meshInfosByMesh.ContainsKey(context.meshId))
-                                    {
-                                        meshInfosByMesh[context.meshId] = new HashSet<MeshInfo>();
-                                    }
-                                    meshInfosByMesh[context.meshId].Add(newInfo);
-
-                                    newInfo.AddContext(context.meshId, context.materialId, -1,
-                                    tempVertexBuffer, tempIndexBuffer, context.startVertexBuffer, context.color, context.color);
-                                }
-                                else
-                                {
-                                    // update context and set overrideId to -1 to reflect that we are back to the original material
-                                    info.mMeshContexts[i] = new BetterMeshGenContext(
-                                        context.meshId, context.materialId, context.color, -1, context.color,
-                                        context.transformIndex, context.numVertices, context.numIndices, context.startVertexBuffer, context.startIndexBuffer);
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -729,10 +544,15 @@ namespace com.google.apps.peltzer.client.model.render
             // Generate or fetch the triangles, etc for the mesh.
             // TODO(bug): This only works because Model.cs happens to update the model before calling the ReMesher.
             //                   We shoud make that more robust.
-            Debug.Log("Add mesh to meshes pending add: " + mmesh.id);
             // Generate the Unity meshes for this mesh.
             // TODO(bug): We should cache these Meshes for MMeshes too, if possible.
             meshesPendingAdd.Add(mmesh.id);
+        }
+
+        public void AddMesh(int meshId, int materialId)
+        {
+            meshesPendingAdd.Add(meshId);
+            meshIdToMaterialId[meshId] = materialId;
         }
 
         /// <summary>
@@ -757,7 +577,6 @@ namespace com.google.apps.peltzer.client.model.render
             foreach (var info in meshInfos)
             {
                 info.meshesPendingRemove.Add(meshId);
-                Debug.Log("Add " + meshId + " to pending removal in MeshInfo: " + info.materialAndColor.matId);
                 meshInfosPendingRegeneration.Add(info);
             }
             meshInfosByMesh.Remove(meshId);
@@ -770,7 +589,6 @@ namespace com.google.apps.peltzer.client.model.render
         {
             foreach (var meshInfo in meshInfosPendingRegeneration)
             {
-                Debug.Log("MeshInfo mat id: " + meshInfo.materialAndColor.matId);
                 meshInfo.UpdateMeshBuffer();
             }
             meshInfosPendingRegeneration.Clear();
@@ -793,6 +611,8 @@ namespace com.google.apps.peltzer.client.model.render
 
                 var mMesh = model.GetMesh(meshId);
 
+                var useMaterialOverride = meshIdToMaterialId.TryGetValue(meshId, out var materialId);
+
                 Dictionary<int, MeshGenContext> components =
                 MeshHelper.MeshComponentsFromMMesh(mMesh, false);
                 if (components == null)
@@ -811,10 +631,22 @@ namespace com.google.apps.peltzer.client.model.render
                         AssertOrThrow.True(pair.Value.verts.Count < MAX_VERTS_PER_CONTEXT,
                           "MMesh has too many vertices ( " + pair.Value.verts.Count + " vs a max of " + MAX_VERTS_PER_CONTEXT);
                     }
+                    MeshInfo infoForMaterial;
                     // Find or create an unfull MeshInfo for the given material
-                    MeshInfo infoForMaterial = GetInfoForMaterialAndVertCount(pair.Key, pair.Value.verts.Count, pair.Value.triangles.Count);
+                    if (useMaterialOverride)
+                    {
+                        infoForMaterial = GetInfoForMaterialAndVertCount(materialId, pair.Value.verts.Count, pair.Value.triangles.Count);
+                        meshIdToMaterialId.Remove(meshId);
+                        // if we are not using a raw color material for overriding, use the original color (e.g. for highlighting)
+                        var overrideColor = MaterialRegistry.rawColors.Length < materialId ? pair.Value.colors[0] : MaterialRegistry.GetMaterialColor32ById(materialId);
+                        infoForMaterial.AddContext(mMesh.id, pair.Value, overrideColor, true);
+                    }
+                    else
+                    {
+                        infoForMaterial = GetInfoForMaterialAndVertCount(pair.Key, pair.Value.verts.Count, pair.Value.triangles.Count);
+                        infoForMaterial.AddContext(mMesh.id, pair.Value, pair.Value.colors[0]);
+                    }
 
-                    infoForMaterial.AddContext(mMesh.id, pair.Value);
 
                     meshInfos.Add(infoForMaterial);
                 }
