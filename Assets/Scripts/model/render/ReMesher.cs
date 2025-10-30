@@ -99,6 +99,7 @@ namespace com.google.apps.peltzer.client.model.render
         // IDs of meshes that we have yet to add-to/remove-from the ReMesher, and haven't gotten around to doing yet.
         // We only add when ReMesher.Flush() is called so that a bunch of those operations can be batched.
         private HashSet<int> meshesPendingAdd = new();
+        public HashSet<int> meshesPendingRemove = new();
         private HashSet<MeshInfo> meshInfosPendingRegeneration = new();
         // When hovering over a mesh, depending on the tool, we might want to render the mesh with a specific material.
         private Dictionary<int, int> meshIdToMaterialId = new();
@@ -116,10 +117,6 @@ namespace com.google.apps.peltzer.client.model.render
             // stores simplified contexts for each MMesh so we know where they are located in the Unity mesh buffers
             // if an MMesh has multiple contexts they should be after each other in the buffer as they should be added at the same time!
             public List<BetterMeshGenContext> mMeshContexts = new();
-            // initially this was part of Remesher, but it is now possible for a MeshInfo to have a mesh removed which gets instantly added
-            // to another MeshInfo (which also has another mesh removed), this would mean both MeshInfos need to update their buffers, 
-            // and they need to have their own list of pending removes, otherwise we end up removing the mesh from both MeshInfos.
-            public HashSet<int> meshesPendingRemove = new();
 
             // The material we draw this mesh with.
             public MaterialAndColor materialAndColor;
@@ -246,9 +243,8 @@ namespace com.google.apps.peltzer.client.model.render
             /// TODO: Use jobs in the future and this should not be a problem.
             /// TODO: Later, instead of copying data around, we could set the indices of removed contexts to 0 which makes them invisible.
             /// Then we can do a combined cleanup of the mesh buffers every couple of seconds.
-            /// <param name="meshesPendingRemove"> mesh ids of the MMeshes we want to remove from the Unity mesh</param>
             /// </summary>
-            public void UpdateMeshBuffer()
+            public void UpdateMeshBuffer(HashSet<int> meshesPendingRemove)
             {
                 int offsetVB = 0; // the offset we need to apply to the start indices of later contexts after previous ones were removed
                 int offsetIB = 0; // same as above for index buffers
@@ -279,7 +275,6 @@ namespace com.google.apps.peltzer.client.model.render
                         // check if flagged for removal
                         if (meshesPendingRemove.Contains(context.meshId))
                         {
-                            Debug.Log("Update buffer to remove mesh: " + context.meshId + " " + Time.realtimeSinceStartup);
 
                             listOffset += 1;
                             freeXformMatIndices.Push(context.transformIndex); // free up the transform index
@@ -364,8 +359,6 @@ namespace com.google.apps.peltzer.client.model.render
                     vertexCount = numVerts
                 };
                 mesh.SetSubMesh(0, desc);
-
-                meshesPendingRemove.Clear();
             }
 
             // for debugging only
@@ -539,7 +532,7 @@ namespace com.google.apps.peltzer.client.model.render
         ///   Add a mesh to be rendered.  A mesh with the same id must exist in the model.
         /// </summary>
         /// <param name="mmesh">The mesh.</param>
-        public void AddMesh(MMesh mmesh)
+        public void Add(MMesh mmesh)
         {
             // Generate or fetch the triangles, etc for the mesh.
             // TODO(bug): This only works because Model.cs happens to update the model before calling the ReMesher.
@@ -549,10 +542,33 @@ namespace com.google.apps.peltzer.client.model.render
             meshesPendingAdd.Add(mmesh.id);
         }
 
-        public void AddMesh(int meshId, int materialId)
+        public void Add(int meshId)
+        {
+            meshesPendingAdd.Add(meshId);
+        }
+
+        public void Add(int meshId, int materialId)
         {
             meshesPendingAdd.Add(meshId);
             meshIdToMaterialId[meshId] = materialId;
+        }
+
+        public void Update(int meshId)
+        {
+            if (Contains(meshId))
+            {
+                Remove(meshId);
+                Add(meshId);
+            }
+        }
+
+        public void Update(int meshId, int materialId)
+        {
+            if (Contains(meshId))
+            {
+                Remove(meshId);
+                Add(meshId, materialId);
+            }
         }
 
         /// <summary>
@@ -569,17 +585,18 @@ namespace com.google.apps.peltzer.client.model.render
         ///   Actual removal will happen in batch the next time Flush is called.
         /// </summary>
         /// <param name="meshId">The mesh id.</param>
-        public void RemoveMesh(int meshId)
+        public bool Remove(int meshId)
         {
             meshesPendingAdd.Remove(meshId);
-            if (!meshInfosByMesh.TryGetValue(meshId, out var meshInfos)) return;
+            if (!meshInfosByMesh.TryGetValue(meshId, out var meshInfos)) return false;
 
             foreach (var info in meshInfos)
             {
-                info.meshesPendingRemove.Add(meshId);
+                meshesPendingRemove.Add(meshId);
                 meshInfosPendingRegeneration.Add(info);
             }
             meshInfosByMesh.Remove(meshId);
+            return true;
         }
 
         /// <summary>
@@ -589,9 +606,10 @@ namespace com.google.apps.peltzer.client.model.render
         {
             foreach (var meshInfo in meshInfosPendingRegeneration)
             {
-                meshInfo.UpdateMeshBuffer();
+                meshInfo.UpdateMeshBuffer(meshesPendingRemove);
             }
             meshInfosPendingRegeneration.Clear();
+            meshesPendingRemove.Clear();
         }
 
         /// <summary>
@@ -735,10 +753,14 @@ namespace com.google.apps.peltzer.client.model.render
             }
         }
 
-        // Visible for testing
-        public bool HasMesh(int meshId)
+        /// <summary>
+        /// Checks if the remesher contains the given mesh. This can mean either that the mesh is already added to a MeshInfo,
+        /// or is pending to be added. It also checks that the mesh is not pending removal, in which case it returns false.
+        /// </summary> <param name="meshId"> id of the current mesh</param>
+        /// <returns>checks if the mesh is in the remesher </returns>
+        public bool Contains(int meshId)
         {
-            return meshInfosByMesh.ContainsKey(meshId);
+            return (meshesPendingAdd.Contains(meshId) || meshInfosByMesh.ContainsKey(meshId)) && !meshesPendingRemove.Contains(meshId);
         }
 
         // Visible for testing.  Walk all MeshInfos and count how many depend on a given mesh.

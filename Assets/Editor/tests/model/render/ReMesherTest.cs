@@ -38,22 +38,22 @@ namespace com.google.apps.peltzer.client.model.render
             GameObject go = new GameObject();
             MeshRepresentationCache meshRepresentationCache = new MeshRepresentationCache();
             meshRepresentationCache.Setup(model, PeltzerMain.Instance.worldSpace);
-            remesher.AddMesh(Primitives.AxisAlignedBox(
+            remesher.Add(Primitives.AxisAlignedBox(
               1, Vector3.zero, Vector3.one, /* Material id*/ 2));
 
-            remesher.AddMesh(Primitives.AxisAlignedBox(
+            remesher.Add(Primitives.AxisAlignedBox(
               2, Vector3.one, Vector3.one, /* Material id*/ 3));
 
             remesher.Render(model);
 
-            remesher.RemoveMesh(1);
+            remesher.Remove(1);
 
             remesher.Render(model);
 
             // Delete a mesh that isn't there.
             try
             {
-                remesher.RemoveMesh(1);
+                remesher.Remove(1);
                 Assert.True(false, "Expected exception.");
             }
             catch (Exception)
@@ -64,7 +64,7 @@ namespace com.google.apps.peltzer.client.model.render
             // Add a duplicate mesh.
             try
             {
-                remesher.AddMesh(Primitives.AxisAlignedBox(
+                remesher.Add(Primitives.AxisAlignedBox(
                   2, Vector3.one, Vector3.one, /* Material id*/ 3));
                 Assert.True(false, "Expected exception.");
             }
@@ -88,13 +88,13 @@ namespace com.google.apps.peltzer.client.model.render
             //  Add 100 multicolor meshes:
             for (int i = 0; i < 100; i++)
             {
-                remesher.AddMesh(multiColorMesh(i, i % 5, (i + 1) % 5, (i + 2) % 5));
+                remesher.Add(multiColorMesh(i, i % 5, (i + 1) % 5, (i + 2) % 5));
             }
 
             // Make sure they are all there:
             for (int i = 0; i < 100; i++)
             {
-                NUnit.Framework.Assert.IsTrue(remesher.HasMesh(i));
+                NUnit.Framework.Assert.IsTrue(remesher.Contains(i));
                 // Has three colors, should be in exactly three meshInfos.
                 NUnit.Framework.Assert.AreEqual(3, remesher.MeshInMeshInfosCount(i));
             }
@@ -102,7 +102,7 @@ namespace com.google.apps.peltzer.client.model.render
             // Now remove half of them:
             for (int i = 0; i < 100; i += 2)
             {
-                remesher.RemoveMesh(i);
+                remesher.Remove(i);
             }
 
             // Make sure the ReMesher has what we think it should have:
@@ -111,12 +111,12 @@ namespace com.google.apps.peltzer.client.model.render
                 if (i % 2 == 0)
                 {
                     // Was deleted.  Make sure it isn't anywhere:
-                    NUnit.Framework.Assert.IsFalse(remesher.HasMesh(i));
+                    NUnit.Framework.Assert.IsFalse(remesher.Contains(i));
                     NUnit.Framework.Assert.AreEqual(0, remesher.MeshInMeshInfosCount(i));
                 }
                 else
                 {
-                    NUnit.Framework.Assert.IsTrue(remesher.HasMesh(i));
+                    NUnit.Framework.Assert.IsTrue(remesher.Contains(i));
                     NUnit.Framework.Assert.AreEqual(3, remesher.MeshInMeshInfosCount(i));
                 }
             }
@@ -124,7 +124,7 @@ namespace com.google.apps.peltzer.client.model.render
             // Add some new ones back:
             for (int i = 100; i < 200; i++)
             {
-                remesher.AddMesh(multiColorMesh(i, i % 5, (i + 1) % 5, (i + 2) % 5));
+                remesher.Add(multiColorMesh(i, i % 5, (i + 1) % 5, (i + 2) % 5));
             }
 
             // Check everything again:
@@ -133,12 +133,12 @@ namespace com.google.apps.peltzer.client.model.render
                 if (i < 100 && i % 2 == 0)
                 {
                     // Was deleted.  Make sure it isn't anywhere:
-                    NUnit.Framework.Assert.IsFalse(remesher.HasMesh(i));
+                    NUnit.Framework.Assert.IsFalse(remesher.Contains(i));
                     NUnit.Framework.Assert.AreEqual(0, remesher.MeshInMeshInfosCount(i));
                 }
                 else
                 {
-                    NUnit.Framework.Assert.IsTrue(remesher.HasMesh(i));
+                    NUnit.Framework.Assert.IsTrue(remesher.Contains(i));
                     NUnit.Framework.Assert.AreEqual(3, remesher.MeshInMeshInfosCount(i));
                 }
             }
@@ -148,13 +148,13 @@ namespace com.google.apps.peltzer.client.model.render
             {
                 if (i >= 100 || i % 2 != 0)
                 {
-                    remesher.RemoveMesh(i);
+                    remesher.Remove(i);
                 }
             }
 
             for (int i = 0; i < 200; i++)
             {
-                NUnit.Framework.Assert.IsFalse(remesher.HasMesh(i));
+                NUnit.Framework.Assert.IsFalse(remesher.Contains(i));
                 NUnit.Framework.Assert.AreEqual(0, remesher.MeshInMeshInfosCount(i));
             }
         }

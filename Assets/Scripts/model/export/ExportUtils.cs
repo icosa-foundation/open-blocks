@@ -73,7 +73,7 @@ namespace com.google.apps.peltzer.client.model.export
                     remesher = new ReMesher();
                     foreach (MMesh mesh in meshes)
                     {
-                        remesher.AddMesh(mesh);
+                        remesher.Add(mesh);
                     }
                     remesher.Flush();
                     remesher.UpdateTransforms(model);

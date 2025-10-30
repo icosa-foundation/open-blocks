@@ -161,18 +161,18 @@ namespace com.google.apps.peltzer.client.model.core
 
             // Make sure the ReMesher knows about these.
             ReMesher remesher = model.GetReMesher();
-            NUnit.Framework.Assert.IsTrue(remesher.HasMesh(meshOne));
-            NUnit.Framework.Assert.IsTrue(remesher.HasMesh(meshTwo));
+            NUnit.Framework.Assert.IsTrue(remesher.Contains(meshOne));
+            NUnit.Framework.Assert.IsTrue(remesher.Contains(meshTwo));
 
             // Hide one and make sure ReMesher is updated.
             model.HideMeshForTestOrTutorial(meshOne);
-            NUnit.Framework.Assert.IsFalse(remesher.HasMesh(meshOne));
-            NUnit.Framework.Assert.IsTrue(remesher.HasMesh(meshTwo));
+            NUnit.Framework.Assert.IsFalse(remesher.Contains(meshOne));
+            NUnit.Framework.Assert.IsTrue(remesher.Contains(meshTwo));
 
             // Unhide and check again.
             model.UnhideMeshForTestOrTutorial(meshOne);
-            NUnit.Framework.Assert.IsTrue(remesher.HasMesh(meshOne));
-            NUnit.Framework.Assert.IsTrue(remesher.HasMesh(meshTwo));
+            NUnit.Framework.Assert.IsTrue(remesher.Contains(meshOne));
+            NUnit.Framework.Assert.IsTrue(remesher.Contains(meshTwo));
         }
 
         [Test]

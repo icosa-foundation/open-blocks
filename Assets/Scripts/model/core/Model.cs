@@ -393,7 +393,7 @@ namespace com.google.apps.peltzer.client.model.core
             }
             else
             {
-                remesher.AddMesh(mesh);
+                remesher.Add(mesh);
             }
 
             if (mesh.groupId != MMesh.GROUP_NONE)
@@ -492,7 +492,7 @@ namespace com.google.apps.peltzer.client.model.core
 
             // Remove the mesh from either hiddenMeshes, or the remesher.
             hiddenMeshes.Remove(meshId);
-            remesher.RemoveMesh(meshId);
+            remesher.Remove(meshId);
 
             PeltzerMain.Instance.GetSelector().ResetInactive();
 
@@ -574,10 +574,10 @@ namespace com.google.apps.peltzer.client.model.core
                 OnMeshChanged(mesh, materialsChanged, geometryChanged, vertsOrFacesChanged);
             }
             // Update the renderer.
-            remesher.RemoveMesh(meshId);
+            remesher.Remove(meshId);
             if (!hiddenMeshes.Contains(meshId))
             {
-                remesher.AddMesh(mesh);
+                remesher.Add(mesh);
             }
         }
 
@@ -589,7 +589,7 @@ namespace com.google.apps.peltzer.client.model.core
         /// <param name="meshId">The mesh id.</param>
         private void HideMesh(int meshId)
         {
-            remesher.RemoveMesh(meshId);
+            remesher.Remove(meshId);
             hiddenMeshes.Add(meshId);
         }
 
@@ -603,7 +603,7 @@ namespace com.google.apps.peltzer.client.model.core
                 return;
 
             hiddenMeshes.Remove(meshId);
-            remesher.AddMesh(meshById[meshId]);
+            remesher.Add(meshById[meshId]);
         }
 
         /// <summary>
@@ -612,7 +612,8 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         public void MarkMeshForDeletion(int meshId)
         {
-            remesher.RemoveMesh(meshId);
+            Debug.Log("Marking mesh for deletion: " + meshId);
+            remesher.Remove(meshId);
 
             if (renderOwners.ContainsKey(meshId))
             {
@@ -746,7 +747,7 @@ namespace com.google.apps.peltzer.client.model.core
             }
 
             MMesh mesh = meshById[meshId];
-            remesher.AddMesh(mesh);
+            remesher.Add(mesh);
         }
 
         /// <summary>

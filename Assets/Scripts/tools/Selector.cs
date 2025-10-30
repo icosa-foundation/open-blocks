@@ -803,8 +803,7 @@ namespace com.google.apps.peltzer.client.tools
                 if (!hoverMeshes.Contains(meshId))
                 {
                     hoverMeshes.Add(meshId);
-                    remesher.RemoveMesh(meshId);
-                    remesher.AddMesh(meshId, GetSelectorOverrideMaterialId());
+                    remesher.Update(meshId, GetSelectorOverrideMaterialId());
                     if (Features.vibrateOnHover)
                     {
                         peltzerController.TriggerHapticFeedback(HapticFeedback.HapticFeedbackType.FEEDBACK_1,
@@ -819,8 +818,7 @@ namespace com.google.apps.peltzer.client.tools
                 if (!touchedMeshIds.Contains(meshId))
                 {
                     tempHashset.Add(meshId);
-                    remesher.RemoveMesh(meshId);
-                    remesher.AddMesh(model.GetMesh(meshId));
+                    remesher.Update(meshId);
                 }
             }
             foreach (int meshId in tempHashset)
@@ -856,8 +854,7 @@ namespace com.google.apps.peltzer.client.tools
         {
             MMesh mesh = model.GetMesh(meshId);
 
-            remesher.RemoveMesh(meshId);
-            remesher.AddMesh(meshId, GetSelectorOverrideMaterialId());
+            remesher.Update(meshId, GetSelectorOverrideMaterialId());
             selectedMeshes.Add(meshId);
             PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
 
@@ -1185,8 +1182,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private void DeselectOneMesh(int meshId)
         {
-            remesher.RemoveMesh(meshId);
-            remesher.AddMesh(model.GetMesh(meshId));
+            remesher.Update(meshId);
             selectedMeshes.Remove(meshId);
             PeltzerMain.Instance.SetSaveSelectedButtonActiveIfSelectionNotEmpty();
         }
@@ -1236,8 +1232,7 @@ namespace com.google.apps.peltzer.client.tools
                     {
                         foreach (var meshId in selectedMeshes)
                         {
-                            remesher.RemoveMesh(meshId);
-                            remesher.AddMesh(model.GetMesh(meshId));
+                            remesher.Update(meshId);
                         }
                     }
                     selectedMeshes.Clear();
@@ -1250,8 +1245,7 @@ namespace com.google.apps.peltzer.client.tools
                     {
                         foreach (var meshId in hoverMeshes)
                         {
-                            remesher.RemoveMesh(meshId);
-                            remesher.AddMesh(model.GetMesh(meshId));
+                            remesher.Update(meshId);
                         }
                     }
                 }
