@@ -50,16 +50,39 @@ namespace com.google.apps.peltzer.client.model.csg
             HashSet<int> intersectingMeshIds;
             if (spatialIndex.FindIntersectingMeshes(brush.bounds, out intersectingMeshIds))
             {
-                foreach (int meshId in intersectingMeshIds)
+                // Special handling for UNION: merge all intersecting meshes with the brush into a single result
+                if (csgOp == CsgOperation.UNION && intersectingMeshIds.Count > 0)
                 {
-                    MMesh mesh = model.GetMesh(meshId);
-                    List<MMesh> results = DoCsgOperation(mesh, brush, csgOp);
-                    commands.Add(new DeleteMeshCommand(mesh.id));
+                    // Start with the brush as the base
+                    List<MMesh> currentResults = new List<MMesh> { brush.Clone() };
+
+                    // Union each intersecting mesh into the accumulating result
+                    foreach (int meshId in intersectingMeshIds)
+                    {
+                        MMesh mesh = model.GetMesh(meshId);
+                        List<MMesh> newResults = new List<MMesh>();
+
+                        // Union the mesh with all current results
+                        foreach (MMesh currentMesh in currentResults)
+                        {
+                            List<MMesh> unionResults = DoCsgOperation(currentMesh, mesh, csgOp);
+                            newResults.AddRange(unionResults);
+                        }
+
+                        currentResults = newResults;
+                        commands.Add(new DeleteMeshCommand(mesh.id));
+                    }
+
+                    // Add the final unified result
                     bool isFirstResult = true;
-                    foreach (MMesh result in results)
+                    foreach (MMesh result in currentResults)
                     {
                         MMesh meshToAdd = result;
-                        if (!isFirstResult)
+                        if (isFirstResult)
+                        {
+                            meshToAdd.ChangeId(brush.id);
+                        }
+                        else
                         {
                             meshToAdd = result.CloneWithNewId(model.GenerateMeshId());
                         }
@@ -74,6 +97,37 @@ namespace com.google.apps.peltzer.client.model.csg
                             return false;
                         }
                         isFirstResult = false;
+                    }
+                }
+                else
+                {
+                    // For all other operations (SUBTRACT, INTERSECT, SPLIT, PAINT_INTERSECT),
+                    // process each intersecting mesh independently
+                    foreach (int meshId in intersectingMeshIds)
+                    {
+                        MMesh mesh = model.GetMesh(meshId);
+                        List<MMesh> results = DoCsgOperation(mesh, brush, csgOp);
+                        commands.Add(new DeleteMeshCommand(mesh.id));
+                        bool isFirstResult = true;
+                        foreach (MMesh result in results)
+                        {
+                            MMesh meshToAdd = result;
+                            if (!isFirstResult)
+                            {
+                                meshToAdd = result.CloneWithNewId(model.GenerateMeshId());
+                            }
+
+                            if (model.CanAddMesh(meshToAdd))
+                            {
+                                commands.Add(new AddMeshCommand(meshToAdd));
+                            }
+                            else
+                            {
+                                // Abort everything if an invalid mesh would be generated.
+                                return false;
+                            }
+                            isFirstResult = false;
+                        }
                     }
                 }
             }
