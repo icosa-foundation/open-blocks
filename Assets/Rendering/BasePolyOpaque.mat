@@ -18,7 +18,7 @@ Material:
   - _
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
+  m_DoubleSidedGI: 1
   m_CustomRenderQueue: -1
   stringTagMap:
     RenderType: Opaque
@@ -71,6 +71,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _RefractTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -91,6 +95,9 @@ Material:
     m_Floats:
     - _AlphaClip: 0
     - _AlphaToMask: 0
+    - _AnimNoiseAmplitude: 0.125
+    - _AnimNoiseScale: 20
+    - _AnimPct: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BlendOp: 0
@@ -98,7 +105,7 @@ Material:
     - _ClearCoat: 0
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _Cull: 2
+    - _Cull: 0
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
@@ -106,10 +113,12 @@ Material:
     - _DstBlendAlpha: 0
     - _EmissiveAmount: 0
     - _EnvironmentReflections: 1
+    - _FacetSize: 0.06
     - _FresnelPower: 5
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _MaxEffectEmissive: 0.4
     - _Metallic: 0
     - _Mirror: 0
     - _Mode: 0
@@ -127,6 +136,7 @@ Material:
     - _RefractiveIndex: 1.5
     - _Roughnes: 0.56
     - _Roughness: 1
+    - _SelectRadius: 0
     - _SelectorAlphaRadius: 0.25
     - _Smoothness: 0
     - _SmoothnessTextureChannel: 0
@@ -136,13 +146,17 @@ Material:
     - _Surface: 0
     - _UVSec: 0
     - _WorkflowMode: 1
+    - _ZTest: 4
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EffectColor: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0.103773594, g: 0.053297598, b: 0, a: 0}
     - _EmissiveColor: {r: 1, g: 1, b: 1, a: 0}
+    - _MeshShaderBounds: {r: 0, g: 1, b: 0, a: 0}
     - _OverrideColor: {r: 0.9705882, g: 0, b: 0, a: 1}
+    - _SelectPositionWorld: {r: 0, g: 0, b: 0, a: 0}
     - _SelectorPosition: {r: 0, g: 0, b: 0, a: 0}
     - _SpecColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
