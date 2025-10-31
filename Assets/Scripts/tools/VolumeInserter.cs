@@ -841,6 +841,27 @@ namespace com.google.apps.peltzer.client.tools
                 StartInsertMesh();
 
             }
+            else if (IsStartInsertVolumeOrCopyEvent(args) && isCopyMode())
+            {
+                // Handle copy mode: copy the hovered mesh to custom shape
+                if (selector.SelectedOrHoveredMeshes().Any())
+                {
+                    peltzerController.shapesMenu.SetShapesMenuCustomShapes();
+                    audioLibrary.PlayClip(audioLibrary.insertVolumeSound);
+                    peltzerController.TriggerHapticFeedback(
+                        HapticFeedback.HapticFeedbackType.FEEDBACK_3,
+                        durationSeconds: 0.05f,
+                        strength: 0.3f);
+                    // Switch to the custom shape that was just created
+                    peltzerController.shapesMenu.SetShapeMenuItem(ShapesMenu.CUSTOM_SHAPE_ID, showMenu: true);
+                }
+                else
+                {
+                    // No mesh selected/hovered - play error sound
+                    audioLibrary.PlayClip(audioLibrary.errorSound);
+                    peltzerController.TriggerHapticFeedback();
+                }
+            }
             else if (IsEndInsertVolumeEvent(args) && !isCopyMode())
             {
                 if (heldMeshes != null && (heldMeshes.IsInserting || heldMeshes.IsFilling))
