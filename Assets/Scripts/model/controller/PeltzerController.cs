@@ -1526,8 +1526,6 @@ namespace com.google.apps.peltzer.client.model.controller
             //     }
             //
             // }
-
-            EnsureCustomShapePreviewInitialized();
         }
 
         private void EnsureCustomShapePreviewInitialized()

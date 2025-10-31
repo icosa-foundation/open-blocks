@@ -30,6 +30,14 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
     private void OnEnable()
     {
         TryEnsureDependencies();
+
+        // Only initialize if custom shapes haven't been set yet
+        if (m_ShapesMenu != null && m_ShapesMenu.GetShapesMenuCustomShapes() != null)
+        {
+            // Custom shapes already exist, don't reset them
+            return;
+        }
+
         if (TryInitializeCustomShapeImmediately())
         {
             return;
