@@ -27,6 +27,7 @@ namespace com.google.apps.peltzer.client.model.controller
     {
         // The available shapes.
         private Dictionary<Primitives.Shape, GameObject> mockShapes = new Dictionary<Primitives.Shape, GameObject>();
+        private GameObject copyModeToolhead;
 
         void Start()
         {
@@ -36,6 +37,19 @@ namespace com.google.apps.peltzer.client.model.controller
             mockShapes[Primitives.Shape.TORUS] = ObjectFinder.ObjectById("ID_Torus");
             mockShapes[Primitives.Shape.SPHERE] = ObjectFinder.ObjectById("ID_Sphere");
             mockShapes[Primitives.Shape.ICOSAHEDRON] = ObjectFinder.ObjectById("ID_Icosahedron");
+            copyModeToolhead = ObjectFinder.ObjectById("ID_Copy");
+        }
+
+        private string GetGameObjectPath(GameObject obj)
+        {
+            string path = obj.name;
+            Transform parent = obj.transform.parent;
+            while (parent != null)
+            {
+                path = parent.name + "/" + path;
+                parent = parent.parent;
+            }
+            return path;
         }
 
         /// <summary>
@@ -44,6 +58,24 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <param name="shapeMenuItemId"></param>
         public void ShapeChangedHandler(int shapeMenuItemId)
         {
+            // Handle copy mode
+            if (shapeMenuItemId == ShapesMenu.COPY_MODE_ID)
+            {
+                foreach (KeyValuePair<Primitives.Shape, GameObject> mockShape in mockShapes)
+                {
+                    mockShape.Value.SetActive(false);
+                }
+                if (copyModeToolhead != null)
+                {
+                    copyModeToolhead.SetActive(true);
+                }
+                return;
+            }
+
+            // Hide copy mode toolhead for all other modes (primitives and custom)
+            if (copyModeToolhead != null) copyModeToolhead.SetActive(false);
+
+            // Handle regular primitive shapes (custom shape is handled elsewhere)
             foreach (KeyValuePair<Primitives.Shape, GameObject> mockShape in mockShapes)
             {
                 if (shapeMenuItemId == (int)mockShape.Key)

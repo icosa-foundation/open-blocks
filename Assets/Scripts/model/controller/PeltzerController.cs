@@ -420,6 +420,10 @@ namespace com.google.apps.peltzer.client.model.controller
                 gameObject.AddComponent<MeshRepresentationCache>()
             );
 
+            // Set up shape toolhead handler for dominant hand
+            ShapeToolheadAnimation peltzerShapeToolhead = gameObject.AddComponent<ShapeToolheadAnimation>();
+            shapesMenu.ShapeMenuItemChangedHandler += peltzerShapeToolhead.ShapeChangedHandler;
+
             EnsureCustomShapePreviewInitialized();
 
             // Put everything in the default handedness position.

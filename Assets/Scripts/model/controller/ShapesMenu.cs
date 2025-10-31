@@ -163,7 +163,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     {
                         new (mesh, MaterialRegistry.GetMaterialAndColorById(material))
                     };
-                    obj.transform.rotation = Quaternion.Euler(90, 33, 0);
+                    obj.transform.localRotation = Quaternion.Euler(0, 33, 0);
                 }
                 else if (id == CUSTOM_SHAPE_ID)
                 {
@@ -189,18 +189,18 @@ namespace com.google.apps.peltzer.client.model.controller
                 if (id != COPY_MODE_ID)
                 {
                     obj.transform.localRotation = Quaternion.identity;
+                    // Default shapes smaller for the menu.
+                    obj.transform.localScale /= 1.6f;
+                    MeshWithMaterialRenderer meshRenderer = obj.GetComponent<MeshWithMaterialRenderer>();
+                    meshRenderer.ResetTransform();
+                    // The menu exists in world space, not model space, so indicate that MeshWithMaterialRenderer should
+                    // use the object's world position to render, not a model space position.
+                    meshRenderer.UseGameObjectPosition = true;
+                    // Should ignore worldSpace rotation, so as to always give the user the same view of the menu.
+                    meshRenderer.IgnoreWorldRotation = true;
+                    // And, likewise, should ignore worldSpace scale, so as to always give the user the same view of the menu.
+                    meshRenderer.IgnoreWorldScale = true;
                 }
-                // Default shapes smaller for the menu.
-                obj.transform.localScale /= 1.6f;
-                MeshWithMaterialRenderer meshRenderer = obj.GetComponent<MeshWithMaterialRenderer>();
-                meshRenderer.ResetTransform();
-                // The menu exists in world space, not model space, so indicate that MeshWithMaterialRenderer should
-                // use the object's world position to render, not a model space position.
-                meshRenderer.UseGameObjectPosition = true;
-                // Should ignore worldSpace rotation, so as to always give the user the same view of the menu.
-                meshRenderer.IgnoreWorldRotation = true;
-                // And, likewise, should ignore worldSpace scale, so as to always give the user the same view of the menu.
-                meshRenderer.IgnoreWorldScale = true;
                 // Make the item active or inactive as appropriate.
                 obj.SetActive(IsShapeMenuItemEnabled(id));
                 // And finally add it to the menu array.
