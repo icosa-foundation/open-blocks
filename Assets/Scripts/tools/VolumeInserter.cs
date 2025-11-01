@@ -586,6 +586,7 @@ namespace com.google.apps.peltzer.client.tools
                     CsgOperations.CsgOperation.UNION => audioLibrary.insertVolumeSound,
                     CsgOperations.CsgOperation.INTERSECT => audioLibrary.deleteSound,
                     CsgOperations.CsgOperation.SUBTRACT => audioLibrary.deleteSound,
+                    CsgOperations.CsgOperation.SPLIT => audioLibrary.deleteSound,
                     CsgOperations.CsgOperation.PAINT_INTERSECT => audioLibrary.paintSound,
                     _ => null
                 };
@@ -753,6 +754,10 @@ namespace com.google.apps.peltzer.client.tools
                     case CsgOperations.CsgOperation.INTERSECT:
                         peltzerController.controllerGeometry.csgTooltips.SetActive(true);
                         textMesh.text = "Intersect Shape";
+                        break;
+                    case CsgOperations.CsgOperation.SPLIT:
+                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
+                        textMesh.text = "Split Shape";
                         break;
                     case CsgOperations.CsgOperation.UNION:
                         peltzerController.controllerGeometry.csgTooltips.SetActive(true);
@@ -947,6 +952,7 @@ namespace com.google.apps.peltzer.client.tools
                 // Cycle CSG Mode or return to normal mode
                 else if (peltzerController.mode == ControllerMode.csg)
                 {
+                    // SUBTRACT > INTERSECT > UNION > SPLIT > PAINT_INTERSECT > INACTIVE (back to insert mode)
                     switch (csgOperation)
                     {
                         case CsgOperations.CsgOperation.SUBTRACT:
@@ -956,6 +962,9 @@ namespace com.google.apps.peltzer.client.tools
                             csgOperation = CsgOperations.CsgOperation.UNION;
                             break;
                         case CsgOperations.CsgOperation.UNION:
+                            csgOperation = CsgOperations.CsgOperation.SPLIT;
+                            break;
+                        case CsgOperations.CsgOperation.SPLIT:
                             csgOperation = CsgOperations.CsgOperation.PAINT_INTERSECT;
                             break;
                         case CsgOperations.CsgOperation.PAINT_INTERSECT:
@@ -983,12 +992,28 @@ namespace com.google.apps.peltzer.client.tools
                 peltzerController.shapesMenu.Hide();
                 UnsetAllHoverTooltips();
                 // Reset CSG mode when entering insert mode.
-                csgOperation = CsgOperations.CsgOperation.INACTIVE;
+                // Only reset CSG mode when explicitly switching from csg to insertVolume mode
+                // (which happens when cycling through modes with the app menu button).
+                // This preserves the CSG mode when switching to other tools and back.
+                if (oldMode == ControllerMode.csg && newMode == ControllerMode.insertVolume)
+                {
+                    csgOperation = CsgOperations.CsgOperation.INACTIVE;
+                }
                 peltzerController.ChangeTouchpadCsgSprite(csgOperation);
             }
 
             if (newMode == ControllerMode.insertVolume || newMode == ControllerMode.csg)
             {
+                // If entering insertVolume mode but csgOperation indicates we should be in CSG mode,
+                // switch to CSG mode to restore the previous state
+                if (newMode == ControllerMode.insertVolume && csgOperation != CsgOperations.CsgOperation.INACTIVE)
+                {
+                    peltzerController.ChangeMode(ControllerMode.csg);
+                    peltzerController.shapesMenu.ChangeShapesMenuMaterial(MaterialRegistry.PINK_WIREFRAME_ID);
+                    peltzerController.ChangeTouchpadCsgSprite(csgOperation);
+                    return; // ModeChangeEventHandler will be called again with the new mode
+                }
+
                 CreateNewVolumeMesh();
 
                 if (completedSnaps < SNAP_KNOW_HOW_COUNT)
