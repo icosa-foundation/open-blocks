@@ -276,36 +276,93 @@ namespace com.google.apps.peltzer.client.model.csg
             MMesh largeCube = Primitives.AxisAlignedBox(1, Vector3.zero, Vector3.one, 1);
 
             // Subtracting large cube from small cube should result in empty space.
-            NUnit.Framework.Assert.IsNull(CsgOperations.DoCsgOperation(smallCube, largeCube));
+            List<MMesh> emptyResult = CsgOperations.DoCsgOperation(smallCube, largeCube);
+            NUnit.Framework.Assert.AreEqual(0, emptyResult.Count);
 
             // Subtracting small cube from large cube should result in just the large cube with an invisible hole.
-            MMesh results = CsgOperations.DoCsgOperation(largeCube, smallCube);
-            NUnit.Framework.Assert.AreEqual(12, results.faceCount);
+            List<MMesh> results = CsgOperations.DoCsgOperation(largeCube, smallCube);
+            NUnit.Framework.Assert.AreEqual(1, results.Count);
+            NUnit.Framework.Assert.AreEqual(12, results[0].faceCount);
 
             // Mesh should still be valid:
-            NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(results));
+            NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(results[0]));
         }
 
         [Test]
         public void SubtractCubeOverlappingCube()
         {
             // Two cubes next to each other, overlapping.
-            MMesh result = CsgOperations.DoCsgOperation(
+            List<MMesh> result = CsgOperations.DoCsgOperation(
               Primitives.AxisAlignedBox(1, new Vector3(-1, 0, 0), Vector3.one, 1),
               Primitives.AxisAlignedBox(2, Vector3.zero, Vector3.one, 1));
 
-            NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(result, true));
+            NUnit.Framework.Assert.AreEqual(1, result.Count);
+            NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(result[0], true));
         }
 
         //[Test] TODO: Uncomment when works :/
         public void SubtractSphereOverlappingCube()
         {
             // A cube and a sphere, overlapping.
-            MMesh result = CsgOperations.DoCsgOperation(
+            List<MMesh> result = CsgOperations.DoCsgOperation(
               Primitives.AxisAlignedBox(1, new Vector3(-1, -0.7f, -0.3f), Vector3.one, 2),
               Primitives.AxisAlignedIcosphere(2, new Vector3(-.2f, 0, 0), Vector3.one, 1));
 
-            NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(result, true));
+            NUnit.Framework.Assert.AreEqual(1, result.Count);
+            NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(result[0], true));
+        }
+
+        [Test]
+        public void SplitCubeWithinCubeProducesSubtractAndIntersectMeshes()
+        {
+            MMesh smallCube = Primitives.AxisAlignedBox(1, Vector3.zero, Vector3.one * 0.5f, 1);
+            MMesh largeCube = Primitives.AxisAlignedBox(2, Vector3.zero, Vector3.one, 1);
+
+            List<MMesh> splitResults = CsgOperations.DoCsgOperation(
+              largeCube,
+              smallCube,
+              CsgOperations.CsgOperation.SPLIT);
+
+            NUnit.Framework.Assert.AreEqual(2, splitResults.Count);
+            NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(splitResults[0]));
+            NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(splitResults[1]));
+
+            // The subtract result should preserve the outer cube while the intersect result is the smaller cube.
+            NUnit.Framework.Assert.AreEqual(12, splitResults[0].faceCount);
+            NUnit.Framework.Assert.AreEqual(6, splitResults[1].faceCount);
+        }
+
+        [Test]
+        public void SplitOperationAddsExtraMeshToModel()
+        {
+            Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 5);
+            Model model = new Model(bounds);
+            SpatialIndex spatialIndex = new SpatialIndex(model, bounds);
+
+            int originalMeshId = 12345;
+            MMesh baseMesh = Primitives.AxisAlignedBox(originalMeshId, Vector3.zero, Vector3.one, 1);
+            model.AddMesh(baseMesh);
+            spatialIndex.AddMesh(baseMesh);
+
+            MMesh splittingBrush = Primitives.AxisAlignedBox(54321, Vector3.zero, Vector3.one * 0.5f, 1);
+
+            bool operationResult = CsgOperations.CsgMeshFromModel(
+              model,
+              spatialIndex,
+              splittingBrush,
+              CsgOperations.CsgOperation.SPLIT);
+
+            NUnit.Framework.Assert.IsTrue(operationResult);
+            NUnit.Framework.Assert.AreEqual(2, model.GetNumberOfMeshes());
+            NUnit.Framework.Assert.IsTrue(model.HasMesh(originalMeshId));
+
+            List<MMesh> remainingMeshes = model.GetAllMeshes().ToList();
+            NUnit.Framework.Assert.AreEqual(2, remainingMeshes.Count);
+            MMesh subtractMesh = remainingMeshes.Single(mesh => mesh.id == originalMeshId);
+            MMesh intersectMesh = remainingMeshes.Single(mesh => mesh.id != originalMeshId);
+
+            NUnit.Framework.Assert.AreEqual(12, subtractMesh.faceCount);
+            NUnit.Framework.Assert.AreEqual(6, intersectMesh.faceCount);
         }
 
         [Test]

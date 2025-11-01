@@ -13,9 +13,12 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Text;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
+using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.util;
 
 namespace com.google.apps.peltzer.client.model.csg
@@ -30,7 +33,9 @@ namespace com.google.apps.peltzer.client.model.csg
             INACTIVE,
             UNION,
             INTERSECT,
-            SUBTRACT
+            SUBTRACT,
+            SPLIT,
+            PAINT_INTERSECT
         }
 
         /// <summary>
@@ -45,22 +50,83 @@ namespace com.google.apps.peltzer.client.model.csg
             HashSet<int> intersectingMeshIds;
             if (spatialIndex.FindIntersectingMeshes(brush.bounds, out intersectingMeshIds))
             {
-                foreach (int meshId in intersectingMeshIds)
+                // Special handling for UNION: merge all intersecting meshes with the brush into a single result
+                if (csgOp == CsgOperation.UNION && intersectingMeshIds.Count > 0)
                 {
-                    MMesh mesh = model.GetMesh(meshId);
-                    MMesh result = DoCsgOperation(mesh, brush, csgOp);
-                    commands.Add(new DeleteMeshCommand(mesh.id));
-                    // If the result is null, it means the mesh was entirely erased.  No need to add a new version back.
-                    if (result != null)
+                    // Start with the brush as the base
+                    List<MMesh> currentResults = new List<MMesh> { brush.Clone() };
+
+                    // Union each intersecting mesh into the accumulating result
+                    foreach (int meshId in intersectingMeshIds)
                     {
-                        if (model.CanAddMesh(result))
+                        MMesh mesh = model.GetMesh(meshId);
+                        List<MMesh> newResults = new List<MMesh>();
+
+                        // Union the mesh with all current results
+                        foreach (MMesh currentMesh in currentResults)
                         {
-                            commands.Add(new AddMeshCommand(result));
+                            List<MMesh> unionResults = DoCsgOperation(currentMesh, mesh, csgOp);
+                            newResults.AddRange(unionResults);
+                        }
+
+                        currentResults = newResults;
+                        commands.Add(new DeleteMeshCommand(mesh.id));
+                    }
+
+                    // Add the final unified result
+                    bool isFirstResult = true;
+                    foreach (MMesh result in currentResults)
+                    {
+                        MMesh meshToAdd = result;
+                        if (isFirstResult)
+                        {
+                            meshToAdd.ChangeId(brush.id);
+                        }
+                        else
+                        {
+                            meshToAdd = result.CloneWithNewId(model.GenerateMeshId());
+                        }
+
+                        if (model.CanAddMesh(meshToAdd))
+                        {
+                            commands.Add(new AddMeshCommand(meshToAdd));
                         }
                         else
                         {
                             // Abort everything if an invalid mesh would be generated.
                             return false;
+                        }
+                        isFirstResult = false;
+                    }
+                }
+                else
+                {
+                    // For all other operations (SUBTRACT, INTERSECT, SPLIT, PAINT_INTERSECT),
+                    // process each intersecting mesh independently
+                    foreach (int meshId in intersectingMeshIds)
+                    {
+                        MMesh mesh = model.GetMesh(meshId);
+                        List<MMesh> results = DoCsgOperation(mesh, brush, csgOp);
+                        commands.Add(new DeleteMeshCommand(mesh.id));
+                        bool isFirstResult = true;
+                        foreach (MMesh result in results)
+                        {
+                            MMesh meshToAdd = result;
+                            if (!isFirstResult)
+                            {
+                                meshToAdd = result.CloneWithNewId(model.GenerateMeshId());
+                            }
+
+                            if (model.CanAddMesh(meshToAdd))
+                            {
+                                commands.Add(new AddMeshCommand(meshToAdd));
+                            }
+                            else
+                            {
+                                // Abort everything if an invalid mesh would be generated.
+                                return false;
+                            }
+                            isFirstResult = false;
                         }
                     }
                 }
@@ -74,20 +140,45 @@ namespace com.google.apps.peltzer.client.model.csg
         }
 
         /// <summary>
-        ///   Performs CSG on two meshes.  Returns a new MMesh that is the result of the operation.
-        ///   If the result is an empty space, returns null.
+        ///   Performs CSG on two meshes.  Returns any resulting meshes for the operation.
+        ///   If the result is an empty space, returns an empty list.
         /// </summary>
-        public static MMesh DoCsgOperation(MMesh brush, MMesh target, CsgOperation csgOp = CsgOperation.SUBTRACT)
+        public static List<MMesh> DoCsgOperation(MMesh brush, MMesh target, CsgOperation csgOp = CsgOperation.SUBTRACT)
         {
-            // If the objects don't overlap, we have two fast paths:
+            if (csgOp == CsgOperation.SPLIT)
+            {
+                List<MMesh> splitResults = new List<MMesh>();
+                splitResults.AddRange(DoCsgOperation(brush, target, CsgOperation.SUBTRACT));
+                splitResults.AddRange(DoCsgOperation(brush, target, CsgOperation.INTERSECT));
+                return splitResults;
+            }
+
+            List<MMesh> meshes = new List<MMesh>();
+
+            // If the objects don't overlap, we have fast paths:
             if (!brush.bounds.Intersects(target.bounds))
             {
                 switch (csgOp)
                 {
                     case CsgOperation.INTERSECT:
-                        return null;
+                        // No intersection when bounds don't overlap
+                        return meshes;
                     case CsgOperation.SUBTRACT:
-                        return brush.Clone();
+                        // Subtracting non-overlapping object returns the original
+                        MMesh clone = brush.Clone();
+                        meshes.Add(clone);
+                        return meshes;
+                    case CsgOperation.UNION:
+                        // Union of non-overlapping objects is both objects
+                        MMesh brushClone = brush.Clone();
+                        MMesh targetClone = target.Clone();
+                        meshes.Add(brushClone);
+                        meshes.Add(targetClone);
+                        return meshes;
+                    case CsgOperation.PAINT_INTERSECT:
+                        // No intersection when bounds don't overlap
+                        return meshes;
+
                 }
             }
 
@@ -134,6 +225,9 @@ namespace com.google.apps.peltzer.client.model.csg
                 case CsgOperation.SUBTRACT:
                     result = CsgSubtract(ctx, leftObj, rightObj);
                     break;
+                case CsgOperation.PAINT_INTERSECT:
+                    result = CsgPaintIntersect(ctx, leftObj, rightObj);
+                    break;
             }
 
             if (result != null && result.Count > 0)
@@ -145,7 +239,7 @@ namespace com.google.apps.peltzer.client.model.csg
                     if (brush.remixIds != null) combinedRemixIds.UnionWith(brush.remixIds);
                     if (target.remixIds != null) combinedRemixIds.UnionWith(target.remixIds);
                 }
-                return FromPolys(
+                MMesh resultMesh = FromPolys(
                   brush.id,
                   brush.offset,
                   brush.rotation,
@@ -153,11 +247,10 @@ namespace com.google.apps.peltzer.client.model.csg
                   operationOffset,
                   operationScale,
                   combinedRemixIds);
+                meshes.Add(resultMesh);
             }
-            else
-            {
-                return null;
-            }
+
+            return meshes;
         }
 
         /// <summary>
@@ -172,9 +265,8 @@ namespace com.google.apps.peltzer.client.model.csg
             ClassifyPolygons(leftObj, rightObj);
             ClassifyPolygons(rightObj, leftObj);
 
-            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
             List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.OUTSIDE, PolygonStatus.OPPOSITE);
-            polys.AddRange(SelectPolygons(rightObj, true, facePropertiesForNewFaces, PolygonStatus.INSIDE));
+            polys.AddRange(SelectPolygons(rightObj, true, null, PolygonStatus.INSIDE));
 
             return polys;
         }
@@ -190,9 +282,8 @@ namespace com.google.apps.peltzer.client.model.csg
             ClassifyPolygons(leftObj, rightObj);
             ClassifyPolygons(rightObj, leftObj);
 
-            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
             List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.OUTSIDE, PolygonStatus.SAME);
-            polys.AddRange(SelectPolygons(rightObj, false, facePropertiesForNewFaces, PolygonStatus.OUTSIDE));
+            polys.AddRange(SelectPolygons(rightObj, false, null, PolygonStatus.OUTSIDE));
 
             return polys;
         }
@@ -208,11 +299,122 @@ namespace com.google.apps.peltzer.client.model.csg
             ClassifyPolygons(leftObj, rightObj);
             ClassifyPolygons(rightObj, leftObj);
 
-            FaceProperties facePropertiesForNewFaces = leftObj.polygons[0].faceProperties;
-            List<CsgPolygon> polys = SelectPolygons(leftObj, false, null, PolygonStatus.INSIDE, PolygonStatus.SAME);
-            polys.AddRange(SelectPolygons(rightObj, false, facePropertiesForNewFaces, PolygonStatus.INSIDE));
+            List<CsgPolygon> leftInside = SelectPolygons(leftObj, false, null, PolygonStatus.INSIDE);
+            List<CsgPolygon> rightInside = SelectPolygons(rightObj, false, null, PolygonStatus.INSIDE);
+            List<CsgPolygon> leftCoplanar = SelectPolygons(leftObj, false, null, PolygonStatus.SAME);
+            List<CsgPolygon> rightCoplanar = SelectPolygons(rightObj, false, null, PolygonStatus.SAME);
+
+            List<CsgPolygon> polys = new List<CsgPolygon>(
+              leftInside.Count + rightInside.Count + Mathf.Max(leftCoplanar.Count, rightCoplanar.Count));
+            polys.AddRange(leftInside);
+            polys.AddRange(rightInside);
+            polys.AddRange(MergeCoplanarPolygonsFavoringSecond(leftCoplanar, rightCoplanar));
 
             return polys;
+        }
+
+        /// <summary>
+        ///   Keep the left object geometry but recolor intersecting faces with the dominant
+        ///   material from the right object.
+        /// </summary>
+        private static List<CsgPolygon> CsgPaintIntersect(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
+        {
+            SplitObject(ctx, leftObj, rightObj);
+            SplitObject(ctx, rightObj, leftObj);
+            SplitObject(ctx, leftObj, rightObj);
+            ClassifyPolygons(leftObj, rightObj);
+            ClassifyPolygons(rightObj, leftObj);
+
+            FaceProperties? paintProperties = DetermineDominantFaceProperties(rightObj);
+
+            List<CsgPolygon> recolored = SelectPolygons(
+              leftObj,
+              invert: false,
+              overwriteFaceProperties: paintProperties,
+              PolygonStatus.INSIDE,
+              PolygonStatus.SAME,
+              PolygonStatus.OPPOSITE);
+            List<CsgPolygon> untouched = SelectPolygons(
+              leftObj,
+              invert: false,
+              overwriteFaceProperties: null,
+              PolygonStatus.OUTSIDE);
+
+            recolored.AddRange(untouched);
+
+            // Include any polygons that remain unclassified to preserve original geometry.
+            List<CsgPolygon> unknown = SelectPolygons(
+              leftObj,
+              invert: false,
+              overwriteFaceProperties: null,
+              PolygonStatus.UNKNOWN);
+            recolored.AddRange(unknown);
+
+            return recolored;
+        }
+
+        private static List<CsgPolygon> MergeCoplanarPolygonsFavoringSecond(
+          List<CsgPolygon> primary, List<CsgPolygon> secondary)
+        {
+            if (primary.Count == 0 && secondary.Count == 0)
+            {
+                return new List<CsgPolygon>();
+            }
+
+            if (primary.Count == 0)
+            {
+                return new List<CsgPolygon>(secondary);
+            }
+
+            if (secondary.Count == 0)
+            {
+                return new List<CsgPolygon>(primary);
+            }
+
+            Dictionary<string, CsgPolygon> merged =
+              new Dictionary<string, CsgPolygon>(primary.Count + secondary.Count);
+
+            foreach (CsgPolygon polygon in primary)
+            {
+                merged[BuildPolygonKey(polygon)] = polygon;
+            }
+
+            foreach (CsgPolygon polygon in secondary)
+            {
+                merged[BuildPolygonKey(polygon)] = polygon;
+            }
+
+            return new List<CsgPolygon>(merged.Values);
+        }
+
+        private static string BuildPolygonKey(CsgPolygon polygon)
+        {
+            int vertexCount = polygon.vertices.Count;
+            int[] vertexIds = new int[vertexCount];
+
+            for (int i = 0; i < vertexCount; i++)
+            {
+                vertexIds[i] = RuntimeHelpers.GetHashCode(polygon.vertices[i]);
+            }
+
+            int startIndex = 0;
+            for (int i = 1; i < vertexCount; i++)
+            {
+                if (vertexIds[i] < vertexIds[startIndex])
+                {
+                    startIndex = i;
+                }
+            }
+
+            StringBuilder builder = new StringBuilder(vertexCount * 12);
+            for (int i = 0; i < vertexCount; i++)
+            {
+                int index = (startIndex + i) % vertexCount;
+                builder.Append(vertexIds[index]);
+                builder.Append(',');
+            }
+
+            return builder.ToString();
         }
 
         /// <summary>
@@ -241,6 +443,42 @@ namespace com.google.apps.peltzer.client.model.csg
             }
 
             return polys;
+        }
+
+        private static FaceProperties? DetermineDominantFaceProperties(CsgObject obj)
+        {
+            if (obj.polygons.Count == 0)
+            {
+                return null;
+            }
+
+            Dictionary<int, int> materialUsageCounts = new Dictionary<int, int>();
+            foreach (CsgPolygon polygon in obj.polygons)
+            {
+                int materialId = polygon.faceProperties.materialId;
+                int existingCount;
+                if (materialUsageCounts.TryGetValue(materialId, out existingCount))
+                {
+                    materialUsageCounts[materialId] = existingCount + 1;
+                }
+                else
+                {
+                    materialUsageCounts[materialId] = 1;
+                }
+            }
+
+            int selectedMaterialId = obj.polygons[0].faceProperties.materialId;
+            int selectedCount = 0;
+            foreach (KeyValuePair<int, int> kvp in materialUsageCounts)
+            {
+                if (kvp.Value > selectedCount)
+                {
+                    selectedMaterialId = kvp.Key;
+                    selectedCount = kvp.Value;
+                }
+            }
+
+            return new FaceProperties(selectedMaterialId);
         }
 
         // Section 7:  Classify all polygons in the object.
@@ -310,10 +548,38 @@ namespace com.google.apps.peltzer.client.model.csg
         // Public for testing.
         public static void ClassifyPolygonUsingRaycast(CsgPolygon poly, CsgObject wrt)
         {
+            float closestPolyDist;
+            CsgPolygon closest = FindClosestPolygonUsingRaycast(poly, wrt, out closestPolyDist);
+
+            if (closest == null)
+            {
+                // Didn't hit any polys, we are outside.
+                poly.status = PolygonStatus.OUTSIDE;
+                return;
+            }
+
+            float dot = Vector3.Dot(poly.plane.normal, closest.plane.normal);
+            if (Mathf.Abs(closestPolyDist) < CsgMath.EPSILON)
+            {
+                poly.status = dot < 0 ? PolygonStatus.OPPOSITE : PolygonStatus.SAME;
+            }
+            else
+            {
+                poly.status = dot < 0 ? PolygonStatus.OUTSIDE : PolygonStatus.INSIDE;
+            }
+        }
+
+        /// <summary>
+        ///   Helper method to find the closest polygon to the given polygon using raycasting.
+        ///   Extracted for reuse in paint operations.
+        /// </summary>
+        private static CsgPolygon FindClosestPolygonUsingRaycast(
+          CsgPolygon poly, CsgObject wrt, out float closestPolyDist)
+        {
             Vector3 rayStart = poly.baryCenter;
             Vector3 rayNormal = poly.plane.normal;
             CsgPolygon closest = null;
-            float closestPolyDist = float.MaxValue;
+            closestPolyDist = float.MaxValue;
 
             bool done;
             int count = 0;
@@ -384,23 +650,7 @@ namespace com.google.apps.peltzer.client.model.csg
                 count++;
             } while (!done && count < 5);
 
-            if (closest == null)
-            {
-                // Didn't hit any polys, we are outside.
-                poly.status = PolygonStatus.OUTSIDE;
-            }
-            else
-            {
-                float dot = Vector3.Dot(poly.plane.normal, closest.plane.normal);
-                if (Mathf.Abs(closestPolyDist) < CsgMath.EPSILON)
-                {
-                    poly.status = dot < 0 ? PolygonStatus.OPPOSITE : PolygonStatus.SAME;
-                }
-                else
-                {
-                    poly.status = dot < 0 ? PolygonStatus.OUTSIDE : PolygonStatus.INSIDE;
-                }
-            }
+            return closest;
         }
 
         private static bool HasUnknown(CsgPolygon poly)
