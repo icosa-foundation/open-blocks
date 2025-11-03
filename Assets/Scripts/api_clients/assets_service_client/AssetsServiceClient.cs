@@ -19,7 +19,6 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -30,6 +29,7 @@ using com.google.apps.peltzer.client.api_clients.objectstore_client;
 using com.google.apps.peltzer.client.entitlement;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.menu;
+using ICSharpCode.SharpZipLib.Zip;
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using SimpleJSON;
 
@@ -42,12 +42,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private string assetId;
         private HashSet<string> remixIds;
         private SaveData saveData;
-        private byte[] objMultiPartBytes;
-        private byte[] triangulatedObjMultiPartBytes;
-        private byte[] mtlMultiPartBytes;
-        private byte[] fbxMultiPartBytes;
-        private byte[] blocksMultiPartBytes;
-        private byte[] thumbnailMultiPartBytes;
+        private byte[] assetArchiveBytes;
         private bool publish;
         private bool saveSelected;
 
@@ -64,51 +59,21 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         public void BackgroundWork()
         {
-            if (saveData.GLTFfiles != null)
-            {
-                saveData.GLTFfiles.root.multipartBytes = assetsServiceClient.MultiPartContent(saveData.GLTFfiles.root.fileName,
-                    saveData.GLTFfiles.root.mimeType, saveData.GLTFfiles.root.bytes);
-                foreach (FormatDataFile file in saveData.GLTFfiles.resources)
-                {
-                    file.multipartBytes = assetsServiceClient.MultiPartContent(file.fileName, file.mimeType, file.bytes);
-                }
-            }
-            if (saveData.objFile != null)
-            {
-                objMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.OBJ_FILENAME, "text/plain", saveData.objFile);
-                triangulatedObjMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.TRIANGULATED_OBJ_FILENAME,
-                    "text/plain", saveData.triangulatedObjFile);
-                mtlMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.MTL_FILENAME, "text/plain", saveData.mtlFile);
-            }
-            if (saveData.fbxFile != null)
-            {
-                fbxMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.FBX_FILENAME, "application/octet-stream",
-                    saveData.fbxFile);
-            }
-
-            // Blocks format MUST be present
-            blocksMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.BLOCKS_FILENAME, "application/octet-stream",
-              saveData.blocksFile);
-            thumbnailMultiPartBytes = assetsServiceClient.MultiPartContent(ExportUtils.THUMBNAIL_FILENAME, "image/png",
-              saveData.thumbnailBytes);
+            assetArchiveBytes = assetsServiceClient.CreateAssetArchive(saveData, remixIds, assetId, saveSelected);
         }
 
         public void PostWork()
         {
             if (assetId == null || saveSelected)
             {
-                StartCoroutine(assetsServiceClient.UploadModel(remixIds, objMultiPartBytes, saveData.objPolyCount,
-                  triangulatedObjMultiPartBytes, saveData.triangulatedObjPolyCount, mtlMultiPartBytes, saveData.GLTFfiles,
-                  fbxMultiPartBytes, blocksMultiPartBytes, thumbnailMultiPartBytes, publish, saveSelected));
+                StartCoroutine(assetsServiceClient.UploadModel(assetArchiveBytes, publish, saveSelected));
             }
             else
             {
                 // TODO
                 // How do we want to handle updating models?
                 // Can you update a published model?
-                StartCoroutine(assetsServiceClient.UpdateModel(assetId, remixIds, objMultiPartBytes, saveData.objPolyCount,
-                  triangulatedObjMultiPartBytes, saveData.triangulatedObjPolyCount, mtlMultiPartBytes, saveData.GLTFfiles,
-                  fbxMultiPartBytes, blocksMultiPartBytes, thumbnailMultiPartBytes, publish));
+                StartCoroutine(assetsServiceClient.UpdateModel(assetId, assetArchiveBytes, publish));
             }
         }
     }
@@ -380,7 +345,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return $"{ApiBaseUrl}/users/me/assets?{CommonQueryParams(QueryParamsUser)}";
         }
 
-        // Some regex.
+        // Boundary for multipart form data
         private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";
 
         // Most recent asset IDs we have seen in the "Featured" and "Liked" sections.
@@ -389,15 +354,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public static string mostRecentLikedAssetId;
 
         // Some state around an upload.
-        public enum UploadState { IN_PROGRESS, FAILED, SUCCEEDED }
         private string assetId;
-        private Dictionary<string, string> elementIds = new Dictionary<string, string>();
-        private Dictionary<string, UploadState> elementUploadStates = new Dictionary<string, UploadState>();
         private bool assetCreationSuccess;
-        private bool resourceUploadSuccess;
         private bool hasSavedSuccessfully;
-
-        private bool compressResourceUpload = true;
         private readonly object deflateMutex = new object();
         private byte[] tempDeflateBuffer = new byte[65536 * 4];
 
@@ -872,116 +831,249 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
 
         /// <summary>
-        ///   Uploads all the resources for a model to the Assets Service (in parallel).
-        ///   If every upload was successful, creates an asset out of them, and calls PeltzerMain to handle success.
-        ///   Else, calls PeltzerMain to handle failure.
-        ///   Whilst propagating success/failure as a return type might be more idiomatic, it's a pain here, so we
-        ///   avoid it. /shrug.
+        ///   Create the archive of files that will be uploaded to the Assets Service.
         /// </summary>
-        /// <param name="objFile">The bytes of an OBJ file representing this model</param>
-        /// <param name="objPolyCount">The poly count of the OBJ file</param>
-        /// <param name="triangulatedObjFile">The bytes of a triangulated OBJ file representing this model</param>
-        /// <param name="triangulatedObjPolyCount">The poly count of the triangulated OBJ file</param>
-        /// <param name="mtlFile">The bytes of an MTL file to pair with the OBJ file</param>
-        /// <param name="gltfData">All data required for the glTF files representing this model</param>
-        /// <param name="fbxFile">The bytes of a .fbx file representing this model</param>
-        /// <param name="blocksFile">The bytes of a PeltzerFile representing this model</param>
-        /// <param name="thumbnailFile">The bytes of an image file giving a thumbnail view of this model</param>
-        /// <param name="publish">If true, opens the 'publish' dialog on a user's browser after successful creation</param>
-        /// <param name="saveSelected">If true, only the currently selected content is saved.</param>
-        public IEnumerator UploadModel(HashSet<string> remixIds, byte[] objFile, int objPolyCount,
-          byte[] triangulatedObjFile, int triangulatedObjPolyCount, byte[] mtlFile, FormatSaveData gltfData,
-          byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile, bool publish, bool saveSelected)
+        public byte[] CreateAssetArchive(SaveData saveData, HashSet<string> remixIds, string existingAssetId, bool saveSelected)
         {
+            List<Tuple<string, byte[]>> files = new List<Tuple<string, byte[]>>();
 
-            yield return CreateNewAsset(saveSelected);
-
-            // Upload the resources.
-            // Create an asset if all uploads succeeded.
-            if (assetCreationSuccess)
+            if (saveData.objFile != null && saveData.objFile.Length > 0)
             {
-                yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
-                    blocksFile, thumbnailFile, saveSelected);
+                files.Add(Tuple.Create(ExportUtils.OBJ_FILENAME, saveData.objFile));
+                if (saveData.triangulatedObjFile != null && saveData.triangulatedObjFile.Length > 0)
+                {
+                    files.Add(Tuple.Create(ExportUtils.TRIANGULATED_OBJ_FILENAME, saveData.triangulatedObjFile));
+                }
+                if (saveData.mtlFile != null && saveData.mtlFile.Length > 0)
+                {
+                    files.Add(Tuple.Create(ExportUtils.MTL_FILENAME, saveData.mtlFile));
+                }
             }
 
-            if (resourceUploadSuccess)
+            if (saveData.fbxFile != null && saveData.fbxFile.Length > 0)
             {
-                yield return FinalizeAsset(assetId, gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
+                files.Add(Tuple.Create(ExportUtils.FBX_FILENAME, saveData.fbxFile));
+            }
+
+            if (saveData.GLTFfiles != null)
+            {
+                if (saveData.GLTFfiles.root != null && saveData.GLTFfiles.root.bytes != null && saveData.GLTFfiles.root.bytes.Length > 0)
+                {
+                    files.Add(Tuple.Create(saveData.GLTFfiles.root.fileName, saveData.GLTFfiles.root.bytes));
+                }
+
+                if (saveData.GLTFfiles.resources != null)
+                {
+                    foreach (FormatDataFile file in saveData.GLTFfiles.resources)
+                    {
+                        if (file != null && file.bytes != null && file.bytes.Length > 0)
+                        {
+                            files.Add(Tuple.Create(file.fileName, file.bytes));
+                        }
+                    }
+                }
+            }
+
+            if (saveData.blocksFile != null && saveData.blocksFile.Length > 0)
+            {
+                files.Add(Tuple.Create(ExportUtils.BLOCKS_FILENAME, saveData.blocksFile));
             }
             else
             {
-                // TODO: Handle failure.
+                Debug.LogError("Blocks data missing when creating asset archive.");
             }
 
-            // Show a toast informing the user that they uploaded to Zandria (or that there was an error)
+            if (!saveSelected && saveData.thumbnailBytes != null && saveData.thumbnailBytes.Length > 0)
+            {
+                files.Add(Tuple.Create(ExportUtils.THUMBNAIL_FILENAME, saveData.thumbnailBytes));
+            }
+
+            string metadataJson = CreateJsonForAssetResources(remixIds, saveData.objPolyCount,
+                saveData.triangulatedObjPolyCount, saveSelected, existingAssetId);
+            if (!string.IsNullOrEmpty(metadataJson))
+            {
+                files.Add(Tuple.Create("metadata.json", Encoding.UTF8.GetBytes(metadataJson)));
+            }
+
+
+            if (files.Count == 0)
+            {
+                Debug.LogError("No files were available when building the asset archive.");
+                return Array.Empty<byte>();
+            }
+
+            return BuildAssetArchive(files);
+        }
+
+        private byte[] BuildAssetArchive(List<Tuple<string, byte[]>> files)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var zipStream = new ZipOutputStream(memoryStream))
+                {
+                    zipStream.IsStreamOwner = false;
+                    zipStream.SetLevel(9);
+
+                    foreach (Tuple<string, byte[]> file in files)
+                    {
+                        if (file == null || string.IsNullOrEmpty(file.Item1) || file.Item2 == null || file.Item2.Length == 0)
+                        {
+                            continue;
+                        }
+
+                        ZipEntry entry = new ZipEntry(file.Item1)
+                        {
+                            DateTime = DateTime.UtcNow,
+                            Size = file.Item2.Length
+                        };
+                        zipStream.PutNextEntry(entry);
+                        zipStream.Write(file.Item2, 0, file.Item2.Length);
+                        zipStream.CloseEntry();
+                    }
+
+                    zipStream.Finish();
+                }
+
+                return memoryStream.ToArray();
+            }
+        }
+
+        private IEnumerator UploadAssetArchive(string url, byte[] assetArchive, string existingAssetId, bool saveSelected)
+        {
+            assetCreationSuccess = false;
+            assetId = existingAssetId;
+
+            if (assetArchive == null || assetArchive.Length == 0)
+            {
+                Debug.LogError("Asset archive was empty, aborting upload.");
+                yield break;
+            }
+
+            UnityWebRequest request = null;
+
+            // Wrap the zip archive in a multipart form
+            byte[] multipartFormData = MultiPartContent(
+                existingAssetId != null ? $"{existingAssetId}.zip" : "upload.zip",
+                "application/zip",
+                assetArchive);
+
+            for (int i = 0; i < 2; i++)
+            {
+                request = PostRequest(url, "multipart/form-data; boundary=" + BOUNDARY, multipartFormData, compressData: false);
+                request.downloadHandler = new DownloadHandlerBuffer();
+
+                yield return request.SendWebRequest();
+
+                if (request.responseCode == 401 || request.isNetworkError)
+                {
+                    yield return OAuth2Identity.Instance.Reauthorize();
+                    continue;
+                }
+
+                if (request.responseCode < 200 || request.responseCode >= 300)
+                {
+                    Debug.LogError(GetDebugString(request, "Unexpected response from Icosa"));
+                    yield break;
+                }
+
+                string responseText = request.downloadHandler.text;
+                try
+                {
+                    if (!string.IsNullOrEmpty(responseText))
+                    {
+                        PeltzerMain.Instance.UpdateCloudModelOntoPolyMenu(responseText);
+                        JSONNode responseJson = JSON.Parse(responseText);
+                        string idFromResponse = responseJson?["assetId"]?.Value;
+                        if (!string.IsNullOrEmpty(idFromResponse))
+                        {
+                            assetId = idFromResponse;
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(assetId) && !PeltzerMain.Instance.newModelSinceLastSaved && !saveSelected)
+                    {
+                        PeltzerMain.Instance.AssetId = assetId;
+                    }
+
+                    assetCreationSuccess = true;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Exception while saving to Icosa: {responseText}\n{e}");
+                }
+
+                if (!assetCreationSuccess)
+                {
+                    assetId = existingAssetId;
+                }
+
+                yield break;
+            }
+
+            Debug.LogError(GetDebugString(request, "Failed to save to Icosa"));
+        }
+
+        /// <summary>
+        ///   Uploads all data for a model to the Assets Service in a single request.
+        /// </summary>
+        public IEnumerator UploadModel(byte[] assetArchive, bool publish, bool saveSelected)
+        {
+            string url = $"{ApiBaseUrl}/users/me/assets";
+            yield return UploadAssetArchive(url, assetArchive, existingAssetId: null, saveSelected: saveSelected);
+
             PeltzerMain.Instance.HandleSaveComplete(assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
-            if (assetCreationSuccess)
+            if (!assetCreationSuccess)
             {
-                PeltzerMain.Instance.LoadSavedModelOntoPolyMenu(assetId, publish);
+                yield break;
             }
 
-            if (assetCreationSuccess && resourceUploadSuccess)
+            PeltzerMain.Instance.LoadSavedModelOntoPolyMenu(assetId, publish);
+
+            if (!saveSelected)
             {
-                // If we are only saving the selected content, then we don't want to overwrite the LastSavedAssetId
-                // as the id we are currently using is meant to be temporary.
-                if (!saveSelected)
+                PeltzerMain.Instance.LastSavedAssetId = assetId;
+            }
+            if (publish)
+            {
+                OpenPublishUrl(assetId);
+            }
+            else
+            {
+                // Don't prompt to publish if the tutorial is active or if we are only saving a selected
+                // subset of the model.
+                if (!PeltzerMain.Instance.tutorialManager.TutorialOccurring() && !saveSelected)
                 {
-                    PeltzerMain.Instance.LastSavedAssetId = assetId;
+                    // Encourage users to publish their creation.
+                    PeltzerMain.Instance.SetPublishAfterSavePromptActive();
                 }
-                if (publish)
+                if (!hasSavedSuccessfully)
                 {
-                    OpenPublishUrl(assetId);
-                }
-                else
-                {
-                    // Don't prompt to publish if the tutorial is active or if we are only saving a selected
-                    // subset of the model.
-                    if (!PeltzerMain.Instance.tutorialManager.TutorialOccurring() && !saveSelected)
-                    {
-                        // Encourage users to publish their creation.
-                        PeltzerMain.Instance.SetPublishAfterSavePromptActive();
-                    }
-                    if (!hasSavedSuccessfully)
-                    {
-                        // On the first successful save to Zandria we want to open up the browser to the users models so that they
-                        // understand that we save to the cloud and shows them where they can find their models.
-                        hasSavedSuccessfully = true;
-                        OpenSaveUrl();
-                    }
+                    // On the first successful save to Zandria we want to open up the browser to the users models so that they
+                    // understand that we save to the cloud and shows them where they can find their models.
+                    hasSavedSuccessfully = true;
+                    OpenSaveUrl();
                 }
             }
         }
 
         /// <summary>
-        ///   Updates an existing asset after uploading the new resources for it.
+        ///   Updates an existing asset using a single upload request.
         /// </summary>
-        public IEnumerator UpdateModel(string assetId, HashSet<string> remixIds, byte[] objFile, int objPolyCount,
-          byte[] triangulatedObjFile, int triangulatedObjPolyCount, byte[] mtlFile, FormatSaveData gltfData,
-          byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile, bool publish)
+        public IEnumerator UpdateModel(string assetId, byte[] assetArchive, bool publish)
         {
-            this.assetId = assetId;
-            // Upload the resources.
-            yield return UploadResources(objFile, triangulatedObjFile, mtlFile, gltfData, fbxFile,
-                blocksFile, thumbnailFile, saveSelected: false);
+            string url = $"{ApiBaseUrl}/users/me/assets/{assetId}";
+            yield return UploadAssetArchive(url, assetArchive, assetId, saveSelected: false);
 
-
-            assetCreationSuccess = true; // Temporary until we reimplement this
-            // Update the asset if all uploads succeded.
-            if (resourceUploadSuccess)
+            PeltzerMain.Instance.HandleSaveComplete(assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
+            if (!assetCreationSuccess)
             {
-                yield return FinalizeAsset(assetId, gltfData, objPolyCount, triangulatedObjPolyCount, remixIds);
+                yield break;
             }
 
-            // Show a toast informing the user that they uploaded to Zandria, or that there was an error.
-            PeltzerMain.Instance
-              .HandleSaveComplete(assetCreationSuccess, assetCreationSuccess ? "Saved" : "Save failed");
-            if (assetCreationSuccess)
+            PeltzerMain.Instance.LastSavedAssetId = this.assetId;
+            if (publish)
             {
-                PeltzerMain.Instance.LastSavedAssetId = assetId;
-                if (publish)
-                {
-                    OpenPublishUrl(assetId);
-                }
+                OpenPublishUrl(this.assetId);
             }
         }
 
@@ -1002,241 +1094,23 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             PeltzerMain.Instance.HasOpenedSaveUrlThisSession = true;
         }
 
-        /// <summary>
-        ///   Upload all required resources for a creation/overwrite request.
-        /// </summary>
-        private IEnumerator UploadResources(byte[] objFile, byte[] triangulatedObjFile,
-          byte[] mtlFile, FormatSaveData gltfData, byte[] fbxFile, byte[] blocksFile, byte[] thumbnailFile,
-          bool saveSelected)
+        private string CreateJsonForAssetResources(HashSet<string> remixIds, int objPolyCount, int triangulatedObjPolyCount, bool saveSelected, string existingAssetId)
         {
-            if (objFile != null)
-            {
-                yield return StartCoroutine(AddResource(ExportUtils.OBJ_FILENAME, "text/plain", objFile, "obj"));
-                yield return StartCoroutine(AddResource(ExportUtils.TRIANGULATED_OBJ_FILENAME, "text/plain", triangulatedObjFile, "triangulated-obj"));
-                yield return StartCoroutine(AddResource(ExportUtils.MTL_FILENAME, "text/plain", mtlFile, "mtl"));
-            }
-            if (fbxFile != null)
-            {
-                yield return StartCoroutine(AddResource(ExportUtils.FBX_FILENAME, "application/octet-stream", fbxFile, "fbx"));
-            }
-            if (gltfData != null)
-            {
-                yield return StartCoroutine(AddResource(gltfData.root.fileName, gltfData.root.mimeType, gltfData.root.multipartBytes, gltfData.root.tag));
-                for (int i = 0; i < gltfData.resources.Count; i++)
-                {
-                    FormatDataFile file = gltfData.resources[i];
-                    yield return StartCoroutine(AddResource(file.fileName, file.mimeType, file.multipartBytes, file.tag + i));
-                }
-            }
+            JObject metadata = new JObject();
 
-            yield return StartCoroutine(AddResource(ExportUtils.BLOCKS_FILENAME, "application/octet-stream", blocksFile, "blocks"));
+            if (!string.IsNullOrEmpty(existingAssetId))
+            {
+                metadata["assetId"] = existingAssetId;
+            }
 
             if (!saveSelected)
             {
-                yield return StartCoroutine(AddResource(ExportUtils.THUMBNAIL_FILENAME, "image/png", thumbnailFile, "png"));
+                metadata["objPolyCount"] = objPolyCount.ToString();
+                metadata["triangulatedObjPolyCount"] = triangulatedObjPolyCount.ToString();
+                metadata["remixIds"] = remixIds != null ? new JArray(remixIds) : new JArray();
             }
 
-            // Wait for all uploads to complete (or fail);
-            UploadState overallState = UploadState.IN_PROGRESS;
-            while (overallState == UploadState.IN_PROGRESS)
-            {
-                bool allSucceeded = true;
-                foreach (KeyValuePair<string, UploadState> pair in elementUploadStates)
-                {
-                    switch (pair.Value)
-                    {
-                        case UploadState.FAILED:
-                            Debug.LogError("Failed to upload " + pair.Key);
-                            allSucceeded = false;
-                            overallState = UploadState.FAILED;
-                            resourceUploadSuccess = false;
-                            break;
-                        case UploadState.IN_PROGRESS:
-                            allSucceeded = false;
-                            break;
-                    }
-                }
-                if (allSucceeded)
-                {
-                    overallState = UploadState.SUCCEEDED;
-                    resourceUploadSuccess = true;
-                }
-                yield return null;
-            }
-        }
-
-        /// <summary>
-        ///   Create a new asset from the uploaded files.
-        /// </summary>
-        private IEnumerator CreateNewAsset(bool saveSelected)
-        {
-            string url = $"{ApiBaseUrl}/users/me/assets";
-            UnityWebRequest request = new UnityWebRequest();
-
-            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
-            for (int i = 0; i < 2; i++)
-            {
-                // TODO add metadata to the asset
-                // string json = CreateJsonForAssetResources(remixIds, objPolyCount, triangulatedObjPolyCount, "(Untitled)", saveSelected);
-
-                // Create an empty asset ready to be filled with resources.
-                request = PostRequest(
-                    url,
-                    "multipart/form-data; boundary=" + BOUNDARY,
-                    Array.Empty<byte>(),
-                    compressResourceUpload
-                );
-                request.downloadHandler = new DownloadHandlerBuffer();
-
-                yield return request.SendWebRequest();
-
-                if (request.responseCode == 401 || request.isNetworkError)
-                {
-                    yield return OAuth2Identity.Instance.Reauthorize();
-                    continue;
-                }
-
-                if (request.responseCode < 200 || request.responseCode >= 300)
-                {
-                    Debug.LogError($"Unexpected response from Icosa: {request.downloadHandler.text}");
-                    yield break;
-                }
-                try
-                {
-                    var responseJson = JSON.Parse(request.downloadHandler.text);
-                    assetId = responseJson["assetId"];
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"Exception while save to Icosa: {request.downloadHandler.text}\n{e}");
-                    yield break;
-                }
-
-                // Only update the global AssetId if the user has not hit 'new model' or opened a model
-                // since this save began, and if we are not only saving selected content, as the id used
-                // is meant to be temporary.
-                if (!PeltzerMain.Instance.newModelSinceLastSaved && !saveSelected)
-                {
-                    PeltzerMain.Instance.AssetId = assetId;
-                }
-                assetCreationSuccess = true;
-                yield break;
-            }
-
-            Debug.LogError(GetDebugString(request, "Failed to save to asset store"));
-        }
-
-        /// <summary>
-        ///   Overload of the above method used for updating an existing asset.
-        /// </summary>
-        private IEnumerator FinalizeAsset(string assetId, FormatSaveData saveData, int objPolyCount,
-          int triangulatedObjPolyCount, HashSet<string> remixIds)
-        {
-            string json = CreateJsonForAssetResources(remixIds, objPolyCount, triangulatedObjPolyCount, saveSelected: false);
-
-            string url = $"{ApiBaseUrl}/users/me/assets/{assetId}/blocks_finalize";
-            UnityWebRequest request = new UnityWebRequest();
-
-            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
-            for (int i = 0; i < 2; i++)
-            {
-                request = PostRequest(
-                    url,
-                    "application/json",
-                    Encoding.UTF8.GetBytes(json)
-                );
-                request.downloadHandler = new DownloadHandlerBuffer();
-
-                yield return request.SendWebRequest();
-
-                if (request.responseCode == 401 || request.isNetworkError)
-                {
-                    yield return OAuth2Identity.Instance.Reauthorize();
-                    continue;
-                }
-
-                if (request.responseCode < 200 || request.responseCode >= 300)
-                {
-                    Debug.LogError($"Unexpected response from Icosa: {request.downloadHandler.text}");
-                    yield break;
-                }
-
-                try
-                {
-                    var responseJson = JObject.Parse(request.downloadHandler.text);
-                    assetId = responseJson["assetId"].ToString();
-                    PeltzerMain.Instance.UpdateCloudModelOntoPolyMenu(request.downloadHandler.text);
-                    assetCreationSuccess = true;
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"Failed to update {assetId} on Icosa. Response: {request.downloadHandler.text}\n{e}"); ;
-                }
-                yield break;
-            }
-            Debug.LogError(GetDebugString(request, "Failed to save to Icosa"));
-        }
-
-        private string CreateJsonForAssetResources(HashSet<string> remixIds, int objPolyCount, int triangulatedObjPolyCount, bool saveSelected)
-        {
-            string json = "";
-            if (!saveSelected)
-            {
-                string remixIdsJson = String.Join(",", remixIds.Select(remixId => $@"""{remixId}"""));
-                json = $@"{{""objPolyCount"": ""{objPolyCount}"", ""triangulatedObjPolyCount"": ""{triangulatedObjPolyCount}"", ""remixIds"": [{remixIdsJson}]}}";
-            }
-            return json;
-        }
-
-        /// <summary>
-        ///   Add a resource to the existing asset.
-        /// </summary>
-        private IEnumerator AddResource(string filename, string mimeType, byte[] data, string key)
-        {
-            elementUploadStates.Add(key, UploadState.IN_PROGRESS);
-            string url = $"{ApiBaseUrl}/users/me/assets/{assetId}/blocks_format";
-            UnityWebRequest request = new UnityWebRequest();
-
-            // Run this twice so we can re-authorise if access tokens have become stale.
-            for (int i = 0; i < 2; i++)
-            {
-                compressResourceUpload = false; // TODO remove once we've added support for compressed resources
-
-                request = PostRequest(url, "multipart/form-data; boundary=" + BOUNDARY, data, compressResourceUpload);
-                request.downloadHandler = new DownloadHandlerBuffer();
-
-                yield return request.SendWebRequest();
-
-                if (request.responseCode == 401 || request.isNetworkError)
-                {
-                    yield return OAuth2Identity.Instance.Reauthorize();
-                    continue;
-                }
-
-                if (request.responseCode >= 200 && request.responseCode <= 299)
-                {
-                    try
-                    {
-                        elementIds[key] = "some_id"; // match.Groups[1].Captures[0].Value; TODO do we still need this?
-                        elementUploadStates[key] = UploadState.SUCCEEDED;
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogError(GetDebugString(request, $"Failed to save {filename} Response {request.responseCode}: {e}"));
-                        elementUploadStates[key] = UploadState.FAILED;
-                    }
-                }
-                else
-                {
-                    Debug.LogError(GetDebugString(request, $"Failed to save {filename} Response {request.responseCode}"));
-                    elementUploadStates[key] = UploadState.FAILED;
-                }
-                yield break;
-            }
-
-            // Failed twice
-            elementUploadStates[key] = UploadState.FAILED;
-            Debug.LogError(GetDebugString(request, "Failed to save " + filename + " to asset store"));
+            return metadata.HasValues ? metadata.ToString() : string.Empty;
         }
 
         /// <summary>
@@ -1271,12 +1145,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             // Write the media part of the request from the data.
             sw.Write("--" + BOUNDARY);
-            sw.Write(string.Format(
-              "\r\nContent-Disposition: form-data; name=\"files\"; filename=\"{0}\"\r\nContent-Type: {1}\r\n\r\n",
-              filename, mimeType));
+            sw.Write($"\r\nContent-Disposition: form-data; name=\"files\"; filename=\"{filename}\"\r\nContent-Type: {mimeType}\r\n\r\n");
             sw.Flush();
             stream.Write(data, 0, data.Length);
             sw.Write("\r\n--" + BOUNDARY + "--\r\n");
+            sw.Flush();
             sw.Close();
 
             return stream.ToArray();
