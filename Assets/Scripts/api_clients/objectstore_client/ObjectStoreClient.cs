@@ -1059,6 +1059,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     }
 
                     mesh.RecalcReverseTable();
+                    EnsureReverseTableCoverage(mesh);
 
                     MMesh.GeometryOperation operation = mesh.StartOperation();
                     foreach (int vertexId in mesh.GetVertexIds())
@@ -1067,10 +1068,26 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         Vector3 adjusted = orientationFix * ((loc - center) * scale);
                         operation.ModifyVertexMeshSpace(vertexId, adjusted);
                     }
-                    operation.Commit();
+                    operation.CommitWithoutRecalculation();
                     mesh.offset = Vector3.zero;
                     mesh.rotation = Quaternion.identity;
                     mesh.RecalcBounds();
+                }
+            }
+
+            private static void EnsureReverseTableCoverage(MMesh mesh)
+            {
+                if (mesh == null || mesh.reverseTable == null)
+                {
+                    return;
+                }
+
+                foreach (int vertexId in mesh.GetVertexIds())
+                {
+                    if (!mesh.reverseTable.ContainsKey(vertexId))
+                    {
+                        mesh.reverseTable[vertexId] = new HashSet<int>();
+                    }
                 }
             }
 
