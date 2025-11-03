@@ -50,12 +50,12 @@ namespace com.google.apps.peltzer.client.model.import
             return false;
         }
 
-        private static int TryGetMaterialId(Material material)
+        private static int TryGetMaterialId(string materialName)
         {
-            if (material.name.StartsWith("mat"))
+            if (!string.IsNullOrEmpty(materialName) && materialName.StartsWith("mat"))
             {
                 int val = 1;
-                if (int.TryParse(material.name.Substring(3), out val))
+                if (int.TryParse(materialName.Substring(3), out val))
                 {
                     return val;
                 }
@@ -321,7 +321,7 @@ namespace com.google.apps.peltzer.client.model.import
                             newFaceIndex,
                             singleFaceIndices.AsReadOnly(),
                             verticesById,
-                            new FaceProperties(TryGetMaterialId(materials[currentMaterial]))
+                            new FaceProperties(TryGetMaterialId(currentMaterial))
                         );
                         facesById.Add(newFaceIndex++, newFace);
                         faceIndices.Add(singleFaceIndices);
@@ -330,13 +330,7 @@ namespace com.google.apps.peltzer.client.model.import
                 } // foreach facelist
 
                 mmesh = new MMesh(id, Vector3.zero, Quaternion.identity, verticesById, facesById);
-
-                // If all faces are triangular, presume it's been triangulated already
-                // and try to merge coplanar faces to ngons
-                if (allTriangularFaces)
-                {
-                    CoplanarFaceMerger.MergeCoplanarFaces(mmesh);
-                }
+                CoplanarFaceMerger.MergeCoplanarFaces(mmesh);
             }
             return true;
         }

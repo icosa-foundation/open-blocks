@@ -2019,16 +2019,16 @@ namespace com.google.apps.peltzer.client.model.main
                 BackgroundWork work;
                 if (polyMenuBackgroundQueue.WaitAndDequeue(/* wait time ms */ 1000, out work))
                 {
-                    try
-                    {
+                    // try
+                    // {
                         work.BackgroundWork();
                         forMainThread.Enqueue(work);
-                    }
-                    catch (Exception e)
-                    {
+                    // }
+                    // catch (Exception e)
+                    // {
                         // Should probably be a fatal error.  For now, just log something.
-                        Debug.LogError("Exception handling background work: " + e);
-                    }
+                        // Debug.LogError("Exception handling background work: " + e);
+                    // }
                 }
             }
         }

@@ -55,6 +55,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         public string rootUrl;
         public string[] supportingFiles;
         public string baseFile;
+        public string version; // "GLTF", "GLTF1", or "GLTF2"
     }
 
     [Serializable]
@@ -65,5 +66,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         public ObjectStorePeltzerPackageAssets peltzer_package;
         public ObjectStoreObjMtlPackageAssets object_package;
         public ObjectStoreGltfPackageAssets gltf_package;
+        public ObjectStoreGltfPackageAssets gltf;
     }
 }

@@ -185,7 +185,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public int TriangleCountMax;
         public string License;
         public string OrderBy;
-        public string Format;
+        public string[] Formats;
         public string Curated;
         public string Category;
 
@@ -195,7 +195,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 "TriangleCountMax: " + TriangleCountMax + "\n" +
                 "License: " + License + "\n" +
                 "OrderBy: " + OrderBy + "\n" +
-                "Format: " + Format + "\n" +
+                "Format: " + Formats + "\n" +
                 "Curated: " + Curated + "\n" +
                 "Category: " + Category;
         }
@@ -208,7 +208,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 TriangleCountMax = TriangleCountMax,
                 License = License,
                 OrderBy = OrderBy,
-                Format = Format,
+                Formats = Formats,
                 Curated = Curated,
                 Category = Category
             };
@@ -228,7 +228,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 TriangleCountMax == other.TriangleCountMax &&
                 string.Equals(License, other.License) &&
                 string.Equals(OrderBy, other.OrderBy) &&
-                string.Equals(Format, other.Format) &&
+                string.Equals(Formats, other.Formats) &&
                 string.Equals(Curated, other.Curated) &&
                 string.Equals(Category, other.Category);
         }
@@ -240,7 +240,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 TriangleCountMax,
                 License,
                 OrderBy,
-                Format,
+                Formats,
                 Curated,
                 Category
             );
@@ -273,7 +273,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.ANY,
             OrderBy = OrderByChoices.NEWEST,
-            Format = FormatChoices.BLOCKS,
+            Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.BLOCKS, FormatChoices.GLTF2, FormatChoices.OBJ },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
@@ -284,7 +284,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.LIKED_TIME,
-            Format = FormatChoices.BLOCKS,
+            Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.BLOCKS, FormatChoices.GLTF2, FormatChoices.OBJ },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
@@ -295,7 +295,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.BEST,
-            Format = FormatChoices.BLOCKS,
+            Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.BLOCKS, FormatChoices.GLTF2, FormatChoices.OBJ },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
@@ -351,7 +351,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             // This might exceed the limit imposed by the server (currently 100)
             int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-            string url = $"format={q.Format}&";
+            string url = string.Join("", q.Formats.Select(format => $"format={format}&"));
             url += $"pageSize={pageSize}&";
             url += $"orderBy={q.OrderBy}&";
             if (q.TriangleCountMax > 0) url += $"triangleCountMax={q.TriangleCountMax}&";
@@ -631,6 +631,15 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
         }
 
+        private static string GetZipArchiveUrl(JToken formatRoot)
+        {
+            return formatRoot?["zipArchiveUrl"]?.ToString()
+              ?? formatRoot?["zip_archive_url"]?.ToString()
+              ?? formatRoot?["zipArchive"]?["url"]?.ToString()
+              ?? formatRoot?["zip_archive"]?["url"]?.ToString()
+              ?? formatRoot?["zip"]?["url"]?.ToString();
+        }
+
         /// <summary>
         ///   Parses a single asset as defined in vr/assets/asset.proto
         /// </summary>
@@ -708,7 +717,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                             }
                             break;
                         case "OBJ":
-                        case "OBJECT":
                             ParseFormatPaths(format, out string objRootUrl, out string objBaseFile,
                               out string[] objSupportingFiles);
                             if (!string.IsNullOrEmpty(objRootUrl))
@@ -720,12 +728,20 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                                     supportingFiles = objSupportingFiles
                                 };
                                 entryAssets.obj = entryAssets.obj ?? objAssets;
-                                entryAssets.object_package = new ObjectStoreObjMtlPackageAssets
+                                hasSupportedFormat = true;
+                            }
+                            break;
+                        case "OBJECT":
+                            string zipArchiveUrl = GetZipArchiveUrl(format);
+                            if (!string.IsNullOrEmpty(zipArchiveUrl))
+                            {
+                                var objectPackageAssets = new ObjectStoreObjMtlPackageAssets
                                 {
-                                    rootUrl = objRootUrl,
-                                    baseFile = objBaseFile ?? string.Empty,
-                                    supportingFiles = objSupportingFiles
+                                    rootUrl = zipArchiveUrl,
+                                    baseFile = string.Empty,
+                                    supportingFiles = null
                                 };
+                                entryAssets.object_package = entryAssets.object_package ?? objectPackageAssets;
                                 hasSupportedFormat = true;
                             }
                             break;
@@ -736,13 +752,30 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                               out string[] gltfSupportingFiles);
                             if (!string.IsNullOrEmpty(gltfRootUrl))
                             {
-                                entryAssets.gltf_package = new ObjectStoreGltfPackageAssets
+                                var gltfAssets = new ObjectStoreGltfPackageAssets
                                 {
                                     rootUrl = gltfRootUrl,
                                     baseFile = gltfBaseFile ?? string.Empty,
-                                    supportingFiles = gltfSupportingFiles
+                                    supportingFiles = gltfSupportingFiles,
+                                    version = formatType
                                 };
-                                hasSupportedFormat = true;
+
+                                bool looksLikeGlb = (!string.IsNullOrEmpty(gltfBaseFile) && gltfBaseFile.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
+                                  || gltfRootUrl.EndsWith(".glb", StringComparison.OrdinalIgnoreCase);
+
+                                if (looksLikeGlb)
+                                {
+                                    entryAssets.gltf_package = entryAssets.gltf_package ?? gltfAssets;
+                                }
+                                else
+                                {
+                                    entryAssets.gltf = entryAssets.gltf ?? gltfAssets;
+                                }
+
+                                if (formatType == "GLTF2")
+                                {
+                                    hasSupportedFormat = true;
+                                }
                             }
                             break;
                     }
@@ -1440,7 +1473,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 OAuth2Identity.Instance.Authenticate(request);
             }
-            Debug.Log($"request: {request.url}");
+            //Debug.Log($"request: {request.url}");
             return request;
         }
 
