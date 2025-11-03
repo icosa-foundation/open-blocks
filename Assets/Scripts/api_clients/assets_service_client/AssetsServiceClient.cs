@@ -284,9 +284,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
             }
         }
-        // Boundary for multipart form data
-        private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";
-
         // Key names for player prefs
         public static string WEB_BASE_URL_KEY = "WEB_BASE_URL";
         public static string API_BASE_URL_KEY = "API_BASE_URL";
@@ -347,6 +344,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             return $"{ApiBaseUrl}/users/me/assets?{CommonQueryParams(QueryParamsUser)}";
         }
+
+        // Boundary for multipart form data
+        private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";
 
         // Most recent asset IDs we have seen in the "Featured" and "Liked" sections.
         // Used for polling economically (so we know which part of the results is new and which part isn't).
@@ -905,26 +905,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return BuildAssetArchive(files);
         }
 
-        /// <summary>
-        /// Create multipart form data content for uploading a file.
-        /// </summary>
-        private byte[] MultiPartContent(string filename, string mimeType, byte[] data)
-        {
-            MemoryStream stream = new MemoryStream();
-            StreamWriter sw = new StreamWriter(stream);
-
-            // Write the media part of the request from the data.
-            sw.Write("--" + BOUNDARY);
-            sw.Write($"\r\nContent-Disposition: form-data; name=\"files\"; filename=\"{filename}\"\r\nContent-Type: {mimeType}\r\n\r\n");
-            sw.Flush();
-            stream.Write(data, 0, data.Length);
-            sw.Write("\r\n--" + BOUNDARY + "--\r\n");
-            sw.Flush();
-            sw.Close();
-
-            return stream.ToArray();
-        }
-
         private byte[] BuildAssetArchive(List<Tuple<string, byte[]>> files)
         {
             using (var memoryStream = new MemoryStream())
@@ -1053,19 +1033,23 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 PeltzerMain.Instance.LastSavedAssetId = assetId;
             }
-
             if (publish)
             {
                 OpenPublishUrl(assetId);
             }
             else
             {
+                // Don't prompt to publish if the tutorial is active or if we are only saving a selected
+                // subset of the model.
                 if (!PeltzerMain.Instance.tutorialManager.TutorialOccurring() && !saveSelected)
                 {
+                    // Encourage users to publish their creation.
                     PeltzerMain.Instance.SetPublishAfterSavePromptActive();
                 }
                 if (!hasSavedSuccessfully)
                 {
+                    // On the first successful save to Zandria we want to open up the browser to the users models so that they
+                    // understand that we save to the cloud and shows them where they can find their models.
                     hasSavedSuccessfully = true;
                     OpenSaveUrl();
                 }
@@ -1149,6 +1133,26 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
             }
             return debugString.ToString();
+        }
+
+        /// <summary>
+        ///   Build the binary multipart content manually, since Unity's multipart stuff is borked.
+        /// </summary>
+        public byte[] MultiPartContent(string filename, string mimeType, byte[] data)
+        {
+            MemoryStream stream = new MemoryStream();
+            StreamWriter sw = new StreamWriter(stream);
+
+            // Write the media part of the request from the data.
+            sw.Write("--" + BOUNDARY);
+            sw.Write($"\r\nContent-Disposition: form-data; name=\"files\"; filename=\"{filename}\"\r\nContent-Type: {mimeType}\r\n\r\n");
+            sw.Flush();
+            stream.Write(data, 0, data.Length);
+            sw.Write("\r\n--" + BOUNDARY + "--\r\n");
+            sw.Flush();
+            sw.Close();
+
+            return stream.ToArray();
         }
 
         /// <summary>
