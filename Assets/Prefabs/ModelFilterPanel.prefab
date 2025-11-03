@@ -1801,7 +1801,7 @@ PrefabInstance:
     - target: {fileID: 3872651891321024858, guid: 67e185c2436d008428bcab0059b842c9,
         type: 3}
       propertyPath: m_Value
-      value: TECHNOLOGY
+      value: TECH
       objectReference: {fileID: 0}
     - target: {fileID: 3872651891321024858, guid: 67e185c2436d008428bcab0059b842c9,
         type: 3}
