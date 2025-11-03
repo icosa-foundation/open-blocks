@@ -771,8 +771,9 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     {
                         foreach (var kvp in additionalFiles)
                         {
-                            string filePath = Path.Combine(tempDir, kvp.Key);
-                            string fileDir = Path.GetDirectoryName(filePath);
+                                string sanitizedKey = kvp.Key.Replace("\\", "/");
+                                string filePath = Path.Combine(tempDir, sanitizedKey);
+                                string fileDir = Path.GetDirectoryName(filePath);
                             if (!Directory.Exists(fileDir))
                             {
                                 Directory.CreateDirectory(fileDir);
