@@ -331,6 +331,7 @@ namespace com.google.apps.peltzer.client.model.import
 
                 mmesh = new MMesh(id, Vector3.zero, Quaternion.identity, verticesById, facesById);
                 CoplanarFaceMerger.MergeCoplanarFaces(mmesh);
+                ApplyImportOrientationFix(mmesh);
             }
             return true;
         }
@@ -384,6 +385,25 @@ namespace com.google.apps.peltzer.client.model.import
                 subMeshes.Add(new MeshVerticesAndTriangles(subMeshVertices.ToArray(), subMeshTriangles.ToArray()));
             }
             return subMeshes;
+        }
+
+        private static void ApplyImportOrientationFix(MMesh mesh)
+        {
+            if (mesh == null)
+            {
+                return;
+            }
+
+            Quaternion orientationFix = Quaternion.Euler(0f, 180f, 0f);
+            MMesh.GeometryOperation operation = mesh.StartOperation();
+            foreach (int vertexId in mesh.GetVertexIds())
+            {
+                Vector3 loc = mesh.VertexPositionInMeshCoords(vertexId);
+                operation.ModifyVertexMeshSpace(vertexId, orientationFix * loc);
+            }
+            operation.Commit();
+            mesh.offset = orientationFix * mesh.offset;
+            mesh.RecalcBounds();
         }
     }
 }
