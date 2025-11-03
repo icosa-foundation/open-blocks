@@ -771,8 +771,9 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     {
                         foreach (var kvp in additionalFiles)
                         {
-                                string sanitizedKey = kvp.Key.Replace("\\", "/");
-                                string filePath = Path.Combine(tempDir, sanitizedKey);
+                            string sanitizedKey = kvp.Key.Replace("\\", "/").TrimStart('/');
+                            string decodedKey = Uri.UnescapeDataString(sanitizedKey);
+                            string filePath = Path.Combine(tempDir, decodedKey);
                                 string fileDir = Path.GetDirectoryName(filePath);
                             if (!Directory.Exists(fileDir))
                             {
@@ -1055,6 +1056,11 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         continue;
                     }
 
+                    foreach (int vertexId in mesh.GetVertexIds())
+                    {
+                        EnsureReverseTableEntry(mesh, vertexId);
+                    }
+
                     MMesh.GeometryOperation operation = mesh.StartOperation();
                     foreach (int vertexId in mesh.GetVertexIds())
                     {
@@ -1066,6 +1072,25 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     mesh.offset = Vector3.zero;
                     mesh.RecalcBounds();
                 }
+            }
+
+            private static void EnsureReverseTableEntry(MMesh mesh, int vertexId)
+            {
+                if (mesh.reverseTable.ContainsKey(vertexId))
+                {
+                    return;
+                }
+
+                HashSet<int> faces = new HashSet<int>();
+                foreach (Face face in mesh.GetFaces())
+                {
+                    if (face.vertexIds.Contains(vertexId))
+                    {
+                        faces.Add(face.id);
+                    }
+                }
+
+                mesh.reverseTable[vertexId] = faces;
             }
         }
     }
