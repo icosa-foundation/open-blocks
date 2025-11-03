@@ -37,9 +37,15 @@ namespace com.google.apps.peltzer.client.model.import
         /// <param name="id">The id of the new MMesh.</param>
         /// <param name="result">The created mesh, or null if it could not be created.</param>
         /// <returns>Whether the MMesh could be created.</returns>
-        public static bool MMeshFromObjFile(string objFileContents, string mtlFileContents, int id, out MMesh result)
+        public static bool MMeshFromObjFile(
+          string objFileContents,
+          string mtlFileContents,
+          int id,
+          out MMesh result,
+          string textureSearchDirectory = null,
+          Dictionary<string, Texture2D> externalTextures = null)
         {
-            Dictionary<string, Material> materials = ImportMaterials(mtlFileContents);
+            Dictionary<string, Material> materials = ImportMaterials(mtlFileContents, textureSearchDirectory, externalTextures);
             var success = ImportMeshes(id, objFileContents, materials, out MMesh mmesh);
             if (success)
             {
@@ -63,7 +69,10 @@ namespace com.google.apps.peltzer.client.model.import
             return 1;
         }
 
-        public static Dictionary<string, Material> ImportMaterials(string materialsString)
+        public static Dictionary<string, Material> ImportMaterials(
+          string materialsString,
+          string textureSearchDirectory,
+          Dictionary<string, Texture2D> externalTextures)
         {
             Dictionary<string, Material> materials = new Dictionary<string, Material>();
             if (materialsString == null || materialsString.Length == 0)
@@ -78,6 +87,7 @@ namespace com.google.apps.peltzer.client.model.import
                     {
                         string materialName = currentText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1];
                         Color materialColor = Color.white;
+                        string albedoTextureReference = null;
 
                         currentText = reader.ReadLine();
                         while (currentText != null && !currentText.StartsWith("newmtl"))
@@ -91,9 +101,17 @@ namespace com.google.apps.peltzer.client.model.import
                             }
                             else if (currentText.StartsWith("Kd"))
                             {
-                                string[] colorString = currentText.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                                string[] colorString = currentText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                                 materialColor = new Color(float.Parse(colorString[1]), float.Parse(colorString[2]),
                                   float.Parse(colorString[3]));
+                            }
+                            else if (currentText.StartsWith("map_Kd", StringComparison.OrdinalIgnoreCase))
+                            {
+                                string[] mapTokens = currentText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (mapTokens.Length >= 2)
+                                {
+                                    albedoTextureReference = string.Join(" ", mapTokens, 1, mapTokens.Length - 1);
+                                }
                             }
                             currentText = reader.ReadLine();
                         }
@@ -115,6 +133,15 @@ namespace com.google.apps.peltzer.client.model.import
                             material.color = materialColor;
                         }
 
+                        if (!string.IsNullOrEmpty(albedoTextureReference))
+                        {
+                            Texture2D texture = TryResolveTexture(albedoTextureReference, textureSearchDirectory, externalTextures);
+                            if (texture != null)
+                            {
+                                AssignTexture(material, texture);
+                            }
+                        }
+
                         materials.Add(materialName, material);
                     }
                     else
@@ -129,6 +156,7 @@ namespace com.google.apps.peltzer.client.model.import
         public class FFace
         {
             public List<int> vertexIds = new List<int>();
+            public List<int> texCoordIds = new List<int>();
         }
 
         public static bool ImportMeshes(int id, string objFileContents, Dictionary<string, Material> materials, out MMesh mmesh)
@@ -148,8 +176,7 @@ namespace com.google.apps.peltzer.client.model.import
                 materials.Add(currentMaterial, MaterialRegistry.GetMaterialAndColorById(0).material);
             }
 
-            var allVertices = new Dictionary<string, List<Vertex>>();
-            var allTexVertices = new Dictionary<string, List<Vector2>>();
+            var textureVertices = new List<Vector2>();
             var allFaces = new Dictionary<string, List<FFace>>();
 
             string[] parts;
@@ -179,11 +206,9 @@ namespace com.google.apps.peltzer.client.model.import
                         try
                         {
                             var v = new Vector3(Convert.ToSingle(parts[1]), Convert.ToSingle(parts[2]), Convert.ToSingle(parts[3]));
-                            if (!allVertices.ContainsKey(currentMaterial)) allVertices.Add(currentMaterial, new List<Vertex>());
                             int vIndex = verticesById.Count;
                             var vert = new Vertex(vIndex, v);
                             verticesById.Add(vIndex, vert);
-                            allVertices[currentMaterial].Add(vert);
                         }
                         catch (FormatException)
                         {
@@ -205,8 +230,7 @@ namespace com.google.apps.peltzer.client.model.import
                         }
                         try
                         {
-                            if (!allTexVertices.ContainsKey(currentMaterial)) allTexVertices.Add(currentMaterial, new List<Vector2>());
-                            allTexVertices[currentMaterial].Add(new Vector2(Convert.ToSingle(parts[1]), Convert.ToSingle(parts[2])));
+                            textureVertices.Add(new Vector2(Convert.ToSingle(parts[1]), Convert.ToSingle(parts[2])));
                         }
                         catch (FormatException)
                         {
@@ -243,28 +267,40 @@ namespace com.google.apps.peltzer.client.model.import
                         for (int i = 1; i < parts.Length; i++)
                         {
                             int vertexId = 0;
+                            int texCoordId = -1;
                             bool parsed = false;
+                            string token = parts[i];
 
-                            if (parts[i].Contains(sep4[0])) // "//":  v//vn
+                            if (token.Contains(sep4[0])) // "//":  v//vn
                             {
-                                string[] splitParts = parts[i].Split(sep4, StringSplitOptions.RemoveEmptyEntries);
+                                string[] splitParts = token.Split(sep4, StringSplitOptions.RemoveEmptyEntries);
                                 if (splitParts.Length > 0)
                                 {
                                     parsed = int.TryParse(splitParts[0], out vertexId);
                                 }
                             }
-                            else if (parts[i].Contains(sep3[0])) // "/": v/vt or v/vt/vn
+                            else if (token.Contains(sep3[0])) // "/": v/vt or v/vt/vn
                             {
-                                string[] splitParts = parts[i].Split(sep3, StringSplitOptions.RemoveEmptyEntries);
-                                if (splitParts.Length > 0)
+                                string[] splitParts = token.Split(sep3, StringSplitOptions.None);
+                                if (splitParts.Length > 0 && !string.IsNullOrEmpty(splitParts[0]))
                                 {
                                     parsed = int.TryParse(splitParts[0], out vertexId);
+                                }
+                                if (splitParts.Length > 1 && !string.IsNullOrEmpty(splitParts[1]))
+                                {
+                                    if (int.TryParse(splitParts[1], out texCoordId))
+                                    {
+                                        texCoordId = texCoordId > 0 ? texCoordId - 1 : textureVertices.Count + texCoordId;
+                                    }
+                                    else
+                                    {
+                                        texCoordId = -1;
+                                    }
                                 }
                             }
                             else
                             {
-                                string vIndex = parts[i].Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries)[0];
-                                parsed = int.TryParse(vIndex, out vertexId);
+                                parsed = int.TryParse(token, out vertexId);
                             }
 
                             if (parsed)
@@ -274,6 +310,7 @@ namespace com.google.apps.peltzer.client.model.import
                                 if (vertexId >= 0 && vertexId < verticesById.Count)
                                 {
                                     face.vertexIds.Add(vertexId);
+                                    face.texCoordIds.Add(texCoordId);
                                 }
                                 else
                                 {
@@ -305,26 +342,30 @@ namespace com.google.apps.peltzer.client.model.import
                 foreach (KeyValuePair<string, List<FFace>> faceList in allFaces)
                 {
                     int newFaceIndex = 0;
-                    // A list of triangles in this mesh.
-                    var faceIndices = new List<List<int>>();
+                    bool approximatedFacesForMaterial = false;
 
                     foreach (FFace face in faceList.Value)
                     {
                         currentMaterial = faceList.Key;
-                        var singleFaceIndices = new List<int>();
-                        foreach (int idx in face.vertexIds)
-                        {
-                            singleFaceIndices.Add(idx);
-                        }
-                        //singleFaceIndices.Reverse();
+                        var singleFaceIndices = new List<int>(face.vertexIds);
+
+                        Material sourceMaterial = null;
+                        materials.TryGetValue(currentMaterial, out sourceMaterial);
+                        List<Vector2> faceUvs = CollectFaceUvs(face, textureVertices);
+                        int fallbackMaterialId = TryGetMaterialId(currentMaterial);
+                        FaceProperties properties = ResolveFaceProperties(
+                          sourceMaterial,
+                          faceUvs,
+                          fallbackMaterialId,
+                          ref approximatedFacesForMaterial);
+
                         var newFace = new Face(
                             newFaceIndex,
                             singleFaceIndices.AsReadOnly(),
                             verticesById,
-                            new FaceProperties(TryGetMaterialId(currentMaterial))
+                            properties
                         );
                         facesById.Add(newFaceIndex++, newFace);
-                        faceIndices.Add(singleFaceIndices);
                         if (singleFaceIndices.Count > 3) allTriangularFaces = false;
                     } // foreach face
                 } // foreach facelist
@@ -334,6 +375,130 @@ namespace com.google.apps.peltzer.client.model.import
                 ApplyImportOrientationFix(mmesh);
             }
             return true;
+        }
+
+        private static List<Vector2> CollectFaceUvs(FFace face, List<Vector2> textureVertices)
+        {
+            List<Vector2> faceUvs = new List<Vector2>(face.texCoordIds.Count);
+            foreach (int texCoordId in face.texCoordIds)
+            {
+                if (texCoordId >= 0 && texCoordId < textureVertices.Count)
+                {
+                    faceUvs.Add(textureVertices[texCoordId]);
+                }
+            }
+            return faceUvs;
+        }
+
+        private static FaceProperties ResolveFaceProperties(
+          Material material,
+          List<Vector2> faceUvs,
+          int fallbackMaterialId,
+          ref bool approximatedFacesForMaterial)
+        {
+            if (material != null && faceUvs != null && faceUvs.Count > 0)
+            {
+                if (TextureToFaceColorApproximator.TrySampleAverageColor(material, faceUvs, out Color sampledColor))
+                {
+                    approximatedFacesForMaterial = true;
+                    return new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(sampledColor));
+                }
+            }
+
+            return new FaceProperties(fallbackMaterialId);
+        }
+
+        private static Texture2D TryResolveTexture(
+          string textureReference,
+          string textureSearchDirectory,
+          Dictionary<string, Texture2D> externalTextures)
+        {
+            if (string.IsNullOrEmpty(textureReference))
+            {
+                return null;
+            }
+
+            Texture2D resolvedTexture = null;
+            if (externalTextures != null)
+            {
+                if (externalTextures.TryGetValue(textureReference, out resolvedTexture))
+                {
+                    return resolvedTexture;
+                }
+
+                string referenceFileName = Path.GetFileName(textureReference);
+                if (!string.IsNullOrEmpty(referenceFileName))
+                {
+                    foreach (KeyValuePair<string, Texture2D> pair in externalTextures)
+                    {
+                        if (string.Equals(Path.GetFileName(pair.Key), referenceFileName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return pair.Value;
+                        }
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(textureSearchDirectory))
+            {
+                return null;
+            }
+
+            string normalizedReference = textureReference.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+            string candidatePath = Path.Combine(textureSearchDirectory, normalizedReference);
+            if (!File.Exists(candidatePath))
+            {
+                string fallbackFileName = Path.GetFileName(normalizedReference);
+                if (!string.IsNullOrEmpty(fallbackFileName))
+                {
+                    candidatePath = Path.Combine(textureSearchDirectory, fallbackFileName);
+                }
+            }
+
+            if (!File.Exists(candidatePath))
+            {
+                return null;
+            }
+
+            try
+            {
+                byte[] data = File.ReadAllBytes(candidatePath);
+                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (texture.LoadImage(data, false))
+                {
+                    texture.name = Path.GetFileNameWithoutExtension(candidatePath);
+                    texture.wrapMode = TextureWrapMode.Repeat;
+                    return texture;
+                }
+                else
+                {
+                    UnityEngine.Object.Destroy(texture);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Failed to load texture '{textureReference}': {e.Message}");
+            }
+
+            return null;
+        }
+
+        private static void AssignTexture(Material material, Texture2D texture)
+        {
+            if (material == null || texture == null)
+            {
+                return;
+            }
+
+            material.mainTexture = texture;
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", texture);
+            }
+            if (material.HasProperty("_MainTex"))
+            {
+                material.SetTexture("_MainTex", texture);
+            }
         }
 
         private static List<MeshVerticesAndTriangles>

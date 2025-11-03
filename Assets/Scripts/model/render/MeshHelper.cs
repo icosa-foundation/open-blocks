@@ -654,6 +654,8 @@ namespace com.google.apps.peltzer.client.model.render
         /// <param name="result">The resulting MMesh.</param>
         /// <param name="materialId">Material to assign to generated faces.</param>
         /// <param name="trianglesOverride">Optional triangle index list to use instead of the mesh default.</param>
+        /// <param name="facePropertiesOverride">Optional per-face material assignments to apply. If provided, must
+        /// match the number of generated faces.</param>
         /// <returns>Whether the conversion was successful.</returns>
         public static bool MMeshFromUnityMesh(
           Mesh unityMesh,
@@ -662,7 +664,8 @@ namespace com.google.apps.peltzer.client.model.render
           Matrix4x4? meshToRootMatrix,
           out MMesh result,
           int materialId = 1,
-          int[] trianglesOverride = null)
+          int[] trianglesOverride = null,
+          IList<FaceProperties> facePropertiesOverride = null)
         {
             result = null;
 
@@ -713,6 +716,7 @@ namespace com.google.apps.peltzer.client.model.render
                 Dictionary<int, Face> facesById = new Dictionary<int, Face>();
                 int faceIndex = 0;
 
+                int overrideCount = facePropertiesOverride != null ? facePropertiesOverride.Count : 0;
                 for (int i = 0; i < triangles.Length; i += 3)
                 {
                     List<int> faceVertexIds = new List<int>
@@ -722,11 +726,25 @@ namespace com.google.apps.peltzer.client.model.render
                         triangles[i + 2]
                     };
 
+                    FaceProperties properties = new FaceProperties(materialId);
+                    int faceOverrideIndex = i / 3;
+                    if (facePropertiesOverride != null)
+                    {
+                        if (faceOverrideIndex < overrideCount)
+                        {
+                            properties = facePropertiesOverride[faceOverrideIndex];
+                        }
+                        else if (faceOverrideIndex == overrideCount)
+                        {
+                            Debug.LogWarning($"Face properties override count ({overrideCount}) did not match number of faces for mesh '{unityMesh?.name}' (expected {triangles.Length / 3}). Using fallback material for remaining faces.");
+                        }
+                    }
+
                     Face newFace = new Face(
                         faceIndex,
                         faceVertexIds.AsReadOnly(),
                         verticesById,
-                        new FaceProperties(materialId)
+                        properties
                     );
 
                     facesById.Add(faceIndex, newFace);

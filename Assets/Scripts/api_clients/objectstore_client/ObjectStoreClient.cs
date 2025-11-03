@@ -129,6 +129,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 return;
             }
 
+            string assetId = entry.id;
             List<System.Action<System.Action>> attempts = new List<System.Action<System.Action>>();
 
             void AddAttempt(bool condition, System.Action<System.Action> attempt)
@@ -141,27 +142,27 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
             AddAttempt(
               assets.peltzer_package != null && !string.IsNullOrEmpty(assets.peltzer_package.rootUrl),
-              onFailure => AttemptPeltzerPackage(assets.peltzer_package, callback, onFailure));
+              onFailure => AttemptPeltzerPackage(assets.peltzer_package, assetId, callback, onFailure));
 
             AddAttempt(
               assets.peltzer != null && !string.IsNullOrEmpty(assets.peltzer.rootUrl),
-              onFailure => AttemptPeltzerFile(assets.peltzer, callback, onFailure));
+              onFailure => AttemptPeltzerFile(assets.peltzer, assetId, callback, onFailure));
 
             AddAttempt(
               assets.object_package != null && !string.IsNullOrEmpty(assets.object_package.rootUrl),
-              onFailure => AttemptObjPackage(assets.object_package, assets, callback, onFailure));
+              onFailure => AttemptObjPackage(assets.object_package, assets, assetId, callback, onFailure));
 
             AddAttempt(
               assets.obj != null && !string.IsNullOrEmpty(assets.obj.rootUrl),
-              onFailure => AttemptObjFile(assets.obj, callback, onFailure));
+              onFailure => AttemptObjFile(assets.obj, assetId, callback, onFailure));
 
             AddAttempt(
               assets.gltf_package != null && !string.IsNullOrEmpty(assets.gltf_package.rootUrl),
-              onFailure => AttemptGltfBinary(assets.gltf_package, callback, onFailure));
+              onFailure => AttemptGltfBinary(assets.gltf_package, assetId, callback, onFailure));
 
             AddAttempt(
               assets.gltf != null && !string.IsNullOrEmpty(assets.gltf.rootUrl),
-              onFailure => AttemptGltfFile(assets.gltf, callback, onFailure));
+              onFailure => AttemptGltfFile(assets.gltf, assetId, callback, onFailure));
 
             AttemptNext(0);
 
@@ -177,8 +178,20 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             }
         }
 
-        private static void AttemptPeltzerPackage(ObjectStorePeltzerPackageAssets peltzerPackage, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptPeltzerPackage(ObjectStorePeltzerPackageAssets peltzerPackage, string assetId, System.Action<byte[]> callback, System.Action onFailure)
         {
+            // Check cache first
+            string cacheDir = Path.Combine(Application.temporaryCachePath, $"peltzer_package_{assetId}");
+            string cachedFilePath = Path.Combine(cacheDir, "package.zip");
+
+            if (File.Exists(cachedFilePath))
+            {
+                byte[] cachedBytes = File.ReadAllBytes(cachedFilePath);
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new CopyStreamWork(cachedBytes, callback));
+                return;
+            }
+
+            // Cache miss - download
             StringBuilder zipUrl = new StringBuilder(peltzerPackage.rootUrl);
 
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
@@ -199,13 +212,39 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                   }
                   else
                   {
+                      // Cache the downloaded package
+                      try
+                      {
+                          if (!Directory.Exists(cacheDir))
+                          {
+                              Directory.CreateDirectory(cacheDir);
+                          }
+                          File.WriteAllBytes(cachedFilePath, responseBytes);
+                      }
+                      catch (Exception e)
+                      {
+                          Debug.LogWarning($"Failed to cache Peltzer package: {e.Message}");
+                      }
+
                       PeltzerMain.Instance.DoPolyMenuBackgroundWork(new CopyStreamWork(responseBytes, callback));
                   }
               });
         }
 
-        private static void AttemptPeltzerFile(ObjectStorePeltzerAssets peltzerAssets, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptPeltzerFile(ObjectStorePeltzerAssets peltzerAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
         {
+            // Check cache first
+            string cacheDir = Path.Combine(Application.temporaryCachePath, $"peltzer_{assetId}");
+            string cachedFilePath = Path.Combine(cacheDir, "model.pelt");
+
+            if (File.Exists(cachedFilePath))
+            {
+                byte[] cachedBytes = File.ReadAllBytes(cachedFilePath);
+                callback(cachedBytes);
+                return;
+            }
+
+            // Cache miss - download
             StringBuilder url = new StringBuilder(peltzerAssets.rootUrl);
 
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
@@ -226,13 +265,39 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                   }
                   else
                   {
+                      // Cache the downloaded file
+                      try
+                      {
+                          if (!Directory.Exists(cacheDir))
+                          {
+                              Directory.CreateDirectory(cacheDir);
+                          }
+                          File.WriteAllBytes(cachedFilePath, responseBytes);
+                      }
+                      catch (Exception e)
+                      {
+                          Debug.LogWarning($"Failed to cache Peltzer file: {e.Message}");
+                      }
+
                       callback(responseBytes);
                   }
               });
         }
 
-        private static void AttemptObjPackage(ObjectStoreObjMtlPackageAssets objPackage, ObjectStoreObjectAssetsWrapper assets, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptObjPackage(ObjectStoreObjMtlPackageAssets objPackage, ObjectStoreObjectAssetsWrapper assets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
         {
+            // Check cache first
+            string cacheDir = Path.Combine(Application.temporaryCachePath, $"obj_package_{assetId}");
+            string cachedZipPath = Path.Combine(cacheDir, "package.zip");
+
+            if (File.Exists(cachedZipPath))
+            {
+                byte[] cachedBytes = File.ReadAllBytes(cachedZipPath);
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjPackageWork(cachedBytes, callback));
+                return;
+            }
+
+            // Cache miss - download
             StringBuilder zipUrl = new StringBuilder(objPackage.rootUrl);
 
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
@@ -256,7 +321,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                   if (responseBytes != null && responseBytes.Length > 0)
                   {
                       string firstBytes = Encoding.UTF8.GetString(responseBytes, 0, Math.Min(200, responseBytes.Length));
-                      Debug.Log($"Downloaded OBJ package - URL: {zipUrl}, Size: {responseBytes.Length} bytes, First 200 bytes: {firstBytes}");
                   }
 
                   if (!IsZipArchive(responseBytes))
@@ -266,12 +330,40 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       return;
                   }
 
+                  // Cache the downloaded zip
+                  try
+                  {
+                      if (!Directory.Exists(cacheDir))
+                      {
+                          Directory.CreateDirectory(cacheDir);
+                      }
+                      File.WriteAllBytes(cachedZipPath, responseBytes);
+                  }
+                  catch (Exception e)
+                  {
+                      Debug.LogWarning($"Failed to cache OBJ package: {e.Message}");
+                  }
+
                   PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjPackageWork(responseBytes, callback));
               });
         }
 
-        private static void AttemptObjFile(ObjectStoreObjectAssets objAssets, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptObjFile(ObjectStoreObjectAssets objAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
         {
+            // Check cache first
+            string cacheDir = Path.Combine(Application.temporaryCachePath, $"obj_{assetId}");
+            string cachedObjPath = Path.Combine(cacheDir, "model.obj");
+            string cachedMtlPath = Path.Combine(cacheDir, "model.mtl");
+
+            if (File.Exists(cachedObjPath))
+            {
+                string objContents = File.ReadAllText(cachedObjPath);
+                string mtlContents = File.Exists(cachedMtlPath) ? File.ReadAllText(cachedMtlPath) : null;
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjStringsWork(objContents, mtlContents, callback));
+                return;
+            }
+
+            // Cache miss - download
             StringBuilder objUrl = new StringBuilder(objAssets.rootUrl);
 
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
@@ -294,6 +386,21 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
                   string objContents = Encoding.UTF8.GetString(objBytes);
                   string mtlPath = objAssets.supportingFiles?.FirstOrDefault(f => f != null && f.EndsWith(".mtl"));
+
+                  // Cache the OBJ file
+                  try
+                  {
+                      if (!Directory.Exists(cacheDir))
+                      {
+                          Directory.CreateDirectory(cacheDir);
+                      }
+                      File.WriteAllText(cachedObjPath, objContents);
+                  }
+                  catch (Exception e)
+                  {
+                      Debug.LogWarning($"Failed to cache OBJ file: {e.Message}");
+                  }
+
                   if (!string.IsNullOrEmpty(mtlPath))
                   {
                       StringBuilder mtlUrl;
@@ -311,6 +418,20 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         (bool mtlSuccess, int mtlResponseCode, byte[] mtlBytes) =>
                         {
                             string mtlContents = mtlSuccess ? Encoding.UTF8.GetString(mtlBytes) : null;
+
+                            // Cache the MTL file
+                            if (mtlSuccess && mtlContents != null)
+                            {
+                                try
+                                {
+                                    File.WriteAllText(cachedMtlPath, mtlContents);
+                                }
+                                catch (Exception e)
+                                {
+                                    Debug.LogWarning($"Failed to cache MTL file: {e.Message}");
+                                }
+                            }
+
                             PeltzerMain.Instance.DoPolyMenuBackgroundWork(
                               new ConvertObjStringsWork(objContents, mtlContents, callback));
                         });
@@ -323,17 +444,17 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
               });
         }
 
-        private static void AttemptGltfBinary(ObjectStoreGltfPackageAssets gltfAssets, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptGltfBinary(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
         {
-            AttemptGltfAsset(gltfAssets, callback, onFailure, expectBinary: true);
+            AttemptGltfAsset(gltfAssets, assetId, callback, onFailure, expectBinary: true);
         }
 
-        private static void AttemptGltfFile(ObjectStoreGltfPackageAssets gltfAssets, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptGltfFile(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
         {
-            AttemptGltfAsset(gltfAssets, callback, onFailure, expectBinary: false);
+            AttemptGltfAsset(gltfAssets, assetId, callback, onFailure, expectBinary: false);
         }
 
-        private static void AttemptGltfAsset(ObjectStoreGltfPackageAssets gltfAssets, System.Action<byte[]> callback, System.Action onFailure, bool expectBinary)
+        private static void AttemptGltfAsset(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure, bool expectBinary)
         {
             if (gltfAssets.version == "GLTF1" || gltfAssets.version == "GLTF")
             {
@@ -342,6 +463,56 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 return;
             }
 
+            // Check cache first
+            string tempDir = Path.Combine(Application.temporaryCachePath, $"gltf_{assetId}");
+            string extension = expectBinary ? ".glb" : ".gltf";
+            string mainFilePath = Path.Combine(tempDir, $"model{extension}");
+
+            if (File.Exists(mainFilePath))
+            {
+                // Cache hit - verify supporting files if needed
+                bool cacheValid = true;
+                if (gltfAssets.supportingFiles != null && gltfAssets.supportingFiles.Length > 0)
+                {
+                    foreach (string supportingFile in gltfAssets.supportingFiles)
+                    {
+                        if (string.IsNullOrEmpty(supportingFile)) continue;
+                        string sanitizedKey = supportingFile.Replace("\\", "/").TrimStart('/');
+                        string decodedKey = Uri.UnescapeDataString(sanitizedKey);
+                        string filePath = Path.Combine(tempDir, decodedKey);
+                        if (!File.Exists(filePath))
+                        {
+                            cacheValid = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (cacheValid)
+                {
+                    // Load from cache
+                    byte[] cachedBytes = File.ReadAllBytes(mainFilePath);
+                    Dictionary<string, byte[]> cachedAdditionalFiles = null;
+
+                    if (gltfAssets.supportingFiles != null && gltfAssets.supportingFiles.Length > 0)
+                    {
+                        cachedAdditionalFiles = new Dictionary<string, byte[]>();
+                        foreach (string supportingFile in gltfAssets.supportingFiles)
+                        {
+                            if (string.IsNullOrEmpty(supportingFile)) continue;
+                            string sanitizedKey = supportingFile.Replace("\\", "/").TrimStart('/');
+                            string decodedKey = Uri.UnescapeDataString(sanitizedKey);
+                            string filePath = Path.Combine(tempDir, decodedKey);
+                            cachedAdditionalFiles[supportingFile] = File.ReadAllBytes(filePath);
+                        }
+                    }
+
+                    PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertGltfPackageWork(cachedBytes, cachedAdditionalFiles, expectBinary, assetId, callback));
+                    return;
+                }
+            }
+
+            // Cache miss - download
             StringBuilder gltfUrl = new StringBuilder(gltfAssets.rootUrl);
 
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
@@ -407,7 +578,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                                         }
                                         else
                                         {
-                                            PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertGltfPackageWork(responseBytes, additionalFiles, expectBinary, callback));
+                                            PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertGltfPackageWork(responseBytes, additionalFiles, expectBinary, assetId, callback));
                                         }
                                     }
                                 });
@@ -415,7 +586,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       }
                       else
                       {
-                          PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertGltfPackageWork(responseBytes, null, expectBinary, callback));
+                          PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertGltfPackageWork(responseBytes, null, expectBinary, assetId, callback));
                       }
                   }
               });
@@ -651,12 +822,15 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
             public void PostWork()
             {
+                TextureToFaceColorApproximator.ClearCache();
                 callback(outputBytes);
             }
         }
 
         private class ConvertObjPackageWork : BackgroundWork
         {
+            private static readonly string[] SupportedTextureExtensions = new[] { ".png", ".jpg", ".jpeg", ".bmp", ".tga" };
+
             private readonly byte[] zipBytes;
             private readonly System.Action<byte[]> callback;
             private byte[] outputBytes;
@@ -675,6 +849,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     {
                         string objContents = null;
                         string mtlContents = null;
+                        Dictionary<string, Texture2D> embeddedTextures = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
 
                         foreach (ZipEntry entry in zipFile)
                         {
@@ -684,26 +859,45 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                             }
 
                             using (Stream entryStream = zipFile.GetInputStream(entry))
-                            using (StreamReader reader = new StreamReader(entryStream))
                             {
-                                if (entry.Name.EndsWith(".obj", StringComparison.OrdinalIgnoreCase))
+                                string extension = Path.GetExtension(entry.Name);
+                                if (extension != null && extension.Equals(".obj", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    objContents = reader.ReadToEnd();
+                                    using (StreamReader reader = new StreamReader(entryStream))
+                                    {
+                                        objContents = reader.ReadToEnd();
+                                    }
                                 }
-                                else if (entry.Name.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase))
+                                else if (extension != null && extension.Equals(".mtl", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    mtlContents = reader.ReadToEnd();
+                                    using (StreamReader reader = new StreamReader(entryStream))
+                                    {
+                                        mtlContents = reader.ReadToEnd();
+                                    }
                                 }
-                            }
-
-                            if (!string.IsNullOrEmpty(objContents) && !string.IsNullOrEmpty(mtlContents))
-                            {
-                                break;
+                                else if (IsSupportedTextureExtension(extension))
+                                {
+                                    using (MemoryStream memoryStream = new MemoryStream())
+                                    {
+                                        entryStream.CopyTo(memoryStream);
+                                        byte[] textureBytes = memoryStream.ToArray();
+                                        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                                        if (texture.LoadImage(textureBytes, false))
+                                        {
+                                            texture.name = Path.GetFileNameWithoutExtension(entry.Name);
+                                            embeddedTextures[entry.Name] = texture;
+                                        }
+                                        else
+                                        {
+                                            UnityEngine.Object.Destroy(texture);
+                                        }
+                                    }
+                                }
                             }
                         }
 
                         if (!string.IsNullOrEmpty(objContents)
-                          && ObjImporter.MMeshFromObjFile(objContents, mtlContents, 0, out MMesh mesh))
+                          && ObjImporter.MMeshFromObjFile(objContents, mtlContents, 0, out MMesh mesh, null, embeddedTextures))
                         {
                             outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
                         }
@@ -717,7 +911,26 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
             public void PostWork()
             {
+                TextureToFaceColorApproximator.ClearCache();
                 callback(outputBytes);
+            }
+
+            private static bool IsSupportedTextureExtension(string extension)
+            {
+                if (string.IsNullOrEmpty(extension))
+                {
+                    return false;
+                }
+
+                foreach (string candidate in SupportedTextureExtensions)
+                {
+                    if (extension.Equals(candidate, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
         }
 
@@ -726,15 +939,17 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             private readonly byte[] gltfBytes;
             private readonly Dictionary<string, byte[]> additionalFiles;
             private readonly bool isBinary;
+            private readonly string assetId;
             private readonly System.Action<byte[]> callback;
             private byte[] outputBytes;
             private GameObject tempGameObject;
 
-            public ConvertGltfPackageWork(byte[] gltfBytes, Dictionary<string, byte[]> additionalFiles, bool isBinary, System.Action<byte[]> callback)
+            public ConvertGltfPackageWork(byte[] gltfBytes, Dictionary<string, byte[]> additionalFiles, bool isBinary, string assetId, System.Action<byte[]> callback)
             {
                 this.gltfBytes = gltfBytes;
                 this.additionalFiles = additionalFiles;
                 this.isBinary = isBinary;
+                this.assetId = assetId;
                 this.callback = callback;
             }
 
@@ -760,12 +975,21 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
                 try
                 {
-                    tempDir = Path.Combine(Application.temporaryCachePath, $"gltf_{System.Guid.NewGuid()}");
-                    Directory.CreateDirectory(tempDir);
+                    // Use asset ID for deterministic caching - reuse files if already extracted
+                    tempDir = Path.Combine(Application.temporaryCachePath, $"gltf_{assetId}");
+                    if (!Directory.Exists(tempDir))
+                    {
+                        Directory.CreateDirectory(tempDir);
+                    }
 
                     string extension = isBinary ? ".glb" : ".gltf";
                     mainFilePath = Path.Combine(tempDir, $"model{extension}");
-                    File.WriteAllBytes(mainFilePath, gltfBytes);
+
+                    // Only write files if they don't already exist (cache hit)
+                    if (!File.Exists(mainFilePath))
+                    {
+                        File.WriteAllBytes(mainFilePath, gltfBytes);
+                    }
 
                     if (additionalFiles != null)
                     {
@@ -774,12 +998,17 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                             string sanitizedKey = kvp.Key.Replace("\\", "/").TrimStart('/');
                             string decodedKey = Uri.UnescapeDataString(sanitizedKey);
                             string filePath = Path.Combine(tempDir, decodedKey);
-                                string fileDir = Path.GetDirectoryName(filePath);
+                            string fileDir = Path.GetDirectoryName(filePath);
                             if (!Directory.Exists(fileDir))
                             {
                                 Directory.CreateDirectory(fileDir);
                             }
-                            File.WriteAllBytes(filePath, kvp.Value);
+
+                            // Only write if file doesn't exist (cache hit)
+                            if (!File.Exists(filePath))
+                            {
+                                File.WriteAllBytes(filePath, kvp.Value);
+                            }
                         }
                     }
 
@@ -815,8 +1044,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         yield return loadEnumerator.Current;
                     }
 
-                    Debug.Log($"GLTF scene load completed. LastLoadedScene={(importer.LastLoadedScene != null ? importer.LastLoadedScene.name : "null")}");
-
                     try
                     {
                         tempGameObject = importer.LastLoadedScene;
@@ -831,7 +1058,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         {
                             MeshFilter[] meshFilters = tempGameObject.GetComponentsInChildren<MeshFilter>(true);
                             SkinnedMeshRenderer[] skinnedMeshRenderers = tempGameObject.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-                            Debug.Log($"GLTF imported, extracting {meshFilters.Length + skinnedMeshRenderers.Length} meshes from GameObject hierarchy");
                             if (meshFilters.Length == 0 && skinnedMeshRenderers.Length == 0)
                             {
                                 Debug.LogWarning("GLTF import yielded zero MeshFilter/SkinnedMeshRenderer components");
@@ -869,24 +1095,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                             {
                                 NormalizeMeshesForImport(meshes, targetMaxSize);
                                 outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes);
-                                Debug.Log($"Created PeltzerFile with {meshes.Count} MMesh objects");
-#if UNITY_EDITOR
-                                try
-                                {
-                                    string debugFilename = $"converted_{Guid.NewGuid():N}_debug.blocks";
-                                    string debugOutputPath = Path.Combine(tempDir, debugFilename);
-                                    File.WriteAllBytes(debugOutputPath, outputBytes);
-                                    Debug.Log($"GLTF conversion wrote debug Peltzer file to {debugOutputPath} ({outputBytes.Length} bytes)");
-                                }
-                                catch (Exception writeException)
-                                {
-                                    Debug.LogWarning($"Failed to write debug Peltzer file: {writeException}");
-                                }
-#endif
-                            }
-                            else
-                            {
-                                Debug.LogWarning("GLTF import produced zero meshes after extraction; returning null output");
                             }
                         }
                     }
@@ -902,7 +1110,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
                 if (tempGameObject != null)
                 {
-                    Debug.Log($"Destroying GLTF GameObject: {tempGameObject.name}");
                     UnityEngine.Object.DestroyImmediate(tempGameObject);
                 }
 
@@ -923,10 +1130,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 if (outputBytes == null)
                 {
                     Debug.LogWarning("GLTF conversion callback invoked with null output bytes");
-                }
-                else
-                {
-                    Debug.Log($"GLTF conversion produced {outputBytes.Length} bytes");
                 }
             }
 
@@ -966,7 +1169,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 }
 
                 Matrix4x4 meshToRoot = rootTransform.worldToLocalMatrix * meshTransform.localToWorldMatrix;
-                Debug.Log($"Processing mesh '{mesh.name}' (subMeshCount={mesh.subMeshCount}, vertexCount={mesh.vertexCount}) under '{meshTransform.name}'");
 
                 if (mesh.subMeshCount <= 1)
                 {
@@ -1016,11 +1218,26 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     }
                 }
 
-                if (MeshHelper.MMeshFromUnityMesh(mesh, meshId, 0f, meshToRoot, out MMesh mmesh, materialId, triangles))
+                IList<FaceProperties> facePropertiesOverride = null;
+                if (materials != null && materials.Length > 0)
+                {
+                    int materialIndex = Mathf.Clamp(subMeshIndex, 0, materials.Length - 1);
+                    Material sourceMaterial = materials[materialIndex];
+                    if (TextureToFaceColorApproximator.TryComputeFaceColors(mesh, triangles, sourceMaterial, out List<Color> faceColors, out string debugMessage) && faceColors != null)
+                    {
+                        List<FaceProperties> overrides = new List<FaceProperties>(faceColors.Count);
+                        foreach (Color color in faceColors)
+                        {
+                            overrides.Add(new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(color)));
+                        }
+                        facePropertiesOverride = overrides;
+                    }
+                }
+
+                if (MeshHelper.MMeshFromUnityMesh(mesh, meshId, 0f, meshToRoot, out MMesh mmesh, materialId, triangles, facePropertiesOverride))
                 {
                     meshes.Add(mmesh);
                     meshId++;
-                    Debug.Log($"Added MMesh {mmesh.id} from mesh '{mesh.name}' submesh {subMeshIndex} using material {materialId}");
                 }
                 else
                 {
