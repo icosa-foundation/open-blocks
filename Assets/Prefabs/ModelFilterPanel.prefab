@@ -1566,7 +1566,7 @@ MonoBehaviour:
   m_TitleText: {fileID: 4779467503598678405}
   m_OrderByContainer: {fileID: 6792069938679173101}
   m_CategoryContainer: {fileID: 7554139391835600225}
-  m_FormatContainer: {fileID: 0}
+  m_FormatContainer: {fileID: 5185728038943282749}
   m_TriangleCountSlider: {fileID: 8674504437321637060}
 --- !u!1001 &694047647612583419
 PrefabInstance:
@@ -1823,6 +1823,18 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 694047647612583419}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &5185728038943282749 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5644884474754493382, guid: 7812f52391d1a664e84e6b1672d94d58,
+    type: 3}
+  m_PrefabInstance: {fileID: 694047647612583419}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1edecfefdbd2497caae72fa9df8da159, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &928741933753119043
 PrefabInstance:
   m_ObjectHideFlags: 0
