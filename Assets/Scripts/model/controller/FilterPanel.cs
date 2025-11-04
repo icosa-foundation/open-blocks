@@ -68,7 +68,9 @@ namespace com.google.apps.peltzer.client.model.controller
 
             m_MainMenu.SetApiOrderBy(orderBy);
             m_MainMenu.SetApiCategoryFilter(category);
+            m_MainMenu.SetApiFormatFilter(format);
             m_MainMenu.SetApiTriangleCountMax(triangleCount);
+
             m_MainMenu.RefreshResults();
             Disable();
         }
