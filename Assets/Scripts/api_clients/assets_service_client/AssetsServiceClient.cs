@@ -688,8 +688,27 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                                 {
                                     rootUrl = blocksRootUrl,
                                     baseFile = blocksBaseFile ?? string.Empty,
-                                    supportingFiles = blocksSupportingFiles
+                                    supportingFiles = blocksSupportingFiles,
+                                    isPreferredForDownload = format?["isPreferredForDownload"]?.ToObject<bool>() ?? false
                                 };
+                                hasSupportedFormat = true;
+                            }
+                            break;
+                        case "OBJ_NGON":
+                            // OBJ_NGON is preferred over regular OBJ, so assign first
+                            ParseFormatPaths(format, out string objNgonRootUrl, out string objNgonBaseFile,
+                              out string[] objNgonSupportingFiles);
+                            if (!string.IsNullOrEmpty(objNgonRootUrl))
+                            {
+                                var objNgonAssets = new ObjectStoreObjectAssets
+                                {
+                                    rootUrl = objNgonRootUrl,
+                                    baseFile = objNgonBaseFile ?? string.Empty,
+                                    supportingFiles = objNgonSupportingFiles,
+                                    isPreferredForDownload = format?["isPreferredForDownload"]?.ToObject<bool>() ?? false
+                                };
+                                // Prefer OBJ_NGON by assigning unconditionally (will override regular OBJ if already set)
+                                entryAssets.obj = objNgonAssets;
                                 hasSupportedFormat = true;
                             }
                             break;
@@ -702,8 +721,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                                 {
                                     rootUrl = objRootUrl,
                                     baseFile = objBaseFile ?? string.Empty,
-                                    supportingFiles = objSupportingFiles
+                                    supportingFiles = objSupportingFiles,
+                                    isPreferredForDownload = format?["isPreferredForDownload"]?.ToObject<bool>() ?? false
                                 };
+                                // Only use if OBJ_NGON hasn't already been assigned
                                 entryAssets.obj = entryAssets.obj ?? objAssets;
                                 hasSupportedFormat = true;
                             }
@@ -716,7 +737,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                                 {
                                     rootUrl = zipArchiveUrl,
                                     baseFile = string.Empty,
-                                    supportingFiles = null
+                                    supportingFiles = null,
+                                    isPreferredForDownload = format?["isPreferredForDownload"]?.ToObject<bool>() ?? false
                                 };
                                 entryAssets.object_package = entryAssets.object_package ?? objectPackageAssets;
                                 hasSupportedFormat = true;
@@ -734,7 +756,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                                     rootUrl = gltfRootUrl,
                                     baseFile = gltfBaseFile ?? string.Empty,
                                     supportingFiles = gltfSupportingFiles,
-                                    version = formatType
+                                    version = formatType,
+                                    isPreferredForDownload = format?["isPreferredForDownload"]?.ToObject<bool>() ?? false
                                 };
 
                                 bool looksLikeGlb = (!string.IsNullOrEmpty(gltfBaseFile) && gltfBaseFile.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))

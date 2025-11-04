@@ -130,39 +130,57 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             }
 
             string assetId = entry.id;
-            List<System.Action<System.Action>> attempts = new List<System.Action<System.Action>>();
+            List<System.Action<System.Action>> preferredAttempts = new List<System.Action<System.Action>>();
+            List<System.Action<System.Action>> nonPreferredAttempts = new List<System.Action<System.Action>>();
 
-            void AddAttempt(bool condition, System.Action<System.Action> attempt)
+            void AddAttempt(bool condition, bool isPreferred, System.Action<System.Action> attempt)
             {
                 if (condition && attempt != null)
                 {
-                    attempts.Add(attempt);
+                    if (isPreferred)
+                    {
+                        preferredAttempts.Add(attempt);
+                    }
+                    else
+                    {
+                        nonPreferredAttempts.Add(attempt);
+                    }
                 }
             }
 
             AddAttempt(
               assets.peltzer_package != null && !string.IsNullOrEmpty(assets.peltzer_package.rootUrl),
+              assets.peltzer_package?.isPreferredForDownload ?? false,
               onFailure => AttemptPeltzerPackage(assets.peltzer_package, assetId, callback, onFailure));
 
             AddAttempt(
               assets.peltzer != null && !string.IsNullOrEmpty(assets.peltzer.rootUrl),
+              assets.peltzer?.isPreferredForDownload ?? false,
               onFailure => AttemptPeltzerFile(assets.peltzer, assetId, callback, onFailure));
 
             AddAttempt(
               assets.object_package != null && !string.IsNullOrEmpty(assets.object_package.rootUrl),
+              assets.object_package?.isPreferredForDownload ?? false,
               onFailure => AttemptObjPackage(assets.object_package, assets, assetId, callback, onFailure));
 
             AddAttempt(
               assets.obj != null && !string.IsNullOrEmpty(assets.obj.rootUrl),
+              assets.obj?.isPreferredForDownload ?? false,
               onFailure => AttemptObjFile(assets.obj, assetId, callback, onFailure));
 
             AddAttempt(
               assets.gltf_package != null && !string.IsNullOrEmpty(assets.gltf_package.rootUrl),
+              assets.gltf_package?.isPreferredForDownload ?? false,
               onFailure => AttemptGltfBinary(assets.gltf_package, assetId, callback, onFailure));
 
             AddAttempt(
               assets.gltf != null && !string.IsNullOrEmpty(assets.gltf.rootUrl),
+              assets.gltf?.isPreferredForDownload ?? false,
               onFailure => AttemptGltfFile(assets.gltf, assetId, callback, onFailure));
+
+            // Combine lists: preferred formats first, then non-preferred as fallback
+            List<System.Action<System.Action>> attempts = new List<System.Action<System.Action>>(preferredAttempts);
+            attempts.AddRange(nonPreferredAttempts);
 
             AttemptNext(0);
 
@@ -817,6 +835,10 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             private readonly System.Action<byte[]> callback;
             private byte[] outputBytes;
 
+            // Parsed in background
+            private Dictionary<string, ObjImporter.MaterialData> parsedMaterialData;
+            private string parsedObjData;
+
             public ConvertObjStringsWork(string objContents, string mtlContents, System.Action<byte[]> callback)
             {
                 this.objContents = objContents;
@@ -831,14 +853,25 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     return;
                 }
 
-                if (ObjImporter.MMeshFromObjFile(objContents, mtlContents, 0, out MMesh mesh))
-                {
-                    outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
-                }
+                // Parse MTL without creating Unity objects
+                parsedMaterialData = ObjImporter.ParseMaterialData(mtlContents);
+                parsedObjData = objContents;
             }
 
             public void PostWork()
             {
+                if (!string.IsNullOrEmpty(parsedObjData))
+                {
+                    // Create materials on main thread
+                    Dictionary<string, Material> materials = ObjImporter.CreateMaterialsFromData(parsedMaterialData, null, null);
+
+                    // Import mesh with materials
+                    if (ObjImporter.ImportMeshes(0, parsedObjData, materials, out MMesh mesh))
+                    {
+                        outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
+                    }
+                }
+
                 TextureToFaceColorApproximator.ClearCache();
                 callback(outputBytes);
             }
@@ -851,6 +884,11 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             private readonly byte[] zipBytes;
             private readonly System.Action<byte[]> callback;
             private byte[] outputBytes;
+
+            // Parsed in background
+            private string parsedObjData;
+            private Dictionary<string, ObjImporter.MaterialData> parsedMaterialData;
+            private Dictionary<string, byte[]> textureDataByName;
 
             public ConvertObjPackageWork(byte[] zipBytes, System.Action<byte[]> callback)
             {
@@ -866,7 +904,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     {
                         string objContents = null;
                         string mtlContents = null;
-                        Dictionary<string, Texture2D> embeddedTextures = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
+                        textureDataByName = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
 
                         foreach (ZipEntry entry in zipFile)
                         {
@@ -897,24 +935,52 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                                     using (MemoryStream memoryStream = new MemoryStream())
                                     {
                                         entryStream.CopyTo(memoryStream);
-                                        byte[] textureBytes = memoryStream.ToArray();
-                                        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                                        if (texture.LoadImage(textureBytes, false))
-                                        {
-                                            texture.name = Path.GetFileNameWithoutExtension(entry.Name);
-                                            embeddedTextures[entry.Name] = texture;
-                                        }
-                                        else
-                                        {
-                                            UnityEngine.Object.Destroy(texture);
-                                        }
+                                        textureDataByName[entry.Name] = memoryStream.ToArray();
                                     }
                                 }
                             }
                         }
 
-                        if (!string.IsNullOrEmpty(objContents)
-                          && ObjImporter.MMeshFromObjFile(objContents, mtlContents, 0, out MMesh mesh, null, embeddedTextures))
+                        parsedObjData = objContents;
+                        parsedMaterialData = ObjImporter.ParseMaterialData(mtlContents);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to extract OBJ package: {e.Message}");
+                }
+            }
+
+            public void PostWork()
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(parsedObjData))
+                    {
+                        // Load textures on main thread
+                        Dictionary<string, Texture2D> embeddedTextures = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
+                        if (textureDataByName != null)
+                        {
+                            foreach (var kvp in textureDataByName)
+                            {
+                                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                                if (texture.LoadImage(kvp.Value, false))
+                                {
+                                    texture.name = Path.GetFileNameWithoutExtension(kvp.Key);
+                                    embeddedTextures[kvp.Key] = texture;
+                                }
+                                else
+                                {
+                                    UnityEngine.Object.Destroy(texture);
+                                }
+                            }
+                        }
+
+                        // Create materials on main thread
+                        Dictionary<string, Material> materials = ObjImporter.CreateMaterialsFromData(parsedMaterialData, null, embeddedTextures);
+
+                        // Import mesh with materials
+                        if (ObjImporter.ImportMeshes(0, parsedObjData, materials, out MMesh mesh))
                         {
                             outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
                         }
@@ -924,10 +990,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 {
                     Debug.LogError($"Failed to process OBJ package: {e.Message}");
                 }
-            }
 
-            public void PostWork()
-            {
                 TextureToFaceColorApproximator.ClearCache();
                 callback(outputBytes);
             }

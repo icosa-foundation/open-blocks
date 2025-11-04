@@ -28,6 +28,17 @@ namespace com.google.apps.peltzer.client.model.import
     public static class ObjImporter
     {
         /// <summary>
+        /// Material data parsed from MTL file, before creating Unity Material objects
+        /// </summary>
+        public class MaterialData
+        {
+            public string name;
+            public Color color = Color.white;
+            public string textureReference;
+            public int? registryMaterialId;
+        }
+
+        /// <summary>
         ///   Creates an MMesh from the contents of a .obj file and the contents of a .mtl file, with the given id.
         ///   Generally an OBJ file will not create meshes that are "topologically correct", so they won't work right
         ///   with a lot of our tools, but should at least be moveable if nothing else.
@@ -67,6 +78,110 @@ namespace com.google.apps.peltzer.client.model.import
                 }
             }
             return 1;
+        }
+
+        /// <summary>
+        /// Parse MTL file data without creating Unity objects (background thread safe)
+        /// </summary>
+        public static Dictionary<string, MaterialData> ParseMaterialData(string materialsString)
+        {
+            Dictionary<string, MaterialData> materialDataMap = new Dictionary<string, MaterialData>();
+            if (string.IsNullOrEmpty(materialsString))
+                return materialDataMap;
+
+            using (StringReader reader = new StringReader(materialsString))
+            {
+                string currentText = reader.ReadLine()?.Trim();
+                while (currentText != null)
+                {
+                    if (currentText.StartsWith("newmtl"))
+                    {
+                        string materialName = currentText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)[1];
+                        MaterialData data = new MaterialData { name = materialName };
+
+                        currentText = reader.ReadLine();
+                        while (currentText != null && !currentText.StartsWith("newmtl"))
+                        {
+                            currentText = currentText.Trim();
+                            if (currentText.StartsWith("Ka") || currentText.StartsWith("Kd"))
+                            {
+                                string[] colorString = currentText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (colorString.Length >= 4)
+                                {
+                                    data.color = new Color(float.Parse(colorString[1]), float.Parse(colorString[2]), float.Parse(colorString[3]));
+                                }
+                            }
+                            else if (currentText.StartsWith("map_Kd", StringComparison.OrdinalIgnoreCase))
+                            {
+                                string[] mapTokens = currentText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (mapTokens.Length >= 2)
+                                {
+                                    data.textureReference = string.Join(" ", mapTokens, 1, mapTokens.Length - 1);
+                                }
+                            }
+                            currentText = reader.ReadLine();
+                        }
+
+                        // Check if this references a material registry ID
+                        if (materialName.StartsWith("mat"))
+                        {
+                            if (int.TryParse(materialName.Substring("mat".Length), out int potentialMaterialId))
+                            {
+                                data.registryMaterialId = potentialMaterialId;
+                            }
+                        }
+
+                        materialDataMap[materialName] = data;
+                    }
+                    else
+                    {
+                        currentText = reader.ReadLine()?.Trim();
+                    }
+                }
+            }
+            return materialDataMap;
+        }
+
+        /// <summary>
+        /// Create Material objects from parsed MaterialData (must be called on main thread)
+        /// </summary>
+        public static Dictionary<string, Material> CreateMaterialsFromData(
+            Dictionary<string, MaterialData> materialDataMap,
+            string textureSearchDirectory,
+            Dictionary<string, Texture2D> externalTextures)
+        {
+            Dictionary<string, Material> materials = new Dictionary<string, Material>();
+            foreach (var kvp in materialDataMap)
+            {
+                MaterialData data = kvp.Value;
+                Material material = null;
+
+                // Check if this references a material registry entry
+                if (data.registryMaterialId.HasValue)
+                {
+                    material = MaterialRegistry.GetMaterialAndColorById(data.registryMaterialId.Value).material;
+                    material.name = data.name;
+                }
+
+                if (material == null)
+                {
+                    material = new Material(Shader.Find("Diffuse"));
+                    material.name = data.name;
+                    material.color = data.color;
+                }
+
+                if (!string.IsNullOrEmpty(data.textureReference))
+                {
+                    Texture2D texture = TryResolveTexture(data.textureReference, textureSearchDirectory, externalTextures);
+                    if (texture != null)
+                    {
+                        AssignTexture(material, texture);
+                    }
+                }
+
+                materials[data.name] = material;
+            }
+            return materials;
         }
 
         public static Dictionary<string, Material> ImportMaterials(
@@ -337,11 +452,11 @@ namespace com.google.apps.peltzer.client.model.import
                 }
 
                 bool allTriangularFaces = true;
+                int newFaceIndex = 0;
 
                 // Create one mesh per entry in faceList, as all faces will have the same material.
                 foreach (KeyValuePair<string, List<FFace>> faceList in allFaces)
                 {
-                    int newFaceIndex = 0;
                     bool approximatedFacesForMaterial = false;
 
                     foreach (FFace face in faceList.Value)
@@ -403,6 +518,13 @@ namespace com.google.apps.peltzer.client.model.import
                     approximatedFacesForMaterial = true;
                     return new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(sampledColor));
                 }
+            }
+
+            // If we have a material but texture sampling failed or no UVs, use the material's base color
+            if (material != null)
+            {
+                approximatedFacesForMaterial = true;
+                return new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(material.color));
             }
 
             return new FaceProperties(fallbackMaterialId);
