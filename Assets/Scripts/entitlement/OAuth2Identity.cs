@@ -137,7 +137,7 @@ namespace com.google.apps.peltzer.client.entitlement
                 url = string.Format("https://accounts.google.com/AccountChooser?Email={0}&continue={1}",
                   Profile.email, url);
             }
-            Application.OpenURL(url);
+            PeltzerMain.OpenURLInExternalBrowser(url);
         }
 
         public void Login(System.Action onSuccess, System.Action onFailure, bool promptUserIfNoToken)
@@ -297,15 +297,7 @@ namespace com.google.apps.peltzer.client.entitlement
                     .Append("&response_type=code")
                     .Append("&scope=").Append(m_OAuthScope);
 
-                // Something about the url makes OpenURL() not work on OSX, so use a workaround
-                if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer)
-                {
-                    System.Diagnostics.Process.Start(sb.ToString());
-                }
-                else
-                {
-                    Application.OpenURL(sb.ToString());
-                }
+                PeltzerMain.OpenURLInExternalBrowser(sb.ToString());
 
                 if (m_WaitingOnAuthorization)
                 {
@@ -858,18 +850,11 @@ namespace com.google.apps.peltzer.client.entitlement
         {
             if (String.IsNullOrEmpty(m_RefreshToken) && promptUserIfNoToken)
             {
-                // Something about the url makes OpenURL() not work on OSX, so use a workaround
-                if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer)
-                {
-                    System.Diagnostics.Process.Start(m_DeviceCodeUrl);
-                }
-                else
-                {
-                    var secret = Guid.NewGuid().ToString();
-                    m_DeviceLoginSecret = secret;
-                    m_DeviceLoginSecretCreationTime = DateTime.UtcNow;
-                    Application.OpenURL($"{m_DeviceCodeUrl}?appId=openblocks&secret={secret}");
-                }
+                var secret = Guid.NewGuid().ToString();
+                m_DeviceLoginSecret = secret;
+                m_DeviceLoginSecretCreationTime = DateTime.UtcNow;
+                string url = $"{m_DeviceCodeUrl}?appId=openblocks&secret={secret}";
+                PeltzerMain.OpenURLInExternalBrowser(url);
 
                 void onSubmit(object sender, string deviceCode)
                 {

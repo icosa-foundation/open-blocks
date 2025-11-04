@@ -1081,7 +1081,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             string publishUrl = PublishUrl + assetId;
             PeltzerMain.Instance.paletteController.SetPublishDialogActive();
-            System.Diagnostics.Process.Start(publishUrl);
+            PeltzerMain.OpenURLInExternalBrowser(publishUrl);
         }
 
         private void OpenSaveUrl()
@@ -1090,7 +1090,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 return;
             }
-            System.Diagnostics.Process.Start(DEFAULT_SAVE_URL);
+            PeltzerMain.OpenURLInExternalBrowser(DEFAULT_SAVE_URL);
             PeltzerMain.Instance.HasOpenedSaveUrlThisSession = true;
         }
 
