@@ -193,9 +193,17 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 TriangleCountMax == other.TriangleCountMax &&
                 string.Equals(License, other.License) &&
                 string.Equals(OrderBy, other.OrderBy) &&
-                string.Equals(Formats, other.Formats) &&
+                FormatsEqual(Formats, other.Formats) &&
                 string.Equals(Curated, other.Curated) &&
                 string.Equals(Category, other.Category);
+        }
+
+        private static bool FormatsEqual(string[] a, string[] b)
+        {
+            if (ReferenceEquals(a, b)) return true;
+            if (a == null || b == null) return false;
+            if (a.Length != b.Length) return false;
+            return a.SequenceEqual(b);
         }
 
         public override int GetHashCode()
@@ -205,10 +213,21 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 TriangleCountMax,
                 License,
                 OrderBy,
-                Formats,
+                GetFormatsHashCode(Formats),
                 Curated,
                 Category
             );
+        }
+
+        private static int GetFormatsHashCode(string[] formats)
+        {
+            if (formats == null) return 0;
+            var hash = new HashCode();
+            foreach (string format in formats)
+            {
+                hash.Add(format);
+            }
+            return hash.ToHashCode();
         }
 
         public static bool operator ==(ApiQueryParameters left, ApiQueryParameters right)

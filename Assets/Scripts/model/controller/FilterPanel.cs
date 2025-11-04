@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Linq;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
 using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.model.main;
@@ -56,10 +57,13 @@ namespace com.google.apps.peltzer.client.model.controller
             var format = m_FormatContainer.Value;
             var triangleCount = (int)m_TriangleCountSlider.Value;
 
+            // Parse new formats for comparison
+            var newFormats = format.Split(',').Where(f => !string.IsNullOrWhiteSpace(f)).ToArray();
+
             // check if refresh is necessary
             if (m_MainMenu.CurrentQueryParams.Category == category &&
                 m_MainMenu.CurrentQueryParams.OrderBy == orderBy &&
-                string.Join(",", m_MainMenu.CurrentQueryParams.Formats) == format && // Relies on format order not changing
+                FormatsEqual(m_MainMenu.CurrentQueryParams.Formats, newFormats) &&
                 m_MainMenu.CurrentQueryParams.TriangleCountMax == triangleCount)
             {
                 Disable();
@@ -73,6 +77,17 @@ namespace com.google.apps.peltzer.client.model.controller
 
             m_MainMenu.RefreshResults();
             Disable();
+        }
+
+        private static bool FormatsEqual(string[] a, string[] b)
+        {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            if (a.Length != b.Length) return false;
+            // Sort both arrays for order-independent comparison
+            var sortedA = a.OrderBy(x => x).ToArray();
+            var sortedB = b.OrderBy(x => x).ToArray();
+            return sortedA.SequenceEqual(sortedB);
         }
 
         public void HandleCancel()
