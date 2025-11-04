@@ -462,7 +462,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             // Try and actually parse the string.
             JObject results = JObject.Parse(response);
-            IJEnumerable<JToken> assets = results["assets"].AsJEnumerable();
+            IJEnumerable<JToken> assets = results["assets"].AsJEnumerable() ?? new JEnumerable<JToken>();
 
             // Then parse the assets.
             List<ObjectStoreEntry> objectStoreEntries = new List<ObjectStoreEntry>();
