@@ -264,7 +264,7 @@ namespace com.google.apps.peltzer.client.model.import
                 readable.ReadPixels(new Rect(0, 0, targetWidth, targetHeight), 0, 0);
                 readable.Apply();
                 readable.wrapMode = texture.wrapMode;
-                readable.filterMode = FilterMode.Bilinear;
+                readable.filterMode = texture.filterMode;
                 readable.name = texture.name;
 
                 RenderTexture.active = previous;
@@ -312,13 +312,12 @@ namespace com.google.apps.peltzer.client.model.import
             Vector2 uv2,
             int faceSeed)
         {
-            // Normalize UVs to [0,1] before any calculations
-            // GetPixelBilinear doesn't handle negative UVs correctly
-            uv0 = NormalizeUV(uv0);
-            uv1 = NormalizeUV(uv1);
-            uv2 = NormalizeUV(uv2);
+            // Calculate triangle area using normalized UVs (for consistent area measurement)
+            Vector2 uv0_normalized = NormalizeUV(uv0);
+            Vector2 uv1_normalized = NormalizeUV(uv1);
+            Vector2 uv2_normalized = NormalizeUV(uv2);
+            float triangleArea = ComputeTriangleArea(uv0_normalized, uv1_normalized, uv2_normalized);
 
-            float triangleArea = ComputeTriangleArea(uv0, uv1, uv2);
             if (triangleArea < MIN_TRIANGLE_AREA)
             {
                 return Sample(texture, materialTint, uv0);
@@ -335,6 +334,7 @@ namespace com.google.apps.peltzer.client.model.import
             for (int i = 0; i < sampleCount; i++)
             {
                 Vector3 barycentric = GenerateBarycentricSample(i, sampleCount, faceSeed);
+                // Interpolate in original UV space - Sample() will handle wrapping correctly
                 Vector2 uv = barycentric.x * uv0 + barycentric.y * uv1 + barycentric.z * uv2;
                 accumulator += Sample(texture, materialTint, uv);
             }
@@ -353,10 +353,33 @@ namespace com.google.apps.peltzer.client.model.import
 
         private static Color Sample(Texture2D texture, Color tint, Vector2 uv)
         {
-            // GetPixelBilinear with wrap mode should handle UVs correctly
-            Color sampled = texture.GetPixelBilinear(uv.x, uv.y);
+            bool usePointSampling = texture.filterMode == FilterMode.Point;
+            Color sampled;
+
+            if (usePointSampling)
+            {
+                // Point sampling: normalize UV then use GetPixel (doesn't handle wrapping)
+                Vector2 normalizedUV = NormalizeUV(uv);
+                sampled = SampleNearestPixel(texture, normalizedUV);
+            }
+            else
+            {
+                // Bilinear sampling: pass UV directly - GetPixelBilinear handles wrapping correctly
+                sampled = texture.GetPixelBilinear(uv.x, uv.y);
+            }
+
             sampled *= tint;
             return sampled;
+        }
+
+        private static Color SampleNearestPixel(Texture2D texture, Vector2 uv)
+        {
+            int pixelX = Mathf.Clamp((int)(uv.x * texture.width), 0, texture.width - 1);
+            int pixelY = Mathf.Clamp((int)(uv.y * texture.height), 0, texture.height - 1);
+
+            Color result = texture.GetPixel(pixelX, pixelY);
+
+            return result;
         }
 
         private static float ComputeTriangleArea(Vector2 uv0, Vector2 uv1, Vector2 uv2)
