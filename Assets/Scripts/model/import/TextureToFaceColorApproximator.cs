@@ -21,11 +21,26 @@ namespace com.google.apps.peltzer.client.model.import
 {
     internal static class TextureToFaceColorApproximator
     {
+        // Maximum texture dimension for readable copies (larger textures are downscaled to save memory)
         private const int MAX_READABLE_DIMENSION = 1024;
+
+        // Target coverage: sample approximately once per 256 texels (16x16 pixel area)
+        // Balances quality (capturing texture detail) vs performance (fewer samples)
         private const float TARGET_TEXELS_PER_SAMPLE = 256f;
+
+        // Minimum samples per face ensures we capture color variation even on small faces
+        // 3 samples = one near each vertex of the triangle
         private const int MIN_SAMPLES_PER_FACE = 3;
+
+        // Maximum samples per face caps computation cost on large faces
+        // 9 samples provides good coverage without excessive overhead
         private const int MAX_SAMPLES_PER_FACE = 9;
+
+        // Minimum triangle area in UV space (below this, treat as degenerate/point)
         private const float MIN_TRIANGLE_AREA = 1e-6f;
+
+        // Hash bias for generating pseudo-random sample distribution (golden ratio hash constant)
+        // Used to decorrelate sample positions across different faces
         private const int HASH_BIAS = unchecked((int)0x9E3779B9);
 
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
