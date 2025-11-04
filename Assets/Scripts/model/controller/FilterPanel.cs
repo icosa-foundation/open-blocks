@@ -99,11 +99,13 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             var menuMain = PeltzerMain.Instance.GetPolyMenuMain();
             ApiQueryParameters currentQueryParams = menuMain.CurrentQueryParams;
+
             // Show liked time only if we're in the liked tab
             m_OrderByContainer.ShowOptionByIndex(3, menuMain.CurrentCreationType() == PolyMenuMain.CreationType.LIKED);
+
             m_CategoryContainer.SetInitialOption(currentQueryParams.Category);
-            m_FormatContainer.SetInitialOption(currentQueryParams.Formats);
             m_OrderByContainer.SetInitialOption(currentQueryParams.OrderBy);
+            m_FormatContainer.SetInitialOption(currentQueryParams.Formats);
             m_TriangleCountSlider.SetInitialValue(currentQueryParams.TriangleCountMax);
 
             string titleText;
