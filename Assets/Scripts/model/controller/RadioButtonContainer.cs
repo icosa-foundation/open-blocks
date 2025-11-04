@@ -46,6 +46,11 @@ namespace com.google.apps.peltzer.client.model.controller
             return PeltzerMain.Instance.restrictionManager.menuActionsAllowed;
         }
 
+        public void SetInitialOption(string[] options)
+        {
+            SetInitialOption(string.Join(",", options));
+        }
+
         public void SetInitialOption(string option)
         {
 

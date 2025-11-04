@@ -238,7 +238,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.ANY,
             OrderBy = OrderByChoices.NEWEST,
-            Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.BLOCKS, FormatChoices.GLTF2, FormatChoices.OBJ },
+            Formats = new[] { FormatChoices.NOT_TILT },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
@@ -249,7 +249,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.LIKED_TIME,
-            Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.BLOCKS, FormatChoices.GLTF2, FormatChoices.OBJ },
+            Formats = new[] { FormatChoices.NOT_TILT },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
@@ -260,7 +260,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.BEST,
-            Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.BLOCKS, FormatChoices.GLTF2, FormatChoices.OBJ },
+            Formats = new[] { FormatChoices.NOT_TILT },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };

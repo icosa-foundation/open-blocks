@@ -29,6 +29,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public TextMeshPro m_TitleText;
         public RadioButtonContainer m_OrderByContainer;
         public RadioButtonContainer m_CategoryContainer;
+        public RadioButtonContainer m_FormatContainer;
         public Slider m_TriangleCountSlider;
 
         private PolyMenuMain m_MainMenu;
@@ -52,11 +53,13 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             var category = m_CategoryContainer.Value;
             var orderBy = m_OrderByContainer.Value;
+            var format = m_FormatContainer.Value;
             var triangleCount = (int)m_TriangleCountSlider.Value;
 
             // check if refresh is necessary
             if (m_MainMenu.CurrentQueryParams.Category == category &&
                 m_MainMenu.CurrentQueryParams.OrderBy == orderBy &&
+                string.Join(",", m_MainMenu.CurrentQueryParams.Formats) == format && // Relies on format order not changing
                 m_MainMenu.CurrentQueryParams.TriangleCountMax == triangleCount)
             {
                 Disable();
@@ -82,6 +85,7 @@ namespace com.google.apps.peltzer.client.model.controller
             // Show liked time only if we're in the liked tab
             m_OrderByContainer.ShowOptionByIndex(3, menuMain.CurrentCreationType() == PolyMenuMain.CreationType.LIKED);
             m_CategoryContainer.SetInitialOption(currentQueryParams.Category);
+            m_FormatContainer.SetInitialOption(currentQueryParams.Formats);
             m_OrderByContainer.SetInitialOption(currentQueryParams.OrderBy);
             m_TriangleCountSlider.SetInitialValue(currentQueryParams.TriangleCountMax);
 
