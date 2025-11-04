@@ -48,12 +48,12 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void SetInitialOption(string[] options)
         {
+            Debug.Log($"[RadioButtonContainer] Setting initial option to: {string.Join(",", options)}");
             SetInitialOption(string.Join(",", options));
         }
 
         public void SetInitialOption(string option)
         {
-
             foreach (var optionBtn in m_Options)
             {
                 if (optionBtn.m_Value == option)
@@ -66,6 +66,7 @@ namespace com.google.apps.peltzer.client.model.controller
                     optionBtn.isCurrentOption = false;
                     optionBtn.sprite.color = PolyMenuMain.UNSELECTED_ICON_COLOR;
                 }
+                m_Value = option;
             }
         }
 
