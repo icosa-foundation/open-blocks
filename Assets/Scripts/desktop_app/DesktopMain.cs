@@ -257,7 +257,7 @@ namespace com.google.apps.peltzer.client.desktop_app
                     menuFeedbackHoverable.SetOnClickAction(() =>
                     {
                         // OnClick of Poly Library hoverable button opens the Your Models URL in the web browser.
-                        Application.OpenURL(AssetsServiceClient.DEFAULT_SAVE_URL);
+                        PeltzerMain.OpenURLInExternalBrowser(AssetsServiceClient.DEFAULT_SAVE_URL);
                         CloseMenu();
                     });
                 }
@@ -269,7 +269,7 @@ namespace com.google.apps.peltzer.client.desktop_app
                     menuAboutPolyHoverable.SetOnClickAction(() =>
                     {
                         // OnClick of Poly Library hoverable button opens the "About Poly" page in the web browser.
-                        Application.OpenURL(ABOUT_BLOCKS_URL);
+                        PeltzerMain.OpenURLInExternalBrowser(ABOUT_BLOCKS_URL);
                         CloseMenu();
                     });
                 }

@@ -2112,5 +2112,18 @@ namespace com.google.apps.peltzer.client.model.main
             /// </summary>
             public string overrideRemixId = null;
         }
+        public static void OpenURLInExternalBrowser(string url)
+        {
+            // Something about some urls makes OpenURL() not work on OSX, so use a workaround
+            // TODO Is this still necessary?
+            if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.OSXPlayer)
+            {
+                System.Diagnostics.Process.Start(url);
+            }
+            else
+            {
+                Application.OpenURL(url);
+            }
+        }
     }
 }
