@@ -85,12 +85,21 @@ namespace com.google.apps.peltzer.client.model.import
                 return false;
             }
 
-            if (mesh.colors != null && mesh.colors.Length > 0)
+            Vector2[] uvs = mesh.uv;
+            Color[] vertexColors = mesh.colors;
+            bool hasVertexColors = vertexColors != null && vertexColors.Length > 0;
+
+            // If we have vertex colors but no UVs and no texture, use vertex colors only
+            if (hasVertexColors && (uvs == null || uvs.Length == 0))
             {
-                return false;
+                if (!TryGetReadableTexture(material, out _, out _))
+                {
+                    // No texture and no UVs - compute face colors from vertex colors
+                    return TryComputeFaceColorsFromVertexColors(triangles, vertexColors, out faceColors, out debugMessage);
+                }
             }
 
-            Vector2[] uvs = mesh.uv;
+            // If no UVs, we can't sample texture
             if (uvs == null || uvs.Length == 0)
             {
                 return false;
@@ -98,6 +107,11 @@ namespace com.google.apps.peltzer.client.model.import
 
             if (!TryGetReadableTexture(material, out Texture2D readableTexture, out Color materialTint))
             {
+                // No texture available - if we have vertex colors, use them
+                if (hasVertexColors)
+                {
+                    return TryComputeFaceColorsFromVertexColors(triangles, vertexColors, out faceColors, out debugMessage);
+                }
                 return false;
             }
 
@@ -125,12 +139,58 @@ namespace com.google.apps.peltzer.client.model.import
                     uvs[v2],
                     CombineHash(meshSeed, faceIndex)
                 );
+
+                // Multiply by vertex color if present (matches standard material rendering)
+                if (hasVertexColors && IsValidUvIndex(vertexColors, v0) && IsValidUvIndex(vertexColors, v1) && IsValidUvIndex(vertexColors, v2))
+                {
+                    Color avgVertexColor = (vertexColors[v0] + vertexColors[v1] + vertexColors[v2]) / 3f;
+                    sampled *= avgVertexColor;
+                }
+
                 colors.Add(sampled);
             }
 
             faceColors = colors;
-            debugMessage =
-                $"Synthesized {faceCount} face colours from texture '{readableTexture.name}'";
+            debugMessage = hasVertexColors
+                ? $"Synthesized {faceCount} face colours from texture '{readableTexture.name}' multiplied by vertex colors"
+                : $"Synthesized {faceCount} face colours from texture '{readableTexture.name}'";
+            return true;
+        }
+
+        private static bool TryComputeFaceColorsFromVertexColors(
+            int[] triangles,
+            Color[] vertexColors,
+            out List<Color> faceColors,
+            out string debugMessage)
+        {
+            faceColors = null;
+            debugMessage = null;
+
+            if (triangles == null || triangles.Length == 0 || vertexColors == null || vertexColors.Length == 0)
+            {
+                return false;
+            }
+
+            int faceCount = triangles.Length / 3;
+            List<Color> colors = new List<Color>(faceCount);
+
+            for (int i = 0; i < triangles.Length; i += 3)
+            {
+                int v0 = triangles[i];
+                int v1 = triangles[i + 1];
+                int v2 = triangles[i + 2];
+
+                if (!IsValidUvIndex(vertexColors, v0) || !IsValidUvIndex(vertexColors, v1) || !IsValidUvIndex(vertexColors, v2))
+                {
+                    return false;
+                }
+
+                Color avgColor = (vertexColors[v0] + vertexColors[v1] + vertexColors[v2]) / 3f;
+                colors.Add(avgColor);
+            }
+
+            faceColors = colors;
+            debugMessage = $"Synthesized {faceCount} face colours from vertex colors";
             return true;
         }
 
@@ -449,6 +509,11 @@ namespace com.google.apps.peltzer.client.model.import
         private static bool IsValidUvIndex(Vector2[] uvs, int index)
         {
             return index >= 0 && index < uvs.Length;
+        }
+
+        private static bool IsValidUvIndex(Color[] colors, int index)
+        {
+            return index >= 0 && index < colors.Length;
         }
 
         private static Color GetMaterialTint(Material material)
