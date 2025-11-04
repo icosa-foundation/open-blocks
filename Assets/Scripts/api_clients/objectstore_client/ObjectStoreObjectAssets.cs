@@ -50,11 +50,22 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
     }
 
     [Serializable]
+    public class ObjectStoreGltfPackageAssets
+    {
+        public string rootUrl;
+        public string[] supportingFiles;
+        public string baseFile;
+        public string version; // "GLTF", "GLTF1", or "GLTF2"
+    }
+
+    [Serializable]
     public class ObjectStoreObjectAssetsWrapper
     {
         public ObjectStoreObjectAssets obj;
         public ObjectStorePeltzerAssets peltzer;
         public ObjectStorePeltzerPackageAssets peltzer_package;
         public ObjectStoreObjMtlPackageAssets object_package;
+        public ObjectStoreGltfPackageAssets gltf_package;
+        public ObjectStoreGltfPackageAssets gltf;
     }
 }

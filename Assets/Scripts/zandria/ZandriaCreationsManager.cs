@@ -870,8 +870,7 @@ namespace com.google.apps.peltzer.client.zandria
         public void LoadModelForCreation(Creation creation, PolyMenuMain.CreationType type)
         {
             ObjectStoreEntry entry = creation.entry.queryEntry;
-            if (entry == null || (entry.localPeltzerFile == null &&
-              (entry.assets == null || (entry.assets.peltzer == null && entry.assets.peltzer_package == null))))
+            if (!EntryHasLoadableAsset(entry))
             {
                 OnLoadFailure(creation, type);
                 return;
@@ -948,6 +947,31 @@ namespace com.google.apps.peltzer.client.zandria
             }
         }
 
+        private static bool EntryHasLoadableAsset(ObjectStoreEntry entry)
+        {
+            if (entry == null)
+            {
+                return false;
+            }
+
+            if (entry.localPeltzerFile != null)
+            {
+                return true;
+            }
+
+            if (entry.assets == null)
+            {
+                return false;
+            }
+
+            return entry.assets.peltzer != null
+              || entry.assets.peltzer_package != null
+              || entry.assets.object_package != null
+              || entry.assets.obj != null
+              || entry.assets.gltf_package != null
+              || entry.assets.gltf != null;
+        }
+
         // Deals with the response of a GetThumbnailTexture request, retrying it if an auth token was stale.
         private IEnumerator ProcessGetThumbnailTexture(bool success, int responseCode,
           byte[] responseBytes, UnityWebRequest request, ObjectStoreEntry entry,
@@ -965,9 +989,21 @@ namespace com.google.apps.peltzer.client.zandria
             }
             else
             {
-                Texture2D tex = new Texture2D(192, 192);
-                tex.LoadImage(responseBytes);
-                thumbnailTextureCallback(tex);
+                Texture2D originalTex = new Texture2D(2, 2);
+                originalTex.LoadImage(responseBytes);
+
+                Texture2D resizedTex = new Texture2D(512, 384);
+                RenderTexture rt = RenderTexture.GetTemporary(512, 384);
+                Graphics.Blit(originalTex, rt);
+                RenderTexture previous = RenderTexture.active;
+                RenderTexture.active = rt;
+                resizedTex.ReadPixels(new Rect(0, 0, 512, 384), 0, 0);
+                resizedTex.Apply();
+                RenderTexture.active = previous;
+                RenderTexture.ReleaseTemporary(rt);
+                UnityEngine.Object.Destroy(originalTex);
+
+                thumbnailTextureCallback(resizedTex);
             }
         }
 
@@ -1195,6 +1231,13 @@ namespace com.google.apps.peltzer.client.zandria
 
         public void BackgroundWork()
         {
+            // Check if rawFileData is null (e.g., download failed or unsupported format)
+            if (rawFileData == null || rawFileData.Length == 0)
+            {
+                isValidCreation = false;
+                return;
+            }
+
             // Get the actual MMeshes from the peltzer file.
             isValidCreation = creationHandler.GetMMeshesFromPeltzerFile(rawFileData,
               delegate (List<MMesh> meshes, float recommendedRotation)

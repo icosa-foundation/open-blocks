@@ -150,7 +150,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public int TriangleCountMax;
         public string License;
         public string OrderBy;
-        public string Format;
+        public string[] Formats;
         public string Curated;
         public string Category;
 
@@ -160,7 +160,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 "TriangleCountMax: " + TriangleCountMax + "\n" +
                 "License: " + License + "\n" +
                 "OrderBy: " + OrderBy + "\n" +
-                "Format: " + Format + "\n" +
+                "Format: " + Formats + "\n" +
                 "Curated: " + Curated + "\n" +
                 "Category: " + Category;
         }
@@ -173,7 +173,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 TriangleCountMax = TriangleCountMax,
                 License = License,
                 OrderBy = OrderBy,
-                Format = Format,
+                Formats = Formats,
                 Curated = Curated,
                 Category = Category
             };
@@ -193,9 +193,17 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 TriangleCountMax == other.TriangleCountMax &&
                 string.Equals(License, other.License) &&
                 string.Equals(OrderBy, other.OrderBy) &&
-                string.Equals(Format, other.Format) &&
+                FormatsEqual(Formats, other.Formats) &&
                 string.Equals(Curated, other.Curated) &&
                 string.Equals(Category, other.Category);
+        }
+
+        private static bool FormatsEqual(string[] a, string[] b)
+        {
+            if (ReferenceEquals(a, b)) return true;
+            if (a == null || b == null) return false;
+            if (a.Length != b.Length) return false;
+            return a.SequenceEqual(b);
         }
 
         public override int GetHashCode()
@@ -205,10 +213,21 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 TriangleCountMax,
                 License,
                 OrderBy,
-                Format,
+                GetFormatsHashCode(Formats),
                 Curated,
                 Category
             );
+        }
+
+        private static int GetFormatsHashCode(string[] formats)
+        {
+            if (formats == null) return 0;
+            var hash = new HashCode();
+            foreach (string format in formats)
+            {
+                hash.Add(format);
+            }
+            return hash.ToHashCode();
         }
 
         public static bool operator ==(ApiQueryParameters left, ApiQueryParameters right)
@@ -238,7 +257,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.ANY,
             OrderBy = OrderByChoices.NEWEST,
-            Format = FormatChoices.BLOCKS,
+            Formats = new[] { FormatChoices.BLOCKS },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
@@ -249,7 +268,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.LIKED_TIME,
-            Format = FormatChoices.BLOCKS,
+            Formats = new[] { FormatChoices.BLOCKS },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
@@ -260,7 +279,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.BEST,
-            Format = FormatChoices.BLOCKS,
+            Formats = new[] { FormatChoices.BLOCKS },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
@@ -271,7 +290,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             get
             {
-                // TODO make this user configurable
                 if (Application.isMobilePlatform)
                 {
                     return 5000;
@@ -280,7 +298,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 {
                     // -9999 for "no limit"
                     // This must match the special value set on the slider in FilterPanel.cs
-                    return -9999;
+                    return 9000;
                 }
             }
         }
@@ -316,7 +334,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             // This might exceed the limit imposed by the server (currently 100)
             int pageSize = ZandriaCreationsManager.MAX_NUMBER_OF_PAGES * ZandriaCreationsManager.NUMBER_OF_CREATIONS_PER_PAGE;
-            string url = $"format={q.Format}&";
+            string url = string.Join("", q.Formats.Select(format => $"format={format}&"));
             url += $"pageSize={pageSize}&";
             url += $"orderBy={q.OrderBy}&";
             if (q.TriangleCountMax > 0) url += $"triangleCountMax={q.TriangleCountMax}&";
@@ -462,7 +480,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             // Try and actually parse the string.
             JObject results = JObject.Parse(response);
-            IJEnumerable<JToken> assets = results["assets"].AsJEnumerable();
+            IJEnumerable<JToken> assets = results["assets"].AsJEnumerable() ?? new JEnumerable<JToken>();
 
             // Then parse the assets.
             List<ObjectStoreEntry> objectStoreEntries = new List<ObjectStoreEntry>();
@@ -555,6 +573,50 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return true;
         }
 
+        private static void ParseFormatPaths(JToken formatRoot, out string rootUrl, out string baseFile, out string[] supportingFiles)
+        {
+            rootUrl = formatRoot?["root"]?["url"]?.ToString();
+            baseFile = formatRoot?["root"]?["relativePath"]?.ToString()
+              ?? formatRoot?["root"]?["relative_path"]?.ToString()
+              ?? string.Empty;
+
+            supportingFiles = null;
+            JToken resourcesToken = formatRoot?["resources"] ?? formatRoot?["resource"];
+            if (resourcesToken == null)
+            {
+                return;
+            }
+
+            if (resourcesToken.Type == JTokenType.Array)
+            {
+                supportingFiles = resourcesToken
+                  .Select(res => res?["relativePath"]?.ToString()
+                    ?? res?["relative_path"]?.ToString()
+                    ?? res?["url"]?.ToString())
+                  .Where(path => !string.IsNullOrEmpty(path))
+                  .ToArray();
+            }
+            else if (resourcesToken.Type == JTokenType.Object)
+            {
+                string path = resourcesToken?["relativePath"]?.ToString()
+                  ?? resourcesToken?["relative_path"]?.ToString()
+                  ?? resourcesToken?["url"]?.ToString();
+                if (!string.IsNullOrEmpty(path))
+                {
+                    supportingFiles = new[] { path };
+                }
+            }
+        }
+
+        private static string GetZipArchiveUrl(JToken formatRoot)
+        {
+            return formatRoot?["zipArchiveUrl"]?.ToString()
+              ?? formatRoot?["zip_archive_url"]?.ToString()
+              ?? formatRoot?["zipArchive"]?["url"]?.ToString()
+              ?? formatRoot?["zip_archive"]?["url"]?.ToString()
+              ?? formatRoot?["zip"]?["url"]?.ToString();
+        }
+
         /// <summary>
         ///   Parses a single asset as defined in vr/assets/asset.proto
         /// </summary>
@@ -602,25 +664,107 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
 
             var entryAssets = new ObjectStoreObjectAssetsWrapper();
-            var blocksAsset = new ObjectStorePeltzerAssets();
-            // 7 is the enum for Blocks in ElementType
-            // A bit ugly: we simply take one arbitrary entry (we assume only one entry exists, as we only ever upload one).
-            //blocksAsset.rootUrl = asset["formats"]["7"]["format"][0]["root"]["dataUrl"].ToString();
-            var assets = asset["formats"].AsJEnumerable();
-            var blocksEntry = assets?.FirstOrDefault(x => x["formatType"].ToString() == "BLOCKS");
-            if (blocksEntry == null)
+            bool hasSupportedFormat = false;
+
+            var formats = asset["formats"].AsJEnumerable();
+            if (formats != null)
             {
-                Debug.LogWarning($"Asset had no blocks format type: {asset}");
+                foreach (JToken format in formats)
+                {
+                    string formatType = format?["formatType"]?.ToString();
+                    if (string.IsNullOrEmpty(formatType))
+                    {
+                        continue;
+                    }
+
+                    switch (formatType)
+                    {
+                        case "BLOCKS":
+                            ParseFormatPaths(format, out string blocksRootUrl, out string blocksBaseFile,
+                              out string[] blocksSupportingFiles);
+                            if (!string.IsNullOrEmpty(blocksRootUrl))
+                            {
+                                entryAssets.peltzer = new ObjectStorePeltzerAssets
+                                {
+                                    rootUrl = blocksRootUrl,
+                                    baseFile = blocksBaseFile ?? string.Empty,
+                                    supportingFiles = blocksSupportingFiles
+                                };
+                                hasSupportedFormat = true;
+                            }
+                            break;
+                        case "OBJ":
+                            ParseFormatPaths(format, out string objRootUrl, out string objBaseFile,
+                              out string[] objSupportingFiles);
+                            if (!string.IsNullOrEmpty(objRootUrl))
+                            {
+                                var objAssets = new ObjectStoreObjectAssets
+                                {
+                                    rootUrl = objRootUrl,
+                                    baseFile = objBaseFile ?? string.Empty,
+                                    supportingFiles = objSupportingFiles
+                                };
+                                entryAssets.obj = entryAssets.obj ?? objAssets;
+                                hasSupportedFormat = true;
+                            }
+                            break;
+                        case "OBJECT":
+                            string zipArchiveUrl = GetZipArchiveUrl(format);
+                            if (!string.IsNullOrEmpty(zipArchiveUrl))
+                            {
+                                var objectPackageAssets = new ObjectStoreObjMtlPackageAssets
+                                {
+                                    rootUrl = zipArchiveUrl,
+                                    baseFile = string.Empty,
+                                    supportingFiles = null
+                                };
+                                entryAssets.object_package = entryAssets.object_package ?? objectPackageAssets;
+                                hasSupportedFormat = true;
+                            }
+                            break;
+                        case "GLTF":
+                        case "GLTF1":
+                        case "GLTF2":
+                            ParseFormatPaths(format, out string gltfRootUrl, out string gltfBaseFile,
+                              out string[] gltfSupportingFiles);
+                            if (!string.IsNullOrEmpty(gltfRootUrl))
+                            {
+                                var gltfAssets = new ObjectStoreGltfPackageAssets
+                                {
+                                    rootUrl = gltfRootUrl,
+                                    baseFile = gltfBaseFile ?? string.Empty,
+                                    supportingFiles = gltfSupportingFiles,
+                                    version = formatType
+                                };
+
+                                bool looksLikeGlb = (!string.IsNullOrEmpty(gltfBaseFile) && gltfBaseFile.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
+                                  || gltfRootUrl.EndsWith(".glb", StringComparison.OrdinalIgnoreCase);
+
+                                if (looksLikeGlb)
+                                {
+                                    entryAssets.gltf_package = entryAssets.gltf_package ?? gltfAssets;
+                                }
+                                else
+                                {
+                                    entryAssets.gltf = entryAssets.gltf ?? gltfAssets;
+                                }
+
+                                if (formatType == "GLTF2")
+                                {
+                                    hasSupportedFormat = true;
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+
+            if (!hasSupportedFormat)
+            {
+                Debug.LogWarning($"Asset had no supported formats: {asset}");
                 return false;
             }
-            blocksAsset.rootUrl = blocksEntry["root"]?["url"]?.ToString();
-            if (string.IsNullOrEmpty(blocksAsset.rootUrl))
-            {
-                Debug.LogWarning("Asset had no blocks root URL");
-                return false;
-            }
-            blocksAsset.baseFile = "";
-            entryAssets.peltzer = blocksAsset;
+
             objectStoreEntry.assets = entryAssets;
             objectStoreEntry.title = asset["displayName"].ToString();
             objectStoreEntry.author = asset["authorName"].ToString();

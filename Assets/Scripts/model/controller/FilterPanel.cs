@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Linq;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
 using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.model.main;
-using com.google.apps.peltzer.client.tools;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -31,6 +30,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public TextMeshPro m_TitleText;
         public RadioButtonContainer m_OrderByContainer;
         public RadioButtonContainer m_CategoryContainer;
+        public RadioButtonContainer m_FormatContainer;
         public Slider m_TriangleCountSlider;
 
         private PolyMenuMain m_MainMenu;
@@ -54,11 +54,16 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             var category = m_CategoryContainer.Value;
             var orderBy = m_OrderByContainer.Value;
+            var format = m_FormatContainer.Value;
             var triangleCount = (int)m_TriangleCountSlider.Value;
+
+            // Parse new formats for comparison
+            var newFormats = format.Split(',').Where(f => !string.IsNullOrWhiteSpace(f)).ToArray();
 
             // check if refresh is necessary
             if (m_MainMenu.CurrentQueryParams.Category == category &&
                 m_MainMenu.CurrentQueryParams.OrderBy == orderBy &&
+                FormatsEqual(m_MainMenu.CurrentQueryParams.Formats, newFormats) &&
                 m_MainMenu.CurrentQueryParams.TriangleCountMax == triangleCount)
             {
                 Disable();
@@ -67,9 +72,22 @@ namespace com.google.apps.peltzer.client.model.controller
 
             m_MainMenu.SetApiOrderBy(orderBy);
             m_MainMenu.SetApiCategoryFilter(category);
+            m_MainMenu.SetApiFormatFilter(format);
             m_MainMenu.SetApiTriangleCountMax(triangleCount);
+
             m_MainMenu.RefreshResults();
             Disable();
+        }
+
+        private static bool FormatsEqual(string[] a, string[] b)
+        {
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            if (a.Length != b.Length) return false;
+            // Sort both arrays for order-independent comparison
+            var sortedA = a.OrderBy(x => x).ToArray();
+            var sortedB = b.OrderBy(x => x).ToArray();
+            return sortedA.SequenceEqual(sortedB);
         }
 
         public void HandleCancel()
@@ -81,10 +99,13 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             var menuMain = PeltzerMain.Instance.GetPolyMenuMain();
             ApiQueryParameters currentQueryParams = menuMain.CurrentQueryParams;
+
             // Show liked time only if we're in the liked tab
             m_OrderByContainer.ShowOptionByIndex(3, menuMain.CurrentCreationType() == PolyMenuMain.CreationType.LIKED);
+
             m_CategoryContainer.SetInitialOption(currentQueryParams.Category);
             m_OrderByContainer.SetInitialOption(currentQueryParams.OrderBy);
+            m_FormatContainer.SetInitialOption(currentQueryParams.Formats);
             m_TriangleCountSlider.SetInitialValue(currentQueryParams.TriangleCountMax);
 
             string titleText;
