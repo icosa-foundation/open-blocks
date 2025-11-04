@@ -1346,7 +1346,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 OAuth2Identity.Instance.Authenticate(request);
             }
-            //Debug.Log($"request: {request.url}");
             return request;
         }
 

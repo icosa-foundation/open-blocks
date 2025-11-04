@@ -15,10 +15,8 @@
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
 using com.google.apps.peltzer.client.menu;
 using com.google.apps.peltzer.client.model.main;
-using com.google.apps.peltzer.client.tools;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace com.google.apps.peltzer.client.model.controller
 {

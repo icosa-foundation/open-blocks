@@ -92,7 +92,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         /// Downloads the raw file data for an object. This method was originally designed for the Object Store
         /// (predecessor of Zandria) but is actually agnostic to the underlying service, as it just pulls data
         /// from a URL, so we use it from ZandriaCreationsManager.
-        /// Tries formats in priority order: Blocks zip, Blocks file, OBJ zip, OBJ file, GLB, GLTF
+        /// Tries formats in priority order: Blocks, OBJ, GLB, GLTF
         /// </summary>
         /// <param name="entry">The entry for which to load the raw data.</param>
         /// <param name="callback">The callback to call when loading is complete.</param>
