@@ -144,12 +144,19 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public static string
             ANY = "",
             TILT = "TILT",
+            NOT_TILT = "-TILT",
             BLOCKS = "BLOCKS",
+            NOT_BLOCKS = "-BLOCKS",
             GLTF = "GLTF",
+            NOT_GLTF = "-GLTF",
             GLTF1 = "GLTF1",
+            NOT_GLTF1 = "-GLTF1",
             GLTF2 = "GLTF2",
+            NOT_GLTF2 = "-GLTF2",
             OBJ = "OBJ",
-            FBX = "FBX";
+            NOT_OBJ = "-OBJ",
+            FBX = "FBX",
+            NOT_FBX = "-FBX";
     }
 
     public class CuratedChoices

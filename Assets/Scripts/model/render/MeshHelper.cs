@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
+using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.util;
 
@@ -490,14 +491,16 @@ namespace com.google.apps.peltzer.client.model.render
                     }
                     faceProperties.Add(new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(col)));
                 }
-                mmeshes.Add(new MMesh(
+                MMesh importedMesh = new MMesh(
                     PeltzerMain.Instance.model.GenerateMeshId(),
                     Vector3.zero,
                     Quaternion.identity,
                     mesh.vertices.Select(v => v * scale).ToList(),
                     faces,
                     faceProperties
-                ));
+                );
+                CoplanarFaceMerger.MergeCoplanarFaces(importedMesh);
+                mmeshes.Add(importedMesh);
             }
             return mmeshes;
         }
@@ -639,6 +642,124 @@ namespace com.google.apps.peltzer.client.model.render
                 triangles.Add(i + 1);
             }
             return triangles;
+        }
+
+        /// <summary>
+        /// Converts a Unity Mesh to an MMesh, optionally scaling it to fit within a maximum size.
+        /// </summary>
+        /// <param name="unityMesh">The Unity mesh to convert.</param>
+        /// <param name="id">The id for the new MMesh.</param>
+        /// <param name="maxSize">Maximum size for any dimension (0 or negative means no scaling).</param>
+        /// <param name="meshToRootMatrix">Optional matrix to move vertices into a common space (e.g., root local space).</param>
+        /// <param name="result">The resulting MMesh.</param>
+        /// <param name="materialId">Material to assign to generated faces.</param>
+        /// <param name="trianglesOverride">Optional triangle index list to use instead of the mesh default.</param>
+        /// <param name="facePropertiesOverride">Optional per-face material assignments to apply. If provided, must
+        /// match the number of generated faces.</param>
+        /// <returns>Whether the conversion was successful.</returns>
+        public static bool MMeshFromUnityMesh(
+          Mesh unityMesh,
+          int id,
+          float maxSize,
+          Matrix4x4? meshToRootMatrix,
+          out MMesh result,
+          int materialId = 1,
+          int[] trianglesOverride = null,
+          IList<FaceProperties> facePropertiesOverride = null)
+        {
+            result = null;
+
+            if (unityMesh == null || unityMesh.vertexCount == 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                Vector3[] vertices = unityMesh.vertices;
+                int[] triangles = trianglesOverride ?? unityMesh.triangles;
+
+                if (triangles.Length == 0 || triangles.Length % 3 != 0)
+                {
+                    return false;
+                }
+
+                float scale = 1.0f;
+                if (maxSize > 0)
+                {
+                    Vector3 min = vertices[0];
+                    Vector3 max = vertices[0];
+                    for (int i = 1; i < vertices.Length; i++)
+                    {
+                        min = Vector3.Min(min, vertices[i]);
+                        max = Vector3.Max(max, vertices[i]);
+                    }
+                    Vector3 size = max - min;
+                    float maxDimension = Mathf.Max(size.x, size.y, size.z);
+                    if (maxDimension > maxSize)
+                    {
+                        scale = maxSize / maxDimension;
+                    }
+                }
+
+                Matrix4x4 transformMatrix = meshToRootMatrix ?? Matrix4x4.identity;
+
+                Dictionary<int, Vertex> verticesById = new Dictionary<int, Vertex>();
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    Vector3 scaledVertex = vertices[i] * scale;
+                    Vector3 transformedVertex = transformMatrix.MultiplyPoint3x4(scaledVertex);
+                    verticesById[i] = new Vertex(i, transformedVertex);
+                }
+
+                // Build faces from triangles
+                Dictionary<int, Face> facesById = new Dictionary<int, Face>();
+                int faceIndex = 0;
+
+                int overrideCount = facePropertiesOverride != null ? facePropertiesOverride.Count : 0;
+                for (int i = 0; i < triangles.Length; i += 3)
+                {
+                    List<int> faceVertexIds = new List<int>
+                    {
+                        triangles[i],
+                        triangles[i + 1],
+                        triangles[i + 2]
+                    };
+
+                    FaceProperties properties = new FaceProperties(materialId);
+                    int faceOverrideIndex = i / 3;
+                    if (facePropertiesOverride != null)
+                    {
+                        if (faceOverrideIndex < overrideCount)
+                        {
+                            properties = facePropertiesOverride[faceOverrideIndex];
+                        }
+                        else if (faceOverrideIndex == overrideCount)
+                        {
+                            Debug.LogWarning($"Face properties override count ({overrideCount}) did not match number of faces for mesh '{unityMesh?.name}' (expected {triangles.Length / 3}). Using fallback material for remaining faces.");
+                        }
+                    }
+
+                    Face newFace = new Face(
+                        faceIndex,
+                        faceVertexIds.AsReadOnly(),
+                        verticesById,
+                        properties
+                    );
+
+                    facesById.Add(faceIndex, newFace);
+                    faceIndex++;
+                }
+
+                result = new MMesh(id, Vector3.zero, Quaternion.identity, verticesById, facesById);
+                CoplanarFaceMerger.MergeCoplanarFaces(result);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to convert Unity Mesh to MMesh: {e}");
+                return false;
+            }
         }
     }
 }

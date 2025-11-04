@@ -114,6 +114,7 @@ namespace com.google.apps.peltzer.client.model.controller
             }
             val = Mathf.Round(val / m_Step) * m_Step;
             m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, val);
+            m_SliderMaterial = m_SliderRenderer.material;
             m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
         }
 
