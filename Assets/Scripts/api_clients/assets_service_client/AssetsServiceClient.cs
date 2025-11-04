@@ -290,7 +290,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             get
             {
-                // TODO make this user configurable
                 if (Application.isMobilePlatform)
                 {
                     return 5000;
@@ -299,7 +298,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 {
                     // -9999 for "no limit"
                     // This must match the special value set on the slider in FilterPanel.cs
-                    return -9999;
+                    return 9000;
                 }
             }
         }
