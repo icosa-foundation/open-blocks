@@ -537,51 +537,68 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       if (gltfAssets.supportingFiles != null && gltfAssets.supportingFiles.Length > 0)
                       {
                           string rootDir = gltfAssets.rootUrl.Substring(0, gltfAssets.rootUrl.LastIndexOf('/') + 1);
-                          int filesToDownload = gltfAssets.supportingFiles.Length;
+                          int filesToDownload = 0;
                           int filesDownloaded = 0;
                           bool downloadFailed = false;
 
-                          foreach (string supportingFile in gltfAssets.supportingFiles)
+                          // Count only non-empty files
+                          foreach (string file in gltfAssets.supportingFiles)
                           {
-                              if (string.IsNullOrEmpty(supportingFile)) continue;
-
-                              StringBuilder supportingUrl;
-                              if (supportingFile.StartsWith("http://") || supportingFile.StartsWith("https://"))
+                              if (!string.IsNullOrEmpty(file))
                               {
-                                  supportingUrl = new StringBuilder(supportingFile);
+                                  filesToDownload++;
                               }
-                              else
+                          }
+
+                          // If no valid supporting files, proceed directly to conversion
+                          if (filesToDownload == 0)
+                          {
+                              PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertGltfPackageWork(responseBytes, null, expectBinary, assetId, callback));
+                          }
+                          else
+                          {
+                              foreach (string supportingFile in gltfAssets.supportingFiles)
                               {
-                                  supportingUrl = new StringBuilder(rootDir).Append(supportingFile);
-                              }
+                                  if (string.IsNullOrEmpty(supportingFile)) continue;
 
-                              PeltzerMain.Instance.webRequestManager.EnqueueRequest(
-                                () => GetNewGetRequest(supportingUrl, "application/octet-stream"),
-                                (bool fileSuccess, int fileResponseCode, byte[] fileBytes) =>
-                                {
-                                    if (fileSuccess && fileBytes != null)
-                                    {
-                                        additionalFiles[supportingFile] = fileBytes;
-                                    }
-                                    else
-                                    {
-                                        Debug.LogWarning($"Failed to download GLTF supporting file: {supportingUrl}");
-                                        downloadFailed = true;
-                                    }
+                                  StringBuilder supportingUrl;
+                                  if (supportingFile.StartsWith("http://") || supportingFile.StartsWith("https://"))
+                                  {
+                                      supportingUrl = new StringBuilder(supportingFile);
+                                  }
+                                  else
+                                  {
+                                      supportingUrl = new StringBuilder(rootDir).Append(supportingFile);
+                                  }
 
-                                    filesDownloaded++;
-                                    if (filesDownloaded >= filesToDownload)
+                                  PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+                                    () => GetNewGetRequest(supportingUrl, "application/octet-stream"),
+                                    (bool fileSuccess, int fileResponseCode, byte[] fileBytes) =>
                                     {
-                                        if (downloadFailed)
+                                        if (fileSuccess && fileBytes != null)
                                         {
-                                            onFailure();
+                                            additionalFiles[supportingFile] = fileBytes;
                                         }
                                         else
                                         {
-                                            PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertGltfPackageWork(responseBytes, additionalFiles, expectBinary, assetId, callback));
+                                            Debug.LogWarning($"Failed to download GLTF supporting file: {supportingUrl}");
+                                            downloadFailed = true;
                                         }
-                                    }
-                                });
+
+                                        filesDownloaded++;
+                                        if (filesDownloaded >= filesToDownload)
+                                        {
+                                            if (downloadFailed)
+                                            {
+                                                onFailure();
+                                            }
+                                            else
+                                            {
+                                                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertGltfPackageWork(responseBytes, additionalFiles, expectBinary, assetId, callback));
+                                            }
+                                        }
+                                    });
+                              }
                           }
                       }
                       else
