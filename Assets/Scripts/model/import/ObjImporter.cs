@@ -103,7 +103,8 @@ namespace com.google.apps.peltzer.client.model.import
             public List<string> texCoordLines = new List<string>();    // "vt u v"
             public List<string> normalLines = new List<string>();      // "vn x y z"
             public Dictionary<string, List<string>> groupFaceLines = new Dictionary<string, List<string>>();
-            public Dictionary<string, List<string>> groupMaterialLines = new Dictionary<string, List<string>>();
+            // For each group, store the material active for each face (parallel to groupFaceLines)
+            public Dictionary<string, List<string>> groupFaceMaterials = new Dictionary<string, List<string>>();
         }
 
         /// <summary>
@@ -198,16 +199,13 @@ namespace com.google.apps.peltzer.client.model.import
                         if (!data.groupFaceLines.ContainsKey(currentGroup))
                         {
                             data.groupFaceLines[currentGroup] = new List<string>();
-                            data.groupMaterialLines[currentGroup] = new List<string>();
+                            data.groupFaceMaterials[currentGroup] = new List<string>();
                         }
 
-                        // Add material declaration before first face that uses it
-                        if (currentMaterial != null && !data.groupMaterialLines[currentGroup].Contains(currentMaterial))
-                        {
-                            data.groupMaterialLines[currentGroup].Add(currentMaterial);
-                        }
-
+                        // Store the face line
                         data.groupFaceLines[currentGroup].Add(trimmed);
+                        // Store the material active for this face (parallel list)
+                        data.groupFaceMaterials[currentGroup].Add(currentMaterial);
                     }
                 }
             }
@@ -349,18 +347,24 @@ namespace com.google.apps.peltzer.client.model.import
                     }
                 }
 
-                // Add material declarations
-                if (data.groupMaterialLines.ContainsKey(group))
-                {
-                    foreach (string mtlLine in data.groupMaterialLines[group])
-                    {
-                        content.AppendLine(mtlLine);
-                    }
-                }
+                // Add faces with their material declarations interleaved in correct order
+                string lastMaterial = null;
+                List<string> faceLines = kvp.Value;
+                List<string> faceMaterials = data.groupFaceMaterials.ContainsKey(group) ?
+                    data.groupFaceMaterials[group] : new List<string>();
 
-                // Add remapped faces
-                foreach (string faceLine in kvp.Value)
+                for (int i = 0; i < faceLines.Count; i++)
                 {
+                    string faceLine = faceLines[i];
+                    string faceMaterial = i < faceMaterials.Count ? faceMaterials[i] : null;
+
+                    // Emit usemtl only when material changes
+                    if (faceMaterial != null && faceMaterial != lastMaterial)
+                    {
+                        content.AppendLine(faceMaterial);
+                        lastMaterial = faceMaterial;
+                    }
+
                     string remapped = RemapFaceLine(faceLine, remap);
                     content.AppendLine(remapped);
                 }
