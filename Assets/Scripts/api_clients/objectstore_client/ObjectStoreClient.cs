@@ -377,7 +377,29 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             {
                 string objContents = File.ReadAllText(cachedObjPath);
                 string mtlContents = File.Exists(cachedMtlPath) ? File.ReadAllText(cachedMtlPath) : null;
-                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjStringsWork(objContents, mtlContents, callback));
+
+                // Load cached textures
+                Dictionary<string, byte[]> cachedTextures = null;
+                if (objAssets.supportingFiles != null && objAssets.supportingFiles.Length > 0)
+                {
+                    cachedTextures = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+                    foreach (string supportingFile in objAssets.supportingFiles)
+                    {
+                        if (string.IsNullOrEmpty(supportingFile)) continue;
+                        if (supportingFile.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase)) continue;
+
+                        string sanitizedKey = supportingFile.Replace("\\", "/").TrimStart('/');
+                        string decodedKey = Uri.UnescapeDataString(sanitizedKey);
+                        string cachedTexturePath = Path.Combine(cacheDir, decodedKey);
+
+                        if (File.Exists(cachedTexturePath))
+                        {
+                            cachedTextures[supportingFile] = File.ReadAllBytes(cachedTexturePath);
+                        }
+                    }
+                }
+
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjStringsWork(objContents, mtlContents, callback, cachedTextures));
                 return;
             }
 
@@ -403,7 +425,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                   }
 
                   string objContents = Encoding.UTF8.GetString(objBytes);
-                  string mtlPath = objAssets.supportingFiles?.FirstOrDefault(f => f != null && f.EndsWith(".mtl"));
+                  string mtlPath = objAssets.supportingFiles?.FirstOrDefault(f => f != null && f.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase));
 
                   // Cache the OBJ file
                   try
@@ -450,16 +472,116 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                                 }
                             }
 
-                            PeltzerMain.Instance.DoPolyMenuBackgroundWork(
-                              new ConvertObjStringsWork(objContents, mtlContents, callback));
+                            // Download texture files from supportingFiles
+                            DownloadSupportingTextureFiles(objAssets, cacheDir, objContents, mtlContents, callback, onFailure);
                         });
                   }
                   else
                   {
-                      PeltzerMain.Instance.DoPolyMenuBackgroundWork(
-                        new ConvertObjStringsWork(objContents, null, callback));
+                      // No MTL file, but still check for texture files
+                      DownloadSupportingTextureFiles(objAssets, cacheDir, objContents, null, callback, onFailure);
                   }
               });
+        }
+
+        private static void DownloadSupportingTextureFiles(
+            ObjectStoreObjectAssets objAssets,
+            string cacheDir,
+            string objContents,
+            string mtlContents,
+            System.Action<byte[]> callback,
+            System.Action onFailure)
+        {
+            Dictionary<string, byte[]> textureDataByName = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+
+            if (objAssets.supportingFiles == null || objAssets.supportingFiles.Length == 0)
+            {
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjStringsWork(objContents, mtlContents, callback, null));
+                return;
+            }
+
+            string rootDir = objAssets.rootUrl.Substring(0, objAssets.rootUrl.LastIndexOf('/') + 1);
+            int texturesToDownload = 0;
+            int texturesDownloaded = 0;
+            bool downloadFailed = false;
+
+            // Count texture files (skip .mtl files)
+            foreach (string file in objAssets.supportingFiles)
+            {
+                if (!string.IsNullOrEmpty(file) && !file.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase))
+                {
+                    texturesToDownload++;
+                }
+            }
+
+            if (texturesToDownload == 0)
+            {
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjStringsWork(objContents, mtlContents, callback, null));
+                return;
+            }
+
+            foreach (string supportingFile in objAssets.supportingFiles)
+            {
+                if (string.IsNullOrEmpty(supportingFile)) continue;
+                if (supportingFile.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase)) continue;
+
+                StringBuilder supportingUrl;
+                if (supportingFile.StartsWith("http://") || supportingFile.StartsWith("https://"))
+                {
+                    supportingUrl = new StringBuilder(supportingFile);
+                }
+                else
+                {
+                    supportingUrl = new StringBuilder(rootDir).Append(supportingFile);
+                }
+
+                PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+                  () => GetNewGetRequest(supportingUrl, "application/octet-stream"),
+                  (bool fileSuccess, int fileResponseCode, byte[] fileBytes) =>
+                  {
+                      if (fileSuccess && fileBytes != null)
+                      {
+                          textureDataByName[supportingFile] = fileBytes;
+
+                          // Cache the texture file
+                          try
+                          {
+                              string sanitizedKey = supportingFile.Replace("\\", "/").TrimStart('/');
+                              string decodedKey = Uri.UnescapeDataString(sanitizedKey);
+                              string cachedTexturePath = Path.Combine(cacheDir, decodedKey);
+                              string textureDir = Path.GetDirectoryName(cachedTexturePath);
+
+                              if (!Directory.Exists(textureDir))
+                              {
+                                  Directory.CreateDirectory(textureDir);
+                              }
+
+                              File.WriteAllBytes(cachedTexturePath, fileBytes);
+                          }
+                          catch (Exception e)
+                          {
+                              Debug.LogWarning($"Failed to cache texture file {supportingFile}: {e.Message}");
+                          }
+                      }
+                      else
+                      {
+                          Debug.LogWarning($"Failed to download OBJ supporting file: {supportingUrl}");
+                          downloadFailed = true;
+                      }
+
+                      texturesDownloaded++;
+                      if (texturesDownloaded >= texturesToDownload)
+                      {
+                          if (downloadFailed)
+                          {
+                              Debug.LogWarning("Some texture files failed to download, proceeding with available textures");
+                          }
+
+                          PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                            new ConvertObjStringsWork(objContents, mtlContents, callback, textureDataByName));
+                      }
+                  });
+            }
         }
 
         private static void AttemptGltfBinary(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
@@ -832,6 +954,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         {
             private readonly string objContents;
             private readonly string mtlContents;
+            private readonly Dictionary<string, byte[]> textureDataByName;
             private readonly System.Action<byte[]> callback;
             private byte[] outputBytes;
 
@@ -839,10 +962,11 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             private Dictionary<string, ObjImporter.MaterialData> parsedMaterialData;
             private string parsedObjData;
 
-            public ConvertObjStringsWork(string objContents, string mtlContents, System.Action<byte[]> callback)
+            public ConvertObjStringsWork(string objContents, string mtlContents, System.Action<byte[]> callback, Dictionary<string, byte[]> textureDataByName = null)
             {
                 this.objContents = objContents;
                 this.mtlContents = mtlContents;
+                this.textureDataByName = textureDataByName;
                 this.callback = callback;
             }
 
@@ -862,8 +986,28 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             {
                 if (!string.IsNullOrEmpty(parsedObjData))
                 {
+                    // Load textures on main thread if provided
+                    Dictionary<string, Texture2D> embeddedTextures = null;
+                    if (textureDataByName != null && textureDataByName.Count > 0)
+                    {
+                        embeddedTextures = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var kvp in textureDataByName)
+                        {
+                            Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                            if (texture.LoadImage(kvp.Value, false))
+                            {
+                                texture.name = Path.GetFileNameWithoutExtension(kvp.Key);
+                                embeddedTextures[kvp.Key] = texture;
+                            }
+                            else
+                            {
+                                UnityEngine.Object.Destroy(texture);
+                            }
+                        }
+                    }
+
                     // Import meshes (split by groups) - this handles material creation on main thread
-                    if (ObjImporter.MMeshesFromObjFile(parsedObjData, mtlContents, 0, out List<MMesh> meshes, null, null))
+                    if (ObjImporter.MMeshesFromObjFile(parsedObjData, mtlContents, 0, out List<MMesh> meshes, null, embeddedTextures))
                     {
                         outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes);
                     }
