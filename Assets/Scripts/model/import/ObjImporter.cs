@@ -663,6 +663,11 @@ namespace com.google.apps.peltzer.client.model.import
                             Texture2D texture = TryResolveTexture(albedoTextureReference, textureSearchDirectory, externalTextures);
                             if (texture != null)
                             {
+                                // When a material has a texture, the MTL color should not be used as a tint
+                                // Set to white so the texture color is not modified
+                                // (Vertex colors will still multiply with texture in TextureToFaceColorApproximator)
+                                material.color = Color.white;
+
                                 AssignTexture(material, texture);
                             }
                         }
@@ -963,7 +968,9 @@ namespace com.google.apps.peltzer.client.model.import
                 {
                     foreach (KeyValuePair<string, Texture2D> pair in externalTextures)
                     {
-                        if (string.Equals(Path.GetFileName(pair.Key), referenceFileName, StringComparison.OrdinalIgnoreCase))
+                        string pairFileName = Path.GetFileName(pair.Key);
+                        string decodedPairFileName = Uri.UnescapeDataString(pairFileName);
+                        if (string.Equals(decodedPairFileName, referenceFileName, StringComparison.OrdinalIgnoreCase))
                         {
                             return pair.Value;
                         }
