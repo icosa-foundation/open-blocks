@@ -997,6 +997,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                             if (texture.LoadImage(kvp.Value, false))
                             {
                                 texture.name = Path.GetFileNameWithoutExtension(kvp.Key);
+                                texture.wrapMode = TextureWrapMode.Repeat;
                                 embeddedTextures[kvp.Key] = texture;
                             }
                             else
@@ -1009,7 +1010,11 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     // Import meshes (split by groups) - this handles material creation on main thread
                     if (ObjImporter.MMeshesFromObjFile(parsedObjData, mtlContents, 0, out List<MMesh> meshes, null, embeddedTextures))
                     {
-                        outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes);
+                        if (meshes.Count > 0)
+                        {
+                            NormalizeMeshesForImport(meshes, 2.0f);
+                            outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes);
+                        }
                     }
                 }
 
@@ -1122,7 +1127,11 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         // Import meshes (split by groups) - this handles material creation on main thread
                         if (ObjImporter.MMeshesFromObjFile(parsedObjData, parsedMtlData, 0, out List<MMesh> meshes, null, embeddedTextures))
                         {
-                            outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes);
+                            if (meshes.Count > 0)
+                            {
+                                NormalizeMeshesForImport(meshes, 2.0f);
+                                outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes);
+                            }
                         }
                     }
                 }
@@ -1465,69 +1474,69 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 }
             }
 
-            private static void NormalizeMeshesForImport(List<MMesh> meshes, float targetMaxSize)
+        }
+
+        private static void NormalizeMeshesForImport(List<MMesh> meshes, float targetMaxSize)
+        {
+            if (meshes == null || meshes.Count == 0)
             {
-                if (meshes == null || meshes.Count == 0)
-                {
-                    return;
-                }
-
-                Bounds overallBounds = meshes[0].bounds;
-                for (int i = 1; i < meshes.Count; i++)
-                {
-                    overallBounds.Encapsulate(meshes[i].bounds);
-                }
-
-                Vector3 center = overallBounds.center;
-                float maxDimension = Mathf.Max(overallBounds.size.x, Mathf.Max(overallBounds.size.y, overallBounds.size.z));
-                float scale = 1f;
-                if (targetMaxSize > 0f && maxDimension > Mathf.Epsilon)
-                {
-                    scale = Mathf.Min(1f, targetMaxSize / maxDimension);
-                }
-
-                Quaternion orientationFix = Quaternion.Euler(0f, 180f, 0f);
-
-                foreach (MMesh mesh in meshes)
-                {
-                    if (mesh == null)
-                    {
-                        continue;
-                    }
-
-                    mesh.RecalcReverseTable();
-                    EnsureReverseTableCoverage(mesh);
-
-                    MMesh.GeometryOperation operation = mesh.StartOperation();
-                    foreach (int vertexId in mesh.GetVertexIds())
-                    {
-                        Vector3 loc = mesh.VertexPositionInMeshCoords(vertexId);
-                        Vector3 adjusted = orientationFix * ((loc - center) * scale);
-                        operation.ModifyVertexMeshSpace(vertexId, adjusted);
-                    }
-                    operation.CommitWithoutRecalculation();
-                    mesh.offset = Vector3.zero;
-                    mesh.rotation = Quaternion.identity;
-                    mesh.RecalcBounds();
-                }
+                return;
             }
 
-            private static void EnsureReverseTableCoverage(MMesh mesh)
+            Bounds overallBounds = meshes[0].bounds;
+            for (int i = 1; i < meshes.Count; i++)
             {
-                if (mesh == null || mesh.reverseTable == null)
+                overallBounds.Encapsulate(meshes[i].bounds);
+            }
+
+            Vector3 center = overallBounds.center;
+            float maxDimension = Mathf.Max(overallBounds.size.x, Mathf.Max(overallBounds.size.y, overallBounds.size.z));
+            float scale = 1f;
+            if (targetMaxSize > 0f && maxDimension > Mathf.Epsilon)
+            {
+                scale = Mathf.Min(1f, targetMaxSize / maxDimension);
+            }
+
+            Quaternion orientationFix = Quaternion.Euler(0f, 180f, 0f);
+
+            foreach (MMesh mesh in meshes)
+            {
+                if (mesh == null)
                 {
-                    return;
+                    continue;
                 }
 
+                mesh.RecalcReverseTable();
+                EnsureReverseTableCoverage(mesh);
+
+                MMesh.GeometryOperation operation = mesh.StartOperation();
                 foreach (int vertexId in mesh.GetVertexIds())
                 {
-                    if (!mesh.reverseTable.ContainsKey(vertexId))
-                    {
-                        mesh.reverseTable[vertexId] = new HashSet<int>();
-                    }
+                    Vector3 loc = mesh.VertexPositionInMeshCoords(vertexId);
+                    Vector3 adjusted = orientationFix * ((loc - center) * scale);
+                    operation.ModifyVertexMeshSpace(vertexId, adjusted);
                 }
+                operation.CommitWithoutRecalculation();
+                mesh.offset = Vector3.zero;
+                mesh.rotation = Quaternion.identity;
+                mesh.RecalcBounds();
+            }
+        }
+
+        private static void EnsureReverseTableCoverage(MMesh mesh)
+        {
+            if (mesh == null || mesh.reverseTable == null)
+            {
+                return;
             }
 
+            foreach (int vertexId in mesh.GetVertexIds())
+            {
+                if (!mesh.reverseTable.ContainsKey(vertexId))
+                {
+                    mesh.reverseTable[vertexId] = new HashSet<int>();
+                }
+            }
         }
     }
 }
