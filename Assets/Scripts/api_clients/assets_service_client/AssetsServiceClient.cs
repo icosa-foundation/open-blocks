@@ -755,6 +755,20 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                                 }
                             }
                             break;
+                        case "VOX":
+                            ParseFormatPaths(format, out string voxRootUrl, out string voxBaseFile,
+                              out string[] voxSupportingFiles);
+                            if (!string.IsNullOrEmpty(voxRootUrl))
+                            {
+                                entryAssets.vox = new ObjectStoreVoxAssets
+                                {
+                                    rootUrl = voxRootUrl,
+                                    baseFile = voxBaseFile ?? string.Empty,
+                                    supportingFiles = voxSupportingFiles
+                                };
+                                hasSupportedFormat = true;
+                            }
+                            break;
                     }
                 }
             }

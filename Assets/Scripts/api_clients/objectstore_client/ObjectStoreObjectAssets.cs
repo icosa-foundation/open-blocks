@@ -59,6 +59,14 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
     }
 
     [Serializable]
+    public class ObjectStoreVoxAssets
+    {
+        public string rootUrl;
+        public string[] supportingFiles;
+        public string baseFile;
+    }
+
+    [Serializable]
     public class ObjectStoreObjectAssetsWrapper
     {
         public ObjectStoreObjectAssets obj;
@@ -67,5 +75,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         public ObjectStoreObjMtlPackageAssets object_package;
         public ObjectStoreGltfPackageAssets gltf_package;
         public ObjectStoreGltfPackageAssets gltf;
+        public ObjectStoreVoxAssets vox;
     }
 }
