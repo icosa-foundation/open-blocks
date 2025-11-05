@@ -862,13 +862,10 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             {
                 if (!string.IsNullOrEmpty(parsedObjData))
                 {
-                    // Create materials on main thread
-                    Dictionary<string, Material> materials = ObjImporter.CreateMaterialsFromData(parsedMaterialData, null, null);
-
-                    // Import mesh with materials
-                    if (ObjImporter.ImportMeshes(0, parsedObjData, materials, out MMesh mesh))
+                    // Import meshes (split by groups) - this handles material creation on main thread
+                    if (ObjImporter.MMeshesFromObjFile(parsedObjData, mtlContents, 0, out List<MMesh> meshes, null, null))
                     {
-                        outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
+                        outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes);
                     }
                 }
 
@@ -887,6 +884,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
             // Parsed in background
             private string parsedObjData;
+            private string parsedMtlData;
             private Dictionary<string, ObjImporter.MaterialData> parsedMaterialData;
             private Dictionary<string, byte[]> textureDataByName;
 
@@ -942,6 +940,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         }
 
                         parsedObjData = objContents;
+                        parsedMtlData = mtlContents;
                         parsedMaterialData = ObjImporter.ParseMaterialData(mtlContents);
                     }
                 }
@@ -976,13 +975,10 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                             }
                         }
 
-                        // Create materials on main thread
-                        Dictionary<string, Material> materials = ObjImporter.CreateMaterialsFromData(parsedMaterialData, null, embeddedTextures);
-
-                        // Import mesh with materials
-                        if (ObjImporter.ImportMeshes(0, parsedObjData, materials, out MMesh mesh))
+                        // Import meshes (split by groups) - this handles material creation on main thread
+                        if (ObjImporter.MMeshesFromObjFile(parsedObjData, parsedMtlData, 0, out List<MMesh> meshes, null, embeddedTextures))
                         {
-                            outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
+                            outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes);
                         }
                     }
                 }

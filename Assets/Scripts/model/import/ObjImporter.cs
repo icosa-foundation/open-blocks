@@ -19,6 +19,7 @@ using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.render;
 using System.Linq;
 using System;
+using System.Text;
 
 namespace com.google.apps.peltzer.client.model.import
 {
@@ -56,15 +57,424 @@ namespace com.google.apps.peltzer.client.model.import
           string textureSearchDirectory = null,
           Dictionary<string, Texture2D> externalTextures = null)
         {
-            Dictionary<string, Material> materials = ImportMaterials(mtlFileContents, textureSearchDirectory, externalTextures);
-            var success = ImportMeshes(id, objFileContents, materials, out MMesh mmesh);
-            if (success)
+            List<MMesh> results;
+            bool success = MMeshesFromObjFile(objFileContents, mtlFileContents, id, out results, textureSearchDirectory, externalTextures);
+            if (success && results.Count > 0)
             {
-                result = mmesh;
+                result = results[0];
                 return true;
             }
             result = null;
             return false;
+        }
+
+        public static bool MMeshesFromObjFile(
+          string objFileContents,
+          string mtlFileContents,
+          int baseId,
+          out List<MMesh> results,
+          string textureSearchDirectory = null,
+          Dictionary<string, Texture2D> externalTextures = null)
+        {
+            results = new List<MMesh>();
+            Dictionary<string, Material> materials = ImportMaterials(mtlFileContents, textureSearchDirectory, externalTextures);
+
+            // Split OBJ by groups
+            Dictionary<string, string> groupedObjContents = SplitObjByGroups(objFileContents);
+
+            int meshId = baseId;
+            foreach (var kvp in groupedObjContents)
+            {
+                if (ImportMeshes(meshId++, kvp.Value, materials, out MMesh mmesh))
+                {
+                    results.Add(mmesh);
+                }
+            }
+
+            return results.Count > 0;
+        }
+
+        /// <summary>
+        /// Data structure to hold parsed OBJ file components
+        /// </summary>
+        private class ObjData
+        {
+            public List<string> vertexLines = new List<string>();      // "v x y z"
+            public List<string> texCoordLines = new List<string>();    // "vt u v"
+            public List<string> normalLines = new List<string>();      // "vn x y z"
+            public Dictionary<string, List<string>> groupFaceLines = new Dictionary<string, List<string>>();
+            public Dictionary<string, List<string>> groupMaterialLines = new Dictionary<string, List<string>>();
+        }
+
+        /// <summary>
+        /// Index remapping for vertices, texture coordinates, and normals
+        /// </summary>
+        private class IndexRemapping
+        {
+            public Dictionary<int, int> vertexRemap = new Dictionary<int, int>();
+            public Dictionary<int, int> texCoordRemap = new Dictionary<int, int>();
+            public Dictionary<int, int> normalRemap = new Dictionary<int, int>();
+        }
+
+        /// <summary>
+        /// Splits OBJ file content by groups, remapping vertex indices for each group
+        /// </summary>
+        private static Dictionary<string, string> SplitObjByGroups(string objFileContents)
+        {
+            // Parse the OBJ file into structured data
+            ObjData data = ParseObjData(objFileContents);
+
+            // If no groups found, return entire OBJ as single mesh
+            if (data.groupFaceLines.Count == 0)
+            {
+                Dictionary<string, string> singleGroup = new Dictionary<string, string>();
+                singleGroup["Mesh"] = objFileContents;
+                return singleGroup;
+            }
+
+            // Analyze which vertices/texCoords/normals each group uses
+            Dictionary<string, HashSet<int>> vertexUsage = AnalyzeIndexUsage(data.groupFaceLines, 0);
+            Dictionary<string, HashSet<int>> texCoordUsage = AnalyzeIndexUsage(data.groupFaceLines, 1);
+            Dictionary<string, HashSet<int>> normalUsage = AnalyzeIndexUsage(data.groupFaceLines, 2);
+
+            // Generate remapped OBJ content for each group
+            return GenerateGroupedObjContent(data, vertexUsage, texCoordUsage, normalUsage);
+        }
+
+        /// <summary>
+        /// Parse OBJ file into structured data
+        /// </summary>
+        private static ObjData ParseObjData(string objFileContents)
+        {
+            ObjData data = new ObjData();
+            string currentGroup = null;
+            string currentMaterial = null;
+
+            using (StringReader reader = new StringReader(objFileContents))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    string trimmed = line.Trim();
+                    if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#"))
+                    {
+                        continue;
+                    }
+
+                    if (trimmed.StartsWith("v "))
+                    {
+                        data.vertexLines.Add(trimmed);
+                    }
+                    else if (trimmed.StartsWith("vt "))
+                    {
+                        data.texCoordLines.Add(trimmed);
+                    }
+                    else if (trimmed.StartsWith("vn "))
+                    {
+                        data.normalLines.Add(trimmed);
+                    }
+                    else if (trimmed.StartsWith("g ") || trimmed.StartsWith("o "))
+                    {
+                        // Extract group name (everything after "g " or "o ")
+                        currentGroup = trimmed.Substring(2).Trim();
+                        if (string.IsNullOrEmpty(currentGroup))
+                        {
+                            currentGroup = "UnnamedGroup";
+                        }
+                        currentMaterial = null; // Reset material when entering new group
+                    }
+                    else if (trimmed.StartsWith("usemtl "))
+                    {
+                        currentMaterial = trimmed;
+                    }
+                    else if (trimmed.StartsWith("f "))
+                    {
+                        // Assign to group (or "DefaultGroup" if no group declared)
+                        if (currentGroup == null)
+                        {
+                            currentGroup = "DefaultGroup";
+                        }
+
+                        if (!data.groupFaceLines.ContainsKey(currentGroup))
+                        {
+                            data.groupFaceLines[currentGroup] = new List<string>();
+                            data.groupMaterialLines[currentGroup] = new List<string>();
+                        }
+
+                        // Add material declaration before first face that uses it
+                        if (currentMaterial != null && !data.groupMaterialLines[currentGroup].Contains(currentMaterial))
+                        {
+                            data.groupMaterialLines[currentGroup].Add(currentMaterial);
+                        }
+
+                        data.groupFaceLines[currentGroup].Add(trimmed);
+                    }
+                }
+            }
+
+            return data;
+        }
+
+        /// <summary>
+        /// Analyze which indices (vertex/texCoord/normal) are used by each group
+        /// </summary>
+        /// <param name="groupFaceLines">Face lines per group</param>
+        /// <param name="indexPosition">0=vertex, 1=texCoord, 2=normal</param>
+        private static Dictionary<string, HashSet<int>> AnalyzeIndexUsage(
+            Dictionary<string, List<string>> groupFaceLines,
+            int indexPosition)
+        {
+            Dictionary<string, HashSet<int>> usage = new Dictionary<string, HashSet<int>>();
+
+            foreach (var kvp in groupFaceLines)
+            {
+                string group = kvp.Key;
+                usage[group] = new HashSet<int>();
+
+                foreach (string faceLine in kvp.Value)
+                {
+                    var indices = ParseFaceIndices(faceLine, indexPosition);
+                    foreach (int idx in indices)
+                    {
+                        if (idx >= 0) // -1 means not present
+                        {
+                            usage[group].Add(idx);
+                        }
+                    }
+                }
+            }
+
+            return usage;
+        }
+
+        /// <summary>
+        /// Parse face line and extract indices at specified position
+        /// </summary>
+        /// <param name="faceLine">Face line like "f 1/2/3 4/5/6 7/8/9"</param>
+        /// <param name="indexPosition">0=vertex, 1=texCoord, 2=normal</param>
+        private static List<int> ParseFaceIndices(string faceLine, int indexPosition)
+        {
+            List<int> indices = new List<int>();
+            string[] parts = faceLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 1; i < parts.Length; i++) // Skip "f" at index 0
+            {
+                string token = parts[i];
+
+                // Handle different face formats: "v", "v/vt", "v/vt/vn", "v//vn"
+                if (token.Contains("/"))
+                {
+                    string[] splitParts = token.Split('/');
+                    if (indexPosition < splitParts.Length && !string.IsNullOrEmpty(splitParts[indexPosition]))
+                    {
+                        if (int.TryParse(splitParts[indexPosition], out int idx))
+                        {
+                            // Convert to 0-based index (OBJ is 1-indexed)
+                            indices.Add(idx > 0 ? idx - 1 : idx);
+                        }
+                    }
+                    else
+                    {
+                        indices.Add(-1); // Not present
+                    }
+                }
+                else if (indexPosition == 0) // Only vertex index present
+                {
+                    if (int.TryParse(token, out int idx))
+                    {
+                        indices.Add(idx > 0 ? idx - 1 : idx);
+                    }
+                }
+                else
+                {
+                    indices.Add(-1); // Not present
+                }
+            }
+
+            return indices;
+        }
+
+        /// <summary>
+        /// Generate remapped OBJ content for each group
+        /// </summary>
+        private static Dictionary<string, string> GenerateGroupedObjContent(
+            ObjData data,
+            Dictionary<string, HashSet<int>> vertexUsage,
+            Dictionary<string, HashSet<int>> texCoordUsage,
+            Dictionary<string, HashSet<int>> normalUsage)
+        {
+            Dictionary<string, string> result = new Dictionary<string, string>();
+
+            foreach (var kvp in data.groupFaceLines)
+            {
+                string group = kvp.Key;
+                StringBuilder content = new StringBuilder();
+
+                // Build index remapping
+                IndexRemapping remap = BuildIndexRemapping(
+                    vertexUsage[group],
+                    texCoordUsage[group],
+                    normalUsage[group]);
+
+                // Add remapped vertices
+                foreach (int oldIdx in vertexUsage[group].OrderBy(x => x))
+                {
+                    if (oldIdx >= 0 && oldIdx < data.vertexLines.Count)
+                    {
+                        content.AppendLine(data.vertexLines[oldIdx]);
+                    }
+                }
+
+                // Add remapped texture coordinates
+                if (texCoordUsage[group].Count > 0)
+                {
+                    foreach (int oldIdx in texCoordUsage[group].OrderBy(x => x))
+                    {
+                        if (oldIdx >= 0 && oldIdx < data.texCoordLines.Count)
+                        {
+                            content.AppendLine(data.texCoordLines[oldIdx]);
+                        }
+                    }
+                }
+
+                // Add remapped normals
+                if (normalUsage[group].Count > 0)
+                {
+                    foreach (int oldIdx in normalUsage[group].OrderBy(x => x))
+                    {
+                        if (oldIdx >= 0 && oldIdx < data.normalLines.Count)
+                        {
+                            content.AppendLine(data.normalLines[oldIdx]);
+                        }
+                    }
+                }
+
+                // Add material declarations
+                if (data.groupMaterialLines.ContainsKey(group))
+                {
+                    foreach (string mtlLine in data.groupMaterialLines[group])
+                    {
+                        content.AppendLine(mtlLine);
+                    }
+                }
+
+                // Add remapped faces
+                foreach (string faceLine in kvp.Value)
+                {
+                    string remapped = RemapFaceLine(faceLine, remap);
+                    content.AppendLine(remapped);
+                }
+
+                result[group] = content.ToString();
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Build index remapping dictionaries (old index -> new index)
+        /// </summary>
+        private static IndexRemapping BuildIndexRemapping(
+            HashSet<int> vertexIndices,
+            HashSet<int> texCoordIndices,
+            HashSet<int> normalIndices)
+        {
+            IndexRemapping remap = new IndexRemapping();
+
+            int newIdx = 0;
+            foreach (int oldIdx in vertexIndices.OrderBy(x => x))
+            {
+                remap.vertexRemap[oldIdx] = newIdx++;
+            }
+
+            newIdx = 0;
+            foreach (int oldIdx in texCoordIndices.OrderBy(x => x))
+            {
+                if (oldIdx >= 0)
+                {
+                    remap.texCoordRemap[oldIdx] = newIdx++;
+                }
+            }
+
+            newIdx = 0;
+            foreach (int oldIdx in normalIndices.OrderBy(x => x))
+            {
+                if (oldIdx >= 0)
+                {
+                    remap.normalRemap[oldIdx] = newIdx++;
+                }
+            }
+
+            return remap;
+        }
+
+        /// <summary>
+        /// Remap face line indices to new values
+        /// </summary>
+        private static string RemapFaceLine(string faceLine, IndexRemapping remap)
+        {
+            string[] parts = faceLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            StringBuilder result = new StringBuilder("f");
+
+            for (int i = 1; i < parts.Length; i++) // Skip "f" at index 0
+            {
+                string token = parts[i];
+                result.Append(" ");
+
+                if (token.Contains("/"))
+                {
+                    string[] indices = token.Split('/');
+
+                    // Remap vertex index
+                    if (indices.Length > 0 && !string.IsNullOrEmpty(indices[0]))
+                    {
+                        int vIdx = int.Parse(indices[0]);
+                        vIdx = vIdx > 0 ? vIdx - 1 : vIdx; // Convert to 0-based
+                        int newVIdx = remap.vertexRemap[vIdx] + 1; // Back to 1-based
+                        result.Append(newVIdx);
+                    }
+
+                    result.Append("/");
+
+                    // Remap texture coordinate index
+                    if (indices.Length > 1 && !string.IsNullOrEmpty(indices[1]))
+                    {
+                        int tIdx = int.Parse(indices[1]);
+                        tIdx = tIdx > 0 ? tIdx - 1 : tIdx; // Convert to 0-based
+                        if (remap.texCoordRemap.ContainsKey(tIdx))
+                        {
+                            int newTIdx = remap.texCoordRemap[tIdx] + 1; // Back to 1-based
+                            result.Append(newTIdx);
+                        }
+                    }
+
+                    // Remap normal index
+                    if (indices.Length > 2)
+                    {
+                        result.Append("/");
+                        if (!string.IsNullOrEmpty(indices[2]))
+                        {
+                            int nIdx = int.Parse(indices[2]);
+                            nIdx = nIdx > 0 ? nIdx - 1 : nIdx; // Convert to 0-based
+                            if (remap.normalRemap.ContainsKey(nIdx))
+                            {
+                                int newNIdx = remap.normalRemap[nIdx] + 1; // Back to 1-based
+                                result.Append(newNIdx);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Simple vertex-only format
+                    int vIdx = int.Parse(token);
+                    vIdx = vIdx > 0 ? vIdx - 1 : vIdx; // Convert to 0-based
+                    int newVIdx = remap.vertexRemap[vIdx] + 1; // Back to 1-based
+                    result.Append(newVIdx);
+                }
+            }
+
+            return result.ToString();
         }
 
         private static int TryGetMaterialId(string materialName)
