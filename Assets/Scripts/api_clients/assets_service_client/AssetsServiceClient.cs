@@ -375,6 +375,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private string assetId;
         private bool assetCreationSuccess;
         private bool hasSavedSuccessfully;
+        private List<KeyValuePair<string, string>> currentUploadMetadata = new();
         private readonly object deflateMutex = new object();
         private byte[] tempDeflateBuffer = new byte[65536 * 4];
 
@@ -1002,14 +1003,19 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// </summary>
         public byte[] CreateAssetArchive(SaveData saveData, HashSet<string> remixIds, string existingAssetId, bool saveSelected)
         {
+            currentUploadMetadata = new List<KeyValuePair<string, string>>();
             List<Tuple<string, byte[]>> files = new List<Tuple<string, byte[]>>();
+            bool hasObjFile = false;
+            bool hasTriangulatedObjFile = false;
 
             if (saveData.objFile != null && saveData.objFile.Length > 0)
             {
                 files.Add(Tuple.Create(ExportUtils.OBJ_FILENAME, saveData.objFile));
+                hasObjFile = true;
                 if (saveData.triangulatedObjFile != null && saveData.triangulatedObjFile.Length > 0)
                 {
                     files.Add(Tuple.Create(ExportUtils.TRIANGULATED_OBJ_FILENAME, saveData.triangulatedObjFile));
+                    hasTriangulatedObjFile = true;
                 }
                 if (saveData.mtlFile != null && saveData.mtlFile.Length > 0)
                 {
@@ -1055,12 +1061,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 files.Add(Tuple.Create(ExportUtils.THUMBNAIL_FILENAME, saveData.thumbnailBytes));
             }
 
-            string metadataJson = CreateJsonForAssetResources(remixIds, saveData.objPolyCount,
-                saveData.triangulatedObjPolyCount, saveSelected, existingAssetId);
-            if (!string.IsNullOrEmpty(metadataJson))
-            {
-                files.Add(Tuple.Create("metadata.json", Encoding.UTF8.GetBytes(metadataJson)));
-            }
+            currentUploadMetadata = CreateMetadataFields(remixIds, saveData.objPolyCount,
+                saveData.triangulatedObjPolyCount, saveSelected, existingAssetId, hasObjFile);
 
 
             if (files.Count == 0)
@@ -1122,7 +1124,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             byte[] multipartFormData = MultiPartContent(
                 existingAssetId != null ? $"{existingAssetId}.zip" : "upload.zip",
                 "application/zip",
-                assetArchive);
+                assetArchive,
+                currentUploadMetadata);
 
             for (int i = 0; i < 2; i++)
             {
@@ -1261,23 +1264,41 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             PeltzerMain.Instance.HasOpenedSaveUrlThisSession = true;
         }
 
-        private string CreateJsonForAssetResources(HashSet<string> remixIds, int objPolyCount, int triangulatedObjPolyCount, bool saveSelected, string existingAssetId)
+        private List<KeyValuePair<string, string>> CreateMetadataFields(
+            HashSet<string> remixIds,
+            int objPolyCount,
+            int triangulatedObjPolyCount,
+            bool saveSelected,
+            string existingAssetId,
+            bool includeObjFile)
         {
-            JObject metadata = new JObject();
+            List<KeyValuePair<string, string>> metadata = new List<KeyValuePair<string, string>>();
 
             if (!string.IsNullOrEmpty(existingAssetId))
             {
-                metadata["assetId"] = existingAssetId;
+                metadata.Add(new KeyValuePair<string, string>("assetId", existingAssetId));
+            }
+
+            if (includeObjFile)
+            {
+                metadata.Add(new KeyValuePair<string, string>("formatOverride", $"{ExportUtils.OBJ_FILENAME}:OBJ_NGON"));
             }
 
             if (!saveSelected)
             {
-                metadata["objPolyCount"] = objPolyCount.ToString();
-                metadata["triangulatedObjPolyCount"] = triangulatedObjPolyCount.ToString();
-                metadata["remixIds"] = remixIds != null ? new JArray(remixIds) : new JArray();
+                metadata.Add(new KeyValuePair<string, string>("objPolyCount", objPolyCount.ToString()));
+                metadata.Add(new KeyValuePair<string, string>("triangulatedObjPolyCount", triangulatedObjPolyCount.ToString()));
+
+                if (remixIds != null)
+                {
+                    foreach (string remixId in remixIds)
+                    {
+                        metadata.Add(new KeyValuePair<string, string>("remixIds", remixId));
+                    }
+                }
             }
 
-            return metadata.HasValues ? metadata.ToString() : string.Empty;
+            return metadata;
         }
 
         /// <summary>
@@ -1305,21 +1326,36 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         /// <summary>
         ///   Build the binary multipart content manually, since Unity's multipart stuff is borked.
         /// </summary>
-        public byte[] MultiPartContent(string filename, string mimeType, byte[] data)
+        public byte[] MultiPartContent(string filename, string mimeType, byte[] data, List<KeyValuePair<string, string>> additionalFields = null)
         {
-            MemoryStream stream = new MemoryStream();
-            StreamWriter sw = new StreamWriter(stream);
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, leaveOpen: true))
+                {
+                    // Write the media part of the request from the data.
+                    writer.Write("--" + BOUNDARY);
+                    writer.Write($"\r\nContent-Disposition: form-data; name=\"files\"; filename=\"{filename}\"\r\nContent-Type: {mimeType}\r\n\r\n");
+                    writer.Flush();
+                    stream.Write(data, 0, data.Length);
+                    writer.Write("\r\n");
 
-            // Write the media part of the request from the data.
-            sw.Write("--" + BOUNDARY);
-            sw.Write($"\r\nContent-Disposition: form-data; name=\"files\"; filename=\"{filename}\"\r\nContent-Type: {mimeType}\r\n\r\n");
-            sw.Flush();
-            stream.Write(data, 0, data.Length);
-            sw.Write("\r\n--" + BOUNDARY + "--\r\n");
-            sw.Flush();
-            sw.Close();
+                    if (additionalFields != null && additionalFields.Count > 0)
+                    {
+                        foreach (KeyValuePair<string, string> field in additionalFields)
+                        {
+                            writer.Write("--" + BOUNDARY);
+                            writer.Write($"\r\nContent-Disposition: form-data; name=\"{field.Key}\"\r\n\r\n");
+                            writer.Write(field.Value ?? string.Empty);
+                            writer.Write("\r\n");
+                        }
+                    }
 
-            return stream.ToArray();
+                    writer.Write("--" + BOUNDARY + "--\r\n");
+                    writer.Flush();
+                }
+
+                return stream.ToArray();
+            }
         }
 
         /// <summary>
