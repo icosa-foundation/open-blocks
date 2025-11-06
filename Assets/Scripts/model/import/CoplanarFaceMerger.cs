@@ -30,7 +30,7 @@ namespace com.google.apps.peltzer.client.model.import
         private const float PLANE_DISTANCE_TOLERANCE = 0.0005f;
         private const float VERTEX_WELD_TOLERANCE = 0.0005f;
 
-        public static void MergeCoplanarFaces(MMesh mesh, bool requireConvexResult = false)
+        public static void MergeCoplanarFaces(MMesh mesh, bool requireConvexResult = false, bool removeColinearVertices = false)
         {
             if (mesh == null || mesh.faceCount == 0)
             {
@@ -132,6 +132,11 @@ namespace com.google.apps.peltzer.client.model.import
             else
             {
                 operation.CommitWithoutRecalculation();
+            }
+
+            if (removeColinearVertices)
+            {
+                RemoveColinearVerticesFromFaces(mesh);
             }
         }
 
@@ -778,6 +783,70 @@ namespace com.google.apps.peltzer.client.model.import
                 Start = start;
                 End = end;
                 Key = key;
+            }
+        }
+
+        private static void RemoveColinearVerticesFromFaces(MMesh mesh)
+        {
+            if (mesh == null || mesh.faceCount == 0)
+            {
+                return;
+            }
+
+            MMesh.GeometryOperation operation = mesh.StartOperation();
+            bool modified = false;
+
+            foreach (Face face in mesh.GetFaces().ToList())
+            {
+                if (face.vertexIds.Count <= 3)
+                {
+                    // Can't remove vertices from a triangle
+                    continue;
+                }
+
+                List<Vector3> positions = new List<Vector3>(face.vertexIds.Count);
+                foreach (int vertexId in face.vertexIds)
+                {
+                    positions.Add(mesh.VertexPositionInMeshCoords(vertexId));
+                }
+
+                List<Vector3> cornerPositions = MeshMath.FindCornerVertices(positions);
+
+                // If we removed any vertices, update the face
+                if (cornerPositions.Count != positions.Count && cornerPositions.Count >= 3)
+                {
+                    // Build a new vertex list with only the corner vertices
+                    List<int> newVertexIds = new List<int>();
+
+                    // For each corner position, find the corresponding vertex ID
+                    foreach (Vector3 cornerPos in cornerPositions)
+                    {
+                        for (int i = 0; i < positions.Count; i++)
+                        {
+                            if ((cornerPos - positions[i]).sqrMagnitude < VERTEX_WELD_TOLERANCE * VERTEX_WELD_TOLERANCE)
+                            {
+                                newVertexIds.Add(face.vertexIds[i]);
+                                break;
+                            }
+                        }
+                    }
+
+                    if (newVertexIds.Count >= 3 && newVertexIds.Count != face.vertexIds.Count)
+                    {
+                        operation.ModifyFace(face.id, newVertexIds, face.properties);
+                        modified = true;
+                    }
+                }
+            }
+
+            if (modified)
+            {
+                operation.Commit();
+                mesh.RecalcBounds();
+            }
+            else
+            {
+                operation.CommitWithoutRecalculation();
             }
         }
     }
