@@ -23,6 +23,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         public string rootUrl;
         public string[] supportingFiles;
         public string baseFile;
+        public bool isPreferredForDownload;
     }
 
     [Serializable]
@@ -31,6 +32,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         public string rootUrl;
         public string[] supportingFiles;
         public string baseFile;
+        public bool isPreferredForDownload;
     }
 
     [Serializable]
@@ -39,6 +41,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         public string rootUrl;
         public string[] supportingFiles;
         public string baseFile;
+        public bool isPreferredForDownload;
     }
 
     [Serializable]
@@ -47,6 +50,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         public string rootUrl;
         public string[] supportingFiles;
         public string baseFile;
+        public bool isPreferredForDownload;
     }
 
     [Serializable]
@@ -56,6 +60,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         public string[] supportingFiles;
         public string baseFile;
         public string version; // "GLTF", "GLTF1", or "GLTF2"
+        public bool isPreferredForDownload;
     }
 
     [Serializable]

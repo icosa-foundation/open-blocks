@@ -48,7 +48,6 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void SetInitialOption(string[] options)
         {
-            Debug.Log($"[RadioButtonContainer] Setting initial option to: {string.Join(",", options)}");
             SetInitialOption(string.Join(",", options));
         }
 
