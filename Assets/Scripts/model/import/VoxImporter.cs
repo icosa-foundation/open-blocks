@@ -145,6 +145,9 @@ namespace com.google.apps.peltzer.client.model.import
                 return false;
             }
 
+            // Read version number (typically 150)
+            int _version = reader.ReadInt32(); // Don't remove, needed to advance stream
+
             // Read MAIN chunk
             string mainId = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (mainId != "MAIN")
