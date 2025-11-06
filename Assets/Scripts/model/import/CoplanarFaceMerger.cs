@@ -31,7 +31,7 @@ namespace com.google.apps.peltzer.client.model.import
         private const float PLANE_DISTANCE_TOLERANCE = 0.0005f;
         private const float VERTEX_WELD_TOLERANCE = 0.0005f;
 
-        public static void MergeCoplanarFaces(MMesh mesh, bool requireConvexResult = false, bool removeColinearVertices = false)
+        public static void MergeCoplanarFaces(MMesh mesh, bool requireConvexResult = false, bool removeColinearVertices = true)
         {
             if (mesh == null || mesh.faceCount == 0)
             {
