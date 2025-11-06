@@ -158,6 +158,12 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
               assets.peltzer?.isPreferredForDownload ?? false,
               onFailure => AttemptPeltzerFile(assets.peltzer, assetId, callback, onFailure));
 
+            // VOX format - always prioritized regardless of isPreferredForDownload
+            AddAttempt(
+              assets.vox != null && !string.IsNullOrEmpty(assets.vox.rootUrl),
+              true,
+              onFailure => AttemptVoxFile(assets.vox, assetId, callback, onFailure));
+
             AddAttempt(
               assets.object_package != null && !string.IsNullOrEmpty(assets.object_package.rootUrl),
               assets.object_package?.isPreferredForDownload ?? false,
@@ -582,6 +588,58 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       }
                   });
             }
+        }
+
+        private static void AttemptVoxFile(ObjectStoreVoxAssets voxAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
+        {
+            // Check cache first
+            string cacheDir = Path.Combine(Application.temporaryCachePath, $"vox_{assetId}");
+            string cachedVoxPath = Path.Combine(cacheDir, "model.vox");
+
+            if (File.Exists(cachedVoxPath))
+            {
+                byte[] voxBytes = File.ReadAllBytes(cachedVoxPath);
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertVoxBytesWork(voxBytes, callback));
+                return;
+            }
+
+            // Cache miss - download
+            StringBuilder voxUrl = new StringBuilder(voxAssets.rootUrl);
+
+            PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+              () => GetNewGetRequest(voxUrl, "application/octet-stream"),
+              (bool success, int responseCode, byte[] voxBytes) =>
+              {
+                  if (!success)
+                  {
+                      if (responseCode == 404)
+                      {
+                          Debug.LogWarning($"404 Not Found: VOX file not available at {voxUrl}");
+                      }
+                      else
+                      {
+                          Debug.LogWarning($"VOX file download failed - URL: {voxUrl}, Response code: {responseCode}");
+                      }
+                      onFailure();
+                      return;
+                  }
+
+                  // Cache the VOX file
+                  try
+                  {
+                      if (!Directory.Exists(cacheDir))
+                      {
+                          Directory.CreateDirectory(cacheDir);
+                      }
+                      File.WriteAllBytes(cachedVoxPath, voxBytes);
+                  }
+                  catch (Exception e)
+                  {
+                      Debug.LogWarning($"Failed to cache VOX file: {e.Message}");
+                  }
+
+                  PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertVoxBytesWork(voxBytes, callback));
+              });
         }
 
         private static void AttemptGltfBinary(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
@@ -1019,6 +1077,39 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 }
 
                 TextureToFaceColorApproximator.ClearCache();
+                callback(outputBytes);
+            }
+        }
+
+        private class ConvertVoxBytesWork : BackgroundWork
+        {
+            private readonly byte[] voxBytes;
+            private readonly System.Action<byte[]> callback;
+            private byte[] outputBytes;
+
+            public ConvertVoxBytesWork(byte[] voxBytes, System.Action<byte[]> callback)
+            {
+                this.voxBytes = voxBytes;
+                this.callback = callback;
+            }
+
+            public void BackgroundWork()
+            {
+                if (voxBytes == null || voxBytes.Length == 0)
+                {
+                    return;
+                }
+
+                if (VoxImporter.MMeshFromVoxFile(voxBytes, 0, out MMesh mesh))
+                {
+                    // Can't decide if this is a good thing to do automatically or not
+                    //CoplanarFaceMerger.MergeCoplanarFaces(mesh);
+                    outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
+                }
+            }
+
+            public void PostWork()
+            {
                 callback(outputBytes);
             }
         }
