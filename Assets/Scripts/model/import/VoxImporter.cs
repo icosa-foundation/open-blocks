@@ -1,4 +1,6 @@
-// Copyright 2025 The Open Blocks Authors
+// Copyright 2025 The Open Blocks Authors.
+// Based on VoxReader Copyright 2024 Sandro Figo and contributors
+// https://github.com/sandrofigo/VoxReader
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,6 +60,7 @@ namespace com.google.apps.peltzer.client.model.import
             /// If true, generates separate cube geometry for each voxel.
             /// If false, generates optimized mesh with internal face culling.
             /// </summary>
+
             public bool generateSeparateCubes = false;
 
             /// <summary>
@@ -142,9 +145,6 @@ namespace com.google.apps.peltzer.client.model.import
                 return false;
             }
 
-            int version = reader.ReadInt32();
-            Debug.Log($"VOX file version: {version}");
-
             // Read MAIN chunk
             string mainId = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (mainId != "MAIN")
@@ -153,7 +153,6 @@ namespace com.google.apps.peltzer.client.model.import
                 return false;
             }
 
-            int mainChunkSize = reader.ReadInt32();
             int mainChildrenSize = reader.ReadInt32();
 
             // Parse chunks
@@ -228,49 +227,52 @@ namespace com.google.apps.peltzer.client.model.import
             List<FaceProperties> faceProperties = new List<FaceProperties>();
             Dictionary<Vector3, int> vertexMap = new Dictionary<Vector3, int>();
 
-            // Face directions (normals)
+            // Face directions (normals) - ordered to match faceVertexOffsets
             Vector3Int[] faceDirections = new Vector3Int[]
             {
-                new Vector3Int(1, 0, 0),   // Right
                 new Vector3Int(-1, 0, 0),  // Left
-                new Vector3Int(0, 1, 0),   // Top
+                new Vector3Int(1, 0, 0),   // Right
                 new Vector3Int(0, -1, 0),  // Bottom
-                new Vector3Int(0, 0, 1),   // Front
-                new Vector3Int(0, 0, -1)   // Back
+                new Vector3Int(0, 1, 0),   // Top
+                new Vector3Int(0, 0, -1),  // Front
+                new Vector3Int(0, 0, 1)    // Back
             };
 
             // For each face direction, define the 4 vertices (relative to voxel position)
+            // Using same winding order as Primitives.CUBE_POINTS
+            // Cube vertices: 0=(0,0,0), 1=(1,0,0), 2=(0,1,0), 3=(1,1,0), 4=(0,0,1), 5=(1,0,1), 6=(0,1,1), 7=(1,1,1)
+            // CUBE_POINTS: left={0,4,6,2}, right={1,3,7,5}, bottom={0,1,5,4}, top={2,6,7,3}, front={0,2,3,1}, back={4,5,7,6}
             Vector3[][] faceVertexOffsets = new Vector3[][]
             {
-                // Right (+X)
+                // Left (-X): {0,4,6,2}
+                new Vector3[]
+                {
+                    new Vector3(0, 0, 0), new Vector3(0, 0, 1), new Vector3(0, 1, 1), new Vector3(0, 1, 0)
+                },
+                // Right (+X): {1,3,7,5}
                 new Vector3[]
                 {
                     new Vector3(1, 0, 0), new Vector3(1, 1, 0), new Vector3(1, 1, 1), new Vector3(1, 0, 1)
                 },
-                // Left (-X)
+                // Bottom (-Y): {0,1,5,4}
                 new Vector3[]
                 {
-                    new Vector3(0, 0, 1), new Vector3(0, 1, 1), new Vector3(0, 1, 0), new Vector3(0, 0, 0)
+                    new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(1, 0, 1), new Vector3(0, 0, 1)
                 },
-                // Top (+Y)
+                // Top (+Y): {2,6,7,3}
                 new Vector3[]
                 {
-                    new Vector3(0, 1, 0), new Vector3(1, 1, 0), new Vector3(1, 1, 1), new Vector3(0, 1, 1)
+                    new Vector3(0, 1, 0), new Vector3(0, 1, 1), new Vector3(1, 1, 1), new Vector3(1, 1, 0)
                 },
-                // Bottom (-Y)
+                // Front (-Z): {0,2,3,1}
                 new Vector3[]
                 {
-                    new Vector3(0, 0, 1), new Vector3(1, 0, 1), new Vector3(1, 0, 0), new Vector3(0, 0, 0)
+                    new Vector3(0, 0, 0), new Vector3(0, 1, 0), new Vector3(1, 1, 0), new Vector3(1, 0, 0)
                 },
-                // Front (+Z)
+                // Back (+Z): {4,5,7,6}
                 new Vector3[]
                 {
                     new Vector3(0, 0, 1), new Vector3(1, 0, 1), new Vector3(1, 1, 1), new Vector3(0, 1, 1)
-                },
-                // Back (-Z)
-                new Vector3[]
-                {
-                    new Vector3(1, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 1, 0), new Vector3(1, 1, 0)
                 }
             };
 
@@ -313,8 +315,6 @@ namespace com.google.apps.peltzer.client.model.import
                 }
             }
 
-            Debug.Log($"Generated optimized mesh: {vertices.Count} vertices, {faces.Count} faces");
-
             MMesh mesh = new MMesh(id, Vector3.zero, Quaternion.identity, vertices, faces, faceProperties);
             ApplyImportOrientationFix(mesh);
             return mesh;
@@ -329,28 +329,29 @@ namespace com.google.apps.peltzer.client.model.import
             List<List<int>> faces = new List<List<int>>();
             List<FaceProperties> faceProperties = new List<FaceProperties>();
 
-            // Cube vertex offsets (8 vertices per cube)
+            // Cube vertex offsets (8 vertices per cube) - matching Primitives.cs vertex ordering
+            // 0=(0,0,0), 1=(1,0,0), 2=(0,1,0), 3=(1,1,0), 4=(0,0,1), 5=(1,0,1), 6=(0,1,1), 7=(1,1,1)
             Vector3[] cubeVertices = new Vector3[]
             {
-                new Vector3(0, 0, 0),
-                new Vector3(1, 0, 0),
-                new Vector3(1, 1, 0),
-                new Vector3(0, 1, 0),
-                new Vector3(0, 0, 1),
-                new Vector3(1, 0, 1),
-                new Vector3(1, 1, 1),
-                new Vector3(0, 1, 1)
+                new Vector3(0, 0, 0),  // 0
+                new Vector3(1, 0, 0),  // 1
+                new Vector3(0, 1, 0),  // 2
+                new Vector3(1, 1, 0),  // 3
+                new Vector3(0, 0, 1),  // 4
+                new Vector3(1, 0, 1),  // 5
+                new Vector3(0, 1, 1),  // 6
+                new Vector3(1, 1, 1)   // 7
             };
 
-            // Cube faces (6 faces per cube, each with 4 vertex indices)
+            // Cube faces matching Primitives.CUBE_POINTS exactly
             int[][] cubeFaces = new int[][]
             {
-                new int[] { 1, 2, 6, 5 }, // Right (+X)
-                new int[] { 4, 7, 3, 0 }, // Left (-X)
-                new int[] { 3, 2, 6, 7 }, // Top (+Y)
-                new int[] { 0, 1, 5, 4 }, // Bottom (-Y)
-                new int[] { 4, 5, 6, 7 }, // Front (+Z)
-                new int[] { 1, 0, 3, 2 }  // Back (-Z)
+                new int[] { 0, 4, 6, 2 },  // Left (-X)
+                new int[] { 1, 3, 7, 5 },  // Right (+X)
+                new int[] { 0, 1, 5, 4 },  // Bottom (-Y)
+                new int[] { 2, 6, 7, 3 },  // Top (+Y)
+                new int[] { 0, 2, 3, 1 },  // Front (-Z)
+                new int[] { 4, 5, 7, 6 }   // Back (+Z)
             };
 
             // Generate a cube for each voxel
