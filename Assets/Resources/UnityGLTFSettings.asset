@@ -95,6 +95,32 @@ MonoBehaviour:
   m_Name: LightsPunctualExport
   m_EditorClassIdentifier: 
   enabled: 1
+--- !u!114 &-4367880529377057203
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d106e4b0674b44e09e9c8d85ba6216df, type: 3}
+  m_Name: AudioImport
+  m_EditorClassIdentifier: 
+  enabled: 0
+--- !u!114 &-3303139986247691822
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a3011a000a64498d8297909d5cc472a, type: 3}
+  m_Name: SpriteRendererExport
+  m_EditorClassIdentifier: 
+  enabled: 1
 --- !u!114 &-2281407825902784987
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -108,6 +134,19 @@ MonoBehaviour:
   m_Name: LodsImport
   m_EditorClassIdentifier: 
   enabled: 1
+--- !u!114 &-2114849740015885731
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13416558369ebcb46a99c28ceb137930, type: 3}
+  m_Name: VisualScriptingExportPlugin
+  m_EditorClassIdentifier: 
+  enabled: 0
 --- !u!114 &-2052313805406765103
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -186,6 +225,19 @@ MonoBehaviour:
   m_Name: UnlitMaterialsImport
   m_EditorClassIdentifier: 
   enabled: 1
+--- !u!114 &-279865399401322330
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a59cc7d090dc43ef86b454e445bdbf9a, type: 3}
+  m_Name: AudioExport
+  m_EditorClassIdentifier: 
+  enabled: 0
 --- !u!114 &1
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -214,6 +266,7 @@ MonoBehaviour:
   - {fileID: -532093289739952862}
   - {fileID: -1318153804559117839}
   - {fileID: -6604616479937177193}
+  - {fileID: -4367880529377057203}
   ExportPlugins:
   - {fileID: -6507744306642174255}
   - {fileID: 4385002393139919586}
@@ -226,6 +279,9 @@ MonoBehaviour:
   - {fileID: -1175718026053339879}
   - {fileID: 442494980155015986}
   - {fileID: 3472522801945669739}
+  - {fileID: -279865399401322330}
+  - {fileID: -3303139986247691822}
+  - {fileID: -2114849740015885731}
   exportNames: 1
   exportFullPath: 0
   EditorExportTransformMode: 0

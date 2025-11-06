@@ -156,7 +156,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             OBJ = "OBJ",
             NOT_OBJ = "-OBJ",
             FBX = "FBX",
-            NOT_FBX = "-FBX";
+            NOT_FBX = "-FBX",
+            VOX = "VOX",
+            NOT_VOX = "-VOX";
     }
 
     public class CuratedChoices
