@@ -1710,7 +1710,7 @@ PrefabInstance:
     - target: {fileID: 3282499047251485550, guid: 7812f52391d1a664e84e6b1672d94d58,
         type: 3}
       propertyPath: m_Value
-      value: OBJ,GLTF2,-BLOCKS
+      value: OBJ,GLTF2,VOX,-BLOCKS,-TILT
       objectReference: {fileID: 0}
     - target: {fileID: 3282499047251485550, guid: 7812f52391d1a664e84e6b1672d94d58,
         type: 3}
