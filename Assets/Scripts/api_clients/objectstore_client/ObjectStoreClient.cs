@@ -158,9 +158,10 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
               assets.peltzer?.isPreferredForDownload ?? false,
               onFailure => AttemptPeltzerFile(assets.peltzer, assetId, callback, onFailure));
 
-            // VOX format - prioritized over OBJ/GLTF but after native Blocks format
+            // VOX format - always prioritized regardless of isPreferredForDownload
             AddAttempt(
               assets.vox != null && !string.IsNullOrEmpty(assets.vox.rootUrl),
+              true,
               onFailure => AttemptVoxFile(assets.vox, assetId, callback, onFailure));
 
             AddAttempt(

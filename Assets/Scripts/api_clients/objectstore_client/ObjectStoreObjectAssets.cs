@@ -69,6 +69,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         public string rootUrl;
         public string[] supportingFiles;
         public string baseFile;
+        public bool isPreferredForDownload;
     }
 
     [Serializable]

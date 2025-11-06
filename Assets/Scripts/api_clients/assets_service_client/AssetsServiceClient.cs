@@ -788,7 +788,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                                 {
                                     rootUrl = voxRootUrl,
                                     baseFile = voxBaseFile ?? string.Empty,
-                                    supportingFiles = voxSupportingFiles
+                                    supportingFiles = voxSupportingFiles,
+                                    isPreferredForDownload = format?["isPreferredForDownload"]?.ToObject<bool>() ?? false
                                 };
                                 hasSupportedFormat = true;
                             }
@@ -1437,6 +1438,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 OAuth2Identity.Instance.Authenticate(request);
             }
+            Debug.Log($"{request.url}");
             return request;
         }
 
