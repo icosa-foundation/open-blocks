@@ -198,7 +198,6 @@ namespace com.google.apps.peltzer.client.model.import
                         byte a = reader.ReadByte();
                         palette[i] = new Color(r / 255f, g / 255f, b / 255f, a / 255f);
                     }
-                    Debug.Log("Loaded custom palette");
                 }
 
                 // Skip to end of chunk and its children
