@@ -156,6 +156,7 @@ namespace com.google.apps.peltzer.client.model.import
                 return false;
             }
 
+            int mainContentSize = reader.ReadInt32(); // Don't remove, needed to advance stream
             int mainChildrenSize = reader.ReadInt32();
 
             // Parse chunks
@@ -174,7 +175,6 @@ namespace com.google.apps.peltzer.client.model.import
                     modelSize.x = reader.ReadInt32();
                     modelSize.y = reader.ReadInt32();
                     modelSize.z = reader.ReadInt32();
-                    Debug.Log($"Model size: {modelSize}");
                 }
                 else if (chunkId == "XYZI")
                 {
@@ -187,7 +187,6 @@ namespace com.google.apps.peltzer.client.model.import
                         byte colorIndex = reader.ReadByte();
                         voxels.Add(new Voxel(x, y, z, colorIndex));
                     }
-                    Debug.Log($"Loaded {numVoxels} voxels");
                 }
                 else if (chunkId == "RGBA")
                 {
@@ -383,8 +382,6 @@ namespace com.google.apps.peltzer.client.model.import
                         MaterialRegistry.GetMaterialIdClosestToColor(voxelColor)));
                 }
             }
-
-            Debug.Log($"Generated separate cubes mesh: {vertices.Count} vertices, {faces.Count} faces");
 
             MMesh mesh = new MMesh(id, Vector3.zero, Quaternion.identity, vertices, faces, faceProperties);
             ApplyImportOrientationFix(mesh);
