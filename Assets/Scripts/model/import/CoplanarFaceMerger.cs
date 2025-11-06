@@ -18,6 +18,7 @@ using System.Linq;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
+using com.google.apps.peltzer.client.model.util;
 
 namespace com.google.apps.peltzer.client.model.import
 {
@@ -804,38 +805,13 @@ namespace com.google.apps.peltzer.client.model.import
                     continue;
                 }
 
-                List<Vector3> positions = new List<Vector3>(face.vertexIds.Count);
-                foreach (int vertexId in face.vertexIds)
-                {
-                    positions.Add(mesh.VertexPositionInMeshCoords(vertexId));
-                }
-
-                List<Vector3> cornerPositions = MeshMath.FindCornerVertices(positions);
+                List<int> cornerVertexIds = FindCornerVertexIds(mesh, face);
 
                 // If we removed any vertices, update the face
-                if (cornerPositions.Count != positions.Count && cornerPositions.Count >= 3)
+                if (cornerVertexIds.Count != face.vertexIds.Count && cornerVertexIds.Count >= 3)
                 {
-                    // Build a new vertex list with only the corner vertices
-                    List<int> newVertexIds = new List<int>();
-
-                    // For each corner position, find the corresponding vertex ID
-                    foreach (Vector3 cornerPos in cornerPositions)
-                    {
-                        for (int i = 0; i < positions.Count; i++)
-                        {
-                            if ((cornerPos - positions[i]).sqrMagnitude < VERTEX_WELD_TOLERANCE * VERTEX_WELD_TOLERANCE)
-                            {
-                                newVertexIds.Add(face.vertexIds[i]);
-                                break;
-                            }
-                        }
-                    }
-
-                    if (newVertexIds.Count >= 3 && newVertexIds.Count != face.vertexIds.Count)
-                    {
-                        operation.ModifyFace(face.id, newVertexIds, face.properties);
-                        modified = true;
-                    }
+                    operation.ModifyFace(face.id, cornerVertexIds, face.properties);
+                    modified = true;
                 }
             }
 
@@ -848,6 +824,39 @@ namespace com.google.apps.peltzer.client.model.import
             {
                 operation.CommitWithoutRecalculation();
             }
+        }
+
+        /// <summary>
+        /// Finds corner vertices (non-colinear vertices) for a face and returns their IDs.
+        /// This is an optimized O(V) version that avoids position-to-ID mapping.
+        /// </summary>
+        private static List<int> FindCornerVertexIds(MMesh mesh, Face face)
+        {
+            int numVertices = face.vertexIds.Count;
+            if (numVertices < 3)
+            {
+                return new List<int>(face.vertexIds);
+            }
+
+            List<int> cornerVertexIds = new List<int>(numVertices);
+            Vector3 previous = mesh.VertexPositionInMeshCoords(face.vertexIds[numVertices - 1]);
+            Vector3 current = mesh.VertexPositionInMeshCoords(face.vertexIds[0]);
+            Vector3 next;
+
+            for (int i = 0; i < numVertices; i++)
+            {
+                next = mesh.VertexPositionInMeshCoords(face.vertexIds[(i + 1) % numVertices]);
+
+                if (!Math3d.AreColinear(previous, current, next))
+                {
+                    cornerVertexIds.Add(face.vertexIds[i]);
+                }
+
+                previous = current;
+                current = next;
+            }
+
+            return cornerVertexIds;
         }
     }
 }
