@@ -130,39 +130,63 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             }
 
             string assetId = entry.id;
-            List<System.Action<System.Action>> attempts = new List<System.Action<System.Action>>();
+            List<System.Action<System.Action>> preferredAttempts = new List<System.Action<System.Action>>();
+            List<System.Action<System.Action>> nonPreferredAttempts = new List<System.Action<System.Action>>();
 
-            void AddAttempt(bool condition, System.Action<System.Action> attempt)
+            void AddAttempt(bool condition, bool isPreferred, System.Action<System.Action> attempt)
             {
                 if (condition && attempt != null)
                 {
-                    attempts.Add(attempt);
+                    if (isPreferred)
+                    {
+                        preferredAttempts.Add(attempt);
+                    }
+                    else
+                    {
+                        nonPreferredAttempts.Add(attempt);
+                    }
                 }
             }
 
             AddAttempt(
               assets.peltzer_package != null && !string.IsNullOrEmpty(assets.peltzer_package.rootUrl),
+              assets.peltzer_package?.isPreferredForDownload ?? false,
               onFailure => AttemptPeltzerPackage(assets.peltzer_package, assetId, callback, onFailure));
 
             AddAttempt(
               assets.peltzer != null && !string.IsNullOrEmpty(assets.peltzer.rootUrl),
+              assets.peltzer?.isPreferredForDownload ?? false,
               onFailure => AttemptPeltzerFile(assets.peltzer, assetId, callback, onFailure));
+
+            // VOX format - always prioritized regardless of isPreferredForDownload
+            AddAttempt(
+              assets.vox != null && !string.IsNullOrEmpty(assets.vox.rootUrl),
+              true,
+              onFailure => AttemptVoxFile(assets.vox, assetId, callback, onFailure));
 
             AddAttempt(
               assets.object_package != null && !string.IsNullOrEmpty(assets.object_package.rootUrl),
+              assets.object_package?.isPreferredForDownload ?? false,
               onFailure => AttemptObjPackage(assets.object_package, assets, assetId, callback, onFailure));
 
             AddAttempt(
               assets.obj != null && !string.IsNullOrEmpty(assets.obj.rootUrl),
+              assets.obj?.isPreferredForDownload ?? false,
               onFailure => AttemptObjFile(assets.obj, assetId, callback, onFailure));
 
             AddAttempt(
               assets.gltf_package != null && !string.IsNullOrEmpty(assets.gltf_package.rootUrl),
+              assets.gltf_package?.isPreferredForDownload ?? false,
               onFailure => AttemptGltfBinary(assets.gltf_package, assetId, callback, onFailure));
 
             AddAttempt(
               assets.gltf != null && !string.IsNullOrEmpty(assets.gltf.rootUrl),
+              assets.gltf?.isPreferredForDownload ?? false,
               onFailure => AttemptGltfFile(assets.gltf, assetId, callback, onFailure));
+
+            // Combine lists: preferred formats first, then non-preferred as fallback
+            List<System.Action<System.Action>> attempts = new List<System.Action<System.Action>>(preferredAttempts);
+            attempts.AddRange(nonPreferredAttempts);
 
             AttemptNext(0);
 
@@ -359,7 +383,29 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             {
                 string objContents = File.ReadAllText(cachedObjPath);
                 string mtlContents = File.Exists(cachedMtlPath) ? File.ReadAllText(cachedMtlPath) : null;
-                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjStringsWork(objContents, mtlContents, callback));
+
+                // Load cached textures
+                Dictionary<string, byte[]> cachedTextures = null;
+                if (objAssets.supportingFiles != null && objAssets.supportingFiles.Length > 0)
+                {
+                    cachedTextures = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+                    foreach (string supportingFile in objAssets.supportingFiles)
+                    {
+                        if (string.IsNullOrEmpty(supportingFile)) continue;
+                        if (supportingFile.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase)) continue;
+
+                        string sanitizedKey = supportingFile.Replace("\\", "/").TrimStart('/');
+                        string decodedKey = Uri.UnescapeDataString(sanitizedKey);
+                        string cachedTexturePath = Path.Combine(cacheDir, decodedKey);
+
+                        if (File.Exists(cachedTexturePath))
+                        {
+                            cachedTextures[supportingFile] = File.ReadAllBytes(cachedTexturePath);
+                        }
+                    }
+                }
+
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjStringsWork(objContents, mtlContents, callback, cachedTextures));
                 return;
             }
 
@@ -385,7 +431,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                   }
 
                   string objContents = Encoding.UTF8.GetString(objBytes);
-                  string mtlPath = objAssets.supportingFiles?.FirstOrDefault(f => f != null && f.EndsWith(".mtl"));
+                  string mtlPath = objAssets.supportingFiles?.FirstOrDefault(f => f != null && f.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase));
 
                   // Cache the OBJ file
                   try
@@ -432,15 +478,167 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                                 }
                             }
 
-                            PeltzerMain.Instance.DoPolyMenuBackgroundWork(
-                              new ConvertObjStringsWork(objContents, mtlContents, callback));
+                            // Download texture files from supportingFiles
+                            DownloadSupportingTextureFiles(objAssets, cacheDir, objContents, mtlContents, callback, onFailure);
                         });
                   }
                   else
                   {
-                      PeltzerMain.Instance.DoPolyMenuBackgroundWork(
-                        new ConvertObjStringsWork(objContents, null, callback));
+                      // No MTL file, but still check for texture files
+                      DownloadSupportingTextureFiles(objAssets, cacheDir, objContents, null, callback, onFailure);
                   }
+              });
+        }
+
+        private static void DownloadSupportingTextureFiles(
+            ObjectStoreObjectAssets objAssets,
+            string cacheDir,
+            string objContents,
+            string mtlContents,
+            System.Action<byte[]> callback,
+            System.Action onFailure)
+        {
+            Dictionary<string, byte[]> textureDataByName = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+
+            if (objAssets.supportingFiles == null || objAssets.supportingFiles.Length == 0)
+            {
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjStringsWork(objContents, mtlContents, callback, null));
+                return;
+            }
+
+            string rootDir = objAssets.rootUrl.Substring(0, objAssets.rootUrl.LastIndexOf('/') + 1);
+            int texturesToDownload = 0;
+            int texturesDownloaded = 0;
+            bool downloadFailed = false;
+
+            // Count texture files (skip .mtl files)
+            foreach (string file in objAssets.supportingFiles)
+            {
+                if (!string.IsNullOrEmpty(file) && !file.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase))
+                {
+                    texturesToDownload++;
+                }
+            }
+
+            if (texturesToDownload == 0)
+            {
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertObjStringsWork(objContents, mtlContents, callback, null));
+                return;
+            }
+
+            foreach (string supportingFile in objAssets.supportingFiles)
+            {
+                if (string.IsNullOrEmpty(supportingFile)) continue;
+                if (supportingFile.EndsWith(".mtl", StringComparison.OrdinalIgnoreCase)) continue;
+
+                StringBuilder supportingUrl;
+                if (supportingFile.StartsWith("http://") || supportingFile.StartsWith("https://"))
+                {
+                    supportingUrl = new StringBuilder(supportingFile);
+                }
+                else
+                {
+                    supportingUrl = new StringBuilder(rootDir).Append(supportingFile);
+                }
+
+                PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+                  () => GetNewGetRequest(supportingUrl, "application/octet-stream"),
+                  (bool fileSuccess, int fileResponseCode, byte[] fileBytes) =>
+                  {
+                      if (fileSuccess && fileBytes != null)
+                      {
+                          textureDataByName[supportingFile] = fileBytes;
+
+                          // Cache the texture file
+                          try
+                          {
+                              string sanitizedKey = supportingFile.Replace("\\", "/").TrimStart('/');
+                              string decodedKey = Uri.UnescapeDataString(sanitizedKey);
+                              string cachedTexturePath = Path.Combine(cacheDir, decodedKey);
+                              string textureDir = Path.GetDirectoryName(cachedTexturePath);
+
+                              if (!Directory.Exists(textureDir))
+                              {
+                                  Directory.CreateDirectory(textureDir);
+                              }
+
+                              File.WriteAllBytes(cachedTexturePath, fileBytes);
+                          }
+                          catch (Exception e)
+                          {
+                              Debug.LogWarning($"Failed to cache texture file {supportingFile}: {e.Message}");
+                          }
+                      }
+                      else
+                      {
+                          Debug.LogWarning($"Failed to download OBJ supporting file: {supportingUrl}");
+                          downloadFailed = true;
+                      }
+
+                      texturesDownloaded++;
+                      if (texturesDownloaded >= texturesToDownload)
+                      {
+                          if (downloadFailed)
+                          {
+                              Debug.LogWarning("Some texture files failed to download, proceeding with available textures");
+                          }
+
+                          PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                            new ConvertObjStringsWork(objContents, mtlContents, callback, textureDataByName));
+                      }
+                  });
+            }
+        }
+
+        private static void AttemptVoxFile(ObjectStoreVoxAssets voxAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
+        {
+            // Check cache first
+            string cacheDir = Path.Combine(Application.temporaryCachePath, $"vox_{assetId}");
+            string cachedVoxPath = Path.Combine(cacheDir, "model.vox");
+
+            if (File.Exists(cachedVoxPath))
+            {
+                byte[] voxBytes = File.ReadAllBytes(cachedVoxPath);
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertVoxBytesWork(voxBytes, callback));
+                return;
+            }
+
+            // Cache miss - download
+            StringBuilder voxUrl = new StringBuilder(voxAssets.rootUrl);
+
+            PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+              () => GetNewGetRequest(voxUrl, "application/octet-stream"),
+              (bool success, int responseCode, byte[] voxBytes) =>
+              {
+                  if (!success)
+                  {
+                      if (responseCode == 404)
+                      {
+                          Debug.LogWarning($"404 Not Found: VOX file not available at {voxUrl}");
+                      }
+                      else
+                      {
+                          Debug.LogWarning($"VOX file download failed - URL: {voxUrl}, Response code: {responseCode}");
+                      }
+                      onFailure();
+                      return;
+                  }
+
+                  // Cache the VOX file
+                  try
+                  {
+                      if (!Directory.Exists(cacheDir))
+                      {
+                          Directory.CreateDirectory(cacheDir);
+                      }
+                      File.WriteAllBytes(cachedVoxPath, voxBytes);
+                  }
+                  catch (Exception e)
+                  {
+                      Debug.LogWarning($"Failed to cache VOX file: {e.Message}");
+                  }
+
+                  PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ConvertVoxBytesWork(voxBytes, callback));
               });
         }
 
@@ -814,13 +1012,19 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         {
             private readonly string objContents;
             private readonly string mtlContents;
+            private readonly Dictionary<string, byte[]> textureDataByName;
             private readonly System.Action<byte[]> callback;
             private byte[] outputBytes;
 
-            public ConvertObjStringsWork(string objContents, string mtlContents, System.Action<byte[]> callback)
+            // Parsed in background
+            private Dictionary<string, ObjImporter.MaterialData> parsedMaterialData;
+            private string parsedObjData;
+
+            public ConvertObjStringsWork(string objContents, string mtlContents, System.Action<byte[]> callback, Dictionary<string, byte[]> textureDataByName = null)
             {
                 this.objContents = objContents;
                 this.mtlContents = mtlContents;
+                this.textureDataByName = textureDataByName;
                 this.callback = callback;
             }
 
@@ -831,15 +1035,81 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     return;
                 }
 
-                if (ObjImporter.MMeshFromObjFile(objContents, mtlContents, 0, out MMesh mesh))
+                // Parse MTL without creating Unity objects
+                parsedMaterialData = ObjImporter.ParseMaterialData(mtlContents);
+                parsedObjData = objContents;
+            }
+
+            public void PostWork()
+            {
+                if (!string.IsNullOrEmpty(parsedObjData))
                 {
+                    // Load textures on main thread if provided
+                    Dictionary<string, Texture2D> embeddedTextures = null;
+                    if (textureDataByName != null && textureDataByName.Count > 0)
+                    {
+                        embeddedTextures = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var kvp in textureDataByName)
+                        {
+                            Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                            if (texture.LoadImage(kvp.Value, false))
+                            {
+                                texture.name = Path.GetFileNameWithoutExtension(kvp.Key);
+                                texture.wrapMode = TextureWrapMode.Repeat;
+                                embeddedTextures[kvp.Key] = texture;
+                            }
+                            else
+                            {
+                                UnityEngine.Object.Destroy(texture);
+                            }
+                        }
+                    }
+
+                    // Import meshes (split by groups) - this handles material creation on main thread
+                    if (ObjImporter.MMeshesFromObjFile(parsedObjData, mtlContents, 0, out List<MMesh> meshes, null, embeddedTextures))
+                    {
+                        if (meshes.Count > 0)
+                        {
+                            NormalizeMeshesForImport(meshes, 2.0f);
+                            outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes);
+                        }
+                    }
+                }
+
+                TextureToFaceColorApproximator.ClearCache();
+                callback(outputBytes);
+            }
+        }
+
+        private class ConvertVoxBytesWork : BackgroundWork
+        {
+            private readonly byte[] voxBytes;
+            private readonly System.Action<byte[]> callback;
+            private byte[] outputBytes;
+
+            public ConvertVoxBytesWork(byte[] voxBytes, System.Action<byte[]> callback)
+            {
+                this.voxBytes = voxBytes;
+                this.callback = callback;
+            }
+
+            public void BackgroundWork()
+            {
+                if (voxBytes == null || voxBytes.Length == 0)
+                {
+                    return;
+                }
+
+                if (VoxImporter.MMeshFromVoxFile(voxBytes, 0, out MMesh mesh))
+                {
+                    // Can't decide if this is a good thing to do automatically or not
+                    CoplanarFaceMerger.MergeCoplanarFaces(mesh);
                     outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
                 }
             }
 
             public void PostWork()
             {
-                TextureToFaceColorApproximator.ClearCache();
                 callback(outputBytes);
             }
         }
@@ -851,6 +1121,12 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             private readonly byte[] zipBytes;
             private readonly System.Action<byte[]> callback;
             private byte[] outputBytes;
+
+            // Parsed in background
+            private string parsedObjData;
+            private string parsedMtlData;
+            private Dictionary<string, ObjImporter.MaterialData> parsedMaterialData;
+            private Dictionary<string, byte[]> textureDataByName;
 
             public ConvertObjPackageWork(byte[] zipBytes, System.Action<byte[]> callback)
             {
@@ -866,7 +1142,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     {
                         string objContents = null;
                         string mtlContents = null;
-                        Dictionary<string, Texture2D> embeddedTextures = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
+                        textureDataByName = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
 
                         foreach (ZipEntry entry in zipFile)
                         {
@@ -897,26 +1173,56 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                                     using (MemoryStream memoryStream = new MemoryStream())
                                     {
                                         entryStream.CopyTo(memoryStream);
-                                        byte[] textureBytes = memoryStream.ToArray();
-                                        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                                        if (texture.LoadImage(textureBytes, false))
-                                        {
-                                            texture.name = Path.GetFileNameWithoutExtension(entry.Name);
-                                            embeddedTextures[entry.Name] = texture;
-                                        }
-                                        else
-                                        {
-                                            UnityEngine.Object.Destroy(texture);
-                                        }
+                                        textureDataByName[entry.Name] = memoryStream.ToArray();
                                     }
                                 }
                             }
                         }
 
-                        if (!string.IsNullOrEmpty(objContents)
-                          && ObjImporter.MMeshFromObjFile(objContents, mtlContents, 0, out MMesh mesh, null, embeddedTextures))
+                        parsedObjData = objContents;
+                        parsedMtlData = mtlContents;
+                        parsedMaterialData = ObjImporter.ParseMaterialData(mtlContents);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to extract OBJ package: {e.Message}");
+                }
+            }
+
+            public void PostWork()
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(parsedObjData))
+                    {
+                        // Load textures on main thread
+                        Dictionary<string, Texture2D> embeddedTextures = new Dictionary<string, Texture2D>(StringComparer.OrdinalIgnoreCase);
+                        if (textureDataByName != null)
                         {
-                            outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
+                            foreach (var kvp in textureDataByName)
+                            {
+                                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                                if (texture.LoadImage(kvp.Value, false))
+                                {
+                                    texture.name = Path.GetFileNameWithoutExtension(kvp.Key);
+                                    embeddedTextures[kvp.Key] = texture;
+                                }
+                                else
+                                {
+                                    UnityEngine.Object.Destroy(texture);
+                                }
+                            }
+                        }
+
+                        // Import meshes (split by groups) - this handles material creation on main thread
+                        if (ObjImporter.MMeshesFromObjFile(parsedObjData, parsedMtlData, 0, out List<MMesh> meshes, null, embeddedTextures))
+                        {
+                            if (meshes.Count > 0)
+                            {
+                                NormalizeMeshesForImport(meshes, 2.0f);
+                                outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes);
+                            }
                         }
                     }
                 }
@@ -924,10 +1230,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 {
                     Debug.LogError($"Failed to process OBJ package: {e.Message}");
                 }
-            }
 
-            public void PostWork()
-            {
                 TextureToFaceColorApproximator.ClearCache();
                 callback(outputBytes);
             }
@@ -1262,69 +1565,69 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 }
             }
 
-            private static void NormalizeMeshesForImport(List<MMesh> meshes, float targetMaxSize)
+        }
+
+        private static void NormalizeMeshesForImport(List<MMesh> meshes, float targetMaxSize)
+        {
+            if (meshes == null || meshes.Count == 0)
             {
-                if (meshes == null || meshes.Count == 0)
-                {
-                    return;
-                }
-
-                Bounds overallBounds = meshes[0].bounds;
-                for (int i = 1; i < meshes.Count; i++)
-                {
-                    overallBounds.Encapsulate(meshes[i].bounds);
-                }
-
-                Vector3 center = overallBounds.center;
-                float maxDimension = Mathf.Max(overallBounds.size.x, Mathf.Max(overallBounds.size.y, overallBounds.size.z));
-                float scale = 1f;
-                if (targetMaxSize > 0f && maxDimension > Mathf.Epsilon)
-                {
-                    scale = Mathf.Min(1f, targetMaxSize / maxDimension);
-                }
-
-                Quaternion orientationFix = Quaternion.Euler(0f, 180f, 0f);
-
-                foreach (MMesh mesh in meshes)
-                {
-                    if (mesh == null)
-                    {
-                        continue;
-                    }
-
-                    mesh.RecalcReverseTable();
-                    EnsureReverseTableCoverage(mesh);
-
-                    MMesh.GeometryOperation operation = mesh.StartOperation();
-                    foreach (int vertexId in mesh.GetVertexIds())
-                    {
-                        Vector3 loc = mesh.VertexPositionInMeshCoords(vertexId);
-                        Vector3 adjusted = orientationFix * ((loc - center) * scale);
-                        operation.ModifyVertexMeshSpace(vertexId, adjusted);
-                    }
-                    operation.CommitWithoutRecalculation();
-                    mesh.offset = Vector3.zero;
-                    mesh.rotation = Quaternion.identity;
-                    mesh.RecalcBounds();
-                }
+                return;
             }
 
-            private static void EnsureReverseTableCoverage(MMesh mesh)
+            Bounds overallBounds = meshes[0].bounds;
+            for (int i = 1; i < meshes.Count; i++)
             {
-                if (mesh == null || mesh.reverseTable == null)
+                overallBounds.Encapsulate(meshes[i].bounds);
+            }
+
+            Vector3 center = overallBounds.center;
+            float maxDimension = Mathf.Max(overallBounds.size.x, Mathf.Max(overallBounds.size.y, overallBounds.size.z));
+            float scale = 1f;
+            if (targetMaxSize > 0f && maxDimension > Mathf.Epsilon)
+            {
+                scale = Mathf.Min(1f, targetMaxSize / maxDimension);
+            }
+
+            Quaternion orientationFix = Quaternion.Euler(0f, 180f, 0f);
+
+            foreach (MMesh mesh in meshes)
+            {
+                if (mesh == null)
                 {
-                    return;
+                    continue;
                 }
 
+                mesh.RecalcReverseTable();
+                EnsureReverseTableCoverage(mesh);
+
+                MMesh.GeometryOperation operation = mesh.StartOperation();
                 foreach (int vertexId in mesh.GetVertexIds())
                 {
-                    if (!mesh.reverseTable.ContainsKey(vertexId))
-                    {
-                        mesh.reverseTable[vertexId] = new HashSet<int>();
-                    }
+                    Vector3 loc = mesh.VertexPositionInMeshCoords(vertexId);
+                    Vector3 adjusted = orientationFix * ((loc - center) * scale);
+                    operation.ModifyVertexMeshSpace(vertexId, adjusted);
                 }
+                operation.CommitWithoutRecalculation();
+                mesh.offset = Vector3.zero;
+                mesh.rotation = Quaternion.identity;
+                mesh.RecalcBounds();
+            }
+        }
+
+        private static void EnsureReverseTableCoverage(MMesh mesh)
+        {
+            if (mesh == null || mesh.reverseTable == null)
+            {
+                return;
             }
 
+            foreach (int vertexId in mesh.GetVertexIds())
+            {
+                if (!mesh.reverseTable.ContainsKey(vertexId))
+                {
+                    mesh.reverseTable[vertexId] = new HashSet<int>();
+                }
+            }
         }
     }
 }

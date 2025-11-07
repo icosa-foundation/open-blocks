@@ -77,7 +77,8 @@ namespace com.google.apps.peltzer.client.desktop_app
             OBJ,
             OFF,
             GLTF,
-            BLOCKS
+            BLOCKS,
+            VOX
         }
 
         public class LoadObjects : BackgroundWork
@@ -109,6 +110,10 @@ namespace com.google.apps.peltzer.client.desktop_app
                     else if (filenames.Length == 1 && filenames[0].EndsWith(".off"))
                     {
                         DoOffImport(filenames[0]);
+                    }
+                    else if (filenames.Length == 1 && filenames[0].EndsWith(".vox"))
+                    {
+                        DoVoxImport(filenames[0]);
                     }
                     else if (filenames.Length == 1 && filenames[0].EndsWith(".glb"))
                     {
@@ -161,6 +166,12 @@ namespace com.google.apps.peltzer.client.desktop_app
             {
                 modelFilenames = new[] { filename };
                 fileType = FileType.OFF;
+            }
+
+            public void DoVoxImport(string filename)
+            {
+                modelFilenames = new[] { filename };
+                fileType = FileType.VOX;
             }
 
             public void DoObjImport(string[] filenames)
@@ -224,6 +235,10 @@ namespace com.google.apps.peltzer.client.desktop_app
                             break;
                         case FileType.OFF:
                             model.MMeshFromOff(modelFilenames, out mesh);
+                            meshes = new List<MMesh> { mesh };
+                            break;
+                        case FileType.VOX:
+                            model.MMeshFromVox(modelFilenames, out mesh);
                             meshes = new List<MMesh> { mesh };
                             break;
                         case FileType.BLOCKS:

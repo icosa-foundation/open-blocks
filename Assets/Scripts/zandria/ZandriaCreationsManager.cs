@@ -966,6 +966,7 @@ namespace com.google.apps.peltzer.client.zandria
 
             return entry.assets.peltzer != null
               || entry.assets.peltzer_package != null
+              || entry.assets.vox != null
               || entry.assets.object_package != null
               || entry.assets.obj != null
               || entry.assets.gltf_package != null

@@ -1213,5 +1213,15 @@ namespace com.google.apps.peltzer.client.model.core
             }
             return true;
         }
+
+        public bool MMeshFromVox(string[] filenames, out MMesh mesh)
+        {
+            byte[] fileContents = File.ReadAllBytes(filenames[0]);
+            if (!VoxImporter.MMeshFromVoxFile(fileContents, GenerateMeshId(), out mesh) || !CanAddMesh(mesh))
+            {
+                return false;
+            }
+            return true;
+        }
     }
 }
