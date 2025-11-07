@@ -251,6 +251,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void Setup()
         {
+#if OPENXR_SUPPORTED
             if (Config.Instance.sdkMode == SdkMode.OpenXR)
             {
                 var openXRController = new ControllerDeviceOpenXR(transform);
@@ -258,6 +259,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 controller = openXRController;
             }
             else
+#endif
             {
                 // ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
                 // oculusController.controllerType = OVRInput.Controller.LTouch;

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if OPENXR_SUPPORTED
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -232,3 +233,4 @@ namespace com.google.apps.peltzer.client.model.controller
         }
     }
 }
+#endif

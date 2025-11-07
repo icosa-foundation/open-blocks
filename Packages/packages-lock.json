@@ -213,6 +213,18 @@
       },
       "url": "https://packages.unity.com"
     },
+    "org.khronos.unitygltf": {
+      "version": "https://github.com/KhronosGroup/UnityGLTF.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "2.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.shadergraph": "10.0.0",
+        "com.unity.mathematics": "1.0.0"
+      },
+      "hash": "aae262370da5dec08b92f141e721a1e69b628838"
+    },
     "org.nuget.sharpziplib": {
       "version": "1.3.1",
       "depth": 0,

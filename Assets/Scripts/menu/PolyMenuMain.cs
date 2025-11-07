@@ -16,6 +16,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
+using System.Linq;
 using System.Text;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
 using UnityEngine;
@@ -1254,6 +1255,13 @@ namespace com.google.apps.peltzer.client.menu
             {
                 _SetModelParam(q => q.Category = category);
             }
+        }
+
+        public void SetApiFormatFilter(string formats)
+        {
+            var formatList = formats.Split(',').ToList();
+            string[] validFormats = formatList.Where(ChoicesHelper.IsValidChoice<FormatChoices>).ToArray();
+            _SetModelParam(q => q.Formats = validFormats);
         }
 
         public void SetApiOrderBy(string orderBy)

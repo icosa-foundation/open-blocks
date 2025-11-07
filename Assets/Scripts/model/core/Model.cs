@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.util;
@@ -1194,12 +1195,13 @@ namespace com.google.apps.peltzer.client.model.core
             string materialFileContents = "";
             if (!string.IsNullOrEmpty(filenames[1]))
                 materialFileContents = ModelImportController.FileToString(filenames[1]);
-            if (!ObjImporter.MMeshFromObjFile(modelFileContents, materialFileContents, GenerateMeshId(), out mesh)
-                || !CanAddMesh(mesh))
-            {
-                return false;
-            }
-            return true;
+            string textureDirectory = Path.GetDirectoryName(filenames[0]);
+            bool success = ObjImporter.MMeshFromObjFile(modelFileContents, materialFileContents, GenerateMeshId(), out mesh, textureDirectory)
+                && CanAddMesh(mesh);
+
+            TextureToFaceColorApproximator.ClearCache();
+
+            return success;
         }
 
         public bool MMeshFromOff(string[] filenames, out MMesh mesh)
