@@ -27,52 +27,62 @@ namespace com.google.apps.peltzer.client.model.controller
     {
         public void Update()
         {
-            throw new System.NotImplementedException();
+            // No-op
         }
-        public bool IsTrackedObjectValid { get; set; }
+        public bool IsTrackedObjectValid
+        {
+            get
+            {
+                return true;
+            }
+            set
+            {
+                // No-op
+            }
+        }
         public Vector3 GetVelocity()
         {
-            throw new System.NotImplementedException();
+            return Vector3.zero;
         }
         public bool IsPressed(ButtonId buttonId)
         {
-            throw new System.NotImplementedException();
+            return false;
         }
         public bool WasJustPressed(ButtonId buttonId)
         {
-            throw new System.NotImplementedException();
+            return false;
         }
         public bool WasJustReleased(ButtonId buttonId)
         {
-            throw new System.NotImplementedException();
+            return false;
         }
         public bool IsTriggerHalfPressed()
         {
-            throw new System.NotImplementedException();
+            return false;
         }
         public bool WasTriggerJustReleasedFromHalfPress()
         {
-            throw new System.NotImplementedException();
+            return false;
         }
         public bool IsTouched(ButtonId buttonId)
         {
-            throw new System.NotImplementedException();
+            return false;
         }
         public Vector2 GetDirectionalAxis()
         {
-            throw new System.NotImplementedException();
+            return Vector2.zero;
         }
         public TouchpadLocation GetTouchpadLocation()
         {
-            throw new System.NotImplementedException();
+            return new TouchpadLocation();
         }
         public Vector2 GetTriggerScale()
         {
-            throw new System.NotImplementedException();
+            return Vector2.zero;
         }
         public void TriggerHapticPulse(ushort durationMicroSec = 500)
         {
-            throw new System.NotImplementedException();
+            // No-op
         }
     }
 }
