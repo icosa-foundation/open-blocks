@@ -429,7 +429,9 @@ jobs:
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
-          mv build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/Support "build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }}/Contents/"
+          if [ -d "build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/Support" ]; then
+            mv build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/Support "build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }}/Contents/"
+          fi
           find build -name 'UnityFbxSdkNative.bundle' -delete
           # Compress, but skip the top directories
           tar -c -v -z -f OpenBlocks.tgz -C build/${{ matrix.vrsdk }} ${{ matrix.targetPlatform}}
