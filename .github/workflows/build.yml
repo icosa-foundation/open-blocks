@@ -198,7 +198,6 @@ jobs:
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
             cache: Linux
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: MacOS
             targetPlatform: StandaloneOSX
@@ -213,25 +212,6 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             extra_defines: OPENXR_SUPPORTED
-
-          - name: Linux
-            targetPlatform: StandaloneLinux64
-            vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
-            cache: Linux
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
-
-          - name: MacOS
-            targetPlatform: StandaloneOSX
-            vrsdk: Monoscopic
-            cache: MacOS
-            packages_to_remove: com.meta.xr.sdk.core
-
-          - name: Android OpenXR
-            targetPlatform: Android
-            vrsdk: OpenXR
-            cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
-            versionSuffix: 0
 
           - name: Oculus Quest (2+)
             targetPlatform: Android
