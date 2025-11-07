@@ -52,7 +52,7 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
-      - name: Check for tags and fetch from Open Blocsk repo if needed
+      - name: Check for tags and fetch from Open Blocks repo if needed
         if: github.repository != 'icosa-foundation/open-blocks'
         run: |
           if [ $(git tag | wc -l) -eq 0 ]; then
@@ -502,7 +502,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -510,7 +510,7 @@ jobs:
             Support/macos
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: MacOS
           path: build_macos
@@ -564,7 +564,7 @@ jobs:
 
           tar -c -v -z -f OpenBlocks.tgz StandaloneOSX
       - name: Upload signed app
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: MacOS (signed)
           path: |
@@ -581,7 +581,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -621,7 +621,7 @@ jobs:
           xcrun stapler staple dist/OpenBlocks.dmg
 
       - name: Upload notarized dmg
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: MacOS (DMG)
           path: |
