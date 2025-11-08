@@ -62,6 +62,7 @@ namespace com.google.apps.peltzer.client.model.core
         private List<Vector3> cachedMeshSpacePositions = null;
         private List<Color32> cachedColors = null;
         private List<Vector3> cachedRenderNormals = null;
+        private List<Vector2> cachedUVs = null;
 
         /// <summary>
         /// Constructs a face with no normal.  This constructor should only be used when it is certain that the normal will
@@ -84,6 +85,7 @@ namespace com.google.apps.peltzer.client.model.core
             cachedMeshSpacePositions = new List<Vector3>(vertexIds.Count);
             cachedRenderNormals = new List<Vector3>(vertexIds.Count);
             cachedColors = new List<Color32>(vertexIds.Count);
+            cachedUVs = new List<Vector2>(vertexIds.Count);
             RecalcColorCache();
         }
 
@@ -126,6 +128,7 @@ namespace com.google.apps.peltzer.client.model.core
             cachedMeshSpacePositions = new List<Vector3>(vertexIds.Count);
             cachedRenderNormals = new List<Vector3>(vertexIds.Count);
             cachedColors = new List<Color32>(vertexIds.Count);
+            cachedUVs = new List<Vector2>(vertexIds.Count);
             RecalcColorCache();
         }
 
@@ -148,6 +151,7 @@ namespace com.google.apps.peltzer.client.model.core
             cachedMeshSpacePositions = new List<Vector3>(vertexIds.Count);
             cachedRenderNormals = new List<Vector3>(vertexIds.Count);
             cachedColors = new List<Color32>(vertexIds.Count);
+            cachedUVs = new List<Vector2>(vertexIds.Count);
             RecalcColorCache();
         }
 
@@ -156,7 +160,7 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         private Face(int id, ReadOnlyCollection<int> vertexIds, Vector3 normal, FaceProperties properties,
           List<Triangle> modelTriangulation, List<Triangle> renderTriangulation,
-          List<Vector3> cachedMeshSpacePositions, List<Vector3> cachedRenderNormals, List<Color32> cachedColors)
+          List<Vector3> cachedMeshSpacePositions, List<Vector3> cachedRenderNormals, List<Color32> cachedColors, List<Vector2> cachedUVs)
         {
             _id = id;
             _vertexIds = vertexIds;
@@ -168,6 +172,7 @@ namespace com.google.apps.peltzer.client.model.core
             this.cachedMeshSpacePositions = cachedMeshSpacePositions;
             this.cachedRenderNormals = cachedRenderNormals;
             this.cachedColors = cachedColors;
+            this.cachedUVs = cachedUVs;
         }
 
         /// <summary>
@@ -291,7 +296,7 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         /// <summary>
-        /// Returns a list of vertex normals for each vertex in the face in clockwise order, used for building a 
+        /// Returns a list of vertex normals for each vertex in the face in clockwise order, used for building a
         /// renderable mesh.
         /// </summary>
         public List<Vector3> GetRenderNormals(MMesh mesh)
@@ -306,6 +311,38 @@ namespace com.google.apps.peltzer.client.model.core
                 }
             }
             return cachedRenderNormals;
+        }
+
+        /// <summary>
+        /// Returns a list of UV coordinates for each vertex in the face in clockwise order, used for building a
+        /// renderable mesh.
+        /// </summary>
+        public List<Vector2> GetUVs(MMesh mesh)
+        {
+            if (cachedUVs.Count == 0)
+            {
+                RecalcUVCache(mesh);
+            }
+            return cachedUVs;
+        }
+
+        private void RecalcUVCache(MMesh mesh)
+        {
+            cachedUVs.Clear();
+            for (int i = 0; i < vertexIds.Count; i++)
+            {
+                Vertex vertex = mesh.GetVertex(vertexIds[i]);
+                cachedUVs.Add(vertex.uv);
+            }
+        }
+
+        /// <summary>
+        /// Invalidates the UV cache (because vertices have been modified).
+        /// Cache will be recalculated next time UVs are accessed.
+        /// </summary>
+        public void InvalidateUVCache()
+        {
+            cachedUVs.Clear();
         }
 
         public void SetProperties(FaceProperties properties)
@@ -327,7 +364,8 @@ namespace com.google.apps.peltzer.client.model.core
               _renderTriangulation,
               new List<Vector3>(cachedMeshSpacePositions),
               new List<Vector3>(cachedRenderNormals),
-              new List<Color32>(cachedColors));
+              new List<Color32>(cachedColors),
+              new List<Vector2>(cachedUVs));
         }
     }
 }
