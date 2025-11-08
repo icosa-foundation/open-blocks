@@ -1709,21 +1709,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2852041496631331238, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-        type: 3}
-      propertyPath: defaultDistance
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2852041496631331238, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-        type: 3}
-      propertyPath: defaultRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2852041496631331238, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-        type: 3}
-      propertyPath: defaultRotation.y
-      value: 25
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
