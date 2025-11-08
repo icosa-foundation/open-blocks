@@ -22,6 +22,12 @@ namespace com.google.apps.peltzer.client.serialization
     /// </summary>
     public static class PolySerializationUtils
     {
+        public static void WriteVector2(PolySerializer serializer, Vector2 v)
+        {
+            serializer.WriteFloat(v.x);
+            serializer.WriteFloat(v.y);
+        }
+
         public static void WriteVector3(PolySerializer serializer, Vector3 v)
         {
             serializer.WriteFloat(v.x);
@@ -62,6 +68,13 @@ namespace com.google.apps.peltzer.client.serialization
             {
                 serializer.WriteString(s);
             }
+        }
+
+        public static Vector2 ReadVector2(PolySerializer serializer)
+        {
+            float x = serializer.ReadFloat();
+            float y = serializer.ReadFloat();
+            return new Vector2(x, y);
         }
 
         public static Vector3 ReadVector3(PolySerializer serializer)

@@ -855,6 +855,44 @@ namespace com.google.apps.peltzer.client.model.core
             }
             serializer.FinishWritingChunk(SerializationConsts.CHUNK_MMESH);
 
+            // Write UV coordinates if any vertices have UVs set (optional chunk).
+            // Check if any vertex has a non-zero UV coordinate.
+            bool hasUVs = verticesById.Values.Any(v => v.uv != Vector2.zero);
+            if (hasUVs)
+            {
+                serializer.StartWritingChunk(SerializationConsts.CHUNK_MMESH_EXT_UVS);
+                serializer.WriteCount(verticesById.Count);
+                foreach (Vertex v in verticesById.Values)
+                {
+                    serializer.WriteInt(v.id);
+                    PolySerializationUtils.WriteVector2(serializer, v.uv);
+                }
+                serializer.FinishWritingChunk(SerializationConsts.CHUNK_MMESH_EXT_UVS);
+            }
+
+            // Write face texture properties if any face has textures assigned (optional chunk).
+            // Only write faces that have texture IDs or non-default UV transforms.
+            List<Face> facesWithTextures = facesById.Values
+                .Where(f => f.properties.HasTextures() ||
+                           f.properties.textureScale != Vector2.one ||
+                           f.properties.textureOffset != Vector2.zero)
+                .ToList();
+
+            if (facesWithTextures.Count > 0)
+            {
+                serializer.StartWritingChunk(SerializationConsts.CHUNK_FACE_TEXTURES);
+                serializer.WriteCount(facesWithTextures.Count);
+                foreach (Face face in facesWithTextures)
+                {
+                    serializer.WriteInt(face.id);
+                    serializer.WriteInt(face.properties.albedoTextureId);
+                    serializer.WriteInt(face.properties.bumpTextureId);
+                    PolySerializationUtils.WriteVector2(serializer, face.properties.textureScale);
+                    PolySerializationUtils.WriteVector2(serializer, face.properties.textureOffset);
+                }
+                serializer.FinishWritingChunk(SerializationConsts.CHUNK_FACE_TEXTURES);
+            }
+
             // If we have any remix IDs, also write a remix info chunk.
             // As per the design of the file format, this chunk will be automatically skipped by older versions
             // that don't expect remix IDs in the file.
@@ -971,6 +1009,54 @@ namespace com.google.apps.peltzer.client.model.core
             }
 
             serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH);
+
+            // If UV coordinates chunk is present (it's optional), read it and update vertices.
+            if (serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_MMESH_EXT_UVS)
+            {
+                serializer.StartReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_UVS);
+                int uvCount = serializer.ReadCount(0, SerializationConsts.MAX_VERTICES_PER_MESH, "uvCount");
+                for (int i = 0; i < uvCount; i++)
+                {
+                    int vertexId = serializer.ReadInt();
+                    Vector2 uv = PolySerializationUtils.ReadVector2(serializer);
+                    // Update the existing vertex with UV data by replacing it
+                    if (verticesById.ContainsKey(vertexId))
+                    {
+                        Vertex existingVertex = verticesById[vertexId];
+                        verticesById[vertexId] = new Vertex(vertexId, existingVertex.loc, uv);
+                    }
+                }
+                serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_UVS);
+            }
+
+            // If face texture properties chunk is present (it's optional), read it and update faces.
+            if (serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_FACE_TEXTURES)
+            {
+                serializer.StartReadingChunk(SerializationConsts.CHUNK_FACE_TEXTURES);
+                int faceTextureCount = serializer.ReadCount(0, SerializationConsts.MAX_FACES_PER_MESH, "faceTextureCount");
+                for (int i = 0; i < faceTextureCount; i++)
+                {
+                    int faceId = serializer.ReadInt();
+                    int albedoTextureId = serializer.ReadInt();
+                    int bumpTextureId = serializer.ReadInt();
+                    Vector2 textureScale = PolySerializationUtils.ReadVector2(serializer);
+                    Vector2 textureOffset = PolySerializationUtils.ReadVector2(serializer);
+
+                    // Update the face properties with texture data
+                    if (facesById.ContainsKey(faceId))
+                    {
+                        Face existingFace = facesById[faceId];
+                        FaceProperties newProps = new FaceProperties(
+                            existingFace.properties.materialId,
+                            albedoTextureId,
+                            bumpTextureId,
+                            textureScale,
+                            textureOffset);
+                        existingFace.SetProperties(newProps);
+                    }
+                }
+                serializer.FinishReadingChunk(SerializationConsts.CHUNK_FACE_TEXTURES);
+            }
 
             // If the remix IDs chunk is present (it's optional), read it.
             if (serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS)

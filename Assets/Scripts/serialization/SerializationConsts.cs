@@ -29,17 +29,27 @@ namespace com.google.apps.peltzer.client.serialization
         public const int CHUNK_MMESH_EXT_REMIX_IDS = 102;
         // Recommended rotation of model on the Poly Menu (optional chunk).
         public const int CHUNK_PELTZER_EXT_MODEL_ROTATION = 103;
+        // Texture asset library (optional chunk) - contains embedded texture data.
+        public const int CHUNK_TEXTURES = 104;
+        // UV coordinates per vertex (optional chunk) - base UV coordinates for vertices.
+        public const int CHUNK_MMESH_EXT_UVS = 105;
+        // Per-face UV overrides (optional chunk) - UV coordinates for vertices at UV seams.
+        public const int CHUNK_MMESH_EXT_FACE_UVS = 106;
+        // Face texture properties (optional chunk) - texture IDs and UV transforms per face.
+        public const int CHUNK_FACE_TEXTURES = 107;
         // Note: when adding additional mesh chunks, name them CHUNK_MMESH_EXT_* and
         // describe what new fields they contain.
 
         // Maximum allowed counts for repeated fields (for sanity checking).
         public const int MAX_MESHES_PER_FILE = 100000;
         public const int MAX_MATERIALS_PER_FILE = 1024;
+        public const int MAX_TEXTURES_PER_FILE = 1024;
         public const int MAX_VERTICES_PER_MESH = 500000;
         public const int MAX_FACES_PER_MESH = 100000;
         public const int MAX_VERTICES_PER_FACE = 256;
         public const int MAX_HOLES_PER_FACE = 256;
         public const int MAX_VERTICES_PER_HOLE = 256;
         public const int MAX_REMIX_IDS_PER_MMESH = 256;
+        public const int MAX_TEXTURE_DATA_SIZE = 16 * 1024 * 1024; // 16MB per texture
     }
 }

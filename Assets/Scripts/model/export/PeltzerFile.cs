@@ -42,14 +42,16 @@ namespace com.google.apps.peltzer.client.model.export
         public Metadata metadata;
         public float zoomFactor;
         public List<PeltzerMaterial> materials;
+        public Dictionary<int, TextureAsset> textures;
         public List<MMesh> meshes;
 
         public PeltzerFile(Metadata metadata, float zoomFactor, List<PeltzerMaterial> materials,
-          List<MMesh> meshes)
+          List<MMesh> meshes, Dictionary<int, TextureAsset> textures = null)
         {
             this.metadata = metadata;
             this.zoomFactor = zoomFactor;
             this.materials = materials;
+            this.textures = textures ?? new Dictionary<int, TextureAsset>();
             this.meshes = meshes;
         }
 
@@ -74,6 +76,25 @@ namespace com.google.apps.peltzer.client.model.export
             }
             serializer.WriteCount(meshes.Count);
             serializer.FinishWritingChunk(SerializationConsts.CHUNK_PELTZER);
+
+            // Write texture chunk (optional - only if textures are present)
+            if (textures.Count > 0)
+            {
+                serializer.StartWritingChunk(SerializationConsts.CHUNK_TEXTURES);
+                serializer.WriteCount(textures.Count);
+                foreach (var textureEntry in textures)
+                {
+                    TextureAsset texture = textureEntry.Value;
+                    serializer.WriteInt(texture.id);
+                    serializer.WriteString(texture.name);
+                    serializer.WriteInt((int)texture.type);
+                    serializer.WriteInt(texture.width);
+                    serializer.WriteInt(texture.height);
+                    serializer.WriteCount(texture.data.Length);
+                    serializer.WriteBytes(texture.data);
+                }
+                serializer.FinishWritingChunk(SerializationConsts.CHUNK_TEXTURES);
+            }
 
             // Write the meshes. Each mesh is written as a separate chunk.
             for (int i = 0; i < meshes.Count; i++)
@@ -128,6 +149,14 @@ namespace com.google.apps.peltzer.client.model.export
               // Materials are 2 ints each:
               materials.Count() * 8;
 
+            // Calculate estimate for textures:
+            foreach (var textureEntry in textures)
+            {
+                TextureAsset texture = textureEntry.Value;
+                // ID, name, type, width, height, data length, plus actual data, plus chunk overhead
+                estimate += 64 + texture.name.Length * 2 + texture.data.Length;
+            }
+
             // Calculate estimate for meshes:
             for (int i = 0; i < meshes.Count; i++)
             {
@@ -162,6 +191,26 @@ namespace com.google.apps.peltzer.client.model.export
             }
             int meshCount = serializer.ReadCount(0, SerializationConsts.MAX_MESHES_PER_FILE, "meshCount");
             serializer.FinishReadingChunk(SerializationConsts.CHUNK_PELTZER);
+
+            // If textures are present (optional), read them.
+            textures = new Dictionary<int, TextureAsset>();
+            if (serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_TEXTURES)
+            {
+                serializer.StartReadingChunk(SerializationConsts.CHUNK_TEXTURES);
+                int textureCount = serializer.ReadCount(0, SerializationConsts.MAX_TEXTURES_PER_FILE, "textureCount");
+                for (int i = 0; i < textureCount; i++)
+                {
+                    int id = serializer.ReadInt();
+                    string name = serializer.ReadString();
+                    TextureType type = (TextureType)serializer.ReadInt();
+                    int width = serializer.ReadInt();
+                    int height = serializer.ReadInt();
+                    int dataLength = serializer.ReadCount(0, SerializationConsts.MAX_TEXTURE_DATA_SIZE, "textureDataLength");
+                    byte[] data = serializer.ReadBytes(dataLength);
+                    textures[id] = new TextureAsset(id, name, type, data, width, height);
+                }
+                serializer.FinishReadingChunk(SerializationConsts.CHUNK_TEXTURES);
+            }
 
             // Read meshes.
             meshes = new List<MMesh>();

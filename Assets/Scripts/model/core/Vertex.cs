@@ -25,15 +25,22 @@ namespace com.google.apps.peltzer.client.model.core
     {
         private readonly int _id;
         private Vector3 _loc;
+        private Vector2 _uv;
 
         // Read-only getters.
         public int id { get { return _id; } }
         public Vector3 loc { get { return _loc; } }
+        public Vector2 uv { get { return _uv; } }
 
-        public Vertex(int id, Vector3 loc)
+        public Vertex(int id, Vector3 loc) : this(id, loc, Vector2.zero)
+        {
+        }
+
+        public Vertex(int id, Vector3 loc, Vector2 uv)
         {
             _id = id;
             _loc = loc;
+            _uv = uv;
         }
     }
 }
