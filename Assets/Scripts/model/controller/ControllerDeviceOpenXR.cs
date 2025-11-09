@@ -215,8 +215,7 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             isBrush = true;
             device = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-            var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
-            actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
+            actionSet.bindingMask = null; // Let Unity select bindings for any XR controller
             actionSet.Brush.Enable();
             actionSet.Wand.Disable();
         }
@@ -225,8 +224,7 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             isBrush = false;
             device = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-            var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
-            actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
+            actionSet.bindingMask = null; // Let Unity select bindings for any XR controller
             actionSet.Brush.Disable();
             actionSet.Wand.Enable();
         }
