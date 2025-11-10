@@ -304,9 +304,14 @@ namespace com.google.apps.peltzer.client.model.controller
             isBrush = true;
             device = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
 
-            var bindingGroup = GetControllerBindingGroup();
-            Debug.Log($"OpenXR: Setting binding mask for Brush to: '{bindingGroup}'");
-            actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
+            // For vanilla OpenXR: Don't set a binding mask. Let OpenXR automatically
+            // select the appropriate bindings based on the connected device.
+            // This allows a single build to work on all OpenXR-compliant controllers
+            // (Pico, Quest, Vive, Index, WMR, etc.) without vendor-specific SDKs.
+            Debug.Log("OpenXR: Using automatic binding resolution for cross-platform compatibility");
+
+            // Log detected device for debugging
+            GetControllerBindingGroup();
 
             actionSet.Brush.Enable();
             actionSet.Wand.Disable();
@@ -319,9 +324,14 @@ namespace com.google.apps.peltzer.client.model.controller
             isBrush = false;
             device = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
 
-            var bindingGroup = GetControllerBindingGroup();
-            Debug.Log($"OpenXR: Setting binding mask for Wand to: '{bindingGroup}'");
-            actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
+            // For vanilla OpenXR: Don't set a binding mask. Let OpenXR automatically
+            // select the appropriate bindings based on the connected device.
+            // This allows a single build to work on all OpenXR-compliant controllers
+            // (Pico, Quest, Vive, Index, WMR, etc.) without vendor-specific SDKs.
+            Debug.Log("OpenXR: Using automatic binding resolution for cross-platform compatibility");
+
+            // Log detected device for debugging
+            GetControllerBindingGroup();
 
             actionSet.Brush.Disable();
             actionSet.Wand.Enable();
