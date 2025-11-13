@@ -128,6 +128,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case PolyMenuMain.CreationType.COLLECTIONS:
                     titleText += "Your Collections";
                     break;
+                case PolyMenuMain.CreationType.FEATURED_COLLECTIONS:
+                    titleText += "All Collections";
+                    break;
                 case PolyMenuMain.CreationType.YOUR:
                     titleText += "Your Uploads";
                     break;

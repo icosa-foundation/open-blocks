@@ -295,6 +295,17 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             Category = CategoryChoices.ANY
         };
 
+        public static ApiQueryParameters QueryParamsFeaturedCollections = new()
+        {
+            SearchText = "",
+            TriangleCountMax = defaultMaxPolyModelTriangles,
+            License = LicenseChoices.ANY,
+            OrderBy = OrderByChoices.BEST,
+            Formats = new[] { FormatChoices.BLOCKS },
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
+
         public static ApiQueryParameters QueryParamsLocal = new();
 
         private static int defaultMaxPolyModelTriangles
@@ -374,6 +385,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return $"{ApiBaseUrl}/users/me/collections?{CommonQueryParams(QueryParamsCollections)}";
         }
 
+        private static string FeaturedCollectionsSearchUrl()
+        {
+            return $"{ApiBaseUrl}/collections?{CommonQueryParams(QueryParamsFeaturedCollections)}";
+        }
+
         private static string YourModelsSearchUrl()
         {
             return $"{ApiBaseUrl}/users/me/assets?{CommonQueryParams(QueryParamsUser)}";
@@ -400,6 +416,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private static List<string> mostRecentFeaturedAssetIds = new();
         private static List<string> mostRecentLikedAssetIds = new();
         private static List<string> mostRecentCollectionsAssetIds = new();
+        private static List<string> mostRecentFeaturedCollectionsAssetIds = new();
         private static List<string> mostRecentYourAssetIds = new();
         private static List<string> mostRecentLocalAssetIds = new();
 
@@ -414,6 +431,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             mostRecentFeaturedAssetIds.Clear();
             mostRecentLikedAssetIds.Clear();
             mostRecentCollectionsAssetIds.Clear();
+            mostRecentFeaturedCollectionsAssetIds.Clear();
             mostRecentYourAssetIds.Clear();
         }
 
@@ -429,6 +447,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     break;
                 case PolyMenuMain.CreationType.COLLECTIONS:
                     mostRecentCollectionsAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.FEATURED_COLLECTIONS:
+                    mostRecentFeaturedCollectionsAssetIds.Clear();
                     break;
                 case PolyMenuMain.CreationType.YOUR:
                     mostRecentYourAssetIds.Clear();
@@ -459,6 +480,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                         case PolyMenuMain.CreationType.COLLECTIONS:
                             mostRecentCollectionsAssetIds.Add(assetId);
                             break;
+                        case PolyMenuMain.CreationType.FEATURED_COLLECTIONS:
+                            mostRecentFeaturedCollectionsAssetIds.Add(assetId);
+                            break;
                         case PolyMenuMain.CreationType.YOUR:
                             mostRecentYourAssetIds.Add(assetId);
                             break;
@@ -477,6 +501,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.COLLECTIONS => mostRecentCollectionsAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                PolyMenuMain.CreationType.FEATURED_COLLECTIONS => mostRecentFeaturedCollectionsAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 _ => false
@@ -490,6 +515,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.Count == 0,
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.Count == 0,
                 PolyMenuMain.CreationType.COLLECTIONS => mostRecentCollectionsAssetIds.Count == 0,
+                PolyMenuMain.CreationType.FEATURED_COLLECTIONS => mostRecentFeaturedCollectionsAssetIds.Count == 0,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.Count == 0,
                 PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.Count == 0,
                 _ => false
@@ -1037,6 +1063,45 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
                   Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.COLLECTIONS, successCallback, failureCallback));
+            }
+        }
+
+        /// <summary>
+        ///   Fetch a list of featured/public collections, together with their metadata, from the assets service.
+        /// </summary>
+        /// <param name="callback">A callback to which to pass the results.</param>
+        public void GetFeaturedCollections(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback)
+        {
+            UnityWebRequest request = GetRequest(FeaturedCollectionsSearchUrl(), "text/text", false);
+            PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+              () => { return request; },
+              (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
+                ProcessGetFeaturedCollectionsResponse(
+                  success, responseCode, responseBytes, request, successCallback, failureCallback)),
+              maxAgeMillis: WebRequestManager.CACHE_NONE);
+        }
+
+        // Deals with the response of a GetFeaturedCollections request, retrying it if an auth token was stale.
+        private IEnumerator ProcessGetFeaturedCollectionsResponse(bool success, int responseCode, byte[] responseBytes,
+          UnityWebRequest request, System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
+          bool isRecursion = false)
+        {
+            if (!success || responseCode == 401)
+            {
+                if (isRecursion)
+                {
+                    Debug.LogError(GetDebugString(request, "Failed to get featured collections"));
+                    yield break;
+                }
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                yield return OAuth2Identity.Instance.Reauthorize();
+                GetFeaturedCollections(successCallback, failureCallback);
+            }
+            else
+            {
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
+                  Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.FEATURED_COLLECTIONS, successCallback, failureCallback));
             }
         }
 
