@@ -51,7 +51,7 @@ namespace com.google.apps.peltzer.client.menu
         }
 
         // The types of Zandria creations that can be loaded.
-        public enum CreationType { NONE, YOUR, FEATURED, LIKED, LOCAL }
+        public enum CreationType { NONE, YOUR, FEATURED, LIKED, COLLECTIONS, LOCAL }
         // The different sections of the PolyMenu.
         public enum PolyMenuSection { CREATION, OPTION, DETAIL, ENVIRONMENT, LABS }
         // The different actions available in the Details section.
@@ -83,6 +83,7 @@ namespace com.google.apps.peltzer.client.menu
         public PolyMenuMode yourCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.YOUR, 0);
         public PolyMenuMode featuredCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.FEATURED, 0);
         public PolyMenuMode likedCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.LIKED, 0);
+        public PolyMenuMode collectionsCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.COLLECTIONS, 0);
         public PolyMenuMode localCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.LOCAL, 0);
         public PolyMenuMode options = new PolyMenuMode(PolyMenuSection.OPTION, CreationType.NONE, 0);
         public PolyMenuMode environment = new PolyMenuMode(PolyMenuSection.ENVIRONMENT, CreationType.NONE, 0);
@@ -115,8 +116,10 @@ namespace com.google.apps.peltzer.client.menu
         private GameObject modelsMenu;
         private GameObject noSavedModelsMenu;
         private GameObject noLikedModelsMenu;
+        private GameObject noCollectionsModelsMenu;
         private GameObject signedOutYourModelsMenu;
         private GameObject signedOutLikedModelsMenu;
+        private GameObject signedOutCollectionsModelsMenu;
         private GameObject offlineModelsMenu;
         private GameObject detailsPreviewHolder;
         private GameObject detailsThumbnail;
@@ -127,6 +130,7 @@ namespace com.google.apps.peltzer.client.menu
         private SpriteRenderer yourModelsIcon;
         private SpriteRenderer localModelsIcon;
         private SpriteRenderer likedModelsIcon;
+        private SpriteRenderer collectionsModelsIcon;
         private SpriteRenderer featuredModelsIcon;
         private SpriteRenderer environmentIcon;
         private SpriteRenderer labsIcon;
@@ -144,6 +148,7 @@ namespace com.google.apps.peltzer.client.menu
         private GameObject yourModelsTitle;
         private GameObject localModelsTitle;
         private GameObject likedModelsTitle;
+        private GameObject collectionsModelsTitle;
         private GameObject featuredModelsTitle;
 
         // Options buttons.
@@ -214,12 +219,13 @@ namespace com.google.apps.peltzer.client.menu
             controllerMain = PeltzerMain.Instance.controllerMain;
             controllerMain.ControllerActionHandler += ControllerEventHandler;
 
-            menuModes = new PolyMenuMode[7]
+            menuModes = new PolyMenuMode[8]
             {
                 options,
                 yourCreations,
                 featuredCreations,
                 likedCreations,
+                collectionsCreations,
                 environment,
                 labs,
                 localCreations
@@ -238,8 +244,10 @@ namespace com.google.apps.peltzer.client.menu
             modelsMenu = polyMenu.transform.Find("Models").gameObject;
             noSavedModelsMenu = polyMenu.transform.Find("Models-NoneSaved").gameObject;
             noLikedModelsMenu = polyMenu.transform.Find("Models-NoneLiked").gameObject;
+            noCollectionsModelsMenu = polyMenu.transform.Find("Models-NoneCollections")?.gameObject;
             signedOutYourModelsMenu = polyMenu.transform.Find("Models-Signedout-Yours").gameObject;
             signedOutLikedModelsMenu = polyMenu.transform.Find("Models-Signedout-Likes").gameObject;
+            signedOutCollectionsModelsMenu = polyMenu.transform.Find("Models-Signedout-Collections")?.gameObject;
             offlineModelsMenu = polyMenu.transform.Find("Models-Offline").gameObject;
             detailsPreviewHolder = detailsMenu.transform.Find("Model/preview/preview_holder").gameObject;
             detailsThumbnail = detailsMenu.transform.Find("Model/Thumbnail").gameObject;
@@ -249,6 +257,7 @@ namespace com.google.apps.peltzer.client.menu
             yourModelsIcon = polyMenu.transform.Find("NavBar/Your-Models/panel/ic").GetComponent<SpriteRenderer>();
             localModelsIcon = polyMenu.transform.Find("NavBar/Local-Models/panel/ic").GetComponent<SpriteRenderer>();
             likedModelsIcon = polyMenu.transform.Find("NavBar/Liked-Models/panel/ic").GetComponent<SpriteRenderer>();
+            collectionsModelsIcon = polyMenu.transform.Find("NavBar/Collections-Models/panel/ic")?.GetComponent<SpriteRenderer>();
             featuredModelsIcon = polyMenu.transform.Find("NavBar/Featured-Models/panel/ic").GetComponent<SpriteRenderer>();
             environmentIcon = polyMenu.transform.Find("NavBar/Environments/panel/ic").GetComponent<SpriteRenderer>();
             labsIcon = polyMenu.transform.Find("NavBar/LabsSection/panel/ic").GetComponent<SpriteRenderer>();
@@ -266,6 +275,7 @@ namespace com.google.apps.peltzer.client.menu
             yourModelsTitle = polyMenu.transform.Find("Titles/your_models_title").gameObject;
             localModelsTitle = polyMenu.transform.Find("Titles/local_models_title").gameObject;
             likedModelsTitle = polyMenu.transform.Find("Titles/likes_title").gameObject;
+            collectionsModelsTitle = polyMenu.transform.Find("Titles/collections_title")?.gameObject;
             featuredModelsTitle = polyMenu.transform.Find("Titles/featured_title").gameObject;
 
             signInText = polyMenu.transform.Find("Options/sign_in/bg/txt").GetComponent<TextMeshPro>();
@@ -725,6 +735,7 @@ namespace com.google.apps.peltzer.client.menu
             bool isYour = CurrentCreationType() == CreationType.YOUR;
             bool isLocal = CurrentCreationType() == CreationType.LOCAL;
             bool isLiked = CurrentCreationType() == CreationType.LIKED;
+            bool isCollections = CurrentCreationType() == CreationType.COLLECTIONS;
             bool isFeatured = CurrentCreationType() == CreationType.FEATURED;
             bool isOption = CurrentMenuSection() == PolyMenuSection.OPTION;
             bool isEnvironment = CurrentMenuSection() == PolyMenuSection.ENVIRONMENT;
@@ -738,12 +749,14 @@ namespace com.google.apps.peltzer.client.menu
             yourModelsTitle?.SetActive(isYour);
             localModelsTitle?.SetActive(isLocal);
             likedModelsTitle?.SetActive(isLiked);
+            collectionsModelsTitle?.SetActive(isCollections);
             featuredModelsTitle?.SetActive(isFeatured);
 
             if (optionsIcon) { optionsIcon.color = isOption ? SELECTED_AVATAR_COLOR : UNSELECTED_AVATAR_COLOR; }
             if (yourModelsIcon) { yourModelsIcon.color = isYour ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (localModelsIcon) { localModelsIcon.color = isLocal ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (likedModelsIcon) { likedModelsIcon.color = isLiked ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (collectionsModelsIcon) { collectionsModelsIcon.color = isCollections ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (featuredModelsIcon) { featuredModelsIcon.color = isFeatured ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (environmentIcon) { environmentIcon.color = isEnvironment ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (labsIcon) { labsIcon.color = isLabs ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
@@ -756,8 +769,10 @@ namespace com.google.apps.peltzer.client.menu
             // Deactivate all the user prompt menus. If they need to be activated they will be in PopulateZandriaMenu().
             noSavedModelsMenu?.SetActive(false);
             noLikedModelsMenu?.SetActive(false);
+            noCollectionsModelsMenu?.SetActive(false);
             signedOutYourModelsMenu?.SetActive(false);
             signedOutLikedModelsMenu?.SetActive(false);
+            signedOutCollectionsModelsMenu?.SetActive(false);
             offlineModelsMenu?.SetActive(false);
 
             // Activate or deactivate the models menu.
@@ -840,6 +855,7 @@ namespace com.google.apps.peltzer.client.menu
                       (type == CreationType.FEATURED && creationsManager.HasPendingOrValidLoad(CreationType.FEATURED)) ||
                       (type == CreationType.YOUR && creationsManager.HasPendingOrValidLoad(CreationType.YOUR)) ||
                       (type == CreationType.LIKED && creationsManager.HasPendingOrValidLoad(CreationType.LIKED)) ||
+                      (type == CreationType.COLLECTIONS && creationsManager.HasPendingOrValidLoad(CreationType.COLLECTIONS)) ||
                       (type == CreationType.LOCAL && creationsManager.HasPendingOrValidLoad(CreationType.LOCAL)));
                 }
                 else
@@ -850,6 +866,7 @@ namespace com.google.apps.peltzer.client.menu
                     if (!((type == CreationType.FEATURED && creationsManager.HasPendingOrValidLoad(CreationType.FEATURED)) ||
                     (type == CreationType.YOUR && creationsManager.HasPendingOrValidLoad(CreationType.YOUR)) ||
                     (type == CreationType.LIKED && creationsManager.HasPendingOrValidLoad(CreationType.LIKED)) ||
+                    (type == CreationType.COLLECTIONS && creationsManager.HasPendingOrValidLoad(CreationType.COLLECTIONS)) ||
                     (type == CreationType.LOCAL && creationsManager.HasPendingOrValidLoad(CreationType.LOCAL))
                     ))
                     {
@@ -870,6 +887,12 @@ namespace com.google.apps.peltzer.client.menu
             {
                 // Tell the user to log in if the are not logged in.
                 signedOutLikedModelsMenu.SetActive(!modelsMenuActive && type == CreationType.LIKED
+                  && !OAuth2Identity.Instance.LoggedIn);
+            }
+            if (signedOutCollectionsModelsMenu != null)
+            {
+                // Tell the user to log in if the are not logged in.
+                signedOutCollectionsModelsMenu.SetActive(!modelsMenuActive && type == CreationType.COLLECTIONS
                   && !OAuth2Identity.Instance.LoggedIn);
             }
         }

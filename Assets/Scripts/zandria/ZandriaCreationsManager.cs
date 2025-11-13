@@ -810,6 +810,9 @@ namespace com.google.apps.peltzer.client.zandria
                 case PolyMenuMain.CreationType.LIKED:
                     assetsServiceClient.GetLikedModels(successCallback, failureCallback);
                     break;
+                case PolyMenuMain.CreationType.COLLECTIONS:
+                    assetsServiceClient.GetCollections(successCallback, failureCallback);
+                    break;
                 case PolyMenuMain.CreationType.LOCAL:
                     throw new InvalidOperationException(
                       "Cannot get assets service search results for local creations");
@@ -826,6 +829,8 @@ namespace com.google.apps.peltzer.client.zandria
                     return AssetsServiceClient.QueryParamsUser;
                 case PolyMenuMain.CreationType.LIKED:
                     return AssetsServiceClient.QueryParamsLiked;
+                case PolyMenuMain.CreationType.COLLECTIONS:
+                    return AssetsServiceClient.QueryParamsCollections;
                 case PolyMenuMain.CreationType.LOCAL:
                     return AssetsServiceClient.QueryParamsLocal; // Hopefully not used
             }
@@ -844,6 +849,9 @@ namespace com.google.apps.peltzer.client.zandria
                     break;
                 case PolyMenuMain.CreationType.LIKED:
                     AssetsServiceClient.QueryParamsLiked = q;
+                    break;
+                case PolyMenuMain.CreationType.COLLECTIONS:
+                    AssetsServiceClient.QueryParamsCollections = q;
                     break;
                 case PolyMenuMain.CreationType.LOCAL:
                     // Shouldn't happen

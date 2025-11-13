@@ -125,6 +125,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 case PolyMenuMain.CreationType.LIKED:
                     titleText += "Your Likes";
                     break;
+                case PolyMenuMain.CreationType.COLLECTIONS:
+                    titleText += "Your Collections";
+                    break;
                 case PolyMenuMain.CreationType.YOUR:
                     titleText += "Your Uploads";
                     break;
