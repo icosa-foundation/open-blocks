@@ -18,6 +18,7 @@ using System.Linq;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.core;
+using com.google.apps.peltzer.client.model.util;
 
 namespace com.google.apps.peltzer.client.model.import
 {
@@ -30,7 +31,7 @@ namespace com.google.apps.peltzer.client.model.import
         private const float PLANE_DISTANCE_TOLERANCE = 0.0005f;
         private const float VERTEX_WELD_TOLERANCE = 0.0005f;
 
-        public static void MergeCoplanarFaces(MMesh mesh, bool requireConvexResult = false)
+        public static void MergeCoplanarFaces(MMesh mesh, bool requireConvexResult = false, bool removeColinearVertices = true)
         {
             if (mesh == null || mesh.faceCount == 0)
             {
@@ -132,6 +133,11 @@ namespace com.google.apps.peltzer.client.model.import
             else
             {
                 operation.CommitWithoutRecalculation();
+            }
+
+            if (removeColinearVertices)
+            {
+                RemoveColinearVerticesFromFaces(mesh);
             }
         }
 
@@ -779,6 +785,78 @@ namespace com.google.apps.peltzer.client.model.import
                 End = end;
                 Key = key;
             }
+        }
+
+        private static void RemoveColinearVerticesFromFaces(MMesh mesh)
+        {
+            if (mesh == null || mesh.faceCount == 0)
+            {
+                return;
+            }
+
+            MMesh.GeometryOperation operation = mesh.StartOperation();
+            bool modified = false;
+
+            foreach (Face face in mesh.GetFaces().ToList())
+            {
+                if (face.vertexIds.Count <= 3)
+                {
+                    // Can't remove vertices from a triangle
+                    continue;
+                }
+
+                List<int> cornerVertexIds = FindCornerVertexIds(mesh, face);
+
+                // If we removed any vertices, update the face
+                if (cornerVertexIds.Count != face.vertexIds.Count && cornerVertexIds.Count >= 3)
+                {
+                    operation.ModifyFace(face.id, cornerVertexIds, face.properties);
+                    modified = true;
+                }
+            }
+
+            if (modified)
+            {
+                operation.Commit();
+                mesh.RecalcBounds();
+            }
+            else
+            {
+                operation.CommitWithoutRecalculation();
+            }
+        }
+
+        /// <summary>
+        /// Finds corner vertices (non-colinear vertices) for a face and returns their IDs.
+        /// This is an optimized O(V) version that avoids position-to-ID mapping.
+        /// </summary>
+        private static List<int> FindCornerVertexIds(MMesh mesh, Face face)
+        {
+            int numVertices = face.vertexIds.Count;
+            if (numVertices < 3)
+            {
+                return new List<int>(face.vertexIds);
+            }
+
+            List<int> cornerVertexIds = new List<int>(numVertices);
+            Vector3 previous = mesh.VertexPositionInMeshCoords(face.vertexIds[numVertices - 1]);
+            Vector3 current = mesh.VertexPositionInMeshCoords(face.vertexIds[0]);
+            Vector3 next;
+
+            for (int i = 0; i < numVertices; i++)
+            {
+                next = mesh.VertexPositionInMeshCoords(face.vertexIds[(i + 1) % numVertices]);
+
+                if (!Math3d.AreColinear(previous, current, next))
+                {
+                    cornerVertexIds.Add(face.vertexIds[i]);
+                }
+
+                previous = current;
+                current = next;
+            }
+
+            return cornerVertexIds;
         }
     }
 }

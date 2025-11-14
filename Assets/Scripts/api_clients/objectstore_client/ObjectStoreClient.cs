@@ -1103,7 +1103,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 if (VoxImporter.MMeshFromVoxFile(voxBytes, 0, out MMesh mesh))
                 {
                     // Can't decide if this is a good thing to do automatically or not
-                    //CoplanarFaceMerger.MergeCoplanarFaces(mesh);
+                    CoplanarFaceMerger.MergeCoplanarFaces(mesh);
                     outputBytes = PeltzerFileHandler.PeltzerFileFromMeshes(new List<MMesh> { mesh });
                 }
             }
