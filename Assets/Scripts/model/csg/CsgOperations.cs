@@ -572,6 +572,7 @@ namespace com.google.apps.peltzer.client.model.csg
         /// <summary>
         ///   Helper method to find the closest polygon to the given polygon using raycasting.
         ///   Extracted for reuse in paint operations.
+        ///   Uses deterministic perturbations for robustness.
         /// </summary>
         private static CsgPolygon FindClosestPolygonUsingRaycast(
           CsgPolygon poly, CsgObject wrt, out float closestPolyDist)
@@ -581,23 +582,43 @@ namespace com.google.apps.peltzer.client.model.csg
             CsgPolygon closest = null;
             closestPolyDist = float.MaxValue;
 
+            // Deterministic perturbation directions (orthogonal basis + diagonals)
+            Vector3[] perturbationDirections = new Vector3[]
+            {
+                Vector3.zero,                    // Try unperturbed first
+                Vector3.right * 0.1f,            // X axis
+                Vector3.up * 0.1f,               // Y axis
+                Vector3.forward * 0.1f,          // Z axis
+                -Vector3.right * 0.1f,           // -X axis
+                -Vector3.up * 0.1f,              // -Y axis
+                -Vector3.forward * 0.1f,         // -Z axis
+                new Vector3(0.1f, 0.1f, 0.1f),   // Diagonal
+                new Vector3(-0.1f, 0.1f, 0.1f),  // Diagonal
+                new Vector3(0.1f, -0.1f, 0.1f),  // Diagonal
+                new Vector3(0.1f, 0.1f, -0.1f)   // Diagonal
+            };
+
             bool done;
-            int count = 0;
+            int perturbIndex = 0;
             do
             {
                 done = true;  // Done unless we hit a special case.
+
+                // Apply current perturbation
+                Vector3 perturbedNormal = (rayNormal + perturbationDirections[perturbIndex]).normalized;
+
                 foreach (CsgPolygon otherPoly in wrt.polygons)
                 {
-                    float dot = Vector3.Dot(rayNormal, otherPoly.plane.normal);
+                    float dot = Vector3.Dot(perturbedNormal, otherPoly.plane.normal);
                     bool perp = Mathf.Abs(dot) < CsgMath.EPSILON;
                     bool onOtherPlane = Mathf.Abs(otherPoly.plane.GetDistanceToPoint(rayStart)) < CsgMath.EPSILON;
                     Vector3 projectedToOtherPlane = Vector3.zero;
                     float signedDist = -1f;
                     if (!perp)
                     {
-                        CsgMath.RayPlaneIntersection(out projectedToOtherPlane, rayStart, rayNormal, otherPoly.plane);
+                        CsgMath.RayPlaneIntersection(out projectedToOtherPlane, rayStart, perturbedNormal, otherPoly.plane);
                         float dist = Vector3.Distance(projectedToOtherPlane, rayStart);
-                        signedDist = dist * Mathf.Sign(Vector3.Dot(rayNormal, (projectedToOtherPlane - rayStart)));
+                        signedDist = dist * Mathf.Sign(Vector3.Dot(perturbedNormal, (projectedToOtherPlane - rayStart)));
                     }
 
                     if (perp && onOtherPlane)
@@ -638,17 +659,18 @@ namespace com.google.apps.peltzer.client.model.csg
                         }
                     }
                 }
+
                 if (!done)
                 {
-                    // Perturb the normal and try again.
-                    rayNormal += new Vector3(
-                      UnityEngine.Random.Range(-0.1f, 0.1f),
-                      UnityEngine.Random.Range(-0.1f, 0.1f),
-                      UnityEngine.Random.Range(-0.1f, 0.1f));
-                    rayNormal = rayNormal.normalized;
+                    perturbIndex++;
+                    if (perturbIndex >= perturbationDirections.Length)
+                    {
+                        // Tried all perturbations, give up
+                        Debug.LogWarning($"CSG raycast classification failed after trying {perturbationDirections.Length} perturbations");
+                        break;
+                    }
                 }
-                count++;
-            } while (!done && count < 5);
+            } while (!done);
 
             return closest;
         }
@@ -682,21 +704,26 @@ namespace com.google.apps.peltzer.client.model.csg
         {
             bool splitPoly;
             int count = 0;
+            int maxIterations = 500; // Increased from 100 to handle more complex cases
             HashSet<CsgPolygon> alreadySplit = new HashSet<CsgPolygon>();
+            // Track attempted splits to prevent re-attempting the same failed splits
+            HashSet<string> attemptedSplits = new HashSet<string>();
+            int skippedRepeats = 0;
+
             do
             {
                 splitPoly = false;
-                // Temporary guard to prevent infinite loops while there are bugs.
-                // TODO(bug) figure out why csg creates so many rejected splits.
                 count++;
-                if (count > 100)
+                if (count > maxIterations)
                 {
-                    // This usually occurs when csg keeps trying to do the same invalid split over and over.
-                    // If the algorithm has reached this point, it usually means that the two meshes are
-                    // split enough to perform a pretty good looking csg subtraction. More investigation
-                    // should be done on bug and we may be able to remove this guard.
+                    // Log detailed diagnostics when iteration limit is reached
+                    Debug.LogWarning(
+                        $"CSG split iteration limit ({maxIterations}) reached. " +
+                        $"Attempted {attemptedSplits.Count} unique splits, skipped {skippedRepeats} repeated attempts. " +
+                        $"Results may be incomplete. Consider increasing maxIterations or checking input geometry for degeneracies.");
                     return;
                 }
+
                 foreach (CsgPolygon toSplitPoly in toSplit.polygons)
                 {
                     if (alreadySplit.Contains(toSplitPoly))
@@ -709,8 +736,19 @@ namespace com.google.apps.peltzer.client.model.csg
                         foreach (CsgPolygon splitByPoly in splitBy.polygons)
                         {
                             if (toSplitPoly.bounds.Intersects(splitByPoly.bounds)
-                                && !Coplanar(toSplitPoly.plane, splitByPoly.plane))
+                                && !Coplanar(ctx, toSplitPoly.plane, splitByPoly.plane))
                             {
+                                // Create a unique key for this split attempt based on polygon identity
+                                string splitKey = $"{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(toSplitPoly)}_{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(splitByPoly)}";
+
+                                // Skip if we've already attempted this exact split
+                                if (attemptedSplits.Contains(splitKey))
+                                {
+                                    skippedRepeats++;
+                                    continue;
+                                }
+
+                                attemptedSplits.Add(splitKey);
                                 splitPoly = PolygonSplitter.SplitPolys(ctx, toSplit, toSplitPoly, splitByPoly);
                                 if (splitPoly)
                                 {
@@ -725,8 +763,21 @@ namespace com.google.apps.peltzer.client.model.csg
                     }
                 }
             } while (splitPoly);
+
+            if (count > 50)
+            {
+                Debug.Log($"CSG split completed after {count} iterations ({attemptedSplits.Count} unique attempts, {skippedRepeats} skipped repeats)");
+            }
         }
 
+        private static bool Coplanar(CsgContext ctx, Plane plane1, Plane plane2)
+        {
+            float coplanarEps = ctx.CoplanarEpsilon;
+            return Mathf.Abs(plane1.distance - plane2.distance) < coplanarEps
+              && Vector3.Distance(plane1.normal, plane2.normal) < coplanarEps;
+        }
+
+        // Legacy method for backward compatibility (e.g., tests)
         private static bool Coplanar(Plane plane1, Plane plane2)
         {
             return Mathf.Abs(plane1.distance - plane2.distance) < COPLANAR_EPS
