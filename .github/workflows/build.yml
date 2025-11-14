@@ -195,11 +195,13 @@ jobs:
           - name: Linux
             targetPlatform: StandaloneLinux64
             cache: Linux
+            extra_defines: XR_DISABLED
             packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
 
           - name: MacOS
             targetPlatform: StandaloneOSX
             cache: MacOS
+            extra_defines: XR_DISABLED
             packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
 
           - name: Android OpenXR
@@ -214,6 +216,7 @@ jobs:
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 1
+            extra_defines: XR_DISABLED
             packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
 
     steps:
