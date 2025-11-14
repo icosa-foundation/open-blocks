@@ -43,68 +43,6 @@ namespace com.google.apps.peltzer.client.model.controller
             get => isBrush ? "Brush" : "Wand";
         }
 
-        /// <summary>
-        /// Detects the connected controller type and returns the appropriate binding group.
-        /// </summary>
-        private string GetControllerBindingGroup()
-        {
-            if (!device.isValid)
-            {
-                Debug.LogWarning("OpenXR: Device not valid, defaulting to Oculus Touch Controller");
-                return actionSet.OculusTouchControllerScheme.bindingGroup;
-            }
-
-            string deviceName = device.name.ToLowerInvariant();
-            Debug.Log($"OpenXR: Detected controller device: {device.name}");
-
-            // Check for Pico controllers
-            if (deviceName.Contains("pico") || deviceName.Contains("pxr"))
-            {
-                Debug.Log("OpenXR: Using Pico Controller bindings");
-                return actionSet.PicoControllerScheme.bindingGroup;
-            }
-
-            // Check for Valve Index controllers
-            if (deviceName.Contains("index") || deviceName.Contains("knuckles"))
-            {
-                Debug.Log("OpenXR: Using Index Controller bindings");
-                return actionSet.IndexControllerScheme.bindingGroup;
-            }
-
-            // Check for HTC Vive controllers
-            if (deviceName.Contains("vive"))
-            {
-                Debug.Log("OpenXR: Using HTC Vive Controller bindings");
-                return actionSet.HTCViveControllerScheme.bindingGroup;
-            }
-
-            // Check for WMR controllers
-            if (deviceName.Contains("wmr") || deviceName.Contains("windows mixed reality") ||
-                deviceName.Contains("motion controller"))
-            {
-                Debug.Log("OpenXR: Using WMR Controller bindings");
-                return actionSet.WMRControllerScheme.bindingGroup;
-            }
-
-            // Check for Zapbox controllers
-            if (deviceName.Contains("zapbox"))
-            {
-                Debug.Log("OpenXR: Using Zapbox Controller bindings");
-                return actionSet.ZapboxControllerScheme.bindingGroup;
-            }
-
-            // Check for Oculus/Meta Quest controllers
-            if (deviceName.Contains("oculus") || deviceName.Contains("touch") || deviceName.Contains("quest"))
-            {
-                Debug.Log("OpenXR: Using Oculus Touch Controller bindings");
-                return actionSet.OculusTouchControllerScheme.bindingGroup;
-            }
-
-            // Default to Oculus Touch if we can't identify the controller
-            Debug.LogWarning($"OpenXR: Unknown controller type '{device.name}', defaulting to Oculus Touch Controller");
-            return actionSet.OculusTouchControllerScheme.bindingGroup;
-        }
-
         // Constructor, taking in a transform such that it can be regularly updated.
         public ControllerDeviceOpenXR(Transform transform)
         {
@@ -277,7 +215,7 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             isBrush = true;
             device = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-            var bindingGroup = GetControllerBindingGroup();
+            var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
             actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
             actionSet.Brush.Enable();
             actionSet.Wand.Disable();
@@ -287,7 +225,7 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             isBrush = false;
             device = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-            var bindingGroup = GetControllerBindingGroup();
+            var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
             actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
             actionSet.Brush.Disable();
             actionSet.Wand.Enable();
