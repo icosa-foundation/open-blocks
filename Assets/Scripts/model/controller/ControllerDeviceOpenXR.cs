@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Linq;
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.XR;
 using UnityEngine.XR;
-using UnityEngine.XR.OpenXR.Input;
 using CommonUsages = UnityEngine.XR.CommonUsages;
+using InputDevice = UnityEngine.InputSystem.InputDevice;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -215,8 +218,7 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             isBrush = true;
             device = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-            var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
-            actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
+            ApplyBindingMaskForConnectedController();
             actionSet.Brush.Enable();
             actionSet.Wand.Disable();
         }
@@ -225,10 +227,65 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             isBrush = false;
             device = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-            var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
-            actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
+            ApplyBindingMaskForConnectedController();
             actionSet.Brush.Disable();
             actionSet.Wand.Enable();
+        }
+
+        private void ApplyBindingMaskForConnectedController()
+        {
+            string bindingGroup = DetermineBindingGroupForConnectedControllers();
+            actionSet.bindingMask = string.IsNullOrEmpty(bindingGroup)
+                ? null
+                : InputBinding.MaskByGroup(bindingGroup);
+        }
+
+        private string DetermineBindingGroupForConnectedControllers()
+        {
+            // Prefer Pico/PXR controllers when present and fall back to Oculus Touch.
+            if (InputSystem.devices.Any(IsPicoController))
+            {
+                return actionSet.PicoControllerScheme.bindingGroup;
+            }
+
+            if (InputSystem.devices.Any(IsOculusTouchController))
+            {
+                return actionSet.OculusTouchControllerScheme.bindingGroup;
+            }
+
+            // No known controller detected, allow all bindings so the runtime can choose.
+            return null;
+        }
+
+        private static bool IsPicoController(InputDevice inputDevice)
+        {
+            if (inputDevice is not XRController)
+            {
+                return false;
+            }
+
+            return ContainsIgnoreCase(inputDevice.layout, "pxr") ||
+                   ContainsIgnoreCase(inputDevice.layout, "pico") ||
+                   ContainsIgnoreCase(inputDevice.description.manufacturer, "pico") ||
+                   ContainsIgnoreCase(inputDevice.description.product, "pico");
+        }
+
+        private static bool IsOculusTouchController(InputDevice inputDevice)
+        {
+            if (inputDevice is not XRController)
+            {
+                return false;
+            }
+
+            return ContainsIgnoreCase(inputDevice.layout, "oculus") ||
+                   ContainsIgnoreCase(inputDevice.description.manufacturer, "oculus") ||
+                   ContainsIgnoreCase(inputDevice.description.product, "oculus");
+        }
+
+        private static bool ContainsIgnoreCase(string source, string value)
+        {
+            return !string.IsNullOrEmpty(source) &&
+                   source.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
 }
