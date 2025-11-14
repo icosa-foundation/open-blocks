@@ -48,43 +48,17 @@ namespace com.google.apps.peltzer.client.model.controller
         /// </summary>
         private string GetControllerBindingGroup()
         {
-            // First, check InputSystem devices which are more reliable for control scheme detection
-            Debug.Log($"OpenXR: Enumerating InputSystem devices...");
-            foreach (var inputDevice in UnityEngine.InputSystem.InputSystem.devices)
-            {
-                Debug.Log($"OpenXR: InputSystem device: {inputDevice.name} (type: {inputDevice.GetType().Name}, layout: {inputDevice.layout})");
-                string inputDeviceName = inputDevice.name.ToLowerInvariant();
-                string inputDeviceLayout = inputDevice.layout.ToLowerInvariant();
-
-                // Check for Pico controllers in InputSystem
-                if (inputDeviceName.Contains("pico") || inputDeviceName.Contains("pxr") ||
-                    inputDeviceLayout.Contains("pxr"))
-                {
-                    Debug.Log("OpenXR: Using Pico Controller bindings (detected via InputSystem)");
-                    return actionSet.PicoControllerScheme.bindingGroup;
-                }
-            }
-
-            // Fall back to XR InputDevice for detection
             if (!device.isValid)
             {
-                Debug.LogWarning("OpenXR: XR Device not valid, checking again...");
-                // Try to get the device again in case it wasn't ready the first time
-                device = InputDevices.GetDeviceAtXRNode(isBrush ? XRNode.RightHand : XRNode.LeftHand);
-
-                if (!device.isValid)
-                {
-                    Debug.LogWarning("OpenXR: XR Device still not valid, defaulting to Oculus Touch Controller");
-                    return actionSet.OculusTouchControllerScheme.bindingGroup;
-                }
+                Debug.LogWarning("OpenXR: Device not valid, defaulting to Oculus Touch Controller");
+                return actionSet.OculusTouchControllerScheme.bindingGroup;
             }
 
             string deviceName = device.name.ToLowerInvariant();
-            Debug.Log($"OpenXR: XR InputDevice name: '{device.name}', manufacturer: '{device.manufacturer}'");
+            Debug.Log($"OpenXR: Detected controller device: {device.name}");
 
             // Check for Pico controllers
-            if (deviceName.Contains("pico") || deviceName.Contains("pxr") ||
-                device.manufacturer.ToLowerInvariant().Contains("pico"))
+            if (deviceName.Contains("pico") || deviceName.Contains("pxr"))
             {
                 Debug.Log("OpenXR: Using Pico Controller bindings");
                 return actionSet.PicoControllerScheme.bindingGroup;
@@ -127,7 +101,7 @@ namespace com.google.apps.peltzer.client.model.controller
             }
 
             // Default to Oculus Touch if we can't identify the controller
-            Debug.LogWarning($"OpenXR: Unknown controller type - XR Device: '{device.name}', defaulting to Oculus Touch Controller");
+            Debug.LogWarning($"OpenXR: Unknown controller type '{device.name}', defaulting to Oculus Touch Controller");
             return actionSet.OculusTouchControllerScheme.bindingGroup;
         }
 
@@ -303,49 +277,20 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             isBrush = true;
             device = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-
             var bindingGroup = GetControllerBindingGroup();
-            Debug.Log($"OpenXR: Setting binding mask for Brush to: '{bindingGroup}'");
             actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
-
             actionSet.Brush.Enable();
             actionSet.Wand.Disable();
-
-            LogActiveBindings("Brush");
         }
 
         public void InitAsWand()
         {
             isBrush = false;
             device = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-
             var bindingGroup = GetControllerBindingGroup();
-            Debug.Log($"OpenXR: Setting binding mask for Wand to: '{bindingGroup}'");
             actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
-
             actionSet.Brush.Disable();
             actionSet.Wand.Enable();
-
-            LogActiveBindings("Wand");
-        }
-
-        private void LogActiveBindings(string actionMapName)
-        {
-            var map = actionSet.asset.FindActionMap(actionMapName);
-            if (map != null)
-            {
-                Debug.Log($"OpenXR: Active bindings for {actionMapName}:");
-                foreach (var action in map.actions)
-                {
-                    var bindings = action.bindings;
-                    var activeBindings = action.controls;
-                    Debug.Log($"  Action '{action.name}': {activeBindings.Count} active controls");
-                    if (activeBindings.Count == 0)
-                    {
-                        Debug.LogWarning($"  WARNING: No active controls for '{action.name}' - available bindings: {bindings.Count}");
-                    }
-                }
-            }
         }
     }
 }
