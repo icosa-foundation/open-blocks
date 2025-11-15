@@ -747,7 +747,7 @@ namespace com.google.apps.peltzer.client.model.csg
                                 && !Coplanar(ctx, toSplitPoly.plane, splitByPoly.plane))
                             {
                                 // Create a unique key for this split attempt based on polygon identity
-                                string splitKey = $"{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(toSplitPoly)}_{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(splitByPoly)}";
+                                string splitKey = $"{RuntimeHelpers.GetHashCode(toSplitPoly)}_{RuntimeHelpers.GetHashCode(splitByPoly)}";
 
                                 // Skip if we've already attempted this exact split
                                 if (attemptedSplits.Contains(splitKey))
@@ -780,10 +780,6 @@ namespace com.google.apps.peltzer.client.model.csg
                     if (consecutiveNoSplits >= CONVERGENCE_THRESHOLD)
                     {
                         // Converged - no productive splits happening
-                        if (count > 50)
-                        {
-                            Debug.Log($"CSG split converged after {count} iterations ({attemptedSplits.Count} unique attempts, {skippedRepeats} skipped repeats)");
-                        }
                         return;
                     }
                 }
@@ -793,10 +789,6 @@ namespace com.google.apps.peltzer.client.model.csg
                 }
             } while (splitPoly);
 
-            if (count > 50)
-            {
-                Debug.Log($"CSG split completed after {count} iterations ({attemptedSplits.Count} unique attempts, {skippedRepeats} skipped repeats)");
-            }
         }
 
         private static bool Coplanar(CsgContext ctx, Plane plane1, Plane plane2)

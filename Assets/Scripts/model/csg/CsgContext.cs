@@ -53,7 +53,6 @@ namespace com.google.apps.peltzer.client.model.csg
             const float EPSILON_SCALE_FACTOR = 1e-6f;
             baseEpsilon = Mathf.Max(MIN_EPSILON, geometryScale * EPSILON_SCALE_FACTOR);
 
-            Debug.Log($"CSG Context: geometry scale = {geometryScale:F4}, epsilon = {baseEpsilon:F6}");
         }
 
         public CsgVertex CreateOrGetVertexAt(Vector3 loc)
