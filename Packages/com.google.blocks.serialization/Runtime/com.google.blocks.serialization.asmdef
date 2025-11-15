@@ -1,0 +1,14 @@
+{
+    "name": "com.google.blocks.serialization",
+    "rootNamespace": "com.google.blocks.serialization",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
