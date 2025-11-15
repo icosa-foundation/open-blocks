@@ -26,7 +26,10 @@ namespace com.google.apps.peltzer.client.model.csg
 
     public class CsgOperations
     {
-        private const float COPLANAR_EPS = 0.001f;
+        // Coplanar epsilon is intentionally larger than CsgMath.EPSILON to avoid
+        // unnecessarily splitting coplanar polygons, which can cause numerical issues.
+        // Set to 10x the standard epsilon for robustness.
+        private static float COPLANAR_EPS = 0.001f;
 
         public enum CsgOperation
         {
@@ -704,7 +707,9 @@ namespace com.google.apps.peltzer.client.model.csg
         {
             bool splitPoly;
             int count = 0;
-            int maxIterations = 500; // Increased from 100 to handle more complex cases
+            int consecutiveNoSplits = 0;
+            const int MAX_ITERATIONS = 500; // Increased from 100 to handle more complex cases
+            const int CONVERGENCE_THRESHOLD = 3; // If no splits for N consecutive iterations, we've converged
             HashSet<CsgPolygon> alreadySplit = new HashSet<CsgPolygon>();
             // Track attempted splits to prevent re-attempting the same failed splits
             HashSet<string> attemptedSplits = new HashSet<string>();
@@ -714,15 +719,18 @@ namespace com.google.apps.peltzer.client.model.csg
             {
                 splitPoly = false;
                 count++;
-                if (count > maxIterations)
+                if (count > MAX_ITERATIONS)
                 {
                     // Log detailed diagnostics when iteration limit is reached
                     Debug.LogWarning(
-                        $"CSG split iteration limit ({maxIterations}) reached. " +
+                        $"CSG split iteration limit ({MAX_ITERATIONS}) reached. " +
                         $"Attempted {attemptedSplits.Count} unique splits, skipped {skippedRepeats} repeated attempts. " +
                         $"Results may be incomplete. Consider increasing maxIterations or checking input geometry for degeneracies.");
                     return;
                 }
+
+                // Track successful splits this iteration for convergence detection
+                int splitsThisIteration = 0;
 
                 foreach (CsgPolygon toSplitPoly in toSplit.polygons)
                 {
@@ -752,6 +760,7 @@ namespace com.google.apps.peltzer.client.model.csg
                                 splitPoly = PolygonSplitter.SplitPolys(ctx, toSplit, toSplitPoly, splitByPoly);
                                 if (splitPoly)
                                 {
+                                    splitsThisIteration++;
                                     break;
                                 }
                             }
@@ -761,6 +770,26 @@ namespace com.google.apps.peltzer.client.model.csg
                     {
                         break;
                     }
+                }
+
+                // Convergence detection: if we haven't made any splits for multiple consecutive iterations,
+                // the algorithm has likely converged and further iterations won't help
+                if (splitsThisIteration == 0)
+                {
+                    consecutiveNoSplits++;
+                    if (consecutiveNoSplits >= CONVERGENCE_THRESHOLD)
+                    {
+                        // Converged - no productive splits happening
+                        if (count > 50)
+                        {
+                            Debug.Log($"CSG split converged after {count} iterations ({attemptedSplits.Count} unique attempts, {skippedRepeats} skipped repeats)");
+                        }
+                        return;
+                    }
+                }
+                else
+                {
+                    consecutiveNoSplits = 0; // Reset counter when we make progress
                 }
             } while (splitPoly);
 
