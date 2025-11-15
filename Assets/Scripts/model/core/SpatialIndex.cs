@@ -814,6 +814,226 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         /// <summary>
+        ///   Finds vertices within the given bounding box.
+        /// </summary>
+        [MethodImplAttribute(MethodImplOptions.Synchronized)]
+        public bool FindVerticesInBounds(Bounds boundingBox, out HashSet<VertexKey> vertexKeys)
+        {
+            vertexKeys = new HashSet<VertexKey>();
+            HashSet<VertexKey> verts;
+            if (vertices.IntersectedBy(boundingBox, out verts))
+            {
+                lock (condemnedMeshesLock)
+                {
+                    foreach (VertexKey vert in verts)
+                    {
+                        // Confirm the mesh actually still exists in the model, and the vert actually still exists in the mesh.
+                        if (!model.HasMesh(vert.meshId) || condemnedMeshes.Contains(vert.meshId) ||
+                          !model.GetMesh(vert.meshId).HasVertex(vert.vertexId))
+                        {
+                            continue;
+                        }
+                        Bounds bounds = vertices.BoundsForItem(vert);
+                        if (boundingBox.Contains(bounds.center))
+                        {
+                            vertexKeys.Add(vert);
+                        }
+                    }
+                }
+            }
+            return vertexKeys.Count > 0;
+        }
+
+        /// <summary>
+        ///   Finds edges within the given bounding box.
+        /// </summary>
+        [MethodImplAttribute(MethodImplOptions.Synchronized)]
+        public bool FindEdgesInBounds(Bounds boundingBox, out HashSet<EdgeKey> edgeKeys)
+        {
+            edgeKeys = new HashSet<EdgeKey>();
+            HashSet<EdgeKey> edges;
+            if (this.edges.IntersectedBy(boundingBox, out edges))
+            {
+                lock (condemnedMeshesLock)
+                {
+                    foreach (EdgeKey edgeKey in edges)
+                    {
+                        // Confirm the mesh actually still exists in the model, and the verts actually still exist in the mesh.
+                        if (!model.HasMesh(edgeKey.meshId) || condemnedMeshes.Contains(edgeKey.meshId))
+                        {
+                            continue;
+                        }
+                        MMesh mesh = model.GetMesh(edgeKey.meshId);
+                        if (!mesh.HasVertex(edgeKey.vertexId1) || !mesh.HasVertex(edgeKey.vertexId2))
+                        {
+                            continue;
+                        }
+                        EdgeInfo info = edgeInfo[edgeKey];
+                        // Check if edge midpoint is within bounds
+                        Vector3 midpoint = info.edgeStart + info.edgeVector * (info.length / 2);
+                        if (boundingBox.Contains(midpoint))
+                        {
+                            edgeKeys.Add(edgeKey);
+                        }
+                    }
+                }
+            }
+            return edgeKeys.Count > 0;
+        }
+
+        /// <summary>
+        ///   Finds faces within the given bounding box.
+        /// </summary>
+        [MethodImplAttribute(MethodImplOptions.Synchronized)]
+        public bool FindFacesInBounds(Bounds boundingBox, out HashSet<FaceKey> faceKeys)
+        {
+            faceKeys = new HashSet<FaceKey>();
+            HashSet<FaceKey> faces;
+            if (this.faces.IntersectedBy(boundingBox, out faces))
+            {
+                lock (condemnedMeshesLock)
+                {
+                    foreach (FaceKey faceKey in faces)
+                    {
+                        // Confirm the mesh actually still exists in the model, and the face actually still exists in the mesh.
+                        if (!model.HasMesh(faceKey.meshId) || condemnedMeshes.Contains(faceKey.meshId))
+                        {
+                            continue;
+                        }
+                        MMesh mesh = model.GetMesh(faceKey.meshId);
+                        if (!mesh.HasFace(faceKey.faceId))
+                        {
+                            continue;
+                        }
+                        FaceInfo info = faceInfo[faceKey];
+                        // Check if face center is within bounds
+                        if (boundingBox.Contains(info.baryCenter))
+                        {
+                            faceKeys.Add(faceKey);
+                        }
+                    }
+                }
+            }
+            return faceKeys.Count > 0;
+        }
+
+        /// <summary>
+        ///   Finds vertices within the given sphere.
+        /// </summary>
+        [MethodImplAttribute(MethodImplOptions.Synchronized)]
+        public bool FindVerticesInSphere(Vector3 center, float radius, out HashSet<VertexKey> vertexKeys)
+        {
+            vertexKeys = new HashSet<VertexKey>();
+            Bounds searchBounds = new Bounds(center, Vector3.one * radius * 2);
+            HashSet<VertexKey> verts;
+            if (vertices.IntersectedBy(searchBounds, out verts))
+            {
+                float radius2 = radius * radius;
+                lock (condemnedMeshesLock)
+                {
+                    foreach (VertexKey vert in verts)
+                    {
+                        // Confirm the mesh actually still exists in the model, and the vert actually still exists in the mesh.
+                        if (!model.HasMesh(vert.meshId) || condemnedMeshes.Contains(vert.meshId) ||
+                          !model.GetMesh(vert.meshId).HasVertex(vert.vertexId))
+                        {
+                            continue;
+                        }
+                        Bounds bounds = vertices.BoundsForItem(vert);
+                        Vector3 diff = center - bounds.center;
+                        float dist2 = Vector3.Dot(diff, diff);
+                        if (dist2 < radius2)
+                        {
+                            vertexKeys.Add(vert);
+                        }
+                    }
+                }
+            }
+            return vertexKeys.Count > 0;
+        }
+
+        /// <summary>
+        ///   Finds edges within the given sphere.
+        /// </summary>
+        [MethodImplAttribute(MethodImplOptions.Synchronized)]
+        public bool FindEdgesInSphere(Vector3 center, float radius, out HashSet<EdgeKey> edgeKeys)
+        {
+            edgeKeys = new HashSet<EdgeKey>();
+            Bounds searchBounds = new Bounds(center, Vector3.one * radius * 2);
+            HashSet<EdgeKey> edges;
+            if (this.edges.IntersectedBy(searchBounds, out edges))
+            {
+                float radius2 = radius * radius;
+                lock (condemnedMeshesLock)
+                {
+                    foreach (EdgeKey edgeKey in edges)
+                    {
+                        // Confirm the mesh actually still exists in the model, and the verts actually still exist in the mesh.
+                        if (!model.HasMesh(edgeKey.meshId) || condemnedMeshes.Contains(edgeKey.meshId))
+                        {
+                            continue;
+                        }
+                        MMesh mesh = model.GetMesh(edgeKey.meshId);
+                        if (!mesh.HasVertex(edgeKey.vertexId1) || !mesh.HasVertex(edgeKey.vertexId2))
+                        {
+                            continue;
+                        }
+                        EdgeInfo info = edgeInfo[edgeKey];
+                        // Check if edge midpoint is within sphere
+                        Vector3 midpoint = info.edgeStart + info.edgeVector * (info.length / 2);
+                        Vector3 diff = center - midpoint;
+                        float dist2 = Vector3.Dot(diff, diff);
+                        if (dist2 < radius2)
+                        {
+                            edgeKeys.Add(edgeKey);
+                        }
+                    }
+                }
+            }
+            return edgeKeys.Count > 0;
+        }
+
+        /// <summary>
+        ///   Finds faces within the given sphere.
+        /// </summary>
+        [MethodImplAttribute(MethodImplOptions.Synchronized)]
+        public bool FindFacesInSphere(Vector3 center, float radius, out HashSet<FaceKey> faceKeys)
+        {
+            faceKeys = new HashSet<FaceKey>();
+            Bounds searchBounds = new Bounds(center, Vector3.one * radius * 2);
+            HashSet<FaceKey> faces;
+            if (this.faces.IntersectedBy(searchBounds, out faces))
+            {
+                float radius2 = radius * radius;
+                lock (condemnedMeshesLock)
+                {
+                    foreach (FaceKey faceKey in faces)
+                    {
+                        // Confirm the mesh actually still exists in the model, and the face actually still exists in the mesh.
+                        if (!model.HasMesh(faceKey.meshId) || condemnedMeshes.Contains(faceKey.meshId))
+                        {
+                            continue;
+                        }
+                        MMesh mesh = model.GetMesh(faceKey.meshId);
+                        if (!mesh.HasFace(faceKey.faceId))
+                        {
+                            continue;
+                        }
+                        FaceInfo info = faceInfo[faceKey];
+                        // Check if face center is within sphere
+                        Vector3 diff = center - info.baryCenter;
+                        float dist2 = Vector3.Dot(diff, diff);
+                        if (dist2 < radius2)
+                        {
+                            faceKeys.Add(faceKey);
+                        }
+                    }
+                }
+            }
+            return faceKeys.Count > 0;
+        }
+
+        /// <summary>
         ///   Resets the entire state of the Spatial Index, using the given bounds.
         /// </summary>
         public void Reset(Bounds bounds)

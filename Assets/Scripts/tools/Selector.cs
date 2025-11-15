@@ -256,6 +256,11 @@ namespace com.google.apps.peltzer.client.tools
         GameObject selectIndicator;
 
         /// <summary>
+        ///   Volume selector for 3D box and sphere selection.
+        /// </summary>
+        private VolumeSelector volumeSelector;
+
+        /// <summary>
         /// The radius in world coords of rendered points. This is pulled from the point rendering shader to ensure
         /// that selection radii are visually consistent with it.
         /// </summary>
@@ -311,6 +316,11 @@ namespace com.google.apps.peltzer.client.tools
             multiselectTrail.transform.position = -1f * worldSpace.WorldToModel(Vector3.zero);
             multiSelectEnabled = selectModes.Contains(peltzerController.mode);
 
+            // Setup the volume selector.
+            GameObject volumeSelectorObj = new GameObject("VolumeSelector");
+            volumeSelector = volumeSelectorObj.AddComponent<VolumeSelector>();
+            volumeSelector.Setup(worldSpace, spatialIndex, materialLibrary.selectMaterial);
+
             // urp shaders don't have _PointSphereRadius
             // this.edgeRadiusWorld = materialLibrary.edgeHighlightMaterial.GetFloat("_PointSphereRadius");
             // this.pointRadiusWorld = materialLibrary.pointHighlightMaterial.GetFloat("_PointSphereRadius");
@@ -353,6 +363,17 @@ namespace com.google.apps.peltzer.client.tools
             if (isMultiSelecting)
             {
                 UpdateMultiselectionTrail();
+            }
+
+            // Volume Selection
+            if (volumeSelector != null && volumeSelector.IsSelecting())
+            {
+                // Update the volume selector with the current controller position
+                if (PeltzerController.AcquireIfNecessary(ref peltzerController))
+                {
+                    Vector3 currentPos = peltzerController.LastPositionModel;
+                    UpdateVolumeSelection(currentPos);
+                }
             }
         }
 
@@ -1846,6 +1867,134 @@ namespace com.google.apps.peltzer.client.tools
             var mesh = model.GetMesh(facekey.meshId);
             var face = mesh.GetFace(facekey.faceId);
             return face;
+        }
+
+        // ===== Volume Selection Methods =====
+
+        /// <summary>
+        /// Start volume selection at the given position.
+        /// </summary>
+        public void StartVolumeSelection(Vector3 position, VolumeSelector.VolumeType volumeType)
+        {
+            if (volumeSelector != null)
+            {
+                volumeSelector.StartSelection(position, volumeType);
+            }
+        }
+
+        /// <summary>
+        /// Update volume selection with the current position.
+        /// </summary>
+        public void UpdateVolumeSelection(Vector3 position)
+        {
+            if (volumeSelector != null)
+            {
+                volumeSelector.UpdateSelection(position);
+            }
+        }
+
+        /// <summary>
+        /// End volume selection and apply the results to the current selection.
+        /// </summary>
+        public void EndVolumeSelection(SelectorOptions options)
+        {
+            if (volumeSelector != null && volumeSelector.IsSelecting())
+            {
+                VolumeSelectionResult result = volumeSelector.EndSelection(options);
+                ApplyVolumeSelectionResult(result);
+            }
+        }
+
+        /// <summary>
+        /// Cancel the current volume selection.
+        /// </summary>
+        public void CancelVolumeSelection()
+        {
+            if (volumeSelector != null)
+            {
+                volumeSelector.CancelSelection();
+            }
+        }
+
+        /// <summary>
+        /// Check if volume selection is currently active.
+        /// </summary>
+        public bool IsVolumeSelecting()
+        {
+            return volumeSelector != null && volumeSelector.IsSelecting();
+        }
+
+        /// <summary>
+        /// Set the volume selection type (box or sphere).
+        /// </summary>
+        public void SetVolumeSelectionType(VolumeSelector.VolumeType volumeType)
+        {
+            if (volumeSelector != null)
+            {
+                volumeSelector.SetVolumeType(volumeType);
+            }
+        }
+
+        /// <summary>
+        /// Get the current volume selection type.
+        /// </summary>
+        public VolumeSelector.VolumeType GetVolumeSelectionType()
+        {
+            if (volumeSelector != null)
+            {
+                return volumeSelector.GetVolumeType();
+            }
+            return VolumeSelector.VolumeType.BOX;
+        }
+
+        /// <summary>
+        /// Apply the results of a volume selection to the current selection.
+        /// </summary>
+        private void ApplyVolumeSelectionResult(VolumeSelectionResult result)
+        {
+            if (result.vertices != null)
+            {
+                foreach (VertexKey vertexKey in result.vertices)
+                {
+                    if (!selectedVertices.Contains(vertexKey))
+                    {
+                        SelectVertex(vertexKey);
+                    }
+                }
+            }
+
+            if (result.edges != null)
+            {
+                foreach (EdgeKey edgeKey in result.edges)
+                {
+                    if (!selectedEdges.Contains(edgeKey))
+                    {
+                        SelectEdge(edgeKey);
+                    }
+                }
+            }
+
+            if (result.faces != null)
+            {
+                foreach (FaceKey faceKey in result.faces)
+                {
+                    if (!selectedFaces.Contains(faceKey))
+                    {
+                        SelectFace(faceKey, /* enableCoplanarSelection */ false);
+                    }
+                }
+            }
+
+            if (result.meshes != null)
+            {
+                foreach (int meshId in result.meshes)
+                {
+                    if (!selectedMeshes.Contains(meshId))
+                    {
+                        SelectMesh(meshId, /* includeMeshGroups */ false);
+                    }
+                }
+            }
         }
     }
 }
