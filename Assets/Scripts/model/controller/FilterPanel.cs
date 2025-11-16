@@ -117,22 +117,19 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 titleText = $"Searching: ";
             }
+            var contentType = menuMain.CurrentContentType();
+            bool isCollections = contentType == PolyMenuMain.ContentType.COLLECTIONS;
+
             switch (menuMain.CurrentCreationType())
             {
                 case PolyMenuMain.CreationType.FEATURED:
-                    titleText += "All Models";
+                    titleText += isCollections ? "All Collections" : "All Models";
                     break;
                 case PolyMenuMain.CreationType.LIKED:
-                    titleText += "Your Likes";
-                    break;
-                case PolyMenuMain.CreationType.COLLECTIONS:
-                    titleText += "Your Collections";
-                    break;
-                case PolyMenuMain.CreationType.FEATURED_COLLECTIONS:
-                    titleText += "All Collections";
+                    titleText += isCollections ? "Your Liked Collections" : "Your Likes";
                     break;
                 case PolyMenuMain.CreationType.YOUR:
-                    titleText += "Your Uploads";
+                    titleText += isCollections ? "Your Collections" : "Your Uploads";
                     break;
                 case PolyMenuMain.CreationType.LOCAL:
                     titleText += "Your Saved Models";

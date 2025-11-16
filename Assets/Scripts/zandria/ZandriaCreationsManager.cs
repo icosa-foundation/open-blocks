@@ -799,31 +799,71 @@ namespace com.google.apps.peltzer.client.zandria
         public void GetAssetsServiceSearchResults(PolyMenuMain.CreationType type,
           Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback)
         {
-            switch (type)
+            var polyMenu = PeltzerMain.Instance.polyMenuMain;
+            var contentType = polyMenu.CurrentContentType();
+
+            // Check if we're viewing collections instead of models
+            if (contentType == PolyMenuMain.ContentType.COLLECTIONS)
             {
-                case PolyMenuMain.CreationType.FEATURED:
-                    assetsServiceClient.GetFeaturedModels(successCallback, failureCallback);
-                    break;
-                case PolyMenuMain.CreationType.YOUR:
-                    assetsServiceClient.GetYourModels(successCallback, failureCallback);
-                    break;
-                case PolyMenuMain.CreationType.LIKED:
-                    assetsServiceClient.GetLikedModels(successCallback, failureCallback);
-                    break;
-                case PolyMenuMain.CreationType.COLLECTIONS:
-                    assetsServiceClient.GetCollections(successCallback, failureCallback);
-                    break;
-                case PolyMenuMain.CreationType.FEATURED_COLLECTIONS:
-                    assetsServiceClient.GetFeaturedCollections(successCallback, failureCallback);
-                    break;
-                case PolyMenuMain.CreationType.LOCAL:
-                    throw new InvalidOperationException(
-                      "Cannot get assets service search results for local creations");
+                switch (type)
+                {
+                    case PolyMenuMain.CreationType.FEATURED:
+                        assetsServiceClient.GetFeaturedCollections(successCallback, failureCallback);
+                        break;
+                    case PolyMenuMain.CreationType.YOUR:
+                        assetsServiceClient.GetCollections(successCallback, failureCallback);
+                        break;
+                    case PolyMenuMain.CreationType.LIKED:
+                        assetsServiceClient.GetLikedCollections(successCallback, failureCallback);
+                        break;
+                    case PolyMenuMain.CreationType.LOCAL:
+                        throw new InvalidOperationException(
+                          "Cannot get collections for local creations");
+                }
+            }
+            else
+            {
+                // Default: viewing models
+                switch (type)
+                {
+                    case PolyMenuMain.CreationType.FEATURED:
+                        assetsServiceClient.GetFeaturedModels(successCallback, failureCallback);
+                        break;
+                    case PolyMenuMain.CreationType.YOUR:
+                        assetsServiceClient.GetYourModels(successCallback, failureCallback);
+                        break;
+                    case PolyMenuMain.CreationType.LIKED:
+                        assetsServiceClient.GetLikedModels(successCallback, failureCallback);
+                        break;
+                    case PolyMenuMain.CreationType.LOCAL:
+                        throw new InvalidOperationException(
+                          "Cannot get assets service search results for local creations");
+                }
             }
         }
 
         public ApiQueryParameters GetQueryParams(PolyMenuMain.CreationType type)
         {
+            var polyMenu = PeltzerMain.Instance.polyMenuMain;
+            var contentType = polyMenu.CurrentContentType();
+
+            // Return collection-specific query params if viewing collections
+            if (contentType == PolyMenuMain.ContentType.COLLECTIONS)
+            {
+                switch (type)
+                {
+                    case PolyMenuMain.CreationType.FEATURED:
+                        return AssetsServiceClient.QueryParamsFeaturedCollections;
+                    case PolyMenuMain.CreationType.YOUR:
+                        return AssetsServiceClient.QueryParamsCollections;
+                    case PolyMenuMain.CreationType.LIKED:
+                        return AssetsServiceClient.QueryParamsLikedCollections;
+                    case PolyMenuMain.CreationType.LOCAL:
+                        return AssetsServiceClient.QueryParamsLocal;
+                }
+            }
+
+            // Default: return model query params
             switch (type)
             {
                 case PolyMenuMain.CreationType.FEATURED:
@@ -832,10 +872,6 @@ namespace com.google.apps.peltzer.client.zandria
                     return AssetsServiceClient.QueryParamsUser;
                 case PolyMenuMain.CreationType.LIKED:
                     return AssetsServiceClient.QueryParamsLiked;
-                case PolyMenuMain.CreationType.COLLECTIONS:
-                    return AssetsServiceClient.QueryParamsCollections;
-                case PolyMenuMain.CreationType.FEATURED_COLLECTIONS:
-                    return AssetsServiceClient.QueryParamsFeaturedCollections;
                 case PolyMenuMain.CreationType.LOCAL:
                     return AssetsServiceClient.QueryParamsLocal; // Hopefully not used
             }
@@ -844,6 +880,31 @@ namespace com.google.apps.peltzer.client.zandria
 
         public void SetQueryParams(PolyMenuMain.CreationType type, ApiQueryParameters q)
         {
+            var polyMenu = PeltzerMain.Instance.polyMenuMain;
+            var contentType = polyMenu.CurrentContentType();
+
+            // Set collection-specific query params if viewing collections
+            if (contentType == PolyMenuMain.ContentType.COLLECTIONS)
+            {
+                switch (type)
+                {
+                    case PolyMenuMain.CreationType.FEATURED:
+                        AssetsServiceClient.QueryParamsFeaturedCollections = q;
+                        break;
+                    case PolyMenuMain.CreationType.YOUR:
+                        AssetsServiceClient.QueryParamsCollections = q;
+                        break;
+                    case PolyMenuMain.CreationType.LIKED:
+                        AssetsServiceClient.QueryParamsLikedCollections = q;
+                        break;
+                    case PolyMenuMain.CreationType.LOCAL:
+                        // Shouldn't happen
+                        break;
+                }
+                return;
+            }
+
+            // Default: set model query params
             switch (type)
             {
                 case PolyMenuMain.CreationType.FEATURED:
@@ -854,12 +915,6 @@ namespace com.google.apps.peltzer.client.zandria
                     break;
                 case PolyMenuMain.CreationType.LIKED:
                     AssetsServiceClient.QueryParamsLiked = q;
-                    break;
-                case PolyMenuMain.CreationType.COLLECTIONS:
-                    AssetsServiceClient.QueryParamsCollections = q;
-                    break;
-                case PolyMenuMain.CreationType.FEATURED_COLLECTIONS:
-                    AssetsServiceClient.QueryParamsFeaturedCollections = q;
                     break;
                 case PolyMenuMain.CreationType.LOCAL:
                     // Shouldn't happen

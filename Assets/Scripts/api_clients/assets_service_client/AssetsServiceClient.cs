@@ -306,6 +306,17 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             Category = CategoryChoices.ANY
         };
 
+        public static ApiQueryParameters QueryParamsLikedCollections = new()
+        {
+            SearchText = "",
+            TriangleCountMax = defaultMaxPolyModelTriangles,
+            License = LicenseChoices.ANY,
+            OrderBy = OrderByChoices.LIKED_TIME,
+            Formats = new[] { FormatChoices.BLOCKS },
+            Curated = CuratedChoices.ANY,
+            Category = CategoryChoices.ANY
+        };
+
         public static ApiQueryParameters QueryParamsLocal = new();
 
         private static int defaultMaxPolyModelTriangles
@@ -390,6 +401,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return $"{ApiBaseUrl}/collections?{CommonQueryParams(QueryParamsFeaturedCollections)}";
         }
 
+        private static string LikedCollectionsSearchUrl()
+        {
+            return $"{ApiBaseUrl}/users/me/likedcollections?{CommonQueryParams(QueryParamsLikedCollections)}";
+        }
+
         private static string YourModelsSearchUrl()
         {
             return $"{ApiBaseUrl}/users/me/assets?{CommonQueryParams(QueryParamsUser)}";
@@ -417,6 +433,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private static List<string> mostRecentLikedAssetIds = new();
         private static List<string> mostRecentCollectionsAssetIds = new();
         private static List<string> mostRecentFeaturedCollectionsAssetIds = new();
+        private static List<string> mostRecentLikedCollectionsAssetIds = new();
         private static List<string> mostRecentYourAssetIds = new();
         private static List<string> mostRecentLocalAssetIds = new();
 
@@ -432,6 +449,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             mostRecentLikedAssetIds.Clear();
             mostRecentCollectionsAssetIds.Clear();
             mostRecentFeaturedCollectionsAssetIds.Clear();
+            mostRecentLikedCollectionsAssetIds.Clear();
             mostRecentYourAssetIds.Clear();
         }
 
@@ -1101,7 +1119,46 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
-                  Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.FEATURED_COLLECTIONS, successCallback, failureCallback));
+                  Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.FEATURED, successCallback, failureCallback));
+            }
+        }
+
+        /// <summary>
+        ///   Fetch a list of liked collections from the authenticated user, together with their metadata, from the assets service.
+        /// </summary>
+        /// <param name="callback">A callback to which to pass the results.</param>
+        public void GetLikedCollections(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback)
+        {
+            UnityWebRequest request = GetRequest(LikedCollectionsSearchUrl(), "text/text", true);
+            PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+              () => { return request; },
+              (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
+                ProcessGetLikedCollectionsResponse(
+                  success, responseCode, responseBytes, request, successCallback, failureCallback)),
+              maxAgeMillis: WebRequestManager.CACHE_NONE);
+        }
+
+        // Deals with the response of a GetLikedCollections request, retrying it if an auth token was stale.
+        private IEnumerator ProcessGetLikedCollectionsResponse(bool success, int responseCode, byte[] responseBytes,
+          UnityWebRequest request, System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
+          bool isRecursion = false)
+        {
+            if (!success || responseCode == 401)
+            {
+                if (isRecursion)
+                {
+                    Debug.LogError(GetDebugString(request, "Failed to get liked collections"));
+                    yield break;
+                }
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                yield return OAuth2Identity.Instance.Reauthorize();
+                GetLikedCollections(successCallback, failureCallback);
+            }
+            else
+            {
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
+                  Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.LIKED, successCallback, failureCallback));
             }
         }
 
