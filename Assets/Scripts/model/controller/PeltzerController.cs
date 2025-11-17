@@ -420,6 +420,12 @@ namespace com.google.apps.peltzer.client.model.controller
                 gameObject.AddComponent<MeshRepresentationCache>()
             );
 
+            // Set up shape toolhead handler for dominant hand
+            ShapeToolheadAnimation peltzerShapeToolhead = gameObject.AddComponent<ShapeToolheadAnimation>();
+            shapesMenu.ShapeMenuItemChangedHandler += peltzerShapeToolhead.ShapeChangedHandler;
+
+            EnsureCustomShapePreviewInitialized();
+
             // Put everything in the default handedness position.
             ControllerHandednessChanged();
 
@@ -1524,7 +1530,61 @@ namespace com.google.apps.peltzer.client.model.controller
             //     }
             //
             // }
+        }
 
+        private void EnsureCustomShapePreviewInitialized()
+        {
+            if (shapesMenu == null)
+            {
+                return;
+            }
+
+            if (shapesMenu.GetShapesMenuCustomShapes() != null)
+            {
+                return;
+            }
+
+            const string defaultOption = global::OptionsHandlerInsertVolume.DEFAULT_CUSTOM_SHAPE_OPTION;
+            string[] optionParts = defaultOption.Split(':');
+            if (optionParts.Length != 2)
+            {
+                return;
+            }
+
+            Dictionary<string, object> parameters = BuildDefaultCustomShapeParameters(optionParts[0], optionParts[1]);
+
+            try
+            {
+                shapesMenu.SetShapesMenuPolyMesh(optionParts[0], optionParts[1], parameters);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Failed to initialize custom shape preview with default option '{defaultOption}': {e.Message}");
+            }
+        }
+
+        private static Dictionary<string, object> BuildDefaultCustomShapeParameters(string shapeType, string shapeSubtype)
+        {
+            switch (shapeType)
+            {
+                case "RadialSolids":
+                    if (shapeSubtype == "Dipyramid" || shapeSubtype == "Pyramid")
+                    {
+                        return new Dictionary<string, object>
+                        {
+                            { "sides", 6 },
+                        };
+                    }
+                    break;
+                case "Grids":
+                    return new Dictionary<string, object>
+                    {
+                        { "rows", 2 },
+                        { "cols", 2 },
+                    };
+            }
+
+            return new Dictionary<string, object>();
         }
 
         /// <summary>

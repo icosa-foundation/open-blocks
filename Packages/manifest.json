@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "com.iam1337.extapi": "https://github.com/icosa-mirror/extApi.git#upm",
+    "com.ixxy.polyhydra.core": "https://github.com/ixxyXR/polyhydra-core.git#upm",
+    "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git#upm",
     "com.meta.xr.sdk.platform": "74.0.0",
     "org.khronos.unitygltf": "https://github.com/KhronosGroup/UnityGLTF.git",
     "com.unity.ide.rider": "3.0.38",
@@ -53,6 +55,10 @@
       "url": "https://package.openupm.com",
       "scopes": [
         "com.iam1337.extapi",
+        "com.ixxy.polyhydra.core",
+        "com.nition.unity-octree",
+        "com.openupm",
+        "com.syomus.proceduraltoolkit",
         "org.nuget.sharpziplib",
         "org.nuget.system"
       ]

@@ -764,11 +764,36 @@ namespace com.google.apps.peltzer.client.model.csg
         private static bool SafeReplacePolys(SegmentDescriptor seg, CsgObject obj, CsgPolygon oldPoly,
           params List<CsgVertex>[] newPolyVerts)
         {
-
             List<CsgPolygon> newPolys = new List<CsgPolygon>();
+            List<CsgPolygon> validPolys = new List<CsgPolygon>();
+
+            // Create polygons and validate them
             foreach (List<CsgVertex> verts in newPolyVerts)
             {
-                newPolys.Add(new CsgPolygon(verts, oldPoly.faceProperties, oldPoly.plane.normal));
+                CsgPolygon newPoly = new CsgPolygon(verts, oldPoly.faceProperties, oldPoly.plane.normal);
+                newPolys.Add(newPoly);
+
+                // Validate the new polygon for degeneracies
+                // Use a small epsilon for validation (relative to typical coordinate values)
+                float validationEpsilon = CsgMath.EPSILON;
+                if (CsgUtil.IsValidPolygon(newPoly, validationEpsilon))
+                {
+                    validPolys.Add(newPoly);
+                }
+                else if (DEBUG)
+                {
+                    Debug.LogWarning($"CSG split produced degenerate polygon with {verts.Count} vertices, rejecting");
+                }
+            }
+
+            // If all new polys are invalid, don't replace
+            if (validPolys.Count == 0)
+            {
+                if (DEBUG)
+                {
+                    Debug.LogWarning($"CSG split produced only degenerate polygons, keeping original");
+                }
+                return false;
             }
 
             bool dumpPolygons = DEBUG;
@@ -782,7 +807,7 @@ namespace com.google.apps.peltzer.client.model.csg
                     // Same edge, so only one edge is split.
                     numSplitEdges = 1;
                 }
-                if (!CsgUtil.IsValidPolygonSplit(oldPoly, newPolys, numSplitEdges))
+                if (!CsgUtil.IsValidPolygonSplit(oldPoly, validPolys, numSplitEdges))
                 {
                     Console.Write("Invalid split for case: " + Endpoint.combine(seg.finalStart, seg.finalMiddle, seg.finalEnd));
                     dumpPolygons = true;
@@ -804,10 +829,10 @@ namespace com.google.apps.peltzer.client.model.csg
             }
 
             // If we only had one valid polygon, it will be the same as the original, so do nothing.
-            if (newPolys.Count > 1)
+            if (validPolys.Count > 1)
             {
                 obj.polygons.Remove(oldPoly);
-                obj.polygons.AddRange(newPolys);
+                obj.polygons.AddRange(validPolys);
                 return true;
             }
 
