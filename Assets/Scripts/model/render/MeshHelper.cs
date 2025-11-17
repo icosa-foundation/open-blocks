@@ -168,7 +168,6 @@ namespace com.google.apps.peltzer.client.model.render
                     foreach (var mm in existing)
                     {
                         UnityEngine.Object.Destroy(mm.mesh);
-                        UnityEngine.Object.Destroy(mm.materialAndColor.material);
                     }
                     existing.Clear();
                     // This method is used to update a GameObject, and as such we do not want the vert positions in model space,
