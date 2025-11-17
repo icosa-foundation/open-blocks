@@ -423,17 +423,6 @@ jobs:
             androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
             androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
-      - name: Prepare for packaging (permissions and compression, OSX only)
-        if: matrix.targetPlatform == 'StandaloneOSX'
-        run: |
-          find build -name 'UnityFbxSdkNative.bundle' -delete
-          # Avoid tar failure if we have no files
-          touch build/${{ matrix.targetPlatform }}/__keep
-          # Compress, but skip the top directories
-          tar -c -v -z -f OpenBlocks.tgz -C build/${{ matrix.targetPlatform}}
-          rm -rf build/*
-          mv OpenBlocks.tgz build/
-
       - name: Upload build/
         uses: actions/upload-artifact@v5
         with:
