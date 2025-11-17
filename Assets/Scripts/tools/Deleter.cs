@@ -219,11 +219,15 @@ namespace com.google.apps.peltzer.client.tools
                         List<int> retainedVerts = new List<int>();
                         int startIndex = (i + 1) % f.vertexIds.Count;
                         startVertToFace[f.vertexIds[startIndex]] = faceId;
-                        retainedVerts.Add(f.vertexIds[startIndex]);
-                        while (f.vertexIds[(startIndex + 1) % f.vertexIds.Count] != vertexKey.vertexId)
+                        int count = 0;
+                        while (count < f.vertexIds.Count)
                         {
+                            if (f.vertexIds[startIndex] != vertexKey.vertexId)
+                            {
+                                retainedVerts.Add(f.vertexIds[startIndex]);
+                            }
                             startIndex = (startIndex + 1) % f.vertexIds.Count;
-                            retainedVerts.Add(f.vertexIds[startIndex]);
+                            count++;
                         }
                         faceToRetainedVerts[faceId] = retainedVerts;
                     }
@@ -237,20 +241,35 @@ namespace com.google.apps.peltzer.client.tools
             // but I'm not 100% sure if there are any exceptions to this
             // without analyzing the mesh code - so just to be safe, double it
             int infiniteLoopFailsafeLimit = faces.Count * 2;
-
             int failSafeCount = 0;
             while (faces.Count > 0 && failSafeCount <= infiniteLoopFailsafeLimit)
             {
                 List<int> retainedVerts = faceToRetainedVerts[nextFaceId];
-                newFaceVertexIds.AddRange(retainedVerts);
+
                 faces.Remove(nextFaceId);
                 deleteVertOp.DeleteFace(nextFaceId);
-                nextFaceId = startVertToFace[retainedVerts[^1]];
+
+                if (retainedVerts.Count == 0)
+                {
+                    // get another face
+                    foreach (var face in faces)
+                    {
+                        nextFaceId = face;
+                        break;
+                    }
+                }
+                else
+                {
+                    newFaceVertexIds.AddRange(retainedVerts);
+                    nextFaceId = startVertToFace[retainedVerts[^1]];
+                }
+
                 failSafeCount++;
+
             }
 
             // If we hit the limit then something has gone wrong
-            if (failSafeCount >= infiniteLoopFailsafeLimit)
+            if (failSafeCount > infiniteLoopFailsafeLimit)
             {
                 Debug.LogError("Failed to delete vertex - infinite loop detected.");
                 audioLibrary.PlayClip(audioLibrary.errorSound);
@@ -259,7 +278,10 @@ namespace com.google.apps.peltzer.client.tools
             }
 
             deleteVertOp.DeleteVertex(vertexKey.vertexId);
-            deleteVertOp.AddFace(newFaceVertexIds, mesh.GetFace(nextFaceId).properties);
+            if (nextFaceId != -1)
+            {
+                deleteVertOp.AddFace(newFaceVertexIds, mesh.GetFace(nextFaceId).properties);
+            }
             deleteVertOp.Commit();
 
             model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
