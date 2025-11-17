@@ -278,7 +278,7 @@ namespace com.google.apps.peltzer.client.tools
             }
 
             deleteVertOp.DeleteVertex(vertexKey.vertexId);
-            if (nextFaceId != -1)
+            if (nextFaceId != -1 && newFaceVertexIds.Count > 0)
             {
                 deleteVertOp.AddFace(newFaceVertexIds, mesh.GetFace(nextFaceId).properties);
             }
