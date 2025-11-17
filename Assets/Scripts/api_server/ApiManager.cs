@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using com.google.apps.peltzer.client.api_clients.assets_service_client;
 using com.google.apps.peltzer.client.entitlement;
 using com.google.apps.peltzer.client.desktop_app;
 using com.google.apps.peltzer.client.model.core;
@@ -107,7 +108,7 @@ public class ApiController
             return ApiResult.BadRequest("Invalid client secret");
         }
         PeltzerMain.Instance.ApiSignIn(request.device_code);
-        return ApiResult.Ok("Device login successful");
+        return ApiResult.Redirect(new Uri($"{AssetsServiceClient.WebBaseUrl}/device-login-success"));
     }
 
     [ApiGet("mesh/info/{meshId}")]

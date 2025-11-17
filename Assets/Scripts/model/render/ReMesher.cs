@@ -80,6 +80,8 @@ namespace com.google.apps.peltzer.client.model.render
 
             // The number of vertices tracked by this MeshInfo - defaults to 2, because we start with 2 vertices due to a
             // hack to avoid the mesh being view frustum culled.
+            // WARNING: This value may be stale when needsRegeneration = true (after a RemoveMesh).
+            // For capacity checks or vertex count validation, use GetActualVertexCount() instead.
             public int numVerts = 2;
 
             // The number of vertices that are waiting to be added to number of vertices tracked by this MeshInfo when
@@ -132,7 +134,7 @@ namespace com.google.apps.peltzer.client.model.render
             }
 
             /// <summary>
-            ///   Builds a Unity Mesh from the given MeshInfo that has correct (in world-space) vertex positions, and does 
+            ///   Builds a Unity Mesh from the given MeshInfo that has correct (in world-space) vertex positions, and does
             ///   not have any hacks or optimizations that ReMesher relies upon, for export.
             /// </summary>
             public static Mesh BuildExportableMeshFromMeshInfo(MeshInfo meshInfo)
@@ -141,6 +143,7 @@ namespace com.google.apps.peltzer.client.model.render
 
                 // We need to work around the 2 extra verts we hack into the MeshInfo mesh to work around frustrum culling.
                 // These verts exist in the first two indices of the verts array.
+                // NOTE: Using numVerts here is safe because export only happens after Flush(), which ensures needsRegeneration = false.
                 int numVertsInMesh = meshInfo.numVerts - 2;
                 int indexOfFirstVert = 2;
 
@@ -220,6 +223,33 @@ namespace com.google.apps.peltzer.client.model.render
             }
 
             /// <summary>
+            /// Gets the actual vertex count that will exist after regeneration (if needed) or the current count.
+            /// This accounts for all stored contexts, not just numVerts + numPendingVerts.
+            /// </summary>
+            public int GetActualVertexCount()
+            {
+                if (!needsRegeneration)
+                {
+                    return numVerts + numPendingVerts;
+                }
+
+                // When regeneration is needed, calculate from all stored contexts
+                int totalVerts = 2; // Start with the 2 sentinel verts
+                foreach (int meshId in mmeshes)
+                {
+                    HashSet<MeshGenContext> contextSet;
+                    if (meshGenContexts.TryGetValue(meshId, out contextSet))
+                    {
+                        foreach (MeshGenContext context in contextSet)
+                        {
+                            totalVerts += context.verts.Count;
+                        }
+                    }
+                }
+                return totalVerts;
+            }
+
+            /// <summary>
             ///   Add vertices and triangles to a MeshInfo.  This method assumes we've ensured there is "room" in the
             ///   MeshInfo for the new components.
             /// </summary>
@@ -227,6 +257,7 @@ namespace com.google.apps.peltzer.client.model.render
             /// <param name="source">The MehGenContext whose data we're adding to this MeshInfo.</param>
             public void AddContext(int meshId, MeshGenContext source)
             {
+                // NOTE: Using numVerts here is correct - this method directly modifies buffers and maintains numVerts.
                 int transformIndex = mmeshToTransformIndex[meshId];
                 Array.Copy(source.verts.ToArray(), 0, verts, numVerts, source.verts.Count);
                 Array.Copy(source.normals.ToArray(), 0, normals, numVerts, source.verts.Count);
@@ -266,6 +297,28 @@ namespace com.google.apps.peltzer.client.model.render
             /// </summary>
             public void Regenerate()
             {
+                // Calculate total vertex count first to validate it fits
+                int totalVerts = 2; // Start with the 2 sentinel verts
+                foreach (int meshId in mmeshes)
+                {
+                    HashSet<MeshGenContext> contextSet;
+                    if (meshGenContexts.TryGetValue(meshId, out contextSet))
+                    {
+                        foreach (MeshGenContext context in contextSet)
+                        {
+                            totalVerts += context.verts.Count;
+                        }
+                    }
+                }
+
+                // If regeneration would exceed capacity, we cannot proceed
+                // This indicates the MeshInfo was assigned meshes incorrectly
+                if (totalVerts > MAX_VERTS_PER_MESH)
+                {
+                    Debug.LogError($"Cannot regenerate MeshInfo: would require {totalVerts} vertices but max is {MAX_VERTS_PER_MESH}");
+                    return;
+                }
+
                 // Every vert we don't care about will form a degenerate triangle.  Keeps our first two verts.
                 triangles.Clear();
                 Array.Clear(verts, 2, verts.Length - 2);
@@ -273,9 +326,13 @@ namespace com.google.apps.peltzer.client.model.render
 
                 foreach (int meshId in mmeshes)
                 {
-                    foreach (MeshGenContext context in meshGenContexts[meshId])
+                    HashSet<MeshGenContext> contextSet;
+                    if (meshGenContexts.TryGetValue(meshId, out contextSet))
                     {
-                        AddContext(meshId, context);
+                        foreach (MeshGenContext context in contextSet)
+                        {
+                            AddContext(meshId, context);
+                        }
                     }
                 }
                 needsRegeneration = false;
@@ -500,7 +557,7 @@ namespace com.google.apps.peltzer.client.model.render
             for (int i = 0; i < infosForMaterial.Count; i++)
             {
                 MeshInfo curInfo = infosForMaterial[i];
-                if (curInfo.numVerts + curInfo.numPendingVerts + spaceNeeded < MAX_VERTS_PER_MESH
+                if (curInfo.GetActualVertexCount() + spaceNeeded < MAX_VERTS_PER_MESH
                   && curInfo.GetNumMeshes() + 1 < MAX_MMESH_PER_MESHINFO)
                 {
                     return curInfo;
