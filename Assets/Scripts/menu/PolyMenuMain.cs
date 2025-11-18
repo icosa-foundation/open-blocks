@@ -146,6 +146,11 @@ namespace com.google.apps.peltzer.client.menu
         private SelectablePaginationMenuItem pageLeftScript;
         private SelectablePaginationMenuItem pageRightScript;
 
+        // Content type toggle (Models/Collections).
+        private GameObject contentTypeToggleButton;
+        private TextMeshPro contentTypeToggleText;
+        private SelectableContentTypeToggleMenuItem contentTypeToggleScript;
+
         // Menu titles.
         private GameObject optionsTitle;
         private GameObject yourModelsTitle;
@@ -268,6 +273,15 @@ namespace com.google.apps.peltzer.client.menu
               .GetComponent<SelectablePaginationMenuItem>();
             pageRightScript = polyMenu.transform.Find("Models/Pagination/Right/panel")
               .GetComponent<SelectablePaginationMenuItem>();
+
+            // Initialize content type toggle (optional - UI elements may not exist yet)
+            Transform toggleTransform = polyMenu.transform.Find("Models/ContentTypeToggle");
+            if (toggleTransform != null)
+            {
+                contentTypeToggleButton = toggleTransform.gameObject;
+                contentTypeToggleText = toggleTransform.Find("txt")?.GetComponent<TextMeshPro>();
+                contentTypeToggleScript = toggleTransform.GetComponent<SelectableContentTypeToggleMenuItem>();
+            }
 
             optionsTitle = polyMenu.transform.Find("Titles/options_title").gameObject;
             yourModelsTitle = polyMenu.transform.Find("Titles/your_models_title").gameObject;
@@ -724,6 +738,41 @@ namespace com.google.apps.peltzer.client.menu
             pageIndicator.text = string.Format("{0} of {1}", currentPageForDisplay, numPages);
         }
 
+        private void UpdateContentTypeToggle()
+        {
+            // Only update if the UI element exists
+            if (contentTypeToggleButton == null)
+            {
+                return;
+            }
+
+            // Hide toggle for LOCAL (no collections support)
+            bool isLocal = CurrentCreationType() == CreationType.LOCAL;
+            bool isCreationSection = CurrentMenuSection() == PolyMenuSection.CREATION;
+
+            if (isLocal || !isCreationSection)
+            {
+                contentTypeToggleButton.SetActive(false);
+                return;
+            }
+
+            // Show and update the toggle for other creation types
+            contentTypeToggleButton.SetActive(true);
+
+            // Update the text to show current mode
+            if (contentTypeToggleText != null)
+            {
+                ContentType currentType = CurrentContentType();
+                contentTypeToggleText.text = currentType == ContentType.MODELS ? "Models" : "Collections";
+            }
+
+            // Make sure the toggle is active
+            if (contentTypeToggleScript != null)
+            {
+                contentTypeToggleScript.isActive = true;
+            }
+        }
+
         private void ChangeMenu()
         {
             // Start by ensuring Poly Menu is active, to cover the case that 'details' was open and needs to be closed.
@@ -776,6 +825,8 @@ namespace com.google.apps.peltzer.client.menu
                 {
                     // Update the pagination icons.
                     ChangePaginationButtons();
+                    // Update the content type toggle button.
+                    UpdateContentTypeToggle();
                     // Populate the menu with Zandria creations.
                     PopulateZandriaMenu(CurrentCreationType());
                 }
@@ -892,6 +943,9 @@ namespace com.google.apps.peltzer.client.menu
                 {
                     // Update the pagination icons.
                     ChangePaginationButtons();
+
+                    // Update the content type toggle button.
+                    UpdateContentTypeToggle();
 
                     // Populate the menu with Zandria creations.
                     PopulateZandriaMenu(CurrentCreationType());
