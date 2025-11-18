@@ -799,8 +799,8 @@ namespace com.google.apps.peltzer.client.zandria
         public void GetAssetsServiceSearchResults(PolyMenuMain.CreationType type,
           Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback)
         {
-            var polyMenu = PeltzerMain.Instance.polyMenuMain;
-            var contentType = polyMenu.CurrentContentType();
+            var polyMenu = PeltzerMain.Instance?.polyMenuMain;
+            var contentType = polyMenu?.CurrentContentType() ?? PolyMenuMain.ContentType.MODELS;
 
             // Check if we're viewing collections instead of models
             if (contentType == PolyMenuMain.ContentType.COLLECTIONS)
@@ -844,8 +844,8 @@ namespace com.google.apps.peltzer.client.zandria
 
         public ApiQueryParameters GetQueryParams(PolyMenuMain.CreationType type)
         {
-            var polyMenu = PeltzerMain.Instance.polyMenuMain;
-            var contentType = polyMenu.CurrentContentType();
+            var polyMenu = PeltzerMain.Instance?.polyMenuMain;
+            var contentType = polyMenu?.CurrentContentType() ?? PolyMenuMain.ContentType.MODELS;
 
             // Return collection-specific query params if viewing collections
             if (contentType == PolyMenuMain.ContentType.COLLECTIONS)
@@ -880,8 +880,8 @@ namespace com.google.apps.peltzer.client.zandria
 
         public void SetQueryParams(PolyMenuMain.CreationType type, ApiQueryParameters q)
         {
-            var polyMenu = PeltzerMain.Instance.polyMenuMain;
-            var contentType = polyMenu.CurrentContentType();
+            var polyMenu = PeltzerMain.Instance?.polyMenuMain;
+            var contentType = polyMenu?.CurrentContentType() ?? PolyMenuMain.ContentType.MODELS;
 
             // Set collection-specific query params if viewing collections
             if (contentType == PolyMenuMain.ContentType.COLLECTIONS)
