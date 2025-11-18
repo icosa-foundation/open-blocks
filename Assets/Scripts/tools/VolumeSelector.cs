@@ -208,6 +208,13 @@ namespace com.google.apps.peltzer.client.tools
         {
             VolumeSelectionResult result = new VolumeSelectionResult();
 
+            // Debug: check if spatial index is null
+            if (spatialIndex == null)
+            {
+                Debug.LogError("SpatialIndex is null!");
+                return result;
+            }
+
             if (currentVolumeType == VolumeType.BOX)
             {
                 Bounds bounds = GetSelectionBounds();
@@ -249,10 +256,14 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private void PerformBoxSelection(Bounds bounds, Selector.SelectorOptions options, VolumeSelectionResult result)
         {
+            Debug.Log($"PerformBoxSelection - includeVertices:{options.includeVertices}, includeEdges:{options.includeEdges}, includeFaces:{options.includeFaces}, includeMeshes:{options.includeMeshes}");
+
             if (options.includeVertices)
             {
                 HashSet<VertexKey> vertices;
-                if (spatialIndex.FindVerticesInBounds(bounds, out vertices))
+                bool found = spatialIndex.FindVerticesInBounds(bounds, out vertices);
+                Debug.Log($"FindVerticesInBounds returned {found}, count: {(vertices != null ? vertices.Count : 0)}");
+                if (found)
                 {
                     result.vertices = vertices;
                 }
@@ -261,7 +272,9 @@ namespace com.google.apps.peltzer.client.tools
             if (options.includeEdges)
             {
                 HashSet<EdgeKey> edges;
-                if (spatialIndex.FindEdgesInBounds(bounds, out edges))
+                bool found = spatialIndex.FindEdgesInBounds(bounds, out edges);
+                Debug.Log($"FindEdgesInBounds returned {found}, count: {(edges != null ? edges.Count : 0)}");
+                if (found)
                 {
                     result.edges = edges;
                 }
@@ -270,7 +283,9 @@ namespace com.google.apps.peltzer.client.tools
             if (options.includeFaces)
             {
                 HashSet<FaceKey> faces;
-                if (spatialIndex.FindFacesInBounds(bounds, out faces))
+                bool found = spatialIndex.FindFacesInBounds(bounds, out faces);
+                Debug.Log($"FindFacesInBounds returned {found}, count: {(faces != null ? faces.Count : 0)}");
+                if (found)
                 {
                     result.faces = faces;
                 }
@@ -279,7 +294,9 @@ namespace com.google.apps.peltzer.client.tools
             if (options.includeMeshes)
             {
                 HashSet<int> meshes;
-                if (spatialIndex.FindIntersectingMeshes(bounds, out meshes))
+                bool found = spatialIndex.FindIntersectingMeshes(bounds, out meshes);
+                Debug.Log($"FindIntersectingMeshes returned {found}, count: {(meshes != null ? meshes.Count : 0)}");
+                if (found)
                 {
                     result.meshes = meshes;
                 }
