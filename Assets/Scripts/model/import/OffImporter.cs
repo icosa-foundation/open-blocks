@@ -235,7 +235,8 @@ namespace com.google.apps.peltzer.client.model.import
                 yield return parseFace;
             }
 
-            faceProperties = colorsPerFace.Select(color => new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(color))).ToList();
+            // Use exact colors instead of mapping to closest palette color
+            faceProperties = colorsPerFace.Select(color => new FaceProperties(MaterialRegistry.GetOrCreateMaterialId((Color32)color))).ToList();
 
             mmesh = new MMesh(id, Vector3.zero, Quaternion.identity, vertices, faces, faceProperties);
         }

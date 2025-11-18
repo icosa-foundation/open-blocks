@@ -311,8 +311,9 @@ namespace com.google.apps.peltzer.client.model.import
                         }
 
                         faces.Add(faceVertices);
+                        // Use exact color instead of mapping to closest palette color
                         faceProperties.Add(new FaceProperties(
-                            MaterialRegistry.GetMaterialIdClosestToColor(voxelColor)));
+                            MaterialRegistry.GetOrCreateMaterialId((Color32)voxelColor)));
                     }
                 }
             }
@@ -378,8 +379,9 @@ namespace com.google.apps.peltzer.client.model.import
                         face.Add(baseVertexIndex + cubeFaces[i][j]);
                     }
                     faces.Add(face);
+                    // Use exact color instead of mapping to closest palette color
                     faceProperties.Add(new FaceProperties(
-                        MaterialRegistry.GetMaterialIdClosestToColor(voxelColor)));
+                        MaterialRegistry.GetOrCreateMaterialId((Color32)voxelColor)));
                 }
             }
 

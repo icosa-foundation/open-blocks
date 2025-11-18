@@ -93,6 +93,52 @@ namespace com.google.apps.peltzer.client.model.export
                 serializer.WriteFloat(recommendedRotation);
                 serializer.FinishWritingChunk(SerializationConsts.CHUNK_PELTZER_EXT_MODEL_ROTATION);
             }
+
+            // Write custom color palette (if any custom colors are used).
+            WriteCustomPaletteChunk(serializer);
+        }
+
+        /// <summary>
+        /// Writes the custom color palette chunk if the model uses any custom colors.
+        /// This is an optional chunk that will be skipped by older versions.
+        /// </summary>
+        private void WriteCustomPaletteChunk(PolySerializer serializer)
+        {
+            // Collect all custom material IDs used in the model
+            HashSet<int> customIds = new HashSet<int>();
+
+            foreach (MMesh mesh in meshes)
+            {
+                foreach (Face face in mesh.GetFaces())
+                {
+                    int matId = face.properties.materialId;
+                    if (render.MaterialRegistry.IsCustomMaterialId(matId))
+                    {
+                        customIds.Add(matId);
+                    }
+                }
+            }
+
+            // Only write chunk if custom colors exist
+            if (customIds.Count == 0) return;
+
+            serializer.StartWritingChunk(SerializationConsts.CHUNK_CUSTOM_PALETTE);
+
+            // Write color count
+            serializer.WriteCount(customIds.Count);
+
+            // Write each custom color (ID + RGBA)
+            foreach (int id in customIds)
+            {
+                Color32 color = render.MaterialRegistry.GetMaterialColor32ById(id);
+                serializer.WriteInt(id);
+                serializer.WriteByte(color.r);
+                serializer.WriteByte(color.g);
+                serializer.WriteByte(color.b);
+                serializer.WriteByte(color.a);
+            }
+
+            serializer.FinishWritingChunk(SerializationConsts.CHUNK_CUSTOM_PALETTE);
         }
 
         /// <summary>
@@ -177,6 +223,39 @@ namespace com.google.apps.peltzer.client.model.export
                 metadata.recommendedRotation = serializer.ReadFloat();
                 serializer.FinishReadingChunk(SerializationConsts.CHUNK_PELTZER_EXT_MODEL_ROTATION);
             }
+
+            // If the custom color palette is present (it's optional), read and register it.
+            if (serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_CUSTOM_PALETTE)
+            {
+                LoadCustomPaletteChunk(serializer);
+            }
+        }
+
+        /// <summary>
+        /// Loads the custom color palette chunk and registers all custom colors.
+        /// </summary>
+        private void LoadCustomPaletteChunk(PolySerializer serializer)
+        {
+            serializer.StartReadingChunk(SerializationConsts.CHUNK_CUSTOM_PALETTE);
+
+            // Read color count
+            int count = serializer.ReadCount(0, 10000, "customColorCount");
+
+            // Read and register each custom color
+            for (int i = 0; i < count; i++)
+            {
+                int id = serializer.ReadInt();
+                Color32 color = new Color32(
+                    serializer.ReadByte(),  // R
+                    serializer.ReadByte(),  // G
+                    serializer.ReadByte(),  // B
+                    serializer.ReadByte()   // A
+                );
+
+                render.MaterialRegistry.RegisterCustomMaterial(id, color);
+            }
+
+            serializer.FinishReadingChunk(SerializationConsts.CHUNK_CUSTOM_PALETTE);
         }
     }
 

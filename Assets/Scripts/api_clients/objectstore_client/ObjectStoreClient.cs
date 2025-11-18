@@ -1534,7 +1534,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     Material material = materials[materialIndex];
                     if (material != null)
                     {
-                        materialId = MaterialRegistry.GetMaterialIdClosestToColor(GetMaterialBaseColor(material));
+                        // Use exact color instead of mapping to closest palette color
+                        materialId = MaterialRegistry.GetOrCreateMaterialId((Color32)GetMaterialBaseColor(material));
                     }
                 }
 
@@ -1548,7 +1549,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         List<FaceProperties> overrides = new List<FaceProperties>(faceColors.Count);
                         foreach (Color color in faceColors)
                         {
-                            overrides.Add(new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(color)));
+                            // Use exact color instead of mapping to closest palette color
+                            overrides.Add(new FaceProperties(MaterialRegistry.GetOrCreateMaterialId((Color32)color)));
                         }
                         facePropertiesOverride = overrides;
                     }

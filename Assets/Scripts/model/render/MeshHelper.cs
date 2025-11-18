@@ -488,7 +488,8 @@ namespace com.google.apps.peltzer.client.model.render
                     {
                         col *= colors[vertexIndex];
                     }
-                    faceProperties.Add(new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(col)));
+                    // Use exact color instead of mapping to closest palette color
+                    faceProperties.Add(new FaceProperties(MaterialRegistry.GetOrCreateMaterialId((Color32)col)));
                 }
                 MMesh importedMesh = new MMesh(
                     PeltzerMain.Instance.model.GenerateMeshId(),

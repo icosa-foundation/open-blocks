@@ -935,7 +935,8 @@ namespace com.google.apps.peltzer.client.model.import
                 if (TextureToFaceColorApproximator.TrySampleAverageColor(material, faceUvs, out Color sampledColor))
                 {
                     approximatedFacesForMaterial = true;
-                    return new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(sampledColor));
+                    // Use exact color instead of mapping to closest palette color
+                    return new FaceProperties(MaterialRegistry.GetOrCreateMaterialId((Color32)sampledColor));
                 }
             }
 
@@ -943,7 +944,8 @@ namespace com.google.apps.peltzer.client.model.import
             if (material != null)
             {
                 approximatedFacesForMaterial = true;
-                return new FaceProperties(MaterialRegistry.GetMaterialIdClosestToColor(material.color));
+                // Use exact color instead of mapping to closest palette color
+                return new FaceProperties(MaterialRegistry.GetOrCreateMaterialId((Color32)material.color));
             }
 
             return new FaceProperties(fallbackMaterialId);

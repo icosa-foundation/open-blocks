@@ -29,6 +29,8 @@ namespace com.google.apps.peltzer.client.serialization
         public const int CHUNK_MMESH_EXT_REMIX_IDS = 102;
         // Recommended rotation of model on the Poly Menu (optional chunk).
         public const int CHUNK_PELTZER_EXT_MODEL_ROTATION = 103;
+        // Custom color palette for arbitrary RGB colors (optional chunk).
+        public const int CHUNK_CUSTOM_PALETTE = 104;
         // Note: when adding additional mesh chunks, name them CHUNK_MMESH_EXT_* and
         // describe what new fields they contain.
 

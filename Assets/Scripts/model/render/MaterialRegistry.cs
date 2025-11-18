@@ -67,6 +67,16 @@ namespace com.google.apps.peltzer.client.model.render
 
         private static MaterialAndColor highlightSilhouetteMaterial;
 
+        // Custom color support (arbitrary RGB colors beyond the fixed palette)
+        private static System.Collections.Generic.Dictionary<int, Color32> customColors = null;
+        private static System.Collections.Generic.Dictionary<Color32, int> colorToIdCache = null;
+        private static int nextCustomId = CUSTOM_COLOR_START;
+
+        // Constants for material ID ranges
+        public const int LEGACY_PALETTE_END = 27;          // IDs 0-27 are legacy palette + special materials
+        public const int RESERVED_RANGE_END = 999;         // IDs 28-999 reserved for future use
+        public const int CUSTOM_COLOR_START = 1000;        // IDs 1000+ are custom colors
+
         public static int GLASS_ID = rawColors.Length;
         public static int GEM_ID = rawColors.Length + 1;
         public static int PINK_WIREFRAME_ID = rawColors.Length + 2;
@@ -142,6 +152,11 @@ namespace com.google.apps.peltzer.client.model.render
             }
             highlightSilhouetteMaterial = new MaterialAndColor(materialLibrary.meshSelectMaterial,
               new Color32(255, 255, 255, 255), HIGHLIGHT_SILHOUETTE_ID);
+
+            // Initialize custom color storage
+            customColors = new System.Collections.Generic.Dictionary<int, Color32>();
+            colorToIdCache = new System.Collections.Generic.Dictionary<Color32, int>();
+            nextCustomId = CUSTOM_COLOR_START;
         }
 
         private static float r(int raw)
@@ -161,6 +176,7 @@ namespace com.google.apps.peltzer.client.model.render
 
         /// <summary>
         ///   Get a MaterialAndColor given a materialId.
+        ///   Supports both legacy palette materials (0-27) and custom colors (1000+).
         /// </summary>
         /// <param name="materialId">The material id.</param>
         /// <returns>A Material.</returns>
@@ -179,7 +195,22 @@ namespace com.google.apps.peltzer.client.model.render
                 Debug.Log("initializing mats in wrong place - this is an error if a test isn't running.");
                 init(matLib);
             }
-            return materials[materialId % materials.Length];
+
+            // Fast path: legacy palette materials
+            if (materialId >= 0 && materialId < materials.Length)
+            {
+                return materials[materialId];
+            }
+
+            // Custom color: use base material with custom color
+            if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
+            {
+                return new MaterialAndColor(materials[0].material, color, materialId);
+            }
+
+            // Fallback: return first material (for backwards compatibility with old files)
+            Debug.LogWarning($"Unknown material ID: {materialId}, returning default material");
+            return materials[0];
         }
 
         /// <summary>
@@ -213,36 +244,57 @@ namespace com.google.apps.peltzer.client.model.render
 
         /// <summary>
         ///   Get a Material's color given a materialId.
+        ///   Supports both legacy palette materials and custom colors.
         /// </summary>
         /// <param name="materialId">The material id.</param>
         /// <returns>A Color.</returns>
         public static Color GetMaterialColorById(int materialId)
         {
+            // Legacy palette colors
             if (materialId < rawColors.Length)
             {
                 return new Color(r(rawColors[materialId]), g(rawColors[materialId]), b(rawColors[materialId]));
             }
-            else
+
+            // Special materials (glass, gem, etc.)
+            if (materialId < color32s.Length)
             {
-                return new Color(1f, 1f, 1f, 1f);
+                Color32 c = color32s[materialId];
+                return new Color(c.r / 255f, c.g / 255f, c.b / 255f, c.a / 255f);
             }
+
+            // Custom colors
+            if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
+            {
+                return new Color(color.r / 255f, color.g / 255f, color.b / 255f, color.a / 255f);
+            }
+
+            // Fallback: white
+            return new Color(1f, 1f, 1f, 1f);
         }
 
         /// <summary>
-        ///   Get a Material's color given a materialId.
+        ///   Get a Material's color given a materialId as Color32.
+        ///   Supports both legacy palette materials and custom colors.
         /// </summary>
         /// <param name="materialId">The material id.</param>
-        /// <returns>A Color.</returns>
+        /// <returns>A Color32.</returns>
         public static Color32 GetMaterialColor32ById(int materialId)
         {
-            if (materialId < rawColors.Length)
+            // Fast path: legacy palette (includes special materials)
+            if (materialId >= 0 && materialId < color32s.Length)
             {
                 return color32s[materialId];
             }
-            else
+
+            // Custom colors
+            if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
             {
-                return new Color(1f, 1f, 1f, 1f);
+                return color;
             }
+
+            // Fallback: white
+            return new Color32(255, 255, 255, 255);
         }
 
         /// <summary>
@@ -349,6 +401,138 @@ namespace com.google.apps.peltzer.client.model.render
                 return MaterialType.GLASS;
             }
             return MaterialType.PAPER;
+        }
+
+        // ========== Custom Color Support Methods ==========
+
+        /// <summary>
+        ///   Gets or creates a material ID for the given color.
+        ///   If the color matches an existing palette or custom color, returns that ID.
+        ///   Otherwise, creates a new custom color entry.
+        /// </summary>
+        /// <param name="color">The color to get or create a material ID for.</param>
+        /// <returns>A material ID (palette ID or new custom ID).</returns>
+        public static int GetOrCreateMaterialId(Color32 color)
+        {
+            // Check legacy palette (exact match)
+            if (color32s != null)
+            {
+                for (int i = 0; i < color32s.Length; i++)
+                {
+                    if (ColorsEqual(color32s[i], color))
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            // Ensure custom color storage is initialized
+            if (customColors == null || colorToIdCache == null)
+            {
+                Debug.LogWarning("Custom color storage not initialized, initializing now");
+                customColors = new System.Collections.Generic.Dictionary<int, Color32>();
+                colorToIdCache = new System.Collections.Generic.Dictionary<Color32, int>();
+                nextCustomId = CUSTOM_COLOR_START;
+            }
+
+            // Check existing custom colors
+            if (colorToIdCache.TryGetValue(color, out int existingId))
+            {
+                return existingId;
+            }
+
+            // Create new custom color
+            int newId = nextCustomId++;
+            customColors[newId] = color;
+            colorToIdCache[color] = newId;
+
+            return newId;
+        }
+
+        /// <summary>
+        ///   Helper method to compare two Color32 values for equality.
+        /// </summary>
+        private static bool ColorsEqual(Color32 a, Color32 b)
+        {
+            return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+        }
+
+        /// <summary>
+        ///   Checks if a material ID is a legacy palette color (0-27).
+        /// </summary>
+        /// <param name="materialId">The material ID to check.</param>
+        /// <returns>True if the ID is in the legacy palette range.</returns>
+        public static bool IsLegacyMaterialId(int materialId)
+        {
+            return materialId >= 0 && materialId <= LEGACY_PALETTE_END;
+        }
+
+        /// <summary>
+        ///   Checks if a material ID is a custom color (1000+).
+        /// </summary>
+        /// <param name="materialId">The material ID to check.</param>
+        /// <returns>True if the ID is a custom color.</returns>
+        public static bool IsCustomMaterialId(int materialId)
+        {
+            return materialId >= CUSTOM_COLOR_START;
+        }
+
+        /// <summary>
+        ///   Gets the total number of custom colors currently registered.
+        /// </summary>
+        /// <returns>The count of custom colors.</returns>
+        public static int GetCustomColorCount()
+        {
+            return customColors != null ? customColors.Count : 0;
+        }
+
+        /// <summary>
+        ///   Registers a custom material with a specific ID.
+        ///   Used during deserialization to restore custom colors.
+        /// </summary>
+        /// <param name="materialId">The material ID to register.</param>
+        /// <param name="color">The color to associate with this ID.</param>
+        public static void RegisterCustomMaterial(int materialId, Color32 color)
+        {
+            if (materialId < CUSTOM_COLOR_START)
+            {
+                Debug.LogError($"Attempted to register custom material with invalid ID: {materialId}");
+                return;
+            }
+
+            // Ensure storage is initialized
+            if (customColors == null || colorToIdCache == null)
+            {
+                customColors = new System.Collections.Generic.Dictionary<int, Color32>();
+                colorToIdCache = new System.Collections.Generic.Dictionary<Color32, int>();
+                nextCustomId = CUSTOM_COLOR_START;
+            }
+
+            // Add to registry
+            customColors[materialId] = color;
+            colorToIdCache[color] = materialId;
+
+            // Update next ID if necessary
+            if (materialId >= nextCustomId)
+            {
+                nextCustomId = materialId + 1;
+            }
+        }
+
+        /// <summary>
+        ///   Clears all custom colors. Used for testing or optimization.
+        /// </summary>
+        public static void ClearCustomColors()
+        {
+            if (customColors != null)
+            {
+                customColors.Clear();
+            }
+            if (colorToIdCache != null)
+            {
+                colorToIdCache.Clear();
+            }
+            nextCustomId = CUSTOM_COLOR_START;
         }
     }
 }
