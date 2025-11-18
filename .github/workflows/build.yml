@@ -701,7 +701,7 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          mv build_android_openxr/*/com.Icosa.OpenBlocks*apk releases/OpenBlocks_OpenXR_$VERSION.apk
+          mv build_oculus_quest/*/OpenBlocks*apk releases/OpenBlocks_OpenXR_$VERSION.apk
           mv build_android_2D/*/OpenBlocks*apk releases/OpenBlocks_Android2D_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBlocks_Desktop_$VERSION/
           mv build_macos/*.dmg releases/OpenBlocks_Mac_$VERSION.dmg
