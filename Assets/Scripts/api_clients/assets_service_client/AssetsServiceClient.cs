@@ -459,18 +459,15 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 case PolyMenuMain.CreationType.FEATURED:
                     mostRecentFeaturedAssetIds.Clear();
+                    mostRecentFeaturedCollectionsAssetIds.Clear();
                     break;
                 case PolyMenuMain.CreationType.LIKED:
                     mostRecentLikedAssetIds.Clear();
-                    break;
-                case PolyMenuMain.CreationType.COLLECTIONS:
-                    mostRecentCollectionsAssetIds.Clear();
-                    break;
-                case PolyMenuMain.CreationType.FEATURED_COLLECTIONS:
-                    mostRecentFeaturedCollectionsAssetIds.Clear();
+                    mostRecentLikedCollectionsAssetIds.Clear();
                     break;
                 case PolyMenuMain.CreationType.YOUR:
                     mostRecentYourAssetIds.Clear();
+                    mostRecentCollectionsAssetIds.Clear();
                     break;
                 case PolyMenuMain.CreationType.LOCAL:
                     mostRecentLocalAssetIds.Clear();
@@ -482,6 +479,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             ClearRecentAssetIdsByType(type);
 
+            // Note: We're not tracking models vs collections separately here
+            // This means polling/refresh may not work perfectly when toggling between them
+            // but it keeps the code simpler for now
             foreach (JToken asset in assets)
             {
                 var assetId = asset["url"]?.ToString();
@@ -494,12 +494,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                             break;
                         case PolyMenuMain.CreationType.LIKED:
                             mostRecentLikedAssetIds.Add(assetId);
-                            break;
-                        case PolyMenuMain.CreationType.COLLECTIONS:
-                            mostRecentCollectionsAssetIds.Add(assetId);
-                            break;
-                        case PolyMenuMain.CreationType.FEATURED_COLLECTIONS:
-                            mostRecentFeaturedCollectionsAssetIds.Add(assetId);
                             break;
                         case PolyMenuMain.CreationType.YOUR:
                             mostRecentYourAssetIds.Add(assetId);
@@ -518,8 +512,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
-                PolyMenuMain.CreationType.COLLECTIONS => mostRecentCollectionsAssetIds.IndexOf(asset["url"]?.ToString()) != index,
-                PolyMenuMain.CreationType.FEATURED_COLLECTIONS => mostRecentFeaturedCollectionsAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 _ => false
@@ -532,8 +524,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 PolyMenuMain.CreationType.FEATURED => mostRecentFeaturedAssetIds.Count == 0,
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.Count == 0,
-                PolyMenuMain.CreationType.COLLECTIONS => mostRecentCollectionsAssetIds.Count == 0,
-                PolyMenuMain.CreationType.FEATURED_COLLECTIONS => mostRecentFeaturedCollectionsAssetIds.Count == 0,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.Count == 0,
                 PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.Count == 0,
                 _ => false
@@ -1080,7 +1070,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
-                  Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.COLLECTIONS, successCallback, failureCallback));
+                  Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.YOUR, successCallback, failureCallback));
             }
         }
 
