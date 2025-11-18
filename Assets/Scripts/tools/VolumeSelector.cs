@@ -181,8 +181,9 @@ namespace com.google.apps.peltzer.client.tools
             volumeVisual.transform.localScale = Vector3.one;
             volumeVisual.transform.rotation = Quaternion.identity;
 
-            // Create or update box mesh (size already in model space, no conversion needed)
-            Mesh boxMesh = CreateWireframeCube(sizeModel);
+            // Scale size from model space to world space for visual mesh
+            Vector3 sizeWorld = sizeModel * worldSpace.scale;
+            Mesh boxMesh = CreateWireframeCube(sizeWorld);
             meshFilter.mesh = boxMesh;
         }
 
@@ -195,12 +196,12 @@ namespace com.google.apps.peltzer.client.tools
 
             // Convert from model space to world space
             volumeVisual.transform.position = worldSpace.ModelToWorld(startPosition);
-            // No scaling on transform - mesh is created at actual size
             volumeVisual.transform.localScale = Vector3.one;
             volumeVisual.transform.rotation = Quaternion.identity;
 
-            // Create sphere mesh at actual radius (vertices will be at radiusModel distance)
-            Mesh sphereMesh = CreateWireframeSphere(radiusModel, 16, 16);
+            // Scale radius from model space to world space for visual mesh
+            float radiusWorld = radiusModel * worldSpace.scale;
+            Mesh sphereMesh = CreateWireframeSphere(radiusWorld, 16, 16);
             meshFilter.mesh = sphereMesh;
         }
 
