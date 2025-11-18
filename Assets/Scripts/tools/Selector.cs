@@ -1980,7 +1980,11 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     if (!selectedFaces.Contains(faceKey))
                     {
-                        SelectFace(faceKey, /* enableCoplanarSelection */ false);
+                        // Calculate the geometric center of the face for the position parameter
+                        MMesh mesh = model.GetMesh(faceKey.meshId);
+                        Face face = mesh.GetFace(faceKey.faceId);
+                        Vector3 faceCenter = MeshMath.CalculateGeometricCenter(face, mesh);
+                        SelectFace(faceKey, faceCenter);
                     }
                 }
             }
@@ -1991,7 +1995,7 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     if (!selectedMeshes.Contains(meshId))
                     {
-                        SelectMesh(meshId, /* includeMeshGroups */ false);
+                        SelectMesh(meshId);
                     }
                 }
             }
