@@ -211,13 +211,21 @@ namespace com.google.apps.peltzer.client.tools
             if (currentVolumeType == VolumeType.BOX)
             {
                 Bounds bounds = GetSelectionBounds();
+                Debug.Log($"Box selection - Bounds: center={bounds.center}, size={bounds.size}");
                 PerformBoxSelection(bounds, options, result);
             }
             else
             {
                 float radius = Vector3.Distance(startPosition, currentPosition);
+                Debug.Log($"Sphere selection - Center: {startPosition}, Radius: {radius}");
                 PerformSphereSelection(startPosition, radius, options, result);
             }
+
+            int vCount = result.vertices != null ? result.vertices.Count : 0;
+            int eCount = result.edges != null ? result.edges.Count : 0;
+            int fCount = result.faces != null ? result.faces.Count : 0;
+            int mCount = result.meshes != null ? result.meshes.Count : 0;
+            Debug.Log($"Volume selection found: {vCount} vertices, {eCount} edges, {fCount} faces, {mCount} meshes");
 
             return result;
         }

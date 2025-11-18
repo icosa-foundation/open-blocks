@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 using com.google.apps.peltzer.client.model.controller;
 using com.google.apps.peltzer.client.model.core;
@@ -374,6 +375,30 @@ namespace com.google.apps.peltzer.client.tools
                     Vector3 currentPos = peltzerController.LastPositionModel;
                     UpdateVolumeSelection(currentPos);
                 }
+            }
+
+            // **TEMPORARY TEST CODE - REMOVE AFTER TESTING**
+            // Press 'B' key to start box selection, 'N' to start sphere selection, 'M' to end
+            if (Keyboard.current != null && Keyboard.current.bKey.wasPressedThisFrame)
+            {
+                if (PeltzerController.AcquireIfNecessary(ref peltzerController))
+                {
+                    StartVolumeSelection(peltzerController.LastPositionModel, VolumeSelector.VolumeType.BOX);
+                    Debug.Log("Started BOX volume selection at " + peltzerController.LastPositionModel);
+                }
+            }
+            if (Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame)
+            {
+                if (PeltzerController.AcquireIfNecessary(ref peltzerController))
+                {
+                    StartVolumeSelection(peltzerController.LastPositionModel, VolumeSelector.VolumeType.SPHERE);
+                    Debug.Log("Started SPHERE volume selection at " + peltzerController.LastPositionModel);
+                }
+            }
+            if (Keyboard.current != null && Keyboard.current.mKey.wasPressedThisFrame && IsVolumeSelecting())
+            {
+                EndVolumeSelection(Selector.FACES_EDGES_AND_VERTICES);
+                Debug.Log("Ended volume selection");
             }
         }
 
@@ -1977,6 +2002,8 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private void ApplyVolumeSelectionResult(VolumeSelectionResult result)
         {
+            int totalSelected = 0;
+
             if (result.vertices != null)
             {
                 foreach (VertexKey vertexKey in result.vertices)
@@ -1984,6 +2011,7 @@ namespace com.google.apps.peltzer.client.tools
                     if (!selectedVertices.Contains(vertexKey))
                     {
                         SelectVertex(vertexKey);
+                        totalSelected++;
                     }
                 }
             }
@@ -1995,6 +2023,7 @@ namespace com.google.apps.peltzer.client.tools
                     if (!selectedEdges.Contains(edgeKey))
                     {
                         SelectEdge(edgeKey);
+                        totalSelected++;
                     }
                 }
             }
@@ -2008,6 +2037,7 @@ namespace com.google.apps.peltzer.client.tools
                         // Position parameter is not actually used by the highlight system for faces,
                         // so we pass Vector3.zero for volume selections (avoiding unnecessary computation)
                         SelectFace(faceKey, Vector3.zero);
+                        totalSelected++;
                     }
                 }
             }
@@ -2019,9 +2049,12 @@ namespace com.google.apps.peltzer.client.tools
                     if (!selectedMeshes.Contains(meshId))
                     {
                         SelectMesh(meshId);
+                        totalSelected++;
                     }
                 }
             }
+
+            Debug.Log($"Applied volume selection: {totalSelected} elements selected");
         }
     }
 }
