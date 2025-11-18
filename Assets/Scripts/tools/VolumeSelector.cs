@@ -169,19 +169,20 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private void UpdateBoxVisual()
         {
-            Vector3 center = (startPosition + currentPosition) / 2f;
-            Vector3 size = new Vector3(
+            Vector3 centerModel = (startPosition + currentPosition) / 2f;
+            Vector3 sizeModel = new Vector3(
                 Mathf.Abs(currentPosition.x - startPosition.x),
                 Mathf.Abs(currentPosition.y - startPosition.y),
                 Mathf.Abs(currentPosition.z - startPosition.z)
             );
 
-            volumeVisual.transform.position = center;
+            // Convert from model space to world space
+            volumeVisual.transform.position = worldSpace.ModelToWorld(centerModel);
             volumeVisual.transform.localScale = Vector3.one;
             volumeVisual.transform.rotation = Quaternion.identity;
 
-            // Create or update box mesh
-            Mesh boxMesh = CreateWireframeCube(size);
+            // Create or update box mesh (size already in model space, no conversion needed)
+            Mesh boxMesh = CreateWireframeCube(sizeModel);
             meshFilter.mesh = boxMesh;
         }
 
@@ -190,14 +191,16 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private void UpdateSphereVisual()
         {
-            float radius = Vector3.Distance(startPosition, currentPosition);
+            float radiusModel = Vector3.Distance(startPosition, currentPosition);
 
-            volumeVisual.transform.position = startPosition;
-            volumeVisual.transform.localScale = Vector3.one * radius * 2f;
+            // Convert from model space to world space
+            volumeVisual.transform.position = worldSpace.ModelToWorld(startPosition);
+            // No scaling on transform - mesh is created at actual size
+            volumeVisual.transform.localScale = Vector3.one;
             volumeVisual.transform.rotation = Quaternion.identity;
 
-            // Create or update sphere mesh (use wireframe)
-            Mesh sphereMesh = CreateWireframeSphere(radius, 16, 16);
+            // Create sphere mesh at actual radius (vertices will be at radiusModel distance)
+            Mesh sphereMesh = CreateWireframeSphere(radiusModel, 16, 16);
             meshFilter.mesh = sphereMesh;
         }
 
@@ -408,11 +411,12 @@ namespace com.google.apps.peltzer.client.tools
                     float sinPhi = Mathf.Sin(phi);
                     float cosPhi = Mathf.Cos(phi);
 
+                    // Create unit sphere vertices then scale by radius
                     Vector3 position = new Vector3(
                         cosPhi * sinTheta,
                         cosTheta,
                         sinPhi * sinTheta
-                    ) / 2f;  // Divide by 2 because we'll scale by diameter
+                    ) * radius;
 
                     vertices.Add(position);
                 }
