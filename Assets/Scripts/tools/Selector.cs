@@ -1980,11 +1980,9 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     if (!selectedFaces.Contains(faceKey))
                     {
-                        // Calculate the geometric center of the face for the position parameter
-                        MMesh mesh = model.GetMesh(faceKey.meshId);
-                        Face face = mesh.GetFace(faceKey.faceId);
-                        Vector3 faceCenter = MeshMath.CalculateGeometricCenter(face, mesh);
-                        SelectFace(faceKey, faceCenter);
+                        // Position parameter is not actually used by the highlight system for faces,
+                        // so we pass Vector3.zero for volume selections (avoiding unnecessary computation)
+                        SelectFace(faceKey, Vector3.zero);
                     }
                 }
             }
