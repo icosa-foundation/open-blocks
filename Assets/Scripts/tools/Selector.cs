@@ -1427,39 +1427,14 @@ namespace com.google.apps.peltzer.client.tools
                 return;
             }
 
-            // Check if Grip is pressed for volume selection mode
-            bool isGripPressed = peltzerController.controller.IsPressed(ButtonId.Grip);
-
             if (IsStartMultiSelecting(args) && !PeltzerMain.Instance.GetMover().IsMoving()
               && !PeltzerMain.Instance.peltzerController.isPointingAtMenu)
             {
-                if (isGripPressed)
-                {
-                    // GRIP + TRIGGER = Volume Selection (BOX mode by default)
-                    // Hold SecondaryButton (B/Y) while starting for SPHERE mode
-                    bool isSecondaryPressed = peltzerController.controller.IsPressed(ButtonId.SecondaryButton);
-                    VolumeSelector.VolumeType volumeType = isSecondaryPressed ?
-                        VolumeSelector.VolumeType.SPHERE : VolumeSelector.VolumeType.BOX;
-
-                    Vector3 startPos = peltzerController.LastPositionModel;
-                    StartVolumeSelection(startPos, volumeType);
-                }
-                else
-                {
-                    // TRIGGER only = Normal Multi-Select (existing behavior)
-                    StartMultiSelection();
-                }
+                StartMultiSelection();
             }
             else if (isMultiSelecting && IsStopMultiSelecting(args))
             {
                 EndMultiSelection();
-            }
-            else if (IsVolumeSelecting() && IsStopMultiSelecting(args))
-            {
-                // End volume selection and apply results
-                // Selecting vertices, edges, and faces (not meshes)
-                SelectorOptions options = Selector.FACES_EDGES_AND_VERTICES;
-                EndVolumeSelection(options);
             }
         }
 
