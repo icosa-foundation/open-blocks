@@ -1067,11 +1067,19 @@ namespace com.google.apps.peltzer.client.menu
 
         private PolyMenuSection CurrentMenuSection()
         {
+            if (menuModes == null || menuIndex < 0 || menuIndex >= menuModes.Length)
+            {
+                return PolyMenuSection.CREATION; // Safe default during initialization
+            }
             return menuModes[menuIndex].menuSection;
         }
 
         public CreationType CurrentCreationType()
         {
+            if (menuModes == null || menuIndex < 0 || menuIndex >= menuModes.Length)
+            {
+                return CreationType.FEATURED; // Safe default during initialization
+            }
             return menuModes[menuIndex].creationType;
         }
 
