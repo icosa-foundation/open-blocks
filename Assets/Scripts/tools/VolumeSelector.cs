@@ -219,13 +219,13 @@ namespace com.google.apps.peltzer.client.tools
             {
                 Bounds bounds = GetSelectionBounds();
                 Debug.Log($"Box selection - Bounds: center={bounds.center}, size={bounds.size}");
-                PerformBoxSelection(bounds, options, result);
+                PerformBoxSelection(bounds, options, ref result);
             }
             else
             {
                 float radius = Vector3.Distance(startPosition, currentPosition);
                 Debug.Log($"Sphere selection - Center: {startPosition}, Radius: {radius}");
-                PerformSphereSelection(startPosition, radius, options, result);
+                PerformSphereSelection(startPosition, radius, options, ref result);
             }
 
             int vCount = result.vertices != null ? result.vertices.Count : 0;
@@ -254,7 +254,7 @@ namespace com.google.apps.peltzer.client.tools
         /// <summary>
         /// Perform box selection.
         /// </summary>
-        private void PerformBoxSelection(Bounds bounds, Selector.SelectorOptions options, VolumeSelectionResult result)
+        private void PerformBoxSelection(Bounds bounds, Selector.SelectorOptions options, ref VolumeSelectionResult result)
         {
             Debug.Log($"PerformBoxSelection - includeVertices:{options.includeVertices}, includeEdges:{options.includeEdges}, includeFaces:{options.includeFaces}, includeMeshes:{options.includeMeshes}");
 
@@ -307,7 +307,7 @@ namespace com.google.apps.peltzer.client.tools
         /// Perform sphere selection.
         /// </summary>
         private void PerformSphereSelection(Vector3 center, float radius, Selector.SelectorOptions options,
-            VolumeSelectionResult result)
+            ref VolumeSelectionResult result)
         {
             if (options.includeVertices)
             {
