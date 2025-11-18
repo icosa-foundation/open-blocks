@@ -6,6 +6,34 @@ This document describes the new 3D volume selection feature added to the Open Bl
 
 The volume selection feature allows users to select vertices, edges, faces, and meshes by dragging out a 3D volume (box or sphere) instead of selecting individual elements one at a time.
 
+## How to Use (Controller Input)
+
+The feature is integrated with VR controller input for easy testing:
+
+### Controls
+
+**Box Selection:**
+1. Hold **GRIP** button
+2. Press and hold **TRIGGER**
+3. Drag to define the box volume (shown as blue wireframe)
+4. Release **TRIGGER** to complete selection
+
+**Sphere Selection:**
+1. Hold **GRIP** button
+2. Hold **Secondary Button** (B or Y button on Oculus Touch)
+3. Press and hold **TRIGGER**
+4. Drag to define sphere radius from start point (shown as blue wireframe)
+5. Release **TRIGGER** to complete selection
+
+**Normal Multi-Select (existing behavior):**
+- Just press **TRIGGER** without holding GRIP
+
+### What Gets Selected
+
+Currently configured to select: **vertices, edges, and faces** within the volume.
+- Elements are selected if their center point falls within the volume
+- Selection is additive (adds to existing selection)
+
 ## Features
 
 - **Box Selection**: Drag out a 3D box to select all elements within the rectangular volume
