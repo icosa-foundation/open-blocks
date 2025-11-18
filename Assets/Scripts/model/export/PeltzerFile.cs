@@ -91,7 +91,11 @@ namespace com.google.apps.peltzer.client.model.export
                     serializer.WriteInt(texture.width);
                     serializer.WriteInt(texture.height);
                     serializer.WriteCount(texture.data.Length);
-                    serializer.WriteBytes(texture.data);
+                    // Write bytes one at a time
+                    for (int i = 0; i < texture.data.Length; i++)
+                    {
+                        serializer.WriteByte(texture.data[i]);
+                    }
                 }
                 serializer.FinishWritingChunk(SerializationConsts.CHUNK_TEXTURES);
             }
@@ -206,7 +210,12 @@ namespace com.google.apps.peltzer.client.model.export
                     int width = serializer.ReadInt();
                     int height = serializer.ReadInt();
                     int dataLength = serializer.ReadCount(0, SerializationConsts.MAX_TEXTURE_DATA_SIZE, "textureDataLength");
-                    byte[] data = serializer.ReadBytes(dataLength);
+                    // Read bytes one at a time
+                    byte[] data = new byte[dataLength];
+                    for (int j = 0; j < dataLength; j++)
+                    {
+                        data[j] = serializer.ReadByte();
+                    }
                     textures[id] = new TextureAsset(id, name, type, data, width, height);
                 }
                 serializer.FinishReadingChunk(SerializationConsts.CHUNK_TEXTURES);
