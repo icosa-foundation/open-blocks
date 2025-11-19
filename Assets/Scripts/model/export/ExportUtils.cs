@@ -57,11 +57,11 @@ namespace com.google.apps.peltzer.client.model.export
             SaveData saveData = new SaveData();
             HashSet<int> materials = new HashSet<int>();
             ObjFileExporter.ObjFileFromMeshes(meshes, MTL_FILENAME, model.meshRepresentationCache, ref materials,
-              triangulated: false, out saveData.objFile, out saveData.objFaceCount);
+              triangulated: false, out saveData.objFile, out int _);
             if (saveTriangulatedObj)
             {
                 ObjFileExporter.ObjFileFromMeshes(meshes, MTL_FILENAME, model.meshRepresentationCache, ref materials,
-                triangulated: true, out saveData.triangulatedObjFile, out int _);
+                triangulated: true, out saveData.triangulatedObjFile, out saveData.objFaceCount);
             }
 
             saveData.mtlFile = ObjFileExporter.MtlFileFromSet(materials);
