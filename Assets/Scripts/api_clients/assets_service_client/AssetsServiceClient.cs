@@ -1253,8 +1253,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 files.Add(Tuple.Create(ExportUtils.THUMBNAIL_FILENAME, saveData.thumbnailBytes));
             }
 
-            currentUploadMetadata = CreateMetadataFields(remixIds, saveData.objPolyCount,
-                saveData.triangulatedObjPolyCount, saveSelected, existingAssetId, hasObjFile);
+            currentUploadMetadata = CreateMetadataFields(remixIds, saveData.objFaceCount, saveSelected, existingAssetId, hasObjFile);
 
 
             if (files.Count == 0)
@@ -1458,8 +1457,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         private List<KeyValuePair<string, string>> CreateMetadataFields(
             HashSet<string> remixIds,
-            int objPolyCount,
-            int triangulatedObjPolyCount,
+            int objFaceCount,
             bool saveSelected,
             string existingAssetId,
             bool includeObjFile)
@@ -1478,8 +1476,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             if (!saveSelected)
             {
-                metadata.Add(new KeyValuePair<string, string>("objPolyCount", objPolyCount.ToString()));
-                metadata.Add(new KeyValuePair<string, string>("triangulatedObjPolyCount", triangulatedObjPolyCount.ToString()));
+                metadata.Add(new KeyValuePair<string, string>("triangleCount", objFaceCount.ToString()));
 
                 if (remixIds != null)
                 {
