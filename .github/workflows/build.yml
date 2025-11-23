@@ -179,6 +179,7 @@ jobs:
           fi
 
   build:
+    if: false
     name: ${{ matrix.name }} ${{ matrix.flavors.title }}
     needs: configuration
     runs-on: ubuntu-latest
@@ -481,7 +482,7 @@ jobs:
 
   signmacos:
     name: Sign the MacOS .app
-    needs: [configuration, build]
+    needs: [configuration]
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -497,6 +498,8 @@ jobs:
         with:
           name: MacOS
           path: build_macos
+          run-id: 19609793837
+          github-token: ${{ github.token }}
 
       # See https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
       - name: Install the Apple certificate and provisioning profile
@@ -794,7 +797,7 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [configuration, build, signmacos]
+    needs: [configuration, signmacos]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-blocks' &&
@@ -820,6 +823,9 @@ jobs:
         with:
           name: Windows OpenXR
           path: build_windows_openxr
+          run-id: 19609793837
+          github-token: ${{ github.token }}
+
       - name: Download Build Artifacts (MacOS Signed)
         uses: actions/download-artifact@v6
         with:
@@ -830,6 +836,9 @@ jobs:
         with:
           name: Linux
           path: build_linux
+          run-id: 19609793837
+          github-token: ${{ github.token }}
+
       - name: Upload Build
         run: |
           cd build_macos
