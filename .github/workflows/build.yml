@@ -543,9 +543,9 @@ jobs:
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
 
           # codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
-          for bundle in $FILENAME/Contents/Plugins/*.bundle; do
-              codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
-          done
+          # for bundle in $FILENAME/Contents/Plugins/*.bundle; do
+          #     codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
+          # done
           codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
           cd -
 
