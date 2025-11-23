@@ -537,11 +537,13 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           # tar xvfz build_macos/*tgz
+          set -x
           find .
-          cd build_macos
+          mv build_macos/StandaloneOSX .
 
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
 
+          cd StandaloneOSX/
           # codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
           # for bundle in $FILENAME/Contents/Plugins/*.bundle; do
           #     codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
