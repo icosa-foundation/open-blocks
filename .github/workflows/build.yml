@@ -799,10 +799,6 @@ jobs:
   publish_steam:
     name: Publish Steam Release
     needs: [configuration, signmacos]
-    if: |
-      github.event_name == 'push' &&
-      github.repository == 'icosa-foundation/open-blocks' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
