@@ -838,7 +838,6 @@ jobs:
           jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
           jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
           jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
-          jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
           STEAM_USERNAME: ${{ vars.STEAM_USERNAME }}
