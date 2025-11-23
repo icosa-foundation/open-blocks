@@ -179,7 +179,6 @@ jobs:
           fi
 
   build:
-    if: false
     name: ${{ matrix.name }} ${{ matrix.flavors.title }}
     needs: configuration
     runs-on: ubuntu-latest
@@ -424,6 +423,16 @@ jobs:
             androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
             androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
+      - name: Prepare for packaging (permissions and compression, OSX only)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run: |
+          # mv build/${{ matrix.targetPlatform }}/Support "build/${{ matrix.targetPlatform }}/${{ env.filename }}/Contents/"
+          # find build -name 'UnityFbxSdkNative.bundle' -delete
+          # Compress, but skip the top directories
+          tar -c -v -z -f OpenBlocks.tgz -C build/ ${{ matrix.targetPlatform }}
+          rm -rf build/*
+          mv OpenBlocks.tgz build/
+
       - name: Upload build/
         uses: actions/upload-artifact@v5
         with:
@@ -482,7 +491,12 @@ jobs:
 
   signmacos:
     name: Sign the MacOS .app
-    needs: [configuration]
+    needs: [configuration, build]
+    # Always run
+    # if: |
+    #   github.event_name == 'push' &&
+    #   github.repository == 'icosa-foundation/open-blocks' &&
+    #   (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -498,8 +512,6 @@ jobs:
         with:
           name: MacOS
           path: build_macos
-          run-id: 19609793837
-          github-token: ${{ github.token }}
 
       # See https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
       - name: Install the Apple certificate and provisioning profile
@@ -536,10 +548,9 @@ jobs:
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
-          # tar xvfz build_macos/*tgz
           set -x
+          tar xvfz build_macos/*tgz
           find .
-          mv build_macos/StandaloneOSX .
 
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
 
@@ -562,7 +573,11 @@ jobs:
   createdmg:
     name: Create and Notarize DMG
     needs: [configuration, signmacos]
-
+    # Always run
+    # if: |
+    #   github.event_name == 'push' &&
+    #   github.repository == 'icosa-foundation/open-blocks' &&
+    #   (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -798,7 +813,12 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [configuration, signmacos]
+    needs: [configuration, build, signmacos]
+    # Always run
+    # if: |
+    #   github.event_name == 'push' &&
+    #   github.repository == 'icosa-foundation/open-blocks' &&
+    #   (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -820,9 +840,6 @@ jobs:
         with:
           name: Windows OpenXR
           path: build_windows_openxr
-          run-id: 19609793837
-          github-token: ${{ github.token }}
-
       - name: Download Build Artifacts (MacOS Signed)
         uses: actions/download-artifact@v6
         with:
@@ -833,9 +850,6 @@ jobs:
         with:
           name: Linux
           path: build_linux
-          run-id: 19609793837
-          github-token: ${{ github.token }}
-
       - name: Upload Build
         run: |
           cd build_macos
