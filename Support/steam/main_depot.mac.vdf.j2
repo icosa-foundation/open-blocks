@@ -1,9 +1,9 @@
 "DepotBuildConfig"
 {
     // # Set your assigned depot ID here
-    "DepotID" "{{ OPEN_BLOCKS_WINDOWS_DEPOT_ID }}"
+    "DepotID" "{{ OPEN_BLOCKS_MAC_DEPOT_ID }}"
 
-    "ContentRoot" "build_windows_openxr/StandaloneWindows64"
+    "ContentRoot" "build_macos/StandaloneOSX"
 
     "FileMapping"
     {
@@ -18,13 +18,6 @@
         // be included.
         "recursive" "1"
     }
-
-    // Install scripts
-    //"FileMapping" {
-    //  "LocalPath" "../installscript_win.vdf"
-    //  "DepotPath" "."
-    //}
-    //"InstallScript" "../installscript_win.vdf"
 
     // but exclude all symbol files
     "FileExclusion" "*.pdb"

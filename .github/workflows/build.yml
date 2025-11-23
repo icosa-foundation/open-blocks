@@ -423,6 +423,16 @@ jobs:
             androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
             androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
+      - name: Prepare for packaging (permissions and compression, OSX only)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run: |
+          # mv build/${{ matrix.targetPlatform }}/Support "build/${{ matrix.targetPlatform }}/${{ env.filename }}/Contents/"
+          # find build -name 'UnityFbxSdkNative.bundle' -delete
+          # Compress, but skip the top directories
+          tar -c -v -z -f OpenBlocks.tgz -C build/ ${{ matrix.targetPlatform }}
+          rm -rf build/*
+          mv OpenBlocks.tgz build/
+
       - name: Upload build/
         uses: actions/upload-artifact@v5
         with:
@@ -542,7 +552,7 @@ jobs:
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
 
           cd StandaloneOSX/
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
+          # codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
           for bundle in $FILENAME/Contents/Plugins/*.bundle; do
               codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
           done
@@ -846,7 +856,7 @@ jobs:
           jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
           jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
           jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
-          jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
+          # jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
           STEAM_USERNAME: ${{ vars.STEAM_USERNAME }}
