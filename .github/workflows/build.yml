@@ -533,7 +533,9 @@ jobs:
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
-          tar xvfz build_macos/*tgz
+          # tar xvfz build_macos/*tgz
+          find .
+          cd build_macos
 
           export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
 
