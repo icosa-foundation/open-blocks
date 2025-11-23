@@ -482,10 +482,6 @@ jobs:
   signmacos:
     name: Sign the MacOS .app
     needs: [configuration, build]
-    if: |
-      github.event_name == 'push' &&
-      github.repository == 'icosa-foundation/open-blocks' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -560,10 +556,6 @@ jobs:
   createdmg:
     name: Create and Notarize DMG
     needs: [configuration, signmacos]
-    if: |
-      github.event_name == 'push' &&
-      github.repository == 'icosa-foundation/open-blocks' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     runs-on: macos-latest
     steps:
@@ -857,7 +849,7 @@ jobs:
           OPEN_BLOCKS_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
           OPEN_BLOCKS_LINUX_DEPOT_ID: ${{ vars.STEAM_LINUX_DEPOT_ID }}
           OPEN_BLOCKS_WINDOWS_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
-          CHANNEL: beta
+          CHANNEL: openblockstestupload
       - name: Update steam login secret
         run: |
           gzip /home/runner/Steam/config/config.vdf -c | base64 | gh secret set --visibility all --org icosa-foundation STEAM_CONFIG_VDF
