@@ -168,56 +168,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &142150943 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1073078385702938, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-    type: 3}
-  m_PrefabInstance: {fileID: 911258151}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &142150946
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 142150943}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_RenderShadows: 1
-  m_RequiresDepthTextureOption: 2
-  m_RequiresOpaqueTextureOption: 2
-  m_CameraType: 0
-  m_Cameras: []
-  m_RendererIndex: -1
-  m_VolumeLayerMask:
-    serializedVersion: 2
-    m_Bits: 1
-  m_VolumeTrigger: {fileID: 0}
-  m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
-  m_Antialiasing: 0
-  m_AntialiasingQuality: 2
-  m_StopNaN: 0
-  m_Dithering: 0
-  m_ClearDepth: 1
-  m_AllowXRRendering: 1
-  m_AllowHDROutput: 1
-  m_UseScreenCoordOverride: 0
-  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
-  m_RequiresDepthTexture: 0
-  m_RequiresColorTexture: 0
-  m_Version: 2
-  m_TaaSettings:
-    m_Quality: 3
-    m_FrameInfluence: 0.1
-    m_JitterScale: 1
-    m_MipBias: 0
-    m_VarianceClampScale: 0.9
-    m_ContrastAdaptiveSharpening: 0
 --- !u!114 &176735057 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 114687602158668588, guid: 789375d7cedc38f4bb55fa91d9a97de5,
@@ -1656,8 +1606,8 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1080698760957680, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0, type: 3}
-      propertyPath: m_IsActive
-      value: 1
+      propertyPath: m_Name
+      value: Desktop
       objectReference: {fileID: 0}
     - target: {fileID: 224942881730647754, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
         type: 3}
@@ -1667,11 +1617,6 @@ PrefabInstance:
     - target: {fileID: 224942881730647754, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
         type: 3}
       propertyPath: m_Pivot.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 224942881730647754, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-        type: 3}
-      propertyPath: m_RootOrder
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 224942881730647754, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
@@ -1749,77 +1694,26 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 224942881730647754, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224942881730647754, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224942881730647754, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1080698760957680, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1176762898}
-    - targetCorrespondingSourceObject: {fileID: 1978468392366664, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1190849749}
-    - targetCorrespondingSourceObject: {fileID: 1073078385702938, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 142150946}
-    - targetCorrespondingSourceObject: {fileID: 1995444113204308, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1009930580}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0, type: 3}
---- !u!1 &1009930577 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1995444113204308, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-    type: 3}
-  m_PrefabInstance: {fileID: 911258151}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1009930580
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1009930577}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_RenderShadows: 1
-  m_RequiresDepthTextureOption: 2
-  m_RequiresOpaqueTextureOption: 2
-  m_CameraType: 0
-  m_Cameras: []
-  m_RendererIndex: -1
-  m_VolumeLayerMask:
-    serializedVersion: 2
-    m_Bits: 1
-  m_VolumeTrigger: {fileID: 0}
-  m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
-  m_Antialiasing: 0
-  m_AntialiasingQuality: 2
-  m_StopNaN: 0
-  m_Dithering: 0
-  m_ClearDepth: 1
-  m_AllowXRRendering: 1
-  m_AllowHDROutput: 1
-  m_UseScreenCoordOverride: 0
-  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
-  m_RequiresDepthTexture: 0
-  m_RequiresColorTexture: 0
-  m_Version: 2
-  m_TaaSettings:
-    m_Quality: 3
-    m_FrameInfluence: 0.1
-    m_JitterScale: 1
-    m_MipBias: 0
-    m_VarianceClampScale: 0.9
-    m_ContrastAdaptiveSharpening: 0
 --- !u!1001 &1019390277
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1968,74 +1862,6 @@ Transform:
   - {fileID: 1385413875}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1176762891 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1080698760957680, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-    type: 3}
-  m_PrefabInstance: {fileID: 911258151}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1176762898
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1176762891}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c689df46909d84bda89945bb05340afa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!1 &1190849746 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1978468392366664, guid: 589a4d6cdaa3cfd4a8a0088d2dbd99d0,
-    type: 3}
-  m_PrefabInstance: {fileID: 911258151}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1190849749
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1190849746}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_RenderShadows: 1
-  m_RequiresDepthTextureOption: 2
-  m_RequiresOpaqueTextureOption: 2
-  m_CameraType: 0
-  m_Cameras: []
-  m_RendererIndex: -1
-  m_VolumeLayerMask:
-    serializedVersion: 2
-    m_Bits: 1
-  m_VolumeTrigger: {fileID: 0}
-  m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
-  m_Antialiasing: 0
-  m_AntialiasingQuality: 2
-  m_StopNaN: 0
-  m_Dithering: 0
-  m_ClearDepth: 1
-  m_AllowXRRendering: 1
-  m_AllowHDROutput: 1
-  m_UseScreenCoordOverride: 0
-  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
-  m_RequiresDepthTexture: 0
-  m_RequiresColorTexture: 0
-  m_Version: 2
-  m_TaaSettings:
-    m_Quality: 3
-    m_FrameInfluence: 0.1
-    m_JitterScale: 1
-    m_MipBias: 0
-    m_VarianceClampScale: 0.9
-    m_ContrastAdaptiveSharpening: 0
 --- !u!4 &1205209849 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4743203438056566, guid: 1755f33d2a4e7d244b782f95f37bb216,
@@ -2854,6 +2680,7 @@ MonoBehaviour:
   m_DeselectOnBackgroundClick: 1
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
 --- !u!1001 &2055044495
 PrefabInstance:
   m_ObjectHideFlags: 0

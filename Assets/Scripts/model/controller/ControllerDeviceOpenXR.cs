@@ -15,9 +15,10 @@
 using TiltBrush;
 using UnityEngine;
 using UnityEngine.InputSystem;
+#if !XR_DISABLED
 using UnityEngine.XR;
-using UnityEngine.XR.OpenXR.Input;
 using CommonUsages = UnityEngine.XR.CommonUsages;
+#endif
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -26,7 +27,9 @@ namespace com.google.apps.peltzer.client.model.controller
     /// </summary>
     public class ControllerDeviceOpenXR : ControllerDevice
     {
+#if !XR_DISABLED
         private UnityEngine.XR.InputDevice device;
+#endif
         private readonly UnityXRInputAction actionSet = new();
 
         // Haptics.
@@ -84,10 +87,12 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public Vector3 GetVelocity()
         {
+#if !XR_DISABLED
             if (device.TryGetFeatureValue(CommonUsages.deviceVelocity, out Vector3 velocity))
             {
                 return velocity;
             }
+#endif
             return Vector3.zero;
         }
 
@@ -207,28 +212,34 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void TriggerHapticPulse(ushort durationMicroSec = 500)
         {
+#if !XR_DISABLED
             float durationSec = durationMicroSec / 1000000f;
             device.SendHapticImpulse(0, 0.75f, durationSec);
+#endif
         }
 
         public void InitAsBrush()
         {
+#if !XR_DISABLED
             isBrush = true;
             device = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
             var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
             actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
             actionSet.Brush.Enable();
             actionSet.Wand.Disable();
+#endif
         }
 
         public void InitAsWand()
         {
+#if !XR_DISABLED
             isBrush = false;
             device = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
             var bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
             actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
             actionSet.Brush.Disable();
             actionSet.Wand.Enable();
+#endif
         }
     }
 }

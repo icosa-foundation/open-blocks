@@ -811,33 +811,43 @@ namespace com.google.apps.peltzer.client.model.main
         {
             string configPath = Path.Combine(userPath, "OpenBlocks.cfg");
 
-            if (!File.Exists(configPath))
+            try
+            {
+                if (!File.Exists(configPath))
+                {
+                    userConfig = new UserConfig();
+                    // create file
+
+                    using StreamWriter sw = File.CreateText(configPath);
+                    sw.WriteLine(JsonUtility.ToJson(userConfig, true));
+                }
+                else
+                {
+                    userConfig = JsonUtility.FromJson<UserConfig>(File.ReadAllText(configPath));
+                }
+            }
+            catch (Exception)
             {
                 userConfig = new UserConfig();
-                // create file
-                using StreamWriter sw = File.CreateText(configPath);
-                sw.WriteLine(JsonUtility.ToJson(userConfig, true));
+                Debug.LogWarning("Could not read OpenBlocks.cfg, using default user config.");
+            }
+
+            if (userConfig.GalleryUrl == "")
+            {
+                PlayerPrefs.DeleteKey(AssetsServiceClient.WEB_BASE_URL_KEY);
             }
             else
             {
-                userConfig = JsonUtility.FromJson<UserConfig>(File.ReadAllText(configPath));
-                if (userConfig.GalleryUrl == "")
-                {
-                    PlayerPrefs.DeleteKey(AssetsServiceClient.WEB_BASE_URL_KEY);
-                }
-                else
-                {
-                    AssetsServiceClient.WebBaseUrl = userConfig.GalleryUrl;
-                }
+                AssetsServiceClient.WebBaseUrl = userConfig.GalleryUrl;
+            }
 
-                if (userConfig.ApiUrl == "")
-                {
-                    PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
-                }
-                else
-                {
-                    AssetsServiceClient.ApiBaseUrl = userConfig.ApiUrl;
-                }
+            if (userConfig.ApiUrl == "")
+            {
+                PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
+            }
+            else
+            {
+                AssetsServiceClient.ApiBaseUrl = userConfig.ApiUrl;
             }
         }
 

@@ -52,7 +52,7 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
-      - name: Check for tags and fetch from Open Blocsk repo if needed
+      - name: Check for tags and fetch from Open Blocks repo if needed
         if: github.repository != 'icosa-foundation/open-blocks'
         run: |
           if [ $(git tag | wc -l) -eq 0 ]; then
@@ -186,19 +186,38 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows, Oculus Quest (2+)]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android 2D]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
-          - name: Windows
+          - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
             cache: Windows
 
-          - name: Oculus Quest (2+)
+          - name: Linux
+            targetPlatform: StandaloneLinux64
+            cache: Linux
+            extra_defines: XR_DISABLED
+            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
+
+          - name: MacOS
+            targetPlatform: StandaloneOSX
+            cache: MacOS
+            extra_defines: XR_DISABLED
+            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
+
+          - name: Android OpenXR
             targetPlatform: Android
-            vrsdk: Oculus
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            packages_to_remove: com.meta.xr.sdk.core
+
+          - name: Android 2D
+            targetPlatform: Android
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 1
-            extra_defines: OCULUS_SUPPORTED
+            extra_defines: XR_DISABLED
+            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
 
     steps:
       - name: Set masking
@@ -255,7 +274,7 @@ jobs:
 
           df -h /
           echo "Removing Android"
-          sudo rm -rf /usr/local/lib/android # ~9GB
+          sudo rm -rf /usr/local/lib/android # Removes ~9GB
           df -h /
           echo "Removing remaining large directories"
           sudo rm -rf /usr/share/dotnet/  # ~1GB
@@ -397,11 +416,22 @@ jobs:
             chownFilesTo: ${{ needs.configuration.outputs.uid }}:${{ needs.configuration.outputs.gid }}
             #buildMethod: BuildTiltBrush.CommandLine
             androidSymbolType: debugging
-            androidKeystoreName: openbrush.keystore
+            androidKeystoreName: openblocks.keystore
             androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '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' }}
             androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
+            # DO NOT CHANGE THIS TO openblocks as it's  the name inside the hardcoded keystore file
             androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
             androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
+
+      - name: Prepare for packaging (permissions and compression, OSX only)
+        if: matrix.targetPlatform == 'StandaloneOSX'
+        run: |
+          # mv build/${{ matrix.targetPlatform }}/Support "build/${{ matrix.targetPlatform }}/${{ env.filename }}/Contents/"
+          # find build -name 'UnityFbxSdkNative.bundle' -delete
+          # Compress, but skip the top directories
+          tar -c -v -z -f OpenBlocks.tgz -C build/ ${{ matrix.targetPlatform }}
+          rm -rf build/*
+          mv OpenBlocks.tgz build/
 
       - name: Upload build/
         uses: actions/upload-artifact@v5
@@ -459,9 +489,144 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
+  signmacos:
+    name: Sign the MacOS .app
+    needs: [configuration, build]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-blocks' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+          sparse-checkout: |
+            Support/macos
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: MacOS
+          path: build_macos
+
+      # See https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
+      - name: Install the Apple certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_BUILD_CERTIFICATE_BASE64 }}
+          INSTALL_CERTIFICATE_BASE64: ${{ secrets.APPLE_INSTALL_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+        run: |
+          BUILD_CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          INSTALL_CERTIFICATE_PATH=$RUNNER_TEMP/install_certificate.p12
+          PP_PATH=$RUNNER_TEMP/openblocksmac.provisionprofile
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $BUILD_CERTIFICATE_PATH
+          echo -n "$INSTALL_CERTIFICATE_BASE64" | base64 --decode -o $INSTALL_CERTIFICATE_PATH
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $BUILD_CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $INSTALL_CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+
+      - name: Sign the release
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          tar xvfz build_macos/*tgz
+
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
+
+          cd StandaloneOSX/
+          # codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
+          for bundle in $FILENAME/Contents/Plugins/*.bundle; do
+              codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
+          done
+          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
+          cd -
+
+          tar -c -v -z -f OpenBlocks.tgz StandaloneOSX
+      - name: Upload signed app
+        uses: actions/upload-artifact@v5
+        with:
+          name: MacOS (signed)
+          path: |
+            OpenBlocks.tgz
+
+  createdmg:
+    name: Create and Notarize DMG
+    needs: [configuration, signmacos]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-blocks' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+          sparse-checkout: |
+            Support/macos
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: MacOS (signed)
+          path: build_macos
+
+      - name: Create a notarized DMG
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          tar xvfz build_macos/*tgz
+
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
+          mkdir dist
+
+          cp Support/macos/background.png StandaloneOSX/
+          cp Support/macos/background@2x.png StandaloneOSX/
+          pip install jinjanator
+          jinjanate Support/macos/openblocks-dmg.json.j2 > StandaloneOSX/openblocks-dmg.json
+          pushd StandaloneOSX/
+          npx appdmg openblocks-dmg.json ../dist/OpenBlocks.dmg
+          popd
+
+          xcrun notarytool submit \
+          --team-id ${{ vars.APPLE_TEAM_ID }} \
+          --apple-id ${{ vars.APPLE_ID }} \
+          --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} \
+          --wait \
+          dist/OpenBlocks.dmg
+
+          xcrun stapler staple dist/OpenBlocks.dmg
+
+      - name: Upload notarized dmg
+        uses: actions/upload-artifact@v5
+        with:
+          name: MacOS (DMG)
+          path: |
+            dist/OpenBlocks.dmg
+
   release:
     name: Create Github Release
-    needs: [configuration, build]
+    needs: [configuration, build, createdmg]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
@@ -511,27 +676,51 @@ jobs:
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
         run: echo "$CHANGELOG"
 
-      - name: Download Build Artifacts (Windows)
+      - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v6
         with:
-          name: Windows
-          path: build_windows
-      - name: Download Build Artifacts (Oculus Quest 2+)
+          name: Windows OpenXR
+          path: build_windows_openxr
+
+      - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v6
         with:
-          name: Oculus Quest (2+)
-          path: build_oculus_quest
+          name: Android OpenXR
+          path: build_android_openxr
+
+      - name: Download Build Artifacts (Android 2D)
+        uses: actions/download-artifact@v6
+        with:
+          name: Android 2D
+          path: build_android_2D
+
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v6
+        with:
+          name: Linux
+          path: build_linux
+
+      - name: Download Build Artifacts (Mac)
+        uses: actions/download-artifact@v6
+        with:
+          name: MacOS (DMG)
+          path: build_macos
 
       - name: Package Artifacts for release
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          mv build_windows/StandaloneWindows64/ releases/OpenBlocks_Desktop_$VERSION/
-          mv build_oculus_quest/*/OpenBlocks*apk releases/OpenBlocks_Quest_$VERSION.apk
+          mv build_oculus_quest/*/OpenBlocks*apk releases/OpenBlocks_OpenXR_$VERSION.apk
+          mv build_android_2D/*/OpenBlocks*apk releases/OpenBlocks_Android2D_$VERSION.apk
+          mv build_windows_openxr/StandaloneWindows64/ releases/OpenBlocks_Desktop_$VERSION/
+          mv build_macos/*.dmg releases/OpenBlocks_Mac_$VERSION.dmg
+          mv build_linux/StandaloneLinux64/ releases/OpenBlocks_Linux_$VERSION/
           cd releases
           zip -r OpenBlocks_Desktop_$VERSION.zip OpenBlocks_Desktop_$VERSION/
           rm -rf OpenBlocks_Desktop_$VERSION
+          zip -r OpenBlocks_Linux_$VERSION.zip OpenBlocks_Linux_$VERSION/
+          rm -rf OpenBlocks_Linux_$VERSION
 
       - name: Publish
         uses: softprops/action-gh-release@v2
@@ -621,7 +810,7 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [configuration, build]
+    needs: [configuration, build, signmacos]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-blocks' &&
@@ -642,17 +831,32 @@ jobs:
           mkdir -p /home/runner/Steam/config
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - | gunzip - > /home/runner/Steam/config/config.vdf
           md5sum /home/runner/Steam/config/config.vdf
-      - name: Download Build Artifacts (Windows)
+      - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v6
         with:
-          name: Windows
-          path: build_windows
+          name: Windows OpenXR
+          path: build_windows_openxr
+      - name: Download Build Artifacts (MacOS Signed)
+        uses: actions/download-artifact@v6
+        with:
+          name: MacOS (signed)
+          path: build_macos
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v6
+        with:
+          name: Linux
+          path: build_linux
       - name: Upload Build
         run: |
+          cd build_macos
+          tar xvfz OpenBlocks.tgz
+          cd -
           pip install -U jinjanator
           jinjanate Support/steam/app.vdf.j2 > app.vdf
-          jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows/main_depot.vdf
-          #jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
+          jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
+          jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
+          jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
+          # jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
           STEAM_USERNAME: ${{ vars.STEAM_USERNAME }}
@@ -660,6 +864,8 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
           OPEN_BLOCKS_APP_ID: ${{ vars.STEAM_APP_ID }}
           OPEN_BLOCKS_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
+          OPEN_BLOCKS_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
+          OPEN_BLOCKS_LINUX_DEPOT_ID: ${{ vars.STEAM_LINUX_DEPOT_ID }}
           OPEN_BLOCKS_WINDOWS_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Update steam login secret
@@ -676,7 +882,7 @@ jobs:
           path: build_output/
 
   publish_oculus_quest:
-    name: Publish Oculus Quest 2+ Release
+    name: Publish Android Quest Release
     needs: [configuration, build]
     runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
@@ -685,11 +891,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Oculus Quest 2+)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v6
         with:
-          name: Oculus Quest (2+)
-          path: build_oculus_quest
+          name: Android Quest
+          path: build_android_quest
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -699,8 +905,8 @@ jobs:
           OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
         run: |
           mkdir releases
-          mv build_oculus_quest/*/OpenBlocks*apk releases/OpenBlocks_Quest_$VERSION.apk
-          mv build_oculus_quest/*/OpenBlocks*.symbols.zip releases/symbols.zip
+          mv build_android_openxr/*/OpenBlocks*apk releases/OpenBlocks_OpenXR_$VERSION.apk
+          mv build_android_openxr/*/OpenBlocks*.symbols.zip releases/symbols.zip
 
           cd releases
           unzip symbols.zip

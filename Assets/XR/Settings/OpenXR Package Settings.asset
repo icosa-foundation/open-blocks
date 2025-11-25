@@ -227,7 +227,6 @@ MonoBehaviour:
   m_Name: Standalone
   m_EditorClassIdentifier: 
   features:
-  - {fileID: -1636267713295767882}
   - {fileID: -1044453806702251804}
   - {fileID: -7003331306464536427}
   - {fileID: 1235886598695611335}
@@ -236,6 +235,7 @@ MonoBehaviour:
   - {fileID: -8573314630465467102}
   - {fileID: -4265042430813052484}
   - {fileID: 4641667563426586583}
+  - {fileID: -1636267713295767882}
   - {fileID: -7358011321729034840}
   - {fileID: -3189033301795000834}
   - {fileID: 8854558094711406293}
@@ -499,7 +499,6 @@ MonoBehaviour:
   m_Name: Android
   m_EditorClassIdentifier: 
   features:
-  - {fileID: -3794950972582794640}
   - {fileID: 6474526308384710153}
   - {fileID: 8804786142810530813}
   - {fileID: 4782022378052714169}
@@ -507,6 +506,7 @@ MonoBehaviour:
   - {fileID: -8615159225651402808}
   - {fileID: -6780374434742471277}
   - {fileID: -672605800059388132}
+  - {fileID: -3794950972582794640}
   - {fileID: -8267807321072464129}
   - {fileID: 28714803915138272}
   - {fileID: 433533727129305994}
@@ -577,7 +577,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f647cc0545697264a9878224faada6d5, type: 3}
   m_Name: MetaQuestFeature Android
   m_EditorClassIdentifier: 
-  m_enabled: 1
+  m_enabled: 0
   nameUi: Meta Quest Support
   version: 1.0.0
   featureIdInternal: com.unity.openxr.feature.metaquest
