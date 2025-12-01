@@ -522,7 +522,7 @@ MonoBehaviour:
   m_depthSubmissionMode: 1
   m_spacewarpMotionVectorTextureFormat: 0
   m_optimizeBufferDiscards: 1
-  m_symmetricProjection: 1
+  m_symmetricProjection: 0
 --- !u!114 &-1044453806702251804
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -577,7 +577,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f647cc0545697264a9878224faada6d5, type: 3}
   m_Name: MetaQuestFeature Android
   m_EditorClassIdentifier: 
-  m_enabled: 1
+  m_enabled: 0
   nameUi: Meta Quest Support
   version: 1.0.0
   featureIdInternal: com.unity.openxr.feature.metaquest
@@ -602,7 +602,7 @@ MonoBehaviour:
     manifestName: quest3s
     enabled: 1
   forceRemoveInternetPermission: 0
-  symmetricProjection: 1
+  symmetricProjection: 0
   foveatedRenderingApi: 0
   systemSplashScreen: {fileID: 0}
   optimizeBufferDiscards: 1
