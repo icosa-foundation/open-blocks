@@ -10,7 +10,11 @@ using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.export;
 using com.google.apps.peltzer.client.model.main;
 using extApi;
+using Polyhydra.Core;
+using Polyhydra.Wythoff;
+using TiltBrush;
 using UnityEngine;
+using UnityEngine.Networking;
 
 [Serializable]
 public class DeviceLoginRequest
@@ -36,6 +40,8 @@ public class ApiManager : MonoBehaviour
     {
         _api.Update();
     }
+
+
 }
 
 [ApiRoute("api/v1")]
@@ -136,6 +142,18 @@ public class ApiController
         return ApiResult.Ok("Success");
     }
 
+    [ApiGet("mesh/applyOp/{meshId}")]
+    public ApiResult ApplyOpToMesh(int meshId, string op, float a, float b)
+    {
+        if (Enum.TryParse(op, true, out PolyMesh.Operation operation))
+        {
+            var cmd = new ApplyOpToMeshCommand(meshId, operation, a, b, FilterTypes.All, 0);
+            PeltzerMain.Instance.model.ApplyCommand(cmd);
+            return ApiResult.Ok("Success");
+        }
+        return ApiResult.BadRequest("Unknown operation: " + op);
+    }
+
     // [ApiGet("addmesh/{foo}/{id}")]
     // public ApiResult AddMesh()
     // {
@@ -143,7 +161,7 @@ public class ApiController
     //     int meshId = PeltzerMain.Instance.model.GenerateMeshId();
     //     var cmd = new AddMeshCommand(mesh, false);
     //     PeltzerMain.Instance.model.ApplyCommand(cmd);
-    //     return Msg("Success");
+    //     return ApiResult.Ok("Success");
     // }
 
     // [ApiGet("replacemesh/{foo}/{id}")]
@@ -168,6 +186,72 @@ public class ApiController
     public ApiResult Insert(string shape)
     {
         return _Insert(shape, Vector3.zero, Vector3.one);
+    }
+
+    public ApiResult InsertPolyhydra(Dictionary<string, object> kwargs)
+    {
+        MMesh mesh;
+        int meshId = PeltzerMain.Instance.model.GenerateMeshId();
+
+        var recipe = GenerateRecipe(kwargs);
+
+        var poly = PolyBuilder.BuildPolyMesh(recipe);
+        mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, Quaternion.identity, 0);
+        if (mesh != null)
+        {
+            PeltzerMain.Instance.model.AddMesh(mesh);
+            return ApiResult.Ok(meshId);
+        }
+        return ApiResult.InternalServerError("Failed to add mesh");
+    }
+
+    private PolyRecipe GenerateRecipe(Dictionary<string, object> kwargs)
+    {
+        var recipe = new PolyRecipe();
+
+        T ParseEnum<T>(string value) where T : Enum
+        {
+            return (T)Enum.Parse(typeof(T), value);
+        }
+
+        recipe.GeneratorType = ParseEnum<GeneratorTypes>("generator");
+        recipe.generatorParams = kwargs;
+
+        switch (recipe.GeneratorType)
+        {
+            case GeneratorTypes.RegularGrids:
+            case GeneratorTypes.CatalanGrids:
+            case GeneratorTypes.OneUniformGrids:
+            case GeneratorTypes.TwoUniformGrids:
+            case GeneratorTypes.DurerGrids:
+                recipe.GridType = ParseEnum<GridEnums.GridTypes>("gridType");
+                recipe.GridShape = ParseEnum<GridEnums.GridShapes>("gridShape");
+                break;
+            case GeneratorTypes.Shapes:
+                recipe.ShapeType = ParseEnum<ShapeTypes>("shapeName");
+                break;
+            case GeneratorTypes.Radial:
+                recipe.RadialPolyType = ParseEnum<RadialSolids.RadialPolyType>("RadialPolyType");
+                break;
+            // case GeneratorTypes.Johnson:
+            //     recipe.JohnsonSolidType = int.Parse(kwargs["johnsonSolidType"].ToString());
+            //     break;
+            case GeneratorTypes.Uniform:
+                recipe.UniformPolyType = ParseEnum<UniformTypes>("shapeName");
+                break;
+            case GeneratorTypes.Various:
+                recipe.VariousSolidsType = ParseEnum<VariousSolidTypes>("shapeName");
+                break;
+            // case GeneratorTypes.Waterman:
+            //     recipe.WatermanSolidType = int.Parse(kwargs["watermanSolidType"].ToString());
+            //     break;
+            case GeneratorTypes.FileSystem:
+            case GeneratorTypes.GeometryData:
+            case GeneratorTypes.ConwayString:
+            default:
+                break;
+        }
+        return recipe;
     }
 
     public ApiResult _Insert(string shapeName, Vector3 offset, Vector3 scale)

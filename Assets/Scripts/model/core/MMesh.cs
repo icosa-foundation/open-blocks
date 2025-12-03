@@ -24,6 +24,7 @@ using System.Runtime.Serialization;
 using com.google.apps.peltzer.client.model.export;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.serialization;
+using Polyhydra.Core;
 
 namespace com.google.apps.peltzer.client.model.core
 {
@@ -1008,6 +1009,55 @@ namespace com.google.apps.peltzer.client.model.core
         public void SetBoundsForTest(Bounds bounds)
         {
             this.bounds = bounds;
+        }
+
+        public static MMesh PolyHydraToMMesh(
+                PolyMesh poly, int id,
+                Vector3 center, Vector3 scale, Quaternion rotation,
+                int materialId, bool fitWithinUnitBox = false)
+        {
+            var faceProperties = new FaceProperties(materialId);
+
+            var points = poly.ListVerticesByPoints().ToList();
+            var faceIndices = poly.ListFacesByVertexIndices();
+
+            // If we are fitting within a scale,
+            // we need to find the maximum value of the vertices
+            if (fitWithinUnitBox)
+            {
+                float maxValue = 0;
+                for (int i = 0; i < points.Count; i++)
+                {
+                    Vector3 v = points[i];
+                    float maxComponent = Mathf.Max(Mathf.Abs(v.x), Mathf.Max(Mathf.Abs(v.y), Mathf.Abs(v.z)));
+                    maxValue = Mathf.Max(maxValue, Mathf.Abs(maxComponent));
+                }
+                scale = Vector3.one / maxValue;
+            }
+
+            Dictionary<int, Vertex> vertices = new Dictionary<int, Vertex>();
+            for (int i = 0; i < points.Count; i++)
+            {
+                Vector3 v = points[i];
+                v.Scale(scale);
+                Vector3 pos = (rotation * v) + center;
+                vertices[i] = new Vertex(i, pos);
+            }
+
+            List<Face> faces = new List<Face>();
+            for (int i = 0; i < faceIndices.Length; i++)
+            {
+                List<int> verts = faceIndices[i];
+                faces.Add(new Face(i, verts.AsReadOnly(), vertices, faceProperties));
+            }
+            return new MMesh(id, Vector3.zero, Quaternion.identity, vertices, faces.ToDictionary(f => f.id));
+        }
+
+        public static PolyMesh MMeshToPolyHydra(MMesh mmesh)
+        {
+            var vertices = mmesh.GetVertices().Select(v => v.loc).ToList();
+            var faces = mmesh.GetFaces().Select(f => f.vertexIds.ToList()).ToList();
+            return new PolyMesh(vertices, faces);
         }
     }
 }
