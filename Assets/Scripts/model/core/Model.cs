@@ -1021,6 +1021,7 @@ namespace com.google.apps.peltzer.client.model.core
                 }
                 groupById[newGroupId].Add(mesh);
             }
+            remesher.Update(meshId);
         }
 
         /// <summary>
