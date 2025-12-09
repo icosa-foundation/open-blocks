@@ -83,6 +83,9 @@ namespace com.google.apps.peltzer.client.model.render
 
         // Maximum number of vertices we'd put into a coalesced Mesh.
         public const int MAX_VERTS_PER_MESH = 20000;
+        // Maximum number of vertices we allow in one call to GenerateMeshesForMMeshes.
+        // This will spread out the work of generating meshes over multiple frames if needed.
+        private const int MAX_VERTS_PER_GENERATE_MESH = 20000;
 
         // Maximum number of vertices we allow for any context.
         private const int MAX_VERTS_PER_CONTEXT = 20000;
@@ -588,6 +591,7 @@ namespace com.google.apps.peltzer.client.model.render
         public bool Remove(int meshId)
         {
             meshesPendingAdd.Remove(meshId);
+            meshIdToMaterialId.Remove(meshId);
             if (!meshInfosByMesh.TryGetValue(meshId, out var meshInfos)) return false;
 
             foreach (var info in meshInfos)
@@ -619,6 +623,7 @@ namespace com.google.apps.peltzer.client.model.render
         /// <param name="mmeshIds"></param>
         private void GenerateMeshesForMMeshes()
         {
+            var vertsPerGenerateMesh = 0;
             Model model = PeltzerMain.Instance.model;
             HashSet<int> meshesStillPendingAdd = new HashSet<int>();
             foreach (int meshId in meshesPendingAdd)
@@ -628,6 +633,13 @@ namespace com.google.apps.peltzer.client.model.render
                 if (!model.HasMesh(meshId)) continue;
 
                 var mMesh = model.GetMesh(meshId);
+
+                if (vertsPerGenerateMesh > MAX_VERTS_PER_GENERATE_MESH)
+                {
+                    meshesStillPendingAdd.Add(meshId);
+                    continue;
+                }
+                vertsPerGenerateMesh += mMesh.vertexCount;
 
                 var useMaterialOverride = meshIdToMaterialId.TryGetValue(meshId, out var materialId);
 
