@@ -838,6 +838,15 @@ namespace com.google.apps.peltzer.client.model.main
                 {
                     AssetsServiceClient.WebBaseUrl = userConfig.GalleryUrl;
                 }
+
+                if (userConfig.ApiUrl == "")
+                {
+                    PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
+                }
+                else
+                {
+                    AssetsServiceClient.ApiBaseUrl = userConfig.ApiUrl;
+                }
             }
         }
 
@@ -2111,6 +2120,35 @@ namespace com.google.apps.peltzer.client.model.main
             /// a model from Zandria that belongs to someone else, to give appropriate credit).
             /// </summary>
             public string overrideRemixId = null;
+        }
+
+        // By executing the URL directly windows will open it without making the browser a child
+        // process of Tilt Brush.  If this fails or throws an exception we fall back to Unity's
+        // OpenURL().
+        public static void OpenURLInExternalBrowser(string url)
+        {
+#if UNITY_STANDALONE_WINDOWS
+    var startInfo = new System.Diagnostics.ProcessStartInfo(url);
+    startInfo.UseShellExecute = true;
+    try {
+      if (System.Diagnostics.Process.Start(startInfo) == null) {
+        Application.OpenURL(url);
+      }
+    } catch (Exception) {
+      Application.OpenURL(url);
+    }
+#else
+            switch (Application.platform)
+            {
+                case RuntimePlatform.OSXEditor:
+                case RuntimePlatform.OSXPlayer:
+                    System.Diagnostics.Process.Start(url);
+                    break;
+                default:
+                    Application.OpenURL(url);
+                    break;
+            }
+#endif
         }
     }
 }

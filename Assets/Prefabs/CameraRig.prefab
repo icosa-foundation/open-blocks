@@ -45886,6 +45886,8 @@ MonoBehaviour:
   CsgSubtractSprite: {fileID: 21300000, guid: 6a1d385b53ecb544289404050bfb66bc, type: 3}
   CsgIntersectSprite: {fileID: 21300000, guid: 7ecba71d95b4629498c43c8a0ee68d91, type: 3}
   CsgInactiveSprite: {fileID: 21300000, guid: a949fb027ce2c9e4ab4dc1e00e65b818, type: 3}
+  CoplanarSelectionOnSprite: {fileID: 21300000, guid: de2c0a5df6d81c143ba287057c77260f, type: 3}
+  CoplanarSelectionOffSprite: {fileID: 21300000, guid: 750e969620caa42418e02894d018701b, type: 3}
   handedness: 2
   copyModeMesh: {fileID: 4300006, guid: 923f9f7869c51704689c66d67a972377, type: 3}
 --- !u!114 &114717694159959046

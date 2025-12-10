@@ -447,6 +447,13 @@ namespace com.google.apps.peltzer.client.tools
               && args.Action == ButtonAction.NONE;
         }
 
+        private bool IsToggleCoplanarSelectionModeEvent(ControllerEventArgs args)
+        {
+            return args.ControllerType == ControllerType.PELTZER
+              && args.ButtonId == ButtonId.ApplicationMenu
+              && args.Action == ButtonAction.DOWN;
+        }
+
         /// <summary>
         ///   Generates a preview of a mesh with faces that the Reshaper will not modify removed.
         /// </summary>
@@ -947,6 +954,13 @@ namespace com.google.apps.peltzer.client.tools
             {
                 SetHoverTooltip(
                   peltzerController.controllerGeometry.modifyTooltipRight, TouchpadHoverState.RIGHT, args.TouchpadOverlay);
+            }
+            else if (IsToggleCoplanarSelectionModeEvent(args))
+            {
+                bool enabled = selector.ToggleCoplanarFaceSelectionMode();
+                peltzerController.ChangeModifyOverlayCoplanarSprite(true, enabled);
+                audioLibrary.PlayClip(audioLibrary.swipeRightSound);
+                peltzerController.TriggerHapticFeedback();
             }
             else if (IsUnsetAllHoverTooltipsEvent(args))
             {

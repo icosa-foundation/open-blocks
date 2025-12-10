@@ -15,12 +15,46 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.tools.utils;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.util;
+
+/// <summary>
+/// Custom comparer for Vector3 that uses epsilon-based equality to handle floating point precision.
+/// </summary>
+public class Vector3EpsilonComparer : IEqualityComparer<Vector3>
+{
+    private const float EPSILON = 0.00001f;
+
+    public bool Equals(Vector3 a, Vector3 b)
+    {
+        return Mathf.Abs(a.x - b.x) < EPSILON &&
+               Mathf.Abs(a.y - b.y) < EPSILON &&
+               Mathf.Abs(a.z - b.z) < EPSILON;
+    }
+
+    public int GetHashCode(Vector3 v)
+    {
+        // Quantize the vector to a grid to ensure nearby points get the same hash code
+        int gridSize = 10000; // Precision of 0.0001
+        int x = Mathf.RoundToInt(v.x * gridSize);
+        int y = Mathf.RoundToInt(v.y * gridSize);
+        int z = Mathf.RoundToInt(v.z * gridSize);
+
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 31 + x;
+            hash = hash * 31 + y;
+            hash = hash * 31 + z;
+            return hash;
+        }
+    }
+}
 
 /// <summary>
 /// A single face extrusion. Maintains state of the guides showing users how they're extruding.
@@ -203,12 +237,15 @@ public class ExtrusionOperation
     private FaceProperties originalFaceProperties;
     // The cumulation of enlarge/shrink operations. At 0, this means the extrusion has not been enlarged or shrunk.
     private int scaleOffset;
+    // Set of edges (represented as pairs of vertex IDs) that should not have side faces created
+    private HashSet<(int, int)> edgesToSkip;
 
-    public ExtrusionOperation(WorldSpace worldSpace, MMesh mesh, Face heldFace)
+    public ExtrusionOperation(WorldSpace worldSpace, MMesh mesh, Face heldFace, HashSet<(int, int)> edgesToSkip = null)
     {
         this.worldSpace = worldSpace;
         this._mesh = mesh;
         this.heldFace = heldFace;
+        this.edgesToSkip = edgesToSkip ?? new HashSet<(int, int)>();
 
         originalFaceProperties = heldFace.properties;
         SetupExtrusionGuide();
@@ -284,6 +321,18 @@ public class ExtrusionOperation
             Mesh sideGuide = sideMeshes[i];
             sideGuide.Clear();
             ExtrusionSideVertices extrusionSideVertices = extrusionSides[i];
+
+            // Check if this edge should be skipped (shared edge between contiguous coplanar faces)
+            int minVertexId = Mathf.Min(extrusionSideVertices.baseLeftIndex, extrusionSideVertices.baseRightIndex);
+            int maxVertexId = Mathf.Max(extrusionSideVertices.baseLeftIndex, extrusionSideVertices.baseRightIndex);
+            bool shouldSkipEdge = edgesToSkip.Contains((minVertexId, maxVertexId));
+
+            // Skip rendering side face if this edge is shared between contiguous coplanar faces
+            if (shouldSkipEdge)
+            {
+                continue;
+            }
+
             if (extrusionSideVertices.isTriangle)
             {
                 sideGuide.SetVertices(new List<Vector3>() {
@@ -395,8 +444,10 @@ public class ExtrusionOperation
     /// <param name="extrudeMesh">Mesh to extrude.</param>
     /// <param name="extrusionParams">The parameters indicating how to perform the extrusion.</param>
     /// <param name="addedVertices">All added vertices.</param>
+    /// <param name="sharedVertexMap">Shared map of model-space positions to vertices for unifying vertices across extrusions.</param>
     /// <returns>Extruded version of the mesh.</returns>
-    public MMesh DoExtrusion(MMesh mesh, ExtrusionParams extrusionParams, ref HashSet<Vertex> addedVertices)
+    public MMesh DoExtrusion(MMesh mesh, ExtrusionParams extrusionParams, ref HashSet<Vertex> addedVertices,
+        Dictionary<Vector3, Vertex> sharedVertexMap = null)
     {
         heldFace.SetProperties(originalFaceProperties);
         MMesh.GeometryOperation operation = mesh.StartOperation();
@@ -414,18 +465,36 @@ public class ExtrusionOperation
             size = 0;
         }
 
+        // Initialize shared vertex map if not provided (this should not happen in normal flow)
+        if (sharedVertexMap == null)
+        {
+            sharedVertexMap = new Dictionary<Vector3, Vertex>(new Vector3EpsilonComparer());
+        }
+
         List<Vertex> extrusionFaceVertices = new List<Vertex>();
         foreach (ExtrusionSideVertices side in extrusionSides)
         {
-            Vector3 extrusion1Local = mesh.ModelCoordsToMeshCoords(side.extrusionLeft);
-            Vertex vertex1 = extrusionFaceVertices.FirstOrDefault(v => v.loc == extrusion1Local);
-            if (vertex1 == null)
-            {
-                vertex1 = operation.AddVertexMeshSpace(extrusion1Local);
+            // Check if this edge should be skipped (shared edge between contiguous coplanar faces)
+            int minVertexId = Mathf.Min(side.baseLeftIndex, side.baseRightIndex);
+            int maxVertexId = Mathf.Max(side.baseLeftIndex, side.baseRightIndex);
+            bool shouldSkipEdge = edgesToSkip.Contains((minVertexId, maxVertexId));
 
-                addedVertices.Add(vertex1);
-                extrusionFaceVertices.Add(vertex1);
+            // Get or create vertex1 using shared vertex map
+            Vertex vertex1 = GetOrCreateVertex(operation, side.extrusionLeft, mesh, sharedVertexMap,
+                extrusionFaceVertices, addedVertices);
+
+            // Skip creating side face if this edge is shared between contiguous coplanar faces
+            if (shouldSkipEdge)
+            {
+                // Still need to add the second extrusion vertex if it's a quad, but don't create the face
+                if (!side.isTriangle)
+                {
+                    GetOrCreateVertex(operation, side.extrusionRight, mesh, sharedVertexMap,
+                        extrusionFaceVertices, addedVertices);
+                }
+                continue;
             }
+
             if (side.isTriangle)
             {
                 operation.AddFace(new List<int>() { side.baseLeftIndex, side.baseRightIndex, vertex1.id },
@@ -433,14 +502,9 @@ public class ExtrusionOperation
             }
             else
             {
-                Vector3 extrusion2Local = mesh.ModelCoordsToMeshCoords(side.extrusionRight);
-                Vertex vertex2 = extrusionFaceVertices.FirstOrDefault(v => v.loc == extrusion2Local);
-                if (vertex2 == null)
-                {
-                    vertex2 = operation.AddVertexMeshSpace(extrusion2Local);
-                    addedVertices.Add(vertex2);
-                    extrusionFaceVertices.Add(vertex2);
-                }
+                // Get or create vertex2 using shared vertex map
+                Vertex vertex2 = GetOrCreateVertex(operation, side.extrusionRight, mesh, sharedVertexMap,
+                    extrusionFaceVertices, addedVertices);
                 List<int> indicesForFace = new List<int>() { side.baseLeftIndex, side.baseRightIndex, vertex2.id, vertex1.id };
                 operation.AddFace(indicesForFace, originalFaceProperties);
             }
@@ -455,6 +519,44 @@ public class ExtrusionOperation
 
     public MMesh mesh { get { return _mesh; } }
     public Face face { get { return heldFace; } }
+
+    /// <summary>
+    /// Gets an existing vertex from the shared map or creates a new one if it doesn't exist.
+    /// This ensures vertices at the same position are unified across multiple extrusions.
+    /// </summary>
+    private Vertex GetOrCreateVertex(MMesh.GeometryOperation operation, Vector3 positionInModelSpace,
+        MMesh mesh, Dictionary<Vector3, Vertex> sharedVertexMap,
+        List<Vertex> extrusionFaceVertices, HashSet<Vertex> addedVertices)
+    {
+        // Check if we already have a vertex at this model-space position in the shared map
+        Vertex vertex;
+        if (sharedVertexMap.TryGetValue(positionInModelSpace, out vertex))
+        {
+            // Vertex already exists, reuse it
+            // Make sure it's in our local tracking structures
+            if (!extrusionFaceVertices.Contains(vertex))
+            {
+                extrusionFaceVertices.Add(vertex);
+            }
+            return vertex;
+        }
+
+        // Vertex doesn't exist, create a new one
+        Vector3 positionInMeshSpace = mesh.ModelCoordsToMeshCoords(positionInModelSpace);
+
+        // Check if we already created this vertex locally in this extrusion
+        vertex = extrusionFaceVertices.FirstOrDefault(v => v.loc == positionInMeshSpace);
+        if (vertex == null)
+        {
+            vertex = operation.AddVertexMeshSpace(positionInMeshSpace);
+            addedVertices.Add(vertex);
+            extrusionFaceVertices.Add(vertex);
+        }
+
+        // Add to shared map for future extrusions to reuse
+        sharedVertexMap[positionInModelSpace] = vertex;
+        return vertex;
+    }
 
     /// <summary>
     /// Builds the sides of the extrusion. If the size is small enough, some vertices of the extrusion face may merge.
