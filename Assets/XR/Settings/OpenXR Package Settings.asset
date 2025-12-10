@@ -290,6 +290,7 @@ MonoBehaviour:
   m_Name: Standalone
   m_EditorClassIdentifier: 
   features:
+  - {fileID: 7550389493064946940}
   - {fileID: -1044453806702251804}
   - {fileID: -7003331306464536427}
   - {fileID: 1235886598695611335}
@@ -308,7 +309,11 @@ MonoBehaviour:
   - {fileID: -7476709463945014054}
   - {fileID: 1520748503145941529}
   m_renderMode: 1
+  m_autoColorSubmissionMode: 1
+  m_colorSubmissionModes:
+    m_List: 00000000
   m_depthSubmissionMode: 0
+  m_spacewarpMotionVectorTextureFormat: 0
   m_optimizeBufferDiscards: 0
   m_symmetricProjection: 0
 --- !u!114 &-5302301176888860903
@@ -618,38 +623,28 @@ MonoBehaviour:
   m_Name: Android
   m_EditorClassIdentifier: 
   features:
-  - {fileID: -2559240664353979237}
+  - {fileID: 253438287291449118}
   - {fileID: 6474526308384710153}
-  - {fileID: -5302301176888860903}
   - {fileID: 8804786142810530813}
   - {fileID: 4782022378052714169}
-  - {fileID: 297020758532032053}
   - {fileID: -1535685881804736575}
   - {fileID: -8615159225651402808}
   - {fileID: -6780374434742471277}
-  - {fileID: 8026230452117768023}
   - {fileID: -672605800059388132}
   - {fileID: -8267807321072464129}
   - {fileID: 28714803915138272}
   - {fileID: 433533727129305994}
   - {fileID: -735391454909588676}
   - {fileID: -8775940159799933092}
-  - {fileID: -8587147630404417137}
   - {fileID: 2914357624464686647}
-  - {fileID: 8675321798858600652}
-  - {fileID: -3056379876304424482}
-  - {fileID: -4607958180034294770}
-  - {fileID: 8128194063374270276}
-  - {fileID: -7322453031284665290}
-  - {fileID: 4992615608477044667}
-  - {fileID: -7174447031896458503}
-  - {fileID: 1447581313816168876}
-  - {fileID: 4023725468374241736}
-  - {fileID: -1647711214508767485}
   - {fileID: 4253931106115756548}
   - {fileID: -5196133658107764757}
   m_renderMode: 1
+  m_autoColorSubmissionMode: 1
+  m_colorSubmissionModes:
+    m_List: 00000000
   m_depthSubmissionMode: 1
+  m_spacewarpMotionVectorTextureFormat: 0
   m_optimizeBufferDiscards: 1
   m_symmetricProjection: 1
 --- !u!114 &-1044453806702251804
@@ -727,6 +722,9 @@ MonoBehaviour:
   - visibleName: Quest 3
     manifestName: eureka
     enabled: 1
+  - visibleName: Quest 3S
+    manifestName: quest3s
+    enabled: 1
   forceRemoveInternetPermission: 0
   symmetricProjection: 1
   foveatedRenderingApi: 0
@@ -734,6 +732,8 @@ MonoBehaviour:
   optimizeBufferDiscards: 1
   lateLatchingMode: 1
   lateLatchingDebug: 0
+  optimizeMultiviewRenderRegions: 0
+  spacewarpMotionVectorTextureFormat: 0
 --- !u!114 &-201775120846283512
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -799,6 +799,26 @@ MonoBehaviour:
   version: 0.0.1
   featureIdInternal: com.unity.openxr.feature.input.handtracking
   openxrExtensionStrings: XR_MSFT_hand_interaction
+  company: Unity
+  priority: 0
+  required: 0
+--- !u!114 &253438287291449118
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b7365b139f7aec43b23d26b7a48b5a6, type: 3}
+  m_Name: MetaQuestTouchPlusControllerProfile Android
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: Meta Quest Touch Plus Controller Profile
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.metaquestplus
+  openxrExtensionStrings: XR_META_touch_controller_plus
   company: Unity
   priority: 0
   required: 0
@@ -1166,6 +1186,26 @@ MonoBehaviour:
   version: 0.0.1
   featureIdInternal: com.unity.openxr.feature.conformance
   openxrExtensionStrings: XR_EXT_conformance_automation
+  company: Unity
+  priority: 0
+  required: 0
+--- !u!114 &7550389493064946940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b7365b139f7aec43b23d26b7a48b5a6, type: 3}
+  m_Name: MetaQuestTouchPlusControllerProfile Standalone
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: Meta Quest Touch Plus Controller Profile
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.metaquestplus
+  openxrExtensionStrings: XR_META_touch_controller_plus
   company: Unity
   priority: 0
   required: 0
