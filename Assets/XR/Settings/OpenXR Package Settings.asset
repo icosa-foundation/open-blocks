@@ -51,7 +51,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 077bca9897b444788c83491c066a79b1, type: 3}
   m_Name: OpenXRExtensions Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 1
   nameUi: PICO OpenXR Features
   version: 1.0.0
@@ -153,12 +153,12 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: baa5b568c4324bd4faad2da2e7ee7e84, type: 3}
   m_Name: PICOFeature Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 1
   nameUi: PICO Support
   version: 1.4.1
   featureIdInternal: com.unity.openxr.feature.pico
-  openxrExtensionStrings:
+  openxrExtensionStrings: 
   company: PICO
   priority: 0
   required: 0
@@ -174,7 +174,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b8a6d03de5f8f34383932f29d464a21, type: 3}
   m_Name: PICONeo3ControllerProfile Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 1
   nameUi: PICO Neo3 Touch Controller Profile
   version: 1.0.0
@@ -290,7 +290,6 @@ MonoBehaviour:
   m_Name: Standalone
   m_EditorClassIdentifier: 
   features:
-  - {fileID: 7550389493064946940}
   - {fileID: -1044453806702251804}
   - {fileID: -7003331306464536427}
   - {fileID: 1235886598695611335}
@@ -299,6 +298,7 @@ MonoBehaviour:
   - {fileID: -8573314630465467102}
   - {fileID: -4265042430813052484}
   - {fileID: 4641667563426586583}
+  - {fileID: 7550389493064946940}
   - {fileID: -7358011321729034840}
   - {fileID: -3189033301795000834}
   - {fileID: 8854558094711406293}
@@ -327,7 +327,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 233eef4f97ef4b0b8b65c5030c0b05f7, type: 3}
   m_Name: DisplayRefreshRateFeature Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: OpenXR Display Refresh Rate
   version: 1.0.0
@@ -407,7 +407,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e2a7d8f73c864e74eb753124087176f4, type: 3}
   m_Name: PICO4ControllerProfile Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 1
   nameUi: PICO4 Touch Controller Profile
   version: 1.0.0
@@ -479,7 +479,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b7365b139f7aec43b23d26b7a48b5a6, type: 3}
   m_Name: MetaQuestTouchPlusControllerProfile Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: Meta Quest Touch Plus Controller Profile
   version: 0.0.1
@@ -519,7 +519,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48a4218836ed47e2b2fe51c7c56925c7, type: 3}
   m_Name: PerformanceSettingsFeature Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: OpenXR Performance Settings
   version: 1.0.0
@@ -539,7 +539,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 446315a043ab4b998f5a055737c6122b, type: 3}
   m_Name: BodyTrackingFeature Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: PICO Body Tracking
   version: 1.0.0
@@ -580,7 +580,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b1248416ce414cd0a788c5240bec5766, type: 3}
   m_Name: PICOSpatialMesh Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: PICO Spatial Mesh
   version: 1.0.0
@@ -643,7 +643,6 @@ MonoBehaviour:
   m_Name: Android
   m_EditorClassIdentifier: 
   features:
-  - {fileID: 253438287291449118}
   - {fileID: 6474526308384710153}
   - {fileID: 8804786142810530813}
   - {fileID: 4782022378052714169}
@@ -651,12 +650,28 @@ MonoBehaviour:
   - {fileID: -8615159225651402808}
   - {fileID: -6780374434742471277}
   - {fileID: -672605800059388132}
+  - {fileID: -3794950972582794640}
   - {fileID: -8267807321072464129}
   - {fileID: 28714803915138272}
   - {fileID: 433533727129305994}
   - {fileID: -735391454909588676}
   - {fileID: -8775940159799933092}
+  - {fileID: 8026230452117768023}
+  - {fileID: -5302301176888860903}
+  - {fileID: 297020758532032053}
+  - {fileID: 8675321798858600652}
+  - {fileID: -3056379876304424482}
   - {fileID: 2914357624464686647}
+  - {fileID: -2559240664353979237}
+  - {fileID: -7174447031896458503}
+  - {fileID: -8587147630404417137}
+  - {fileID: 1447581313816168876}
+  - {fileID: 4023725468374241736}
+  - {fileID: -1647711214508767485}
+  - {fileID: -7322453031284665290}
+  - {fileID: -4607958180034294770}
+  - {fileID: 8128194063374270276}
+  - {fileID: 4992615608477044667}
   - {fileID: 4253931106115756548}
   - {fileID: -5196133658107764757}
   m_renderMode: 1
@@ -836,7 +851,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b7365b139f7aec43b23d26b7a48b5a6, type: 3}
   m_Name: MetaQuestTouchPlusControllerProfile Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: Meta Quest Touch Plus Controller Profile
   version: 0.0.1
@@ -856,7 +871,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f636716e11d15b4bbafb76eb9d63555, type: 3}
   m_Name: FoveationFeature Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: OpenXR Foveation
   version: 1.0.0
@@ -918,7 +933,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a0b5403262c64d5888bf5672e1e1f3bb, type: 3}
   m_Name: PICOSceneCapture Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 1
   nameUi: PICO Scene Capture
   version: 1.0.0
@@ -1060,7 +1075,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a8b7731b990240c0b289e41fb880787b, type: 3}
   m_Name: PICOSpatialAnchor Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: PICO Spatial Anchor
   version: 1.0.0
@@ -1162,7 +1177,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 21ea647c7f744df897be6365cbf559b7, type: 3}
   m_Name: PICOG3ControllerProfile Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 1
   nameUi: PICOG3 Touch Controller Profile
   version: 1.0.0
@@ -1223,7 +1238,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b7365b139f7aec43b23d26b7a48b5a6, type: 3}
   m_Name: MetaQuestTouchPlusControllerProfile Standalone
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: Meta Quest Touch Plus Controller Profile
   version: 0.0.1
@@ -1243,7 +1258,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 105a2b5276c1435d8411162e42e5064e, type: 3}
   m_Name: LayerSecureContentFeature Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: OpenXR Composition Layer Secure Content
   version: 1.0.0
@@ -1263,7 +1278,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f528fb360066460c862f7a0ce1d8ad4c, type: 3}
   m_Name: PICO4UltraControllerProfile Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 1
   nameUi: PICO4 Ultra Touch Controller Profile
   version: 1.0.0
@@ -1283,7 +1298,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d49168b6dfb469dadf8cd56e4ab8884, type: 3}
   m_Name: PassthroughFeature Android
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   m_enabled: 0
   nameUi: OpenXR Passthrough
   version: 1.0.0
