@@ -1,3 +1,4 @@
+#if !XR_DISABLED
 using System.Collections.Generic;
 using UnityEngine.Scripting;
 using UnityEngine.XR.OpenXR.Input;
@@ -734,3 +735,4 @@ namespace UnityEngine.XR.OpenXR.Features.Interactions
         }
     }
 }
+#endif
