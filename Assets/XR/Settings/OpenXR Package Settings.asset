@@ -426,6 +426,26 @@ MonoBehaviour:
   company: Meta
   priority: 0
   required: 0
+--- !u!114 &-1703675640099707110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad194dcf6c734fa438fad0f4269ec5ad, type: 3}
+  m_Name: PICO4ControllerProfile Android
+  m_EditorClassIdentifier: 
+  m_enabled: 1
+  nameUi: PICO4 Touch Controller Profile
+  version: 1.0.0
+  featureIdInternal: com.unity.openxr.feature.input.PICO4touch
+  openxrExtensionStrings: XR_BD_controller_interaction
+  company: PICO
+  priority: 0
+  required: 0
 --- !u!114 &-1636267713295767882
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -513,6 +533,7 @@ MonoBehaviour:
   - {fileID: -735391454909588676}
   - {fileID: -8775940159799933092}
   - {fileID: 2914357624464686647}
+  - {fileID: -1703675640099707110}
   - {fileID: 4253931106115756548}
   - {fileID: -5196133658107764757}
   m_renderMode: 1
