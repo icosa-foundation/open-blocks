@@ -179,7 +179,7 @@ namespace UnityEngine.XR.OpenXR.Features.Interactions
             /// </summary>
             [Preserve, InputControl(usage = "Haptic")]
             public HapticControl haptic { get; private set; }
-               
+
             [Preserve, InputControl(usage = "BatteryLevel")]
             public AxisControl batteryLevel { get; private set; }
 
@@ -310,7 +310,7 @@ namespace UnityEngine.XR.OpenXR.Features.Interactions
         /// Constant for a haptic interaction binding '.../output/haptic' OpenXR Input Binding. Used by input subsystem to bind actions to physical inputs.
         /// </summary>
         public const string haptic = "/output/haptic";
-                
+
         public const string batteryLevel = "/input/battery/value";
 
         private const string kDeviceLocalizedName = "PICO4 Touch Controller OpenXR";
