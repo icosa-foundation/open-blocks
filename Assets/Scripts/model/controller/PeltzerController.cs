@@ -358,6 +358,10 @@ namespace com.google.apps.peltzer.client.model.controller
                 // openXRController.controllerType = OVRInput.Controller.RTouch;
                 controller = openXRController;
             }
+            else if (Config.Instance.sdkMode == SdkMode.Desktop)
+            {
+                controller = new ControllerDeviceDesktop();
+            }
             else
             {
                 // ControllerDeviceOculus oculusController = new ControllerDeviceOculus(transform);
