@@ -292,7 +292,7 @@ jobs:
 
       - name: Restore Library/
         id: cache_library
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -302,7 +302,7 @@ jobs:
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -423,7 +423,7 @@ jobs:
           echo "diff returned: $CHANGES"
 
       - name: Save Library/PackageCache cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -450,7 +450,7 @@ jobs:
           du -mcsh Library
 
       - name: Save Library/ cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: steps.cache_library.outputs.cache-hit != 'true'
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
