@@ -404,7 +404,7 @@ jobs:
             androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
       - name: Upload build/
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.name }} ${{ matrix.flavors.title }}
           path: |
@@ -512,12 +512,12 @@ jobs:
         run: echo "$CHANGELOG"
 
       - name: Download Build Artifacts (Windows)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: Windows
           path: build_windows
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
@@ -643,7 +643,7 @@ jobs:
           echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - | gunzip - > /home/runner/Steam/config/config.vdf
           md5sum /home/runner/Steam/config/config.vdf
       - name: Download Build Artifacts (Windows)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: Windows
           path: build_windows
@@ -669,7 +669,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
       - name: Save logs
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: ${{ failure() }}
         with:
           name: steamcmd logs
@@ -686,7 +686,7 @@ jobs:
 
     steps:
       - name: Download Build Artifacts (Oculus Quest 2+)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: Oculus Quest (2+)
           path: build_oculus_quest
