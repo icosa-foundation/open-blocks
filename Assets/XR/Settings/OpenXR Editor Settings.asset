@@ -15,5 +15,7 @@ MonoBehaviour:
   Keys: 0100000007000000
   Values:
   - featureSets: []
-  - featureSets: []
+  - featureSets:
+    - com.unity.openxr.featureset.android
   m_vulkanAdditionalGraphicsQueue: 0
+  m_vulkanOffscreenSwapchainNoMainDisplay: 1

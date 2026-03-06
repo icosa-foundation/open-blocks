@@ -12,7 +12,6 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _EMISSION
   - _ENVIRONMENTREFLECTIONS_OFF
   - _GEM_EFFECT
   - _SPECULARHIGHLIGHTS_OFF
@@ -143,6 +142,7 @@ Material:
     - _SelectPositionWorld: {r: 0, g: 0, b: 0, a: 0}
     - _SpecColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!114 &3921185914344211967
 MonoBehaviour:
   m_ObjectHideFlags: 11
