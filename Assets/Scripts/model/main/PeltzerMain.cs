@@ -868,6 +868,8 @@ namespace com.google.apps.peltzer.client.model.main
             freeform = gameObject.AddComponent<Freeform>();
             peltzerController.Setup(volumeInserter, freeform);
             paletteController.Setup();
+            var handTrackingManager = gameObject.AddComponent<HandTrackingManager>();
+            handTrackingManager.Setup(peltzerController, paletteController);
             controllerMain = new ControllerMain(peltzerController, paletteController);
             tutorialManager = gameObject.AddComponent<TutorialManager>();
             attentionCaller = gameObject.AddComponent<AttentionCaller>();
