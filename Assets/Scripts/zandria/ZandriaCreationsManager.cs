@@ -437,6 +437,10 @@ namespace com.google.apps.peltzer.client.zandria
                     {
                         Poll(PolyMenuMain.CreationType.FEATURED);
                     }
+                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.ALL))
+                    {
+                        Poll(PolyMenuMain.CreationType.ALL);
+                    }
                     if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
                     {
                         Poll(PolyMenuMain.CreationType.LIKED);
@@ -804,6 +808,9 @@ namespace com.google.apps.peltzer.client.zandria
                 case PolyMenuMain.CreationType.FEATURED:
                     assetsServiceClient.GetFeaturedModels(successCallback, failureCallback);
                     break;
+                case PolyMenuMain.CreationType.ALL:
+                    assetsServiceClient.GetAllModels(successCallback, failureCallback);
+                    break;
                 case PolyMenuMain.CreationType.YOUR:
                     assetsServiceClient.GetYourModels(successCallback, failureCallback);
                     break;
@@ -822,6 +829,8 @@ namespace com.google.apps.peltzer.client.zandria
             {
                 case PolyMenuMain.CreationType.FEATURED:
                     return AssetsServiceClient.QueryParamsFeatured;
+                case PolyMenuMain.CreationType.ALL:
+                    return AssetsServiceClient.QueryParamsAll;
                 case PolyMenuMain.CreationType.YOUR:
                     return AssetsServiceClient.QueryParamsUser;
                 case PolyMenuMain.CreationType.LIKED:
@@ -838,6 +847,9 @@ namespace com.google.apps.peltzer.client.zandria
             {
                 case PolyMenuMain.CreationType.FEATURED:
                     AssetsServiceClient.QueryParamsFeatured = q;
+                    break;
+                case PolyMenuMain.CreationType.ALL:
+                    AssetsServiceClient.QueryParamsAll = q;
                     break;
                 case PolyMenuMain.CreationType.YOUR:
                     AssetsServiceClient.QueryParamsUser = q;
@@ -1033,7 +1045,7 @@ namespace com.google.apps.peltzer.client.zandria
                 PeltzerMain.Instance.polyMenuMain.SwitchToYourModelsSection();
             }
 
-            if (type == PolyMenuMain.CreationType.FEATURED)
+            if (type is PolyMenuMain.CreationType.FEATURED or PolyMenuMain.CreationType.ALL)
             {
                 PeltzerMain.Instance.menuHint.AddPreview(mwmRenderer);
             }
@@ -1278,7 +1290,8 @@ namespace com.google.apps.peltzer.client.zandria
                         PeltzerMain.Instance.polyMenuMain.SwitchToYourModelsSection();
                     });
                 }
-                else if (type == PolyMenuMain.CreationType.FEATURED && PeltzerMain.Instance.menuHint.IsPopulating())
+                else if (type is PolyMenuMain.CreationType.FEATURED or PolyMenuMain.CreationType.ALL
+                         && PeltzerMain.Instance.menuHint.IsPopulating())
                 {
                     MeshHelper.GameObjectFromMMeshesForMenu(identityWorldSpace, meshes, delegate (GameObject meshPreview)
                     {
