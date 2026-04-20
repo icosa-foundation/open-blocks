@@ -84,7 +84,7 @@ namespace com.google.apps.peltzer.client.menu
         public PolyMenuMode featuredCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.FEATURED, 0);
         public PolyMenuMode likedCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.LIKED, 0);
         public PolyMenuMode localCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.LOCAL, 0);
-        public PolyMenuMode allCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.LOCAL, 0);
+        public PolyMenuMode allCreations = new PolyMenuMode(PolyMenuSection.CREATION, CreationType.ALL, 0);
         public PolyMenuMode options = new PolyMenuMode(PolyMenuSection.OPTION, CreationType.NONE, 0);
         public PolyMenuMode environment = new PolyMenuMode(PolyMenuSection.ENVIRONMENT, CreationType.NONE, 0);
         public PolyMenuMode labs = new PolyMenuMode(PolyMenuSection.LABS, CreationType.NONE, 0);
@@ -123,8 +123,11 @@ namespace com.google.apps.peltzer.client.menu
         private GameObject detailsThumbnail;
         private GameObject environmentMenu;
 
+        private GameObject submenu;
+
         // Menu button icons.
         private SpriteRenderer optionsIcon;
+        private SpriteRenderer submenuIcon;
         private SpriteRenderer yourModelsIcon;
         private SpriteRenderer localModelsIcon;
         private SpriteRenderer likedModelsIcon;
@@ -250,13 +253,17 @@ namespace com.google.apps.peltzer.client.menu
             environmentMenu = polyMenu.transform.Find("Environments").gameObject;
 
             optionsIcon = polyMenu.transform.Find("NavBar/Options/panel/ic").GetComponent<SpriteRenderer>();
-            yourModelsIcon = polyMenu.transform.Find("NavBar/Your-Models/panel/ic").GetComponent<SpriteRenderer>();
             localModelsIcon = polyMenu.transform.Find("NavBar/Local-Models/panel/ic").GetComponent<SpriteRenderer>();
-            likedModelsIcon = polyMenu.transform.Find("NavBar/Liked-Models/panel/ic").GetComponent<SpriteRenderer>();
-            featuredModelsIcon = polyMenu.transform.Find("NavBar/Featured-Models/panel/ic").GetComponent<SpriteRenderer>();
-            allModelsIcon = polyMenu.transform.Find("NavBar/All-Models/panel/ic").GetComponent<SpriteRenderer>();
             environmentIcon = polyMenu.transform.Find("NavBar/Environments/panel/ic").GetComponent<SpriteRenderer>();
             labsIcon = polyMenu.transform.Find("NavBar/LabsSection/panel/ic").GetComponent<SpriteRenderer>();
+
+            submenuIcon = polyMenu.transform.Find("NavBar/Online-Models/panel/ic").GetComponent<SpriteRenderer>();
+            submenu = polyMenu.transform.Find("NavBar/Submenu").gameObject;
+
+            yourModelsIcon = polyMenu.transform.Find("NavBar/Submenu/Your-Models/panel/ic").GetComponent<SpriteRenderer>();
+            likedModelsIcon = polyMenu.transform.Find("NavBar/Submenu/Liked-Models/panel/ic").GetComponent<SpriteRenderer>();
+            featuredModelsIcon = polyMenu.transform.Find("NavBar/Submenu/Featured-Models/panel/ic").GetComponent<SpriteRenderer>();
+            allModelsIcon = polyMenu.transform.Find("NavBar/Submenu/All-Models/panel/ic").GetComponent<SpriteRenderer>();
 
             pageLeftIcon = polyMenu.transform.Find("Models/Pagination/Left/panel/ic").GetComponent<SpriteRenderer>();
             pageRightIcon = polyMenu.transform.Find("Models/Pagination/Right/panel/ic").GetComponent<SpriteRenderer>();
@@ -735,6 +742,8 @@ namespace com.google.apps.peltzer.client.menu
             bool isOption = CurrentMenuSection() == PolyMenuSection.OPTION;
             bool isEnvironment = CurrentMenuSection() == PolyMenuSection.ENVIRONMENT;
             bool isLabs = CurrentMenuSection() == PolyMenuSection.LABS;
+            bool isOnline = isYour || isLiked || isFeatured || isAll;
+
 
             // Hide Search/Filter buttons if creation type is local
             PeltzerMain.Instance.attentionCaller.ShowModelFilterSearchButtons(!isLocal);
@@ -748,15 +757,21 @@ namespace com.google.apps.peltzer.client.menu
             allModelsTitle?.SetActive(isAll);
 
             if (optionsIcon) { optionsIcon.color = isOption ? SELECTED_AVATAR_COLOR : UNSELECTED_AVATAR_COLOR; }
-            if (yourModelsIcon) { yourModelsIcon.color = isYour ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (localModelsIcon) { localModelsIcon.color = isLocal ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (yourModelsIcon) { yourModelsIcon.color = isYour ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (likedModelsIcon) { likedModelsIcon.color = isLiked ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (featuredModelsIcon) { featuredModelsIcon.color = isFeatured ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (allModelsIcon) { allModelsIcon.color = isAll ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (environmentIcon) { environmentIcon.color = isEnvironment ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
             if (labsIcon) { labsIcon.color = isLabs ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
+            if (submenuIcon) { submenuIcon.color = isOnline ? SELECTED_ICON_COLOR : UNSELECTED_ICON_COLOR; }
 
-            // Activate or deactive the necessary menus.
+            if (isOnline)
+            {
+                lastOnlineMenuType = (int)CurrentCreationType();
+            }
+
+            // Activate or deactivate the necessary menus.
             optionsMenu?.SetActive(isOption);
             labsMenu?.SetActive(isLabs);
             environmentMenu?.SetActive(isEnvironment);
@@ -767,6 +782,8 @@ namespace com.google.apps.peltzer.client.menu
             signedOutYourModelsMenu?.SetActive(false);
             signedOutLikedModelsMenu?.SetActive(false);
             offlineModelsMenu?.SetActive(false);
+
+            submenu?.SetActive(!isLocal);
 
             // Activate or deactivate the models menu.
             if (modelsMenu)
@@ -1219,6 +1236,7 @@ namespace com.google.apps.peltzer.client.menu
         public ApiQueryParameters CurrentQueryParams => creationsManager.GetQueryParams(CurrentCreationType());
         private ApiQueryParameters previousQueryParams;
         private CreationType previousCreationType;
+        private int lastOnlineMenuType = (int)CreationType.FEATURED;
 
         public bool QueryParamsChanged()
         {
@@ -1299,6 +1317,13 @@ namespace com.google.apps.peltzer.client.menu
         public void SetApiTriangleCountMax(int max)
         {
             _SetModelParam(q => q.TriangleCountMax = max);
+        }
+
+        public void ToggleOnlineMenuItems()
+        {
+            // if (submenuIcon) { submenuIcon.color = SELECTED_ICON_COLOR; }
+            ApplyMenuChange(lastOnlineMenuType);
+            // submenu?.SetActive(true);
         }
     }
 }

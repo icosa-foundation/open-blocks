@@ -370,6 +370,7 @@ namespace com.google.apps.peltzer.client.zandria
                 pendingLoadsByType = new HashSet<PolyMenuMain.CreationType>();
 
                 StartLoad(PolyMenuMain.CreationType.FEATURED);
+                StartLoad(PolyMenuMain.CreationType.ALL);
                 LoadOfflineModels();
             }
         }
