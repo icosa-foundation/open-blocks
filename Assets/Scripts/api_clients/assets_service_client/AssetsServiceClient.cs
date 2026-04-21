@@ -348,7 +348,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             string url = string.Join("", q.Formats.Select(format => $"format={format}&"));
             url += $"pageSize={pageSize}&";
             url += $"orderBy={q.OrderBy}&";
-            if (q.TriangleCountMax > 0) url += $"triangleCountMax={q.TriangleCountMax}&";
+            if (q.TriangleCountMax > 0)
+            {
+                url += $"triangleCountMin=1&";
+                url += $"triangleCountMax={q.TriangleCountMax}&";
+            }
             if (!string.IsNullOrEmpty(q.SearchText)) url += $"name={q.SearchText}&";
             if (!string.IsNullOrEmpty(q.License)) url += $"license={q.License}&";
             if (!string.IsNullOrEmpty(q.Curated)) url += $"curated={q.Curated}&";
