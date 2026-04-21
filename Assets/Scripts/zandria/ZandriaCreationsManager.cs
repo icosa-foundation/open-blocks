@@ -370,6 +370,7 @@ namespace com.google.apps.peltzer.client.zandria
                 pendingLoadsByType = new HashSet<PolyMenuMain.CreationType>();
 
                 StartLoad(PolyMenuMain.CreationType.FEATURED);
+                StartLoad(PolyMenuMain.CreationType.ALL);
                 LoadOfflineModels();
             }
         }
@@ -407,8 +408,9 @@ namespace com.google.apps.peltzer.client.zandria
                         if (loadIndex >= pair.Value.creations.Count) { continue; } // Preventing bug
                         Creation creation = pair.Value.creations[loadIndex];
 
-                        // Update the progress of the load.
-                        creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
+                        // Automatic model loading is disabled here, so do not leave the entry in a fake
+                        // in-progress state before the user explicitly opens details.
+                        creation.entry.loadStatus = LoadStatus.NONE;
                         // Execute the load.
                         // Note: Calling this will eventually down the line call SetupPreview() in SavePreview.cs
                         // which is responsible for ending the "Saving..." animation on the controller
@@ -436,6 +438,10 @@ namespace com.google.apps.peltzer.client.zandria
                     if (loadsByType.ContainsKey(PolyMenuMain.CreationType.FEATURED))
                     {
                         Poll(PolyMenuMain.CreationType.FEATURED);
+                    }
+                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.ALL))
+                    {
+                        Poll(PolyMenuMain.CreationType.ALL);
                     }
                     if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
                     {
@@ -804,6 +810,9 @@ namespace com.google.apps.peltzer.client.zandria
                 case PolyMenuMain.CreationType.FEATURED:
                     assetsServiceClient.GetFeaturedModels(successCallback, failureCallback);
                     break;
+                case PolyMenuMain.CreationType.ALL:
+                    assetsServiceClient.GetAllModels(successCallback, failureCallback);
+                    break;
                 case PolyMenuMain.CreationType.YOUR:
                     assetsServiceClient.GetYourModels(successCallback, failureCallback);
                     break;
@@ -822,6 +831,8 @@ namespace com.google.apps.peltzer.client.zandria
             {
                 case PolyMenuMain.CreationType.FEATURED:
                     return AssetsServiceClient.QueryParamsFeatured;
+                case PolyMenuMain.CreationType.ALL:
+                    return AssetsServiceClient.QueryParamsAll;
                 case PolyMenuMain.CreationType.YOUR:
                     return AssetsServiceClient.QueryParamsUser;
                 case PolyMenuMain.CreationType.LIKED:
@@ -838,6 +849,9 @@ namespace com.google.apps.peltzer.client.zandria
             {
                 case PolyMenuMain.CreationType.FEATURED:
                     AssetsServiceClient.QueryParamsFeatured = q;
+                    break;
+                case PolyMenuMain.CreationType.ALL:
+                    AssetsServiceClient.QueryParamsAll = q;
                     break;
                 case PolyMenuMain.CreationType.YOUR:
                     AssetsServiceClient.QueryParamsUser = q;
@@ -870,6 +884,7 @@ namespace com.google.apps.peltzer.client.zandria
         public void LoadModelForCreation(Creation creation, PolyMenuMain.CreationType type)
         {
             ObjectStoreEntry entry = creation.entry.queryEntry;
+            creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
             if (!EntryHasLoadableAsset(entry))
             {
                 OnLoadFailure(creation, type);
@@ -886,6 +901,7 @@ namespace com.google.apps.peltzer.client.zandria
                 if (rawFileData == null)
                 {
                     OnLoadFailure(creation, type);
+                    return;
                 }
 
                 // On successful return of the raw byte data for the creation start background work and create the preview
@@ -1033,7 +1049,7 @@ namespace com.google.apps.peltzer.client.zandria
                 PeltzerMain.Instance.polyMenuMain.SwitchToYourModelsSection();
             }
 
-            if (type == PolyMenuMain.CreationType.FEATURED)
+            if (type is PolyMenuMain.CreationType.FEATURED or PolyMenuMain.CreationType.ALL)
             {
                 PeltzerMain.Instance.menuHint.AddPreview(mwmRenderer);
             }
@@ -1278,7 +1294,8 @@ namespace com.google.apps.peltzer.client.zandria
                         PeltzerMain.Instance.polyMenuMain.SwitchToYourModelsSection();
                     });
                 }
-                else if (type == PolyMenuMain.CreationType.FEATURED && PeltzerMain.Instance.menuHint.IsPopulating())
+                else if (type is PolyMenuMain.CreationType.FEATURED or PolyMenuMain.CreationType.ALL
+                         && PeltzerMain.Instance.menuHint.IsPopulating())
                 {
                     MeshHelper.GameObjectFromMMeshesForMenu(identityWorldSpace, meshes, delegate (GameObject meshPreview)
                     {
