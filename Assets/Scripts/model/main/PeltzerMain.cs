@@ -1756,6 +1756,43 @@ namespace com.google.apps.peltzer.client.model.main
         }
 
         /// <summary>
+        ///   Fetches an Icosa model by its remote asset ID and loads it directly into the current scene.
+        /// </summary>
+        public void ImportIcosaModelById(string assetId, System.Action<bool> callback = null)
+        {
+            zandriaCreationsManager.GetAssetFromAssetsService(assetId, delegate (ObjectStoreEntry objectStoreResult)
+            {
+                if (objectStoreResult == null)
+                {
+                    Debug.LogWarning($"[ImportIcosa] No asset found for id: {assetId}");
+                    callback?.Invoke(false);
+                    return;
+                }
+                ObjectStoreClient.GetRawFileData(objectStoreResult, delegate (byte[] rawFileData)
+                {
+                    if (rawFileData == null || rawFileData.Length == 0)
+                    {
+                        Debug.LogWarning($"[ImportIcosa] Failed to download file data for id: {assetId}");
+                        callback?.Invoke(false);
+                        return;
+                    }
+                    PeltzerFile peltzerFile;
+                    if (!PeltzerFileHandler.PeltzerFileFromBytes(rawFileData, out peltzerFile))
+                    {
+                        Debug.LogWarning($"[ImportIcosa] Failed to parse file for id: {assetId}");
+                        callback?.Invoke(false);
+                        return;
+                    }
+                    LoadOptions options = new LoadOptions();
+                    options.cloneBeforeLoad = true;
+                    options.overrideRemixId = assetId;
+                    LoadPeltzerFileIntoModel(peltzerFile, options);
+                    callback?.Invoke(true);
+                });
+            }, /* isSave */ false);
+        }
+
+        /// <summary>
         ///   Takes in an updated model for a cloud-saved creation and then calls the creationsManager to update it.
         /// </summary>
         public void UpdateCloudModelOntoPolyMenu(string asset)

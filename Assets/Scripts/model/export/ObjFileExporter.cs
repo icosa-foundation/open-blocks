@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using com.google.apps.peltzer.client.model.core;
-using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.model.util;
 using System.Collections.Generic;
@@ -126,13 +125,13 @@ namespace com.google.apps.peltzer.client.model.export
         /// </summary>
         public static void ObjFileFromMeshes(ICollection<MMesh> meshes, string mtlFileName,
           MeshRepresentationCache meshRepresentationCache, ref HashSet<int> materials, bool triangulated,
-          out byte[] bytes, out int polyCount)
+          out byte[] bytes, out int faceCount)
         {
             List<Vector3> vertices = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
             Dictionary<int, MeshExportInfo> exportInfos = new Dictionary<int, MeshExportInfo>();
             List<Vector3> polyNormals = new List<Vector3>();
-            polyCount = 0;
+            faceCount = 0;
 
             // Initialize arbitrary vectors once per export. Only criteria is that they are not parallel.
             arbitraryVector = new Vector3(0.42f, -0.21f, 0.15f).normalized;
@@ -170,11 +169,11 @@ namespace com.google.apps.peltzer.client.model.export
                 if (triangulated)
                 {
                     AddTriangulatedMesh(mesh, meshRepresentationCache, ref vertices, ref uvs, ref info, ref polyNormals,
-                      ref materials, ref polyCount);
+                      ref materials, ref faceCount);
                 }
                 else
                 {
-                    AddMesh(mesh, ref vertices, ref uvs, ref info, ref polyNormals, ref materials, ref polyCount);
+                    AddMesh(mesh, ref vertices, ref uvs, ref info, ref polyNormals, ref materials);
                 }
                 exportInfos[mesh.id] = info;
             }
@@ -345,14 +344,14 @@ namespace com.google.apps.peltzer.client.model.export
         /// and vertices to be calculated.</param>
         /// <param name="meshNormals">The face normals of the mesh to be calculated.</param>
         /// <param name="materials">The set of materials that have been seen and should be added to the .mtl file.</param>
-        /// <param name="polyCount">A running total of the poly count of this export.</param>
+        /// <param name="faceCount">A running total of the poly count of this export.</param>
         private static void AddTriangulatedMesh(MMesh mesh, MeshRepresentationCache meshRepresentationCache,
           ref List<Vector3> vertices,
           ref List<Vector2> uvs,
           ref MeshExportInfo meshExportInfo,
           ref List<Vector3> meshNormals,
           ref HashSet<int> materials,
-          ref int polyCount)
+          ref int faceCount)
         {
             meshExportInfo.meshFaceColors = new List<int>();
 
@@ -374,7 +373,7 @@ namespace com.google.apps.peltzer.client.model.export
                 List<int> triangles = meshGenContext.triangles;
                 for (int i = 0; i < triangles.Count; i += 3)
                 {
-                    polyCount++;
+                    faceCount++;
                     int vertexIndex1 = GetVertexIndex(meshGenContext.verts[triangles[i]], ref vertexPositionToIndex,
                       ref vertices);
                     int vertexIndex2 = GetVertexIndex(meshGenContext.verts[triangles[i + 1]], ref vertexPositionToIndex,
@@ -418,14 +417,13 @@ namespace com.google.apps.peltzer.client.model.export
         /// and vertices to be calculated.</param>
         /// <param name="meshNormals">The face normals of the mesh to be calculated.</param>
         /// <param name="materials">The set of materials that have been seen and should be added to the .mtl file.</param>
-        /// <param name="polyCount">A running total of the poly count of this export.</param>
+        /// <param name="faceCount">A running total of the poly count of this export.</param>
         private static void AddMesh(MMesh mesh,
           ref List<Vector3> vertices,
           ref List<Vector2> uvs,
           ref MeshExportInfo meshExportInfo,
           ref List<Vector3> meshNormals,
-          ref HashSet<int> materials,
-          ref int polyCount)
+          ref HashSet<int> materials)
         {
             meshExportInfo.meshFaceColors = new List<int>(mesh.faceCount);
 
@@ -436,7 +434,6 @@ namespace com.google.apps.peltzer.client.model.export
 
             foreach (Face face in mesh.GetFaces())
             {
-                polyCount++;
                 meshExportInfo.meshFaceColors.Add(face.properties.materialId);
                 // Record face color for .mtl file, if not seen already.
                 materials.Add(face.properties.materialId);

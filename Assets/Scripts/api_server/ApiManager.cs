@@ -293,6 +293,17 @@ public class ApiController
         return ApiResult.Ok("Success");
     }
 
+    [ApiGet("scene/load_icosa/{assetId}")]
+    public ApiResult LoadIcosaModel(string assetId)
+    {
+        if (string.IsNullOrEmpty(assetId))
+        {
+            return ApiResult.BadRequest("Error: assetId is required");
+        }
+        PeltzerMain.Instance.ImportIcosaModelById(assetId);
+        return ApiResult.Ok($"Import started for asset: {assetId}");
+    }
+
     [ApiGet("videoviewer/{state}")]
     public ApiResult ShowHideVideoViewer(string state)
     {

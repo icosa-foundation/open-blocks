@@ -175,12 +175,14 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
               onFailure => AttemptObjFile(assets.obj, assetId, callback, onFailure));
 
             AddAttempt(
-              assets.gltf_package != null && !string.IsNullOrEmpty(assets.gltf_package.rootUrl),
+              assets.gltf_package != null && !string.IsNullOrEmpty(assets.gltf_package.rootUrl)
+                && assets.gltf_package.version != "GLTF1" && assets.gltf_package.version != "GLTF",
               assets.gltf_package?.isPreferredForDownload ?? false,
               onFailure => AttemptGltfBinary(assets.gltf_package, assetId, callback, onFailure));
 
             AddAttempt(
-              assets.gltf != null && !string.IsNullOrEmpty(assets.gltf.rootUrl),
+              assets.gltf != null && !string.IsNullOrEmpty(assets.gltf.rootUrl)
+                && assets.gltf.version != "GLTF1" && assets.gltf.version != "GLTF",
               assets.gltf?.isPreferredForDownload ?? false,
               onFailure => AttemptGltfFile(assets.gltf, assetId, callback, onFailure));
 

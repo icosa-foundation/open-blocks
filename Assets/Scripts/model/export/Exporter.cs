@@ -45,9 +45,8 @@ namespace com.google.apps.peltzer.client.model.export
     {
         public string filenameBase;
         public byte[] objFile;
-        public int objPolyCount;
+        public int objFaceCount;
         public byte[] triangulatedObjFile;
-        public int triangulatedObjPolyCount;
         public byte[] mtlFile;
         public FormatSaveData GLTFfiles;
         public byte[] fbxFile;

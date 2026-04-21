@@ -280,6 +280,17 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.BEST,
             Formats = new[] { FormatChoices.BLOCKS },
+            Curated = CuratedChoices.TRUE,
+            Category = CategoryChoices.ANY
+        };
+
+        public static ApiQueryParameters QueryParamsAll = new()
+        {
+            SearchText = "",
+            TriangleCountMax = defaultMaxPolyModelTriangles,
+            License = LicenseChoices.REMIXABLE,
+            OrderBy = OrderByChoices.BEST,
+            Formats = new[] { FormatChoices.BLOCKS },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
@@ -337,7 +348,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             string url = string.Join("", q.Formats.Select(format => $"format={format}&"));
             url += $"pageSize={pageSize}&";
             url += $"orderBy={q.OrderBy}&";
-            if (q.TriangleCountMax > 0) url += $"triangleCountMax={q.TriangleCountMax}&";
+            if (q.TriangleCountMax > 0)
+            {
+                url += $"triangleCountMin=1&";
+                url += $"triangleCountMax={q.TriangleCountMax}&";
+            }
             if (!string.IsNullOrEmpty(q.SearchText)) url += $"name={q.SearchText}&";
             if (!string.IsNullOrEmpty(q.License)) url += $"license={q.License}&";
             if (!string.IsNullOrEmpty(q.Curated)) url += $"curated={q.Curated}&";
@@ -363,6 +378,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return $"{ApiBaseUrl}/users/me/assets?{CommonQueryParams(QueryParamsUser)}";
         }
 
+        private static string AllModelsSearchUrl()
+        {
+            return $"{ApiBaseUrl}/assets?{CommonQueryParams(QueryParamsAll)}";
+        }
+
         // Boundary for multipart form data
         private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";
 
@@ -370,6 +390,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         // Used for polling economically (so we know which part of the results is new and which part isn't).
         public static string mostRecentFeaturedAssetId;
         public static string mostRecentLikedAssetId;
+        public static string mostRecentAllAssetId;
 
         // Some state around an upload.
         private string assetId;
@@ -385,6 +406,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private static List<string> mostRecentLikedAssetIds = new();
         private static List<string> mostRecentYourAssetIds = new();
         private static List<string> mostRecentLocalAssetIds = new();
+        private static List<string> mostRecentAllAssetIds = new();
 
         /// <summary>
         /// Clears all list of most recent asset ids. We use this list to check if assets have changed
@@ -397,6 +419,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             mostRecentFeaturedAssetIds.Clear();
             mostRecentLikedAssetIds.Clear();
             mostRecentYourAssetIds.Clear();
+            mostRecentAllAssetIds.Clear();
         }
 
         public static void ClearRecentAssetIdsByType(PolyMenuMain.CreationType type)
@@ -414,6 +437,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     break;
                 case PolyMenuMain.CreationType.LOCAL:
                     mostRecentLocalAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.ALL:
+                    mostRecentAllAssetIds.Clear();
                     break;
             }
         }
@@ -441,6 +467,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                         case PolyMenuMain.CreationType.LOCAL:
                             mostRecentLocalAssetIds.Add(assetId);
                             break;
+                        case PolyMenuMain.CreationType.ALL:
+                            mostRecentAllAssetIds.Add(assetId);
+                            break;
                     }
                 }
             }
@@ -454,6 +483,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                PolyMenuMain.CreationType.ALL => mostRecentAllAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 _ => false
             };
         }
@@ -466,6 +496,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.Count == 0,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.Count == 0,
                 PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.Count == 0,
+                PolyMenuMain.CreationType.ALL => mostRecentAllAssetIds.Count == 0,
                 _ => false
             };
         }
@@ -486,7 +517,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             // Then parse the assets.
             List<ObjectStoreEntry> objectStoreEntries = new List<ObjectStoreEntry>();
 
-            // If anything has changed in LIKED or FEATURED we update the all object store entries
+            // If anything has changed in LIKED, FEATURED or ALL we update the all object store entries
             var i = 0;
             foreach (JToken asset in assets)
             {
@@ -497,7 +528,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
                 i++;
             }
-            var polyMenu = PeltzerMain.Instance.polyMenuMain;
 
             // edge case where someone might change category and not get any assets and then try to change
             // OrderBy, in that case previous and current assets would be empty, which means nothing changed,
@@ -528,7 +558,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 ObjectStoreEntry objectStoreEntry;
 
-                if (type == PolyMenuMain.CreationType.FEATURED || type == PolyMenuMain.CreationType.LIKED)
+                if (type is PolyMenuMain.CreationType.FEATURED or PolyMenuMain.CreationType.LIKED or PolyMenuMain.CreationType.ALL)
                 {
                     string assetId = asset["url"]?.ToString();
                     if (firstAssetId == null)
@@ -552,6 +582,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             else if (type == PolyMenuMain.CreationType.LIKED)
             {
                 mostRecentLikedAssetId = firstAssetId;
+            }
+            else if (type == PolyMenuMain.CreationType.ALL)
+            {
+                mostRecentAllAssetId = firstAssetId;
             }
             objectStoreSearchResult.results = objectStoreEntries.ToArray();
             return true;
@@ -867,6 +901,26 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
+        /// <summary>
+        ///   Fetch a list of all models, together with their metadata, from the assets service.
+        ///   Only searches for models with CC-BY licensing to avoid any complicated questions around non-remixable models.
+        ///   Requests a create-time-descending ordering.
+        /// </summary>
+        /// <param name="callback">A callback to which to pass the results.</param>
+        /// <param name="isRecursion">Whether this is not the first call to this function.</param>
+        public void GetAllModels(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
+                                      bool isRecursion = false)
+        {
+            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
+            UnityWebRequest request = GetRequest(AllModelsSearchUrl(), "text/text", false);
+            PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+                () => { return request; },
+                (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
+                    ProcessGetAllModelsResponse(
+                        success, responseCode, responseBytes, request, successCallback, failureCallback)),
+                maxAgeMillis: WebRequestManager.CACHE_NONE);
+        }
+
         // Deals with the response of a GetFeaturedModels request, retrying it if an auth token was stale.
         private IEnumerator ProcessGetFeaturedModelsResponse(bool success, int responseCode, byte[] responseBytes,
           UnityWebRequest request, System.Action<ObjectStoreSearchResult> successCallback,
@@ -889,6 +943,31 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(
                   new ParseAssetsBackgroundWork(Encoding.UTF8.GetString(responseBytes),
                   PolyMenuMain.CreationType.FEATURED, successCallback, failureCallback));
+            }
+        }
+
+        // Deals with the response of a GetAllModels request, retrying it if an auth token was stale.
+        private IEnumerator ProcessGetAllModelsResponse(bool success, int responseCode, byte[] responseBytes,
+                                                             UnityWebRequest request, System.Action<ObjectStoreSearchResult> successCallback,
+                                                             System.Action failureCallback, bool isRecursion = false)
+        {
+            if (!success || responseCode == 401)
+            {
+                if (isRecursion)
+                {
+                    Debug.LogError(GetDebugString(request, "Failed to get all models"));
+                    yield break;
+                }
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                yield return OAuth2Identity.Instance.Reauthorize();
+                GetAllModels(successCallback, failureCallback, /* isRecursion */ true);
+            }
+            else
+            {
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                    new ParseAssetsBackgroundWork(Encoding.UTF8.GetString(responseBytes),
+                        PolyMenuMain.CreationType.ALL, successCallback, failureCallback));
             }
         }
 
@@ -1076,8 +1155,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 files.Add(Tuple.Create(ExportUtils.THUMBNAIL_FILENAME, saveData.thumbnailBytes));
             }
 
-            currentUploadMetadata = CreateMetadataFields(remixIds, saveData.objPolyCount,
-                saveData.triangulatedObjPolyCount, saveSelected, existingAssetId, hasObjFile);
+            currentUploadMetadata = CreateMetadataFields(remixIds, saveData.objFaceCount, saveSelected, existingAssetId, hasObjFile);
 
 
             if (files.Count == 0)
@@ -1281,8 +1359,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
         private List<KeyValuePair<string, string>> CreateMetadataFields(
             HashSet<string> remixIds,
-            int objPolyCount,
-            int triangulatedObjPolyCount,
+            int objFaceCount,
             bool saveSelected,
             string existingAssetId,
             bool includeObjFile)
@@ -1301,8 +1378,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             if (!saveSelected)
             {
-                metadata.Add(new KeyValuePair<string, string>("objPolyCount", objPolyCount.ToString()));
-                metadata.Add(new KeyValuePair<string, string>("triangulatedObjPolyCount", triangulatedObjPolyCount.ToString()));
+                metadata.Add(new KeyValuePair<string, string>("triangleCount", objFaceCount.ToString()));
 
                 if (remixIds != null)
                 {
