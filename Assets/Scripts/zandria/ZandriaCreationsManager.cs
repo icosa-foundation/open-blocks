@@ -408,8 +408,9 @@ namespace com.google.apps.peltzer.client.zandria
                         if (loadIndex >= pair.Value.creations.Count) { continue; } // Preventing bug
                         Creation creation = pair.Value.creations[loadIndex];
 
-                        // Update the progress of the load.
-                        creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
+                        // Automatic model loading is disabled here, so do not leave the entry in a fake
+                        // in-progress state before the user explicitly opens details.
+                        creation.entry.loadStatus = LoadStatus.NONE;
                         // Execute the load.
                         // Note: Calling this will eventually down the line call SetupPreview() in SavePreview.cs
                         // which is responsible for ending the "Saving..." animation on the controller
@@ -883,6 +884,7 @@ namespace com.google.apps.peltzer.client.zandria
         public void LoadModelForCreation(Creation creation, PolyMenuMain.CreationType type)
         {
             ObjectStoreEntry entry = creation.entry.queryEntry;
+            creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
             if (!EntryHasLoadableAsset(entry))
             {
                 OnLoadFailure(creation, type);
@@ -899,6 +901,7 @@ namespace com.google.apps.peltzer.client.zandria
                 if (rawFileData == null)
                 {
                     OnLoadFailure(creation, type);
+                    return;
                 }
 
                 // On successful return of the raw byte data for the creation start background work and create the preview

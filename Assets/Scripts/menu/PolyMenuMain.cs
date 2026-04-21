@@ -1053,9 +1053,18 @@ namespace com.google.apps.peltzer.client.menu
 
             // Wait until the creation is loaded to do anything else. During this time the thumbnail is displayed and the
             // Open/Import buttons are inactive.
-            while (creation.entry.loadStatus != ZandriaCreationsManager.LoadStatus.SUCCESSFUL)
+            while (creation.entry.loadStatus != ZandriaCreationsManager.LoadStatus.SUCCESSFUL
+              && creation.entry.loadStatus != ZandriaCreationsManager.LoadStatus.FAILED)
             {
                 yield return null;
+            }
+
+            if (creation.entry.loadStatus == ZandriaCreationsManager.LoadStatus.FAILED)
+            {
+                Sprite errorSprite = creation.errorThumbnail.GetComponent<SpriteRenderer>().sprite;
+                detailsThumbnail.GetComponent<SpriteRenderer>().sprite = errorSprite;
+                ActivateOpenImportButtons(/*active*/ false);
+                yield break;
             }
 
             // The creation has loaded, scale the meshes for the details menu.
