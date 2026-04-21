@@ -290,7 +290,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.BEST,
-            Formats = new[] { FormatChoices.NOT_TILT },
+            Formats = new[] { FormatChoices.BLOCKS },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
