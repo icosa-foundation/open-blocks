@@ -109,7 +109,7 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <summary>
         ///   Allows an external source to set whether this swatch is being hovered.
         /// </summary>
-        public void SetHovered(bool isHovered)
+        public virtual void SetHovered(bool isHovered)
         {
             if (this.isHovered == isHovered)
             {
