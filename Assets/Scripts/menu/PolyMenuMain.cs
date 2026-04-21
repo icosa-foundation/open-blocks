@@ -783,13 +783,12 @@ namespace com.google.apps.peltzer.client.menu
             signedOutLikedModelsMenu?.SetActive(false);
             offlineModelsMenu?.SetActive(false);
 
-            submenu?.SetActive(!isLocal);
-
             // Activate or deactivate the models menu.
             if (modelsMenu)
             {
                 bool isCreation = CurrentMenuSection() == PolyMenuSection.CREATION;
                 modelsMenu.SetActive(isCreation);
+                submenu?.SetActive(isCreation && isOnline);
                 if (isCreation)
                 {
                     // Update the pagination icons.
@@ -1321,9 +1320,7 @@ namespace com.google.apps.peltzer.client.menu
 
         public void ToggleOnlineMenuItems()
         {
-            // if (submenuIcon) { submenuIcon.color = SELECTED_ICON_COLOR; }
             ApplyMenuChange(lastOnlineMenuType);
-            // submenu?.SetActive(true);
         }
     }
 }
