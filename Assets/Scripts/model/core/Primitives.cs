@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Polyhydra.Core;
 
 namespace com.google.apps.peltzer.client.model.core
 {
@@ -29,8 +30,6 @@ namespace com.google.apps.peltzer.client.model.core
         // Note: the Shape enum is used to index things, so it should always start at 0 and count up
         // without skipping numbers. Do not define items to have arbitrary values. You will have a bad time.
         public enum Shape { CONE, SPHERE, CUBE, CYLINDER, TORUS, ICOSAHEDRON };
-        private const int LINES_OF_LATITUDE = 8;
-        private const int LINES_OF_LONGITUDE = 12;
         public static readonly int NUM_SHAPES = Enum.GetValues(typeof(Shape)).Length;
 
         private static readonly int[,] CUBE_POINTS = {
@@ -99,13 +98,13 @@ namespace com.google.apps.peltzer.client.model.core
                 case Shape.CUBE:
                     return AxisAlignedBox(id, offset, scale, material);
                 case Shape.CYLINDER:
-                    return AxisAlignedCylinder(id, offset, scale, /* holeRadius */ null, material);
+                    return AxisAlignedCylinder(id, offset, scale, material);
                 case Shape.SPHERE:
-                    return AxisAlignedUVSphere(LINES_OF_LONGITUDE, LINES_OF_LATITUDE, id, offset, scale, material);
+                    return AxisAlignedUVSphere(id, offset, scale, material);
                 case Shape.TORUS:
                     return Torus(id, offset, scale, material);
                 case Shape.ICOSAHEDRON:
-                    return AxisAlignedIcosphere(id, offset, scale, material, 0);
+                    return AxisAlignedIcosphere(id, offset, scale, material);
                 default:
                     return AxisAlignedBox(id, offset, scale, material);
             }
@@ -122,34 +121,49 @@ namespace com.google.apps.peltzer.client.model.core
         public static MMesh AxisAlignedBox(
           int id, Vector3 center, Vector3 scale, int materialId)
         {
+
+            int xSegments = PrimitiveParams.CubeXSegments;
+            int ySegments = PrimitiveParams.CubeYSegments;
+            int zSegments = PrimitiveParams.CubeZSegments;
+
             FaceProperties faceProperties = new FaceProperties(materialId);
 
-            List<Vertex> corners = new List<Vertex>(8);
-
-            // First make the vertices.  Use the first 3 binary bits of an int
-            // for the direction on each axis.
-            for (int i = 0; i < /* Corners in a cube. */ 8; i++)
+            if (xSegments == 1 && ySegments == 1 && zSegments == 1)
             {
-                float x = (i & 1) == 0 ? -1 : 1;
-                float y = (i & 2) == 0 ? -1 : 1;
-                float z = (i & 4) == 0 ? -1 : 1;
-                corners.Add(new Vertex(i, new Vector3(x, y, z)));
-            }
+                List<Vertex> corners = new List<Vertex>(8);
 
-            corners = new List<Vertex>(Math3d.ScaleVertices(corners, scale));
-            Dictionary<int, Vertex> vertices = corners.ToDictionary(c => c.id);
-            // Create the faces based on our template.
-            List<Face> faces = new List<Face>();
-            for (int i = 0; i < /* Faces in a cube. */ 6; i++)
-            {
-                List<int> verts = new List<int>();
-                for (int j = 0; j < /* Verts per face (i.e. rectangle). */ 4; j++)
+                // First make the vertices.  Use the first 3 binary bits of an int
+                // for the direction on each axis.
+                for (int i = 0; i < /* Corners in a cube. */ 8; i++)
                 {
-                    verts.Add(CUBE_POINTS[i, j]);
+                    float x = (i & 1) == 0 ? -1 : 1;
+                    float y = (i & 2) == 0 ? -1 : 1;
+                    float z = (i & 4) == 0 ? -1 : 1;
+                    corners.Add(new Vertex(i, new Vector3(x, y, z)));
                 }
-                faces.Add(new Face(i, verts.AsReadOnly(), vertices, faceProperties));
+
+                corners = new List<Vertex>(Math3d.ScaleVertices(corners, scale));
+                Dictionary<int, Vertex> vertices = corners.ToDictionary(c => c.id);
+                // Create the faces based on our template.
+                List<Face> faces = new List<Face>();
+                for (int i = 0; i < /* Faces in a cube. */ 6; i++)
+                {
+                    List<int> verts = new List<int>();
+                    for (int j = 0; j < /* Verts per face (i.e. rectangle). */ 4; j++)
+                    {
+                        verts.Add(CUBE_POINTS[i, j]);
+                    }
+                    faces.Add(new Face(i, verts.AsReadOnly(), vertices, faceProperties));
+                }
+                return new MMesh(id, center, Quaternion.identity, vertices, faces.ToDictionary(f => f.id));
             }
-            return new MMesh(id, center, Quaternion.identity, vertices, faces.ToDictionary(f => f.id));
+            else
+            {
+                var poly = VariousSolids.Box(xSegments, ySegments, zSegments);
+                scale.Scale(new Vector3(1f/xSegments, 1f/ySegments, 1f/zSegments));
+                poly.Recenter();
+                return MMesh.PolyHydraToMMesh(poly, id, center, scale, Quaternion.identity, materialId);
+            }
         }
 
         /// <summary>
@@ -163,26 +177,22 @@ namespace com.google.apps.peltzer.client.model.core
         /// <param name="holeRadius">Radius of hole inside cylinder.</param>
         /// <param name="materialId">Material id for the mesh.</param>
         /// <returns>An MMesh that renders a cylinder.</returns>
-        public static MMesh AxisAlignedCylinder(int id, Vector3 center, Vector3 scale, float? holeRadius,
-            int materialId)
+        public static MMesh AxisAlignedCylinder(int id, Vector3 center, Vector3 scale, int materialId)
         {
-            // Controls the smoothness of the cylinder, we could make this a parameter later if we wanted.
-            const int SLICES = 12;
+            float holeRadius = PrimitiveParams.CylinderHoleRadius;
+            int slices = PrimitiveParams.CylinderSlices;
             const int START_OFFSET = 0;
-            const int END_OFFSET = SLICES;
-            const int INNER_START_OFFSET = SLICES * 2;
-            const int INNER_END_OFFSET = SLICES * 3;
+            int END_OFFSET = slices;
+            int INNER_START_OFFSET = slices * 2;
+            int INNER_END_OFFSET = slices * 3;
 
             FaceProperties faceProperties = new FaceProperties(materialId);
 
             Dictionary<int, Vertex> vertices = new Dictionary<int, Vertex>();
             Dictionary<int, Face> faces = new Dictionary<int, Face>();
 
-            // Here we force 'height' to the y axis around the center.
             Vector3 startLocation = new Vector3(0, -1, 0);
             Vector3 endLocation = new Vector3(0, 1, 0);
-
-            // This'll be useful when we want to add cylinders aligned to X or Z axes.
             Vector3 ray = endLocation - startLocation;
 
             Vector3 axisZ = ray.normalized;
@@ -190,93 +200,97 @@ namespace com.google.apps.peltzer.client.model.core
             Vector3 axisX = Vector3.Cross(new Vector3(isY ? 1 : 0, !isY ? 1 : 0, 0), axisZ).normalized;
             Vector3 axisY = Vector3.Cross(axisX, axisZ).normalized;
 
-            // Go around the cylinder and create all the vertices
-            for (int i = 0; i < SLICES; i++)
+            for (int i = 0; i < slices; i++)
             {
-                float radians = (i / (float)SLICES) * 2 * Mathf.PI;
+                float radians = (i / (float)slices) * 2 * Mathf.PI;
 
                 Vector3 outt = axisX * Mathf.Cos(radians) + axisY * Mathf.Sin(radians);
-                Vector3 start = startLocation + ray + outt;
-                Vector3 end = startLocation + outt;
+
+                // Outer circle vertices
+                Vector3 start = endLocation + outt; // Top circle
+                Vector3 end = startLocation + outt; // Bottom circle
 
                 vertices[i + START_OFFSET] = new Vertex(i + START_OFFSET, start);
                 vertices[i + END_OFFSET] = new Vertex(i + END_OFFSET, end);
 
-                if (holeRadius.HasValue)
+                if (holeRadius > 0)
                 {
-                    start = startLocation + ray + outt * holeRadius.Value;
-                    end = startLocation + outt * holeRadius.Value;
-                    vertices[i + INNER_START_OFFSET] = new Vertex(i + INNER_START_OFFSET, start);
-                    vertices[i + INNER_END_OFFSET] = new Vertex(i + INNER_END_OFFSET, end);
+                    // Inner circle vertices
+                    Vector3 innerStart = endLocation + outt * holeRadius; // Top inner circle
+                    Vector3 innerEnd = startLocation + outt * holeRadius; // Bottom inner circle
+
+                    vertices[i + INNER_START_OFFSET] = new Vertex(i + INNER_START_OFFSET, innerStart);
+                    vertices[i + INNER_END_OFFSET] = new Vertex(i + INNER_END_OFFSET, innerEnd);
                 }
             }
 
-            vertices =
-              new Dictionary<int, Vertex>(Math3d.ScaleVertices(vertices.Values, scale).ToDictionary(v => v.id));
+            vertices = new Dictionary<int, Vertex>(Math3d.ScaleVertices(vertices.Values, scale).ToDictionary(v => v.id));
 
-            // Go around the cylinder again and create the outside and inside faces.
-            for (int i = 0; i < SLICES; i++)
+            // Outer side faces - PRESERVE ORIGINAL WINDING
+            for (int i = 0; i < slices; i++)
             {
                 List<int> faceVerts = new List<int> {
-          i + START_OFFSET,
-          (i + 1) % SLICES + START_OFFSET,
-          (i + 1) % SLICES + END_OFFSET,
-          i + END_OFFSET };
-
+                    i + START_OFFSET,
+                    (i + 1) % slices + START_OFFSET,
+                    (i + 1) % slices + END_OFFSET,
+                    i + END_OFFSET
+                };
                 faces[i] = new Face(i, faceVerts.AsReadOnly(), vertices, faceProperties);
+            }
 
-                if (holeRadius.HasValue)
+            int faceIdOff = slices;
+
+            if (holeRadius > 0)
+            {
+                // Inner side faces - PRESERVE ORIGINAL WINDING (reversed for inward-facing)
+                for (int i = 0; i < slices; i++)
                 {
-                    faceVerts = new List<int> {
-            i + INNER_START_OFFSET,
-            i + INNER_END_OFFSET,
-            (i + 1) % SLICES + INNER_END_OFFSET,
-            (i + 1) % SLICES + INNER_START_OFFSET };
+                    List<int> faceVerts = new List<int> {
+                        i + INNER_START_OFFSET,
+                        i + INNER_END_OFFSET,
+                        (i + 1) % slices + INNER_END_OFFSET,
+                        (i + 1) % slices + INNER_START_OFFSET
+                    };
+                    faces[faceIdOff++] = new Face(faceIdOff, faceVerts.AsReadOnly(), vertices, faceProperties);
+                }
 
-                    faces[i + SLICES] =
-                      new Face(i + SLICES, faceVerts.AsReadOnly(), vertices, faceProperties);
+                // Top cap with hole - PRESERVE ORIGINAL WINDING
+                for (int i = 0; i < slices; i++)
+                {
+                    List<int> capVerts = new List<int> {
+                        i + START_OFFSET,
+                        i + INNER_START_OFFSET,
+                        (i + 1) % slices + INNER_START_OFFSET,
+                        (i + 1) % slices + START_OFFSET
+                    };
+                    faces[faceIdOff++] = new Face(faceIdOff, capVerts.AsReadOnly(), vertices, faceProperties);
+                }
+
+                // Bottom cap with hole - PRESERVE ORIGINAL WINDING
+                for (int i = 0; i < slices; i++)
+                {
+                    List<int> capVerts = new List<int> {
+                        i + END_OFFSET,
+                        (i + 1) % slices + END_OFFSET,
+                        (i + 1) % slices + INNER_END_OFFSET,
+                        i + INNER_END_OFFSET
+                    };
+                    faces[faceIdOff++] = new Face(faceIdOff, capVerts.AsReadOnly(), vertices, faceProperties);
                 }
             }
-
-            // Go around one last time and create the caps.
-            List<int> startVerts = new List<int>();
-            List<Vector3> startNorms = new List<Vector3>();
-            List<int> startHole = new List<int>();
-            List<Vector3> startHoleNorms = new List<Vector3>();
-            List<int> endVerts = new List<int>();
-            List<Vector3> endNorms = new List<Vector3>();
-            List<int> endHole = new List<int>();
-            List<Vector3> endHoleNorms = new List<Vector3>();
-            for (int i = 0; i < SLICES; i++)
+            else
             {
-                startVerts.Add(SLICES - i - 1 + START_OFFSET);   // Reverse-order.
-                startNorms.Add(ray.normalized);
-                endVerts.Add(i + END_OFFSET);
-                endNorms.Add(-ray.normalized);
-
-                if (holeRadius.HasValue)
+                // Solid caps (no hole) - PRESERVE ORIGINAL WINDING
+                List<int> startVerts = new List<int>();
+                List<int> endVerts = new List<int>();
+                for (int i = 0; i < slices; i++)
                 {
-                    startHole.Add(i + INNER_START_OFFSET);
-                    startHoleNorms.Add(ray.normalized);
-                    endHole.Add(SLICES - i - 1 + INNER_END_OFFSET);  // Reverse-order.
-                    endHoleNorms.Add(-ray.normalized);
+                    startVerts.Add(slices - i - 1 + START_OFFSET);
+                    endVerts.Add(i + END_OFFSET);
                 }
+                faces[faceIdOff] = new Face(faceIdOff, startVerts.AsReadOnly(), vertices, faceProperties);
+                faces[faceIdOff + 1] = new Face(faceIdOff + 1, endVerts.AsReadOnly(), vertices, faceProperties);
             }
-
-            List<Hole> startHoles = new List<Hole>();
-            List<Hole> endHoles = new List<Hole>();
-
-            if (holeRadius.HasValue)
-            {
-                startHoles.Add(new Hole(startHole.AsReadOnly(), startHoleNorms.AsReadOnly()));
-                endHoles.Add(new Hole(endHole.AsReadOnly(), endHoleNorms.AsReadOnly()));
-            }
-
-            int faceIdOff = faces.Count;
-            faces[faceIdOff] = new Face(
-              faceIdOff, startVerts.AsReadOnly(), vertices, faceProperties);
-            faces[faceIdOff + 1] = new Face(
-              faceIdOff + 1, endVerts.AsReadOnly(), vertices, faceProperties);
 
             return new MMesh(id, center, Quaternion.identity, vertices, faces);
         }
@@ -290,8 +304,9 @@ namespace com.google.apps.peltzer.client.model.core
         /// <param name="materialId">Material id for the mesh.</param>
         /// <param name="recursionLevel">How many times to recursively split triangles on the original icosphere.</param>
         /// <returns>An MMesh that renders an icosphere.</returns>
-        public static MMesh AxisAlignedIcosphere(int id, Vector3 center, Vector3 scale, int materialId, int recursionLevel = 1)
+        public static MMesh AxisAlignedIcosphere(int id, Vector3 center, Vector3 scale, int materialId)
         {
+            int recursionLevel = PrimitiveParams.IcosphereIterations;
             // We won't go straight to Vertex or Face as we're going to subdivide points first.
             List<Vector3> vertexLocations = new List<Vector3>();
             List<List<int>> vertexIndicesForFaces = new List<List<int>>();
@@ -358,9 +373,11 @@ namespace com.google.apps.peltzer.client.model.core
         /// <param name="scale">Scale of sphere.</param>
         /// <param name="materialId">Material id for the mesh.</param>
         /// <returns>An MMesh that renders a UV sphere.</returns>
-        public static MMesh AxisAlignedUVSphere(int numLon, int numLat, int id, Vector3 center, Vector3 scale,
+        public static MMesh AxisAlignedUVSphere(int id, Vector3 center, Vector3 scale,
           int materialId)
         {
+            int numLon = PrimitiveParams.SphereUSlices;
+            int numLat = PrimitiveParams.SphereVSlices;
             // Find the number of vertices that will be on the UV sphere. This is equal to the number of intersections
             // between lines of longitude and latitude plus the north and south poles.
             int numVerts = (numLon * numLat) + 2;
@@ -499,8 +516,8 @@ namespace com.google.apps.peltzer.client.model.core
         /// <returns>A new mesh.</returns>
         public static MMesh AxisAlignedCone(int id, Vector3 center, Vector3 scale, int materialId)
         {
-            const int SLICES = 12;
-            const int TOP_VERT_ID = SLICES;
+            int slices = PrimitiveParams.ConeSlices;
+            int TOP_VERT_ID = slices;
 
             FaceProperties properties = new FaceProperties(materialId);
 
@@ -511,9 +528,9 @@ namespace com.google.apps.peltzer.client.model.core
             Dictionary<int, Face> faces = new Dictionary<int, Face>();
 
             // Go around circle, add points.
-            for (int i = 0; i < SLICES; i++)
+            for (int i = 0; i < slices; i++)
             {
-                float radians = (i / (float)SLICES) * 2 * Mathf.PI;
+                float radians = (i / (float)slices) * 2 * Mathf.PI;
                 vertices[i] = new Vertex(i,
                   new Vector3(Mathf.Cos(radians), -1, Mathf.Sin(radians)));
             }
@@ -523,19 +540,19 @@ namespace com.google.apps.peltzer.client.model.core
               new Dictionary<int, Vertex>(Math3d.ScaleVertices(vertices.Values, scale).ToDictionary(v => v.id));
 
             // Go around again and create faces. Each face is a triangle.
-            for (int i = 0; i < SLICES; i++)
+            for (int i = 0; i < slices; i++)
             {
-                List<int> vertIds = new List<int>() { TOP_VERT_ID, (i + 1) % SLICES, i };
+                List<int> vertIds = new List<int>() { TOP_VERT_ID, (i + 1) % slices, i };
                 faces[i] = new Face(i, vertIds.AsReadOnly(), vertices, properties);
             }
 
             // Go around one last time and create the bottom face.
             List<int> baseVertIds = new List<int>();
-            for (int i = 0; i < SLICES; i++)
+            for (int i = 0; i < slices; i++)
             {
                 baseVertIds.Add(i);
             }
-            faces[SLICES + 1] = new Face(SLICES + 1, baseVertIds.AsReadOnly(), vertices, properties);
+            faces[slices + 1] = new Face(slices + 1, baseVertIds.AsReadOnly(), vertices, properties);
 
             return new MMesh(id, center, Quaternion.identity, vertices, faces);
         }
@@ -608,12 +625,13 @@ namespace com.google.apps.peltzer.client.model.core
         /// <returns>A new mesh.</returns>
         public static MMesh Torus(int id, Vector3 center, Vector3 scale, int materialId)
         {
-            const int SLICES = 12;
+            int outerSlices = PrimitiveParams.TorusOuterSlices;
+            int innerSlices = PrimitiveParams.TorusInnerSlices;
 
             Vector3 up = new Vector3(0, 1, 0);
 
-            float outerRadius = 1;
-            float innerRadius = 0.5f;
+            float outerRadius = PrimitiveParams.TorusOuterRadius;
+            float innerRadius = PrimitiveParams.TorusInnerRadius;
 
             float donutRadius = (outerRadius - innerRadius) / 2f;
             float centerlineRadius = outerRadius - donutRadius;
@@ -624,13 +642,13 @@ namespace com.google.apps.peltzer.client.model.core
             Dictionary<int, Face> faces = new Dictionary<int, Face>();
 
             // Generate all of the surface points and normals.
-            List<Vector3> normals = new List<Vector3>(SLICES * SLICES);
-            for (int i = 0; i < SLICES; i++)
+            List<Vector3> normals = new List<Vector3>(outerSlices * innerSlices);
+            for (int i = 0; i < outerSlices; i++)
             {
-                float outerRads = (i / (float)SLICES) * 2 * Mathf.PI;
-                for (int j = 0; j < SLICES; j++)
+                float outerRads = (i / (float)outerSlices) * 2 * Mathf.PI;
+                for (int j = 0; j < innerSlices; j++)
                 {
-                    float innerRads = (j / (float)SLICES) * 2 * Mathf.PI;
+                    float innerRads = (j / (float)innerSlices) * 2 * Mathf.PI;
 
                     Vector3 centerLinePoint = new Vector3(
                       Mathf.Cos(outerRads) * centerlineRadius, 0, Mathf.Sin(outerRads) * centerlineRadius);
@@ -640,7 +658,7 @@ namespace com.google.apps.peltzer.client.model.core
                       up * Mathf.Cos(innerRads) * donutRadius +
                       dir * Mathf.Sin(innerRads) * donutRadius;
 
-                    vertices[i * SLICES + j] = new Vertex(i * SLICES + j, surfacePoint);
+                    vertices[i * innerSlices + j] = new Vertex(i * innerSlices + j, surfacePoint);
                     normals.Add((surfacePoint - centerLinePoint).normalized);
                 }
             }
@@ -649,14 +667,14 @@ namespace com.google.apps.peltzer.client.model.core
             vertices = new Dictionary<int, Vertex>(Math3d.ScaleVertices(vertices.Values, scale).ToDictionary(v => v.id));
 
             // Now generate the faces.
-            for (int i = 0; i < SLICES; i++)
+            for (int i = 0; i < outerSlices; i++)
             {
-                for (int j = 0; j < SLICES; j++)
+                for (int j = 0; j < innerSlices; j++)
                 {
-                    int idx1 = i * SLICES + j;
-                    int idx2 = ((i + 1) % SLICES) * SLICES + j;
-                    int idx3 = ((i + 1) % SLICES) * SLICES + (j + 1) % SLICES;
-                    int idx4 = i * SLICES + (j + 1) % SLICES;
+                    int idx1 = i * innerSlices + j;
+                    int idx2 = ((i + 1) % outerSlices) * innerSlices + j;
+                    int idx3 = ((i + 1) % outerSlices) * innerSlices + (j + 1) % innerSlices;
+                    int idx4 = i * innerSlices + (j + 1) % innerSlices;
 
                     faces[idx1] = new Face(idx1,
                       new List<int>() { idx1, idx2, idx3, idx4 }.AsReadOnly(),
@@ -667,5 +685,22 @@ namespace com.google.apps.peltzer.client.model.core
 
             return new MMesh(id, center, Quaternion.identity, vertices, faces);
         }
+    }
+
+    public struct PrimitiveParams
+    {
+        public static float CylinderHoleRadius = 0;
+        public static float TorusInnerRadius = 0.5f;
+        public static float TorusOuterRadius = 1f;
+        public static int TorusInnerSlices = 12;
+        public static int TorusOuterSlices = 12;
+        public static int SphereUSlices = 12;
+        public static int SphereVSlices = 8;
+        public static int IcosphereIterations = 0;
+        public static int CylinderSlices = 12;
+        public static int ConeSlices = 12;
+        public static int CubeXSegments = 1;
+        public static int CubeYSegments = 1;
+        public static int CubeZSegments = 1;
     }
 }
