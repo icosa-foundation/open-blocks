@@ -52,7 +52,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5019471fb2174e5c852ecd4047163007, type: 3}
   m_Name: HandInteractionProfile Android
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Hand Interaction Profile
   version: 0.0.1
   featureIdInternal: com.unity.openxr.feature.input.handinteraction
@@ -479,14 +479,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e314dfef9af0904e80129bcc0a79361, type: 3}
   m_Name: HandTracking Android
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Hand Tracking Subsystem
   version: 0.0.1
-  featureIdInternal: com.unity.openxr.feature.input.handtracking
+  featureIdInternal: com.unity.openxr.feature.input.handtrackingsubsystem
   openxrExtensionStrings: XR_EXT_hand_tracking
   company: Unity
   priority: -100
   required: 0
+  m_AutoStartSubsystem: 1
 --- !u!114 &-1720566592181597433
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -921,7 +922,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5019471fb2174e5c852ecd4047163007, type: 3}
   m_Name: HandInteractionProfile Standalone
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Hand Interaction Profile
   version: 0.0.1
   featureIdInternal: com.unity.openxr.feature.input.handinteraction
@@ -1159,14 +1160,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e314dfef9af0904e80129bcc0a79361, type: 3}
   m_Name: HandTracking Standalone
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Hand Tracking Subsystem
   version: 0.0.1
-  featureIdInternal: com.unity.openxr.feature.input.handtracking
+  featureIdInternal: com.unity.openxr.feature.input.handtrackingsubsystem
   openxrExtensionStrings: XR_EXT_hand_tracking
   company: Unity
   priority: -100
   required: 0
+  m_AutoStartSubsystem: 1
 --- !u!114 &8854558094711406293
 MonoBehaviour:
   m_ObjectHideFlags: 0

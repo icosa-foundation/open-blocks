@@ -37,6 +37,8 @@ namespace com.google.apps.peltzer.client.model.controller
     /// </summary>
     public class HandTrackingManager : MonoBehaviour
     {
+        private const string LOG_PREFIX = "[HTOWN0422]";
+
         private PeltzerController peltzerController;
         private PaletteController paletteController;
 
@@ -54,6 +56,15 @@ namespace com.google.apps.peltzer.client.model.controller
 
         private XRHandSubsystem handSubsystem;
         private bool initialized;
+
+        private bool hasLoggedState;
+        private bool lastRightTracked;
+        private bool lastLeftTracked;
+        private bool lastPeltzerUsingHand;
+        private bool lastPaletteUsingHand;
+        private bool lastPeltzerPoseDriverEnabled;
+        private bool lastPalettePoseDriverEnabled;
+        private bool lastPeltzerIsRight;
 
         // -------------------------------------------------------------------
         // Public API
@@ -93,6 +104,8 @@ namespace com.google.apps.peltzer.client.model.controller
                 if (!handSubsystem.running)
                     handSubsystem.Start();
             }
+
+            Debug.Log($"{LOG_PREFIX} start subsystemFound={handSubsystem != null} subsystemRunning={handSubsystem != null && handSubsystem.running}");
         }
 
         private void Update()
@@ -108,14 +121,25 @@ namespace com.google.apps.peltzer.client.model.controller
             HandTrackingDevice peltzerHandDevice = peltzerIsRight ? rightHandDevice : leftHandDevice;
             HandTrackingDevice paletteHandDevice = peltzerIsRight ? leftHandDevice : rightHandDevice;
 
+            LogStateIfChanged(
+                rightTracked,
+                leftTracked,
+                peltzerController.controller == peltzerHandDevice,
+                paletteController.controller == paletteHandDevice,
+                peltzerPoseDriver == null || peltzerPoseDriver.enabled,
+                palettePoseDriver == null || palettePoseDriver.enabled,
+                peltzerIsRight);
+
             // Switch peltzer (brush) controller ↔ hand.
             if (peltzerHandTracked && peltzerController.controller == peltzerControllerDevice)
             {
+                Debug.Log($"{LOG_PREFIX} swap peltzer->hand peltzerIsRight={peltzerIsRight} rightTracked={rightTracked} leftTracked={leftTracked}");
                 peltzerController.controller = peltzerHandDevice;
                 if (peltzerPoseDriver != null) peltzerPoseDriver.enabled = false;
             }
             else if (!peltzerHandTracked && peltzerController.controller == peltzerHandDevice)
             {
+                Debug.Log($"{LOG_PREFIX} swap peltzer->controller peltzerIsRight={peltzerIsRight} rightTracked={rightTracked} leftTracked={leftTracked}");
                 peltzerController.controller = peltzerControllerDevice;
                 if (peltzerPoseDriver != null) peltzerPoseDriver.enabled = true;
             }
@@ -123,11 +147,13 @@ namespace com.google.apps.peltzer.client.model.controller
             // Switch palette (wand) controller ↔ hand.
             if (paletteHandTracked && paletteController.controller == paletteControllerDevice)
             {
+                Debug.Log($"{LOG_PREFIX} swap palette->hand peltzerIsRight={peltzerIsRight} rightTracked={rightTracked} leftTracked={leftTracked}");
                 paletteController.controller = paletteHandDevice;
                 if (palettePoseDriver != null) palettePoseDriver.enabled = false;
             }
             else if (!paletteHandTracked && paletteController.controller == paletteHandDevice)
             {
+                Debug.Log($"{LOG_PREFIX} swap palette->controller peltzerIsRight={peltzerIsRight} rightTracked={rightTracked} leftTracked={leftTracked}");
                 paletteController.controller = paletteControllerDevice;
                 if (palettePoseDriver != null) palettePoseDriver.enabled = true;
             }
@@ -162,6 +188,43 @@ namespace com.google.apps.peltzer.client.model.controller
         // -------------------------------------------------------------------
         // Helpers
         // -------------------------------------------------------------------
+
+        private void LogStateIfChanged(
+            bool rightTracked,
+            bool leftTracked,
+            bool peltzerUsingHand,
+            bool paletteUsingHand,
+            bool peltzerPoseEnabled,
+            bool palettePoseEnabled,
+            bool peltzerIsRight)
+        {
+            if (hasLoggedState &&
+                lastRightTracked == rightTracked &&
+                lastLeftTracked == leftTracked &&
+                lastPeltzerUsingHand == peltzerUsingHand &&
+                lastPaletteUsingHand == paletteUsingHand &&
+                lastPeltzerPoseDriverEnabled == peltzerPoseEnabled &&
+                lastPalettePoseDriverEnabled == palettePoseEnabled &&
+                lastPeltzerIsRight == peltzerIsRight)
+            {
+                return;
+            }
+
+            hasLoggedState = true;
+            lastRightTracked = rightTracked;
+            lastLeftTracked = leftTracked;
+            lastPeltzerUsingHand = peltzerUsingHand;
+            lastPaletteUsingHand = paletteUsingHand;
+            lastPeltzerPoseDriverEnabled = peltzerPoseEnabled;
+            lastPalettePoseDriverEnabled = palettePoseEnabled;
+            lastPeltzerIsRight = peltzerIsRight;
+
+            Debug.Log(
+                $"{LOG_PREFIX} state peltzerIsRight={peltzerIsRight} " +
+                $"rightTracked={rightTracked} leftTracked={leftTracked} " +
+                $"peltzerUsingHand={peltzerUsingHand} paletteUsingHand={paletteUsingHand} " +
+                $"peltzerPoseEnabled={peltzerPoseEnabled} palettePoseEnabled={palettePoseEnabled}");
+        }
 
         private static void ApplyWristPose(Transform target, XRHand hand)
         {

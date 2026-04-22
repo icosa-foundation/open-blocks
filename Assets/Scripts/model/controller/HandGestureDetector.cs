@@ -18,7 +18,8 @@ using UnityEngine.XR.Hands;
 namespace com.google.apps.peltzer.client.model.controller
 {
     /// <summary>
-    /// Static helpers that classify raw XRHand joint data into named gestures.
+    /// Static helpers for wrist pose, virtual thumbstick axis, and fallback raw-joint
+    /// gesture classification when package-provided gesture state is unavailable.
     /// All distance thresholds are in meters.
     /// </summary>
     public static class HandGestureDetector
@@ -28,6 +29,8 @@ namespace com.google.apps.peltzer.client.model.controller
         private const float PINCH_RELEASE_DIST = 0.040f;
         // Finger tip must be within this distance of the palm centre to count as curled.
         private const float CURL_DIST = 0.055f;
+        // Palm-relative axis range that maps to a fully-deflected virtual thumbstick.
+        private const float AXIS_RANGE = 0.06f;
 
         /// <summary>Index + thumb pinch — maps to Trigger.</summary>
         public static bool IsIndexPinching(XRHand hand, bool wasActivePreviousFrame)
@@ -89,7 +92,7 @@ namespace com.google.apps.peltzer.client.model.controller
             Vector3 toIndex = indexTipPose.position - palmPose.position;
             float x = Vector3.Dot(toIndex, palmPose.rotation * Vector3.right);
             float y = Vector3.Dot(toIndex, palmPose.rotation * Vector3.up);
-            return new Vector2(x, y).normalized;
+            return Vector2.ClampMagnitude(new Vector2(x, y) / AXIS_RANGE, 1f);
         }
 
         // --- private helpers ---

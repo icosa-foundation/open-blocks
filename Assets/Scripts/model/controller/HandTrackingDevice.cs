@@ -20,9 +20,11 @@ namespace com.google.apps.peltzer.client.model.controller
 {
     /// <summary>
     /// Implements ControllerDevice using OpenXR hand tracking data.
-    /// Gesture → button mapping:
-    ///   Index pinch  → Trigger
-    ///   Fist         → Grip
+    /// XR Hands common gestures are used for primary hand input:
+    ///   Pinch        → Trigger
+    ///   Grasp firm   → Grip
+    /// Raw joint heuristics are kept only for custom gestures not exposed as common
+    /// hand gestures by XR Hands:
     ///   Middle pinch → SecondaryButton
     ///   Pinky pinch  → ApplicationMenu
     ///   Index point direction (palm-relative) → directional axis / touchpad
@@ -30,6 +32,10 @@ namespace com.google.apps.peltzer.client.model.controller
     /// </summary>
     public class HandTrackingDevice : ControllerDevice
     {
+        private const float PINCH_PRESS_THRESHOLD = 0.8f;
+        private const float PINCH_RELEASE_THRESHOLD = 0.7f;
+        private const float TRIGGER_HALF_PRESS_THRESHOLD = 0.5f;
+
         private readonly bool isRightHand;
         private XRHandSubsystem handSubsystem;
 
@@ -49,6 +55,7 @@ namespace com.google.apps.peltzer.client.model.controller
 
         // Trigger half-press tracking.
         private bool wasTriggerHalfPressed;
+        private float triggerValue;
 
         // Velocity.
         private Vector3 lastWristPosition;
@@ -80,8 +87,19 @@ namespace com.google.apps.peltzer.client.model.controller
         public void Update()
         {
             XRHand hand = CurrentHand;
+            // Shift previous-frame state.
+            wasPinchingLastFrame = isPinching;
+            wasGrippingLastFrame = isGripping;
+            wasMenuGestureLastFrame = isMenuGesture;
+            wasSecondaryGestureLastFrame = isSecondaryGesture;
+            touchpadWasPressedLastFrame = touchpadCurrentlyPressed;
+
             IsTrackedObjectValid = hand.isTracked;
-            if (!hand.isTracked) return;
+            if (!hand.isTracked)
+            {
+                ClearCurrentState();
+                return;
+            }
 
             // Velocity from wrist movement.
             if (HandGestureDetector.TryGetWristPose(hand, out Pose wristPose))
@@ -92,16 +110,9 @@ namespace com.google.apps.peltzer.client.model.controller
                 hasWristPosition = true;
             }
 
-            // Shift previous-frame state.
-            wasPinchingLastFrame = isPinching;
-            wasGrippingLastFrame = isGripping;
-            wasMenuGestureLastFrame = isMenuGesture;
-            wasSecondaryGestureLastFrame = isSecondaryGesture;
-            touchpadWasPressedLastFrame = touchpadCurrentlyPressed;
-
-            // Evaluate current gestures (hysteretic thresholds).
-            isPinching = HandGestureDetector.IsIndexPinching(hand, wasPinchingLastFrame);
-            isGripping = HandGestureDetector.IsFistGrip(hand);
+            // Evaluate current gestures. Trigger comes only from XR Hands common gestures.
+            isPinching = TryGetPinchState(hand, out triggerValue);
+            isGripping = TryGetGripState(hand);
             isMenuGesture = HandGestureDetector.IsPinkyPinching(hand, wasMenuGestureLastFrame);
             isSecondaryGesture = HandGestureDetector.IsMiddlePinching(hand, wasSecondaryGestureLastFrame);
 
@@ -154,14 +165,14 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public bool IsTriggerHalfPressed()
         {
-            // Treat any pinch activity as a half-press so the half-press release edge fires correctly.
-            if (isPinching) wasTriggerHalfPressed = true;
-            return isPinching;
+            bool isHalfPressed = triggerValue > TRIGGER_HALF_PRESS_THRESHOLD;
+            if (isHalfPressed) wasTriggerHalfPressed = true;
+            return isHalfPressed;
         }
 
         public bool WasTriggerJustReleasedFromHalfPress()
         {
-            if (wasTriggerHalfPressed && !isPinching)
+            if (wasTriggerHalfPressed && triggerValue <= TRIGGER_HALF_PRESS_THRESHOLD)
             {
                 wasTriggerHalfPressed = false;
                 return true;
@@ -186,10 +197,74 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public Vector2 GetTriggerScale()
         {
-            return new Vector2(isPinching ? 1f : 0f, 0f);
+            return new Vector2(triggerValue, 0f);
         }
 
         // Hands have no haptic actuators.
         public void TriggerHapticPulse(ushort durationMicroSec = 500) { }
+
+        private Handedness CurrentHandedness => isRightHand ? Handedness.Right : Handedness.Left;
+
+        private void ClearCurrentState()
+        {
+            isPinching = false;
+            isGripping = false;
+            isMenuGesture = false;
+            isSecondaryGesture = false;
+            touchpadCurrentlyPressed = false;
+            triggerValue = 0f;
+            velocity = Vector3.zero;
+            hasWristPosition = false;
+        }
+
+        private bool TryGetPinchState(XRHand hand, out float pinchAmount)
+        {
+            pinchAmount = 0f;
+
+            if (TryGetCommonGestures(out XRCommonHandGestures commonGestures))
+            {
+                if (commonGestures.TryGetPinchTouchedState(out bool isPinchTouched))
+                {
+                    if (commonGestures.TryGetPinchValue(out float currentPinchValue))
+                    {
+                        pinchAmount = currentPinchValue;
+                    }
+                    else
+                    {
+                        pinchAmount = isPinchTouched ? 1f : 0f;
+                    }
+
+                    return isPinchTouched;
+                }
+
+                if (commonGestures.TryGetPinchValue(out float pinchValueOnly))
+                {
+                    pinchAmount = pinchValueOnly;
+                    float threshold = wasPinchingLastFrame ? PINCH_RELEASE_THRESHOLD : PINCH_PRESS_THRESHOLD;
+                    return pinchValueOnly >= threshold;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryGetGripState(XRHand hand)
+        {
+            if (TryGetCommonGestures(out XRCommonHandGestures commonGestures) &&
+                commonGestures.TryGetGraspFirmState(out bool isGraspFirm))
+            {
+                return isGraspFirm;
+            }
+
+            return HandGestureDetector.IsFistGrip(hand);
+        }
+
+        private bool TryGetCommonGestures(out XRCommonHandGestures commonGestures)
+        {
+            commonGestures = null;
+            return handSubsystem != null &&
+                handSubsystem.running &&
+                handSubsystem.TryGetCommonGestures(CurrentHandedness, out commonGestures);
+        }
     }
 }
