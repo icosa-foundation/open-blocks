@@ -1168,7 +1168,7 @@ MonoBehaviour:
   company: Unity
   priority: -100
   required: 0
-  m_AutoStartSubsystem: 1
+  m_AutoStartSubsystem: 0
 --- !u!114 &8854558094711406293
 MonoBehaviour:
   m_ObjectHideFlags: 0

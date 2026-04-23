@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Hands;
+using UnityEngine.XR.Hands.Gestures;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -32,8 +33,9 @@ namespace com.google.apps.peltzer.client.model.controller
     /// </summary>
     public class HandTrackingDevice : ControllerDevice
     {
-        private const float PINCH_PRESS_THRESHOLD = 0.8f;
-        private const float PINCH_RELEASE_THRESHOLD = 0.7f;
+        private const string PINCH_LOG_PREFIX = "HPIN0422B";
+        private const float PINCH_PRESS_THRESHOLD = 0.98f;
+        private const float PINCH_RELEASE_THRESHOLD = 0.95f;
         private const float TRIGGER_HALF_PRESS_THRESHOLD = 0.5f;
 
         private readonly bool isRightHand;
@@ -56,6 +58,8 @@ namespace com.google.apps.peltzer.client.model.controller
         // Trigger half-press tracking.
         private bool wasTriggerHalfPressed;
         private float triggerValue;
+        private float lastLoggedPinchValue = -1f;
+        private float lastLoggedPinchDistance = -1f;
 
         // Velocity.
         private Vector3 lastWristPosition;
@@ -110,7 +114,8 @@ namespace com.google.apps.peltzer.client.model.controller
                 hasWristPosition = true;
             }
 
-            // Evaluate current gestures. Trigger comes only from XR Hands common gestures.
+            // Evaluate current gestures. Trigger comes from the built-in generic finger-shape
+            // pinch metric, which is based on thumb-tip/index-tip proximity.
             isPinching = TryGetPinchState(hand, out triggerValue);
             isGripping = TryGetGripState(hand);
             isMenuGesture = HandGestureDetector.IsPinkyPinching(hand, wasMenuGestureLastFrame);
@@ -213,6 +218,8 @@ namespace com.google.apps.peltzer.client.model.controller
             isSecondaryGesture = false;
             touchpadCurrentlyPressed = false;
             triggerValue = 0f;
+            lastLoggedPinchValue = -1f;
+            lastLoggedPinchDistance = -1f;
             velocity = Vector3.zero;
             hasWristPosition = false;
         }
@@ -220,32 +227,41 @@ namespace com.google.apps.peltzer.client.model.controller
         private bool TryGetPinchState(XRHand hand, out float pinchAmount)
         {
             pinchAmount = 0f;
+            float tipDistance = -1f;
 
-            if (TryGetCommonGestures(out XRCommonHandGestures commonGestures))
+            XRFingerShape fingerShape = hand.CalculateFingerShape(
+                XRHandFingerID.Index,
+                XRFingerShapeTypes.Pinch);
+            if (!fingerShape.TryGetPinch(out float currentPinchValue))
+                return false;
+
+            if (hand.GetJoint(XRHandJointID.IndexTip).TryGetPose(out Pose indexTipPose) &&
+                hand.GetJoint(XRHandJointID.ThumbTip).TryGetPose(out Pose thumbTipPose))
             {
-                if (commonGestures.TryGetPinchTouchedState(out bool isPinchTouched))
-                {
-                    if (commonGestures.TryGetPinchValue(out float currentPinchValue))
-                    {
-                        pinchAmount = currentPinchValue;
-                    }
-                    else
-                    {
-                        pinchAmount = isPinchTouched ? 1f : 0f;
-                    }
-
-                    return isPinchTouched;
-                }
-
-                if (commonGestures.TryGetPinchValue(out float pinchValueOnly))
-                {
-                    pinchAmount = pinchValueOnly;
-                    float threshold = wasPinchingLastFrame ? PINCH_RELEASE_THRESHOLD : PINCH_PRESS_THRESHOLD;
-                    return pinchValueOnly >= threshold;
-                }
+                tipDistance = Vector3.Distance(indexTipPose.position, thumbTipPose.position);
             }
 
-            return false;
+            pinchAmount = currentPinchValue;
+            float threshold = wasPinchingLastFrame ? PINCH_RELEASE_THRESHOLD : PINCH_PRESS_THRESHOLD;
+            bool isPressed = currentPinchValue >= threshold;
+
+            bool pinchStateChanged = isPressed != wasPinchingLastFrame;
+            bool pinchValueChanged = lastLoggedPinchValue < 0f || Mathf.Abs(currentPinchValue - lastLoggedPinchValue) >= 0.1f;
+            bool pinchDistanceChanged = tipDistance >= 0f &&
+                (lastLoggedPinchDistance < 0f || Mathf.Abs(tipDistance - lastLoggedPinchDistance) >= 0.005f);
+            if (pinchStateChanged || pinchValueChanged || pinchDistanceChanged)
+            {
+                string handLabel = isRightHand ? "right" : "left";
+                string distanceText = tipDistance >= 0f ? $"{tipDistance:F4}" : "n/a";
+                Debug.Log(
+                    $"[{PINCH_LOG_PREFIX}] {handLabel} pinchValue={currentPinchValue:F3} " +
+                    $"tipDistance={distanceText} threshold={threshold:F3} pressed={isPressed} " +
+                    $"wasPressed={wasPinchingLastFrame}");
+                lastLoggedPinchValue = currentPinchValue;
+                lastLoggedPinchDistance = tipDistance;
+            }
+
+            return isPressed;
         }
 
         private bool TryGetGripState(XRHand hand)
