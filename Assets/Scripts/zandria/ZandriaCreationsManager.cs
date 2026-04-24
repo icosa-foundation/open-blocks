@@ -935,9 +935,12 @@ namespace com.google.apps.peltzer.client.zandria
             // We have a thumbnail, fetch it before loading the model.
             GetThumbnailTexture(entry, delegate (Texture2D tex)
             {
-                Sprite thumbnailSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
-                  new Vector2(0.5f, 0.5f), THUMBNAIL_IMPORT_PIXELS_PER_UNIT);
-                creation.SetThumbnailSprite(thumbnailSprite);
+                if (tex != null)
+                {
+                    Sprite thumbnailSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
+                      new Vector2(0.5f, 0.5f), THUMBNAIL_IMPORT_PIXELS_PER_UNIT);
+                    creation.SetThumbnailSprite(thumbnailSprite);
+                }
                 load.pendingModelLoadRequestIndices.Add(indexInCreations);
             });
         }
@@ -948,8 +951,15 @@ namespace com.google.apps.peltzer.client.zandria
             if (entry.localThumbnailFile != null)
             {
                 Texture2D tex = new Texture2D(192, 192);
-                tex.LoadImage(File.ReadAllBytes(entry.localThumbnailFile));
-                thumbnailTextureCallback(tex);
+                if (tex.LoadImage(File.ReadAllBytes(entry.localThumbnailFile)))
+                {
+                    thumbnailTextureCallback(tex);
+                }
+                else
+                {
+                    UnityEngine.Object.Destroy(tex);
+                    thumbnailTextureCallback(null);
+                }
             }
             else
             {
@@ -999,6 +1009,7 @@ namespace com.google.apps.peltzer.client.zandria
                 if (isRecursion)
                 {
                     Debug.Log(AssetsServiceClient.GetDebugString(request, "Error when fetching a thumbnail for " + entry.id));
+                    thumbnailTextureCallback(null);
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
@@ -1007,7 +1018,12 @@ namespace com.google.apps.peltzer.client.zandria
             else
             {
                 Texture2D originalTex = new Texture2D(2, 2);
-                originalTex.LoadImage(responseBytes);
+                if (!originalTex.LoadImage(responseBytes))
+                {
+                    UnityEngine.Object.Destroy(originalTex);
+                    thumbnailTextureCallback(null);
+                    yield break;
+                }
 
                 Texture2D resizedTex = new Texture2D(512, 384);
                 RenderTexture rt = RenderTexture.GetTemporary(512, 384);
