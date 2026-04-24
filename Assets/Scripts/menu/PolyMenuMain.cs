@@ -19,6 +19,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
+using com.google.apps.peltzer.client.api_clients.objectstore_client;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.controller;
@@ -177,6 +178,7 @@ namespace com.google.apps.peltzer.client.menu
         private GameObject creationTitle;
         private GameObject creatorName;
         private GameObject creationDate;
+        private GameObject creationFormat;
 
         // Detail menu buttons.
         // These aren't all the buttons only the ones that need to be changed depending on creationType.
@@ -303,6 +305,9 @@ namespace com.google.apps.peltzer.client.menu
             creationTitle = detailsMenu.transform.Find("Metadata/txt-title").gameObject;
             creatorName = detailsMenu.transform.Find("Metadata/txt-name").gameObject;
             creationDate = detailsMenu.transform.Find("Metadata/txt-time").gameObject;
+            creationFormat = detailsMenu.transform.Find("Metadata/txt-format").gameObject;
+            creationFormat.SetActive(false);
+            creationFormat.GetComponent<TextMeshPro>().text = "";
             detailsFailureReason.SetActive(false);
             detailsFailureReason.GetComponent<TextMeshPro>().text = "";
 
@@ -965,6 +970,10 @@ namespace com.google.apps.peltzer.client.menu
             {
                 currentCreationHandler = creation.handler;
                 StartCoroutine(AttachPreviewToDetailsHolder(creation));
+                string loadFormat = creation.entry.queryEntry?.resolvedLoadFormat;
+                creationFormat.SetActive(!string.IsNullOrEmpty(loadFormat));
+                creationFormat.GetComponent<TextMeshPro>().text =
+                  string.IsNullOrEmpty(loadFormat) ? "" : $"format: {loadFormat}";
 
                 // Activate/Deactivate the correct buttons and UI elements for each creation type.
                 creationTitle.SetActive(

@@ -906,7 +906,16 @@ namespace com.google.apps.peltzer.client.zandria
                 // On failure replace this load attempt with another by generating a pending load request.
                 if (rawFileData == null)
                 {
-                    OnLoadFailure(creation, type, "Model download failed.");
+                    if (entry.loadAttemptFormats != null
+                      && entry.loadAttemptFormats.Length == 1
+                      && !string.IsNullOrEmpty(entry.loadAttemptFormats[0]))
+                    {
+                        OnLoadFailure(creation, type, $"Failed to download {entry.loadAttemptFormats[0]} model.");
+                    }
+                    else
+                    {
+                        OnLoadFailure(creation, type, "Multiple download formats attempted.");
+                    }
                     return;
                 }
 

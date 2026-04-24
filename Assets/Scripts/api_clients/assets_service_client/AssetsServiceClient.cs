@@ -571,6 +571,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 {
                     objectStoreEntries.Add(objectStoreEntry);
                 }
+                else
+                {
+                    LogFilteredTileAssetWarning(asset, type);
+                }
             }
 
             UpdateMostRecentAssetIds(assets, type);
@@ -589,6 +593,14 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
             objectStoreSearchResult.results = objectStoreEntries.ToArray();
             return true;
+        }
+
+        private static void LogFilteredTileAssetWarning(JToken asset, PolyMenuMain.CreationType type)
+        {
+            string assetId = asset?["assetId"]?.ToString() ?? "<missing assetId>";
+            string displayName = asset?["displayName"]?.ToString() ?? "<missing displayName>";
+            Debug.LogWarning(
+              $"Remote API asset was filtered out before tile display. type={type}, assetId={assetId}, displayName={displayName}");
         }
 
         public static bool ParseFinalize(JToken asset, out ObjectStoreEntry objectStoreEntry)
