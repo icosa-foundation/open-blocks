@@ -58,6 +58,10 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         public Sprite thumbnailSprite;
         /// <summary>
+        /// The reason the creation failed to load, if known.
+        /// </summary>
+        public string loadFailureReason;
+        /// <summary>
         /// The handler script for the creation that handles converting queries into usuable information.
         /// </summary>
         public ZandriaCreationHandler handler;
@@ -81,6 +85,7 @@ namespace com.google.apps.peltzer.client.zandria
             errorThumbnail.SetActive(false);
             preview.GetComponent<SelectableDetailsMenuItem>().creation = this;
             handler = preview.GetComponent<ZandriaCreationHandler>();
+            loadFailureReason = null;
             this.isLocal = isLocal;
             this.isSave = isSave;
         }
@@ -884,10 +889,11 @@ namespace com.google.apps.peltzer.client.zandria
         public void LoadModelForCreation(Creation creation, PolyMenuMain.CreationType type)
         {
             ObjectStoreEntry entry = creation.entry.queryEntry;
+            creation.loadFailureReason = null;
             creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
             if (!EntryHasLoadableAsset(entry))
             {
-                OnLoadFailure(creation, type);
+                OnLoadFailure(creation, type, "No supported model asset is available for this creation.");
                 return;
             }
 
@@ -900,7 +906,7 @@ namespace com.google.apps.peltzer.client.zandria
                 // On failure replace this load attempt with another by generating a pending load request.
                 if (rawFileData == null)
                 {
-                    OnLoadFailure(creation, type);
+                    OnLoadFailure(creation, type, "Model download failed.");
                     return;
                 }
 
@@ -923,7 +929,7 @@ namespace com.google.apps.peltzer.client.zandria
             ObjectStoreEntry entry = creation.entry.queryEntry;
             if (entry == null)
             {
-                OnLoadFailure(creation, type);
+                OnLoadFailure(creation, type, "Creation metadata is unavailable.");
                 yield break;
             }
             // No thumbnail, just go ahead and load the model.
@@ -1077,12 +1083,14 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         /// <param name="creation">The creation that was not successfully loaded.</param>
         /// <param name="type">The type of entry.</param>
-        public void OnLoadFailure(Creation creation, PolyMenuMain.CreationType type)
+        public void OnLoadFailure(Creation creation, PolyMenuMain.CreationType type,
+          string reason = "Model could not be loaded.")
         {
             lock (mutex)
             {
                 // Update the status of the load.
                 creation.entry.loadStatus = LoadStatus.FAILED;
+                creation.loadFailureReason = string.IsNullOrEmpty(reason) ? "Model could not be loaded." : reason;
                 creation.errorThumbnail.SetActive(true);
                 creation.thumbnail.SetActive(false);
             }
@@ -1267,6 +1275,7 @@ namespace com.google.apps.peltzer.client.zandria
             // Check if rawFileData is null (e.g., download failed or unsupported format)
             if (rawFileData == null || rawFileData.Length == 0)
             {
+                creation.loadFailureReason = "Downloaded model file was empty.";
                 isValidCreation = false;
                 return;
             }
@@ -1284,7 +1293,8 @@ namespace com.google.apps.peltzer.client.zandria
         {
             if (!isValidCreation)
             {
-                creationsManager.OnLoadFailure(creation, type);
+                creationsManager.OnLoadFailure(creation, type,
+                  creation.loadFailureReason ?? creationHandler.lastLoadFailureReason);
                 return;
             }
 
@@ -1362,7 +1372,7 @@ namespace com.google.apps.peltzer.client.zandria
                 else
                 {
                     // Make a new load request if the preview returned null.
-                    creationsManager.OnLoadFailure(creation, type);
+                    creationsManager.OnLoadFailure(creation, type, "Preview generation failed.");
                 }
             });
         }

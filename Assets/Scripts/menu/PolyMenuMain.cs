@@ -122,6 +122,7 @@ namespace com.google.apps.peltzer.client.menu
         private GameObject detailsPreviewHolder;
         private GameObject detailsThumbnail;
         private GameObject detailsLoadingSpinner;
+        private GameObject detailsFailureReason;
         private GameObject environmentMenu;
 
         private GameObject submenu;
@@ -204,6 +205,7 @@ namespace com.google.apps.peltzer.client.menu
         private static string loadingCreationsInfo = "Loading models...";
         private static string noCreationsInfo = "No models available. You either don't have any models yet or your search returned no results.";
         private static string failedToLoadInfo = "Failed to load models. Please check your internet connection.";
+        private static string failedToLoadDetailsReason = "Model could not be loaded.";
 
         public enum CreationInfoState
         {
@@ -252,6 +254,7 @@ namespace com.google.apps.peltzer.client.menu
             detailsPreviewHolder = detailsMenu.transform.Find("Model/preview/preview_holder").gameObject;
             detailsThumbnail = detailsMenu.transform.Find("Model/Thumbnail").gameObject;
             detailsLoadingSpinner = detailsMenu.transform.Find("Model/Thumbnail/Loading Spinner").gameObject;
+            detailsFailureReason = detailsMenu.transform.Find("Metadata/txt-failure-reason").gameObject;
             environmentMenu = polyMenu.transform.Find("Environments").gameObject;
 
             optionsIcon = polyMenu.transform.Find("NavBar/Options/panel/ic").GetComponent<SpriteRenderer>();
@@ -300,6 +303,8 @@ namespace com.google.apps.peltzer.client.menu
             creationTitle = detailsMenu.transform.Find("Metadata/txt-title").gameObject;
             creatorName = detailsMenu.transform.Find("Metadata/txt-name").gameObject;
             creationDate = detailsMenu.transform.Find("Metadata/txt-time").gameObject;
+            detailsFailureReason.SetActive(false);
+            detailsFailureReason.GetComponent<TextMeshPro>().text = "";
 
             openButtonIcon = detailsMenu.transform.Find("Buttons/Open/bg/ic").GetComponent<SpriteRenderer>();
             openButtonText = detailsMenu.transform.Find("Buttons/Open/bg/txt").GetComponent<TextMeshPro>();
@@ -1053,6 +1058,8 @@ namespace com.google.apps.peltzer.client.menu
             detailsThumbnail.SetActive(true);
             detailsLoadingSpinner.SetActive(true);
             detailsThumbnail.GetComponent<SpriteRenderer>().sprite = creation.thumbnailSprite;
+            detailsFailureReason.SetActive(false);
+            detailsFailureReason.GetComponent<TextMeshPro>().text = "";
 
             // Wait until the creation is loaded to do anything else. During this time the thumbnail is displayed and the
             // Open/Import buttons are inactive.
@@ -1067,6 +1074,9 @@ namespace com.google.apps.peltzer.client.menu
                 Sprite errorSprite = creation.errorThumbnail.GetComponent<SpriteRenderer>().sprite;
                 detailsLoadingSpinner.SetActive(false);
                 detailsThumbnail.GetComponent<SpriteRenderer>().sprite = errorSprite;
+                detailsFailureReason.SetActive(true);
+                detailsFailureReason.GetComponent<TextMeshPro>().text =
+                  creation.loadFailureReason ?? failedToLoadDetailsReason;
                 ActivateOpenImportButtons(/*active*/ false);
                 yield break;
             }
