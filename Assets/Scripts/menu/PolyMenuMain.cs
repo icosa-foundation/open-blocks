@@ -121,6 +121,7 @@ namespace com.google.apps.peltzer.client.menu
         private GameObject offlineModelsMenu;
         private GameObject detailsPreviewHolder;
         private GameObject detailsThumbnail;
+        private GameObject detailsLoadingSpinner;
         private GameObject environmentMenu;
 
         private GameObject submenu;
@@ -250,6 +251,7 @@ namespace com.google.apps.peltzer.client.menu
             offlineModelsMenu = polyMenu.transform.Find("Models-Offline").gameObject;
             detailsPreviewHolder = detailsMenu.transform.Find("Model/preview/preview_holder").gameObject;
             detailsThumbnail = detailsMenu.transform.Find("Model/Thumbnail").gameObject;
+            detailsLoadingSpinner = detailsMenu.transform.Find("Model/Thumbnail/Loading Spinner").gameObject;
             environmentMenu = polyMenu.transform.Find("Environments").gameObject;
 
             optionsIcon = polyMenu.transform.Find("NavBar/Options/panel/ic").GetComponent<SpriteRenderer>();
@@ -1049,6 +1051,7 @@ namespace com.google.apps.peltzer.client.menu
         {
             // Make sure the details thumbnail is active and then set the thumbnail to the creation's thumbnail.
             detailsThumbnail.SetActive(true);
+            detailsLoadingSpinner.SetActive(true);
             detailsThumbnail.GetComponent<SpriteRenderer>().sprite = creation.thumbnailSprite;
 
             // Wait until the creation is loaded to do anything else. During this time the thumbnail is displayed and the
@@ -1062,6 +1065,7 @@ namespace com.google.apps.peltzer.client.menu
             if (creation.entry.loadStatus == ZandriaCreationsManager.LoadStatus.FAILED)
             {
                 Sprite errorSprite = creation.errorThumbnail.GetComponent<SpriteRenderer>().sprite;
+                detailsLoadingSpinner.SetActive(false);
                 detailsThumbnail.GetComponent<SpriteRenderer>().sprite = errorSprite;
                 ActivateOpenImportButtons(/*active*/ false);
                 yield break;
