@@ -52,7 +52,7 @@ namespace com.google.apps.peltzer.client.model.controller
         [NonSerialized] private float m_NormalizedValue;
 
         private bool m_IsDragging;
-        private Material m_SliderMaterial;
+        private MaterialPropertyBlock m_PropertyBlock;
         private float m_LastUpdateFrame;
 
         public override void Start()
@@ -117,8 +117,14 @@ namespace com.google.apps.peltzer.client.model.controller
             }
             val = Mathf.Round(val / m_Step) * m_Step;
             m_NormalizedValue = Mathf.InverseLerp(m_Minimum, m_Maximum, val);
-            m_SliderMaterial = m_SliderRenderer.material;
-            m_SliderMaterial.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
+            if (m_PropertyBlock == null)
+            {
+                m_PropertyBlock = new MaterialPropertyBlock();
+            }
+
+            m_SliderRenderer.GetPropertyBlock(m_PropertyBlock);
+            m_PropertyBlock.SetFloat(SHADER_SLIDE_VALUE_PROP, m_NormalizedValue);
+            m_SliderRenderer.SetPropertyBlock(m_PropertyBlock);
         }
 
         private void ControllerEventHandler(object sender, ControllerEventArgs args)
