@@ -148,7 +148,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             {
                 if (!isPresent)
                 {
-                    excludedCandidates.Add($"{candidateName}: not returned by API");
+                    excludedCandidates.Add($"{candidateName}: not present in parsed assets");
                     return;
                 }
 
@@ -263,7 +263,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             if (attempts.Count == 0)
             {
                 entry.resolvedLoadFormat = null;
-                Debug.LogWarning($"{LOAD_ATTEMPT_LOG_PREFIX} asset={entry?.id ?? "unknown"} no valid download formats. apiAssets={DescribeApiAssets(assets)} excluded={DescribeExcludedCandidates(excludedCandidates)}");
+                string sourceFormats = string.IsNullOrEmpty(entry?.apiFormatsSummary) ? "unavailable" : entry.apiFormatsSummary;
+                Debug.LogWarning($"{LOAD_ATTEMPT_LOG_PREFIX} asset={entry?.id ?? "unknown"} no valid download formats survived parsing into ObjectStoreEntry.assets. sourceFormats={sourceFormats} parsedAssets={DescribeParsedAssets(assets)} excluded={DescribeExcludedCandidates(excludedCandidates)}");
                 callback(null);
                 return;
             }
@@ -747,8 +748,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         {
             if (gltfAssets.version == "GLTF1" || gltfAssets.version == "GLTF")
             {
-                Debug.LogWarning($"Skipping GLTF 1.0 file (UnityGLTF only supports GLTF 2.0): {gltfAssets.rootUrl}");
-                onFailure($"Unsupported glTF version '{gltfAssets.version}'");
+                Debug.LogWarning($"{LOAD_ATTEMPT_LOG_PREFIX} asset={assetId} unexpected unsupported glTF version reached AttemptGltfAsset: version={gltfAssets.version} url={gltfAssets.rootUrl}");
+                onFailure($"Internal parser bug: unsupported glTF version '{gltfAssets.version}' was scheduled for download");
                 return;
             }
 
@@ -929,7 +930,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             return null;
         }
 
-        private static string DescribeApiAssets(ObjectStoreObjectAssetsWrapper assets)
+        private static string DescribeParsedAssets(ObjectStoreObjectAssetsWrapper assets)
         {
             if (assets == null)
             {

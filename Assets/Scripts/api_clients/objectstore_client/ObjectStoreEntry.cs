@@ -42,6 +42,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         public DateTime createdDate;
         public string localThumbnailFile;
         public string localPeltzerFile;
+        public string apiFormatsSummary;
         public string[] loadAttemptFormats;
         public string resolvedLoadFormat;
         public Vector3 cameraForward;
