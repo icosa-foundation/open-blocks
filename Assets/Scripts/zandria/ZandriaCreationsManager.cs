@@ -58,6 +58,10 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         public Sprite thumbnailSprite;
         /// <summary>
+        /// The reason the creation failed to load, if known.
+        /// </summary>
+        public string loadFailureReason;
+        /// <summary>
         /// The handler script for the creation that handles converting queries into usuable information.
         /// </summary>
         public ZandriaCreationHandler handler;
@@ -81,6 +85,7 @@ namespace com.google.apps.peltzer.client.zandria
             errorThumbnail.SetActive(false);
             preview.GetComponent<SelectableDetailsMenuItem>().creation = this;
             handler = preview.GetComponent<ZandriaCreationHandler>();
+            loadFailureReason = null;
             this.isLocal = isLocal;
             this.isSave = isSave;
         }
@@ -884,10 +889,11 @@ namespace com.google.apps.peltzer.client.zandria
         public void LoadModelForCreation(Creation creation, PolyMenuMain.CreationType type)
         {
             ObjectStoreEntry entry = creation.entry.queryEntry;
+            creation.loadFailureReason = null;
             creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
             if (!EntryHasLoadableAsset(entry))
             {
-                OnLoadFailure(creation, type);
+                OnLoadFailure(creation, type, "No supported model asset is available for this creation.");
                 return;
             }
 
@@ -900,7 +906,16 @@ namespace com.google.apps.peltzer.client.zandria
                 // On failure replace this load attempt with another by generating a pending load request.
                 if (rawFileData == null)
                 {
-                    OnLoadFailure(creation, type);
+                    if (entry.loadAttemptFormats != null
+                      && entry.loadAttemptFormats.Length == 1
+                      && !string.IsNullOrEmpty(entry.loadAttemptFormats[0]))
+                    {
+                        OnLoadFailure(creation, type, $"Failed to download {entry.loadAttemptFormats[0]} model.");
+                    }
+                    else
+                    {
+                        OnLoadFailure(creation, type, "Multiple download formats attempted.");
+                    }
                     return;
                 }
 
@@ -923,7 +938,7 @@ namespace com.google.apps.peltzer.client.zandria
             ObjectStoreEntry entry = creation.entry.queryEntry;
             if (entry == null)
             {
-                OnLoadFailure(creation, type);
+                OnLoadFailure(creation, type, "Creation metadata is unavailable.");
                 yield break;
             }
             // No thumbnail, just go ahead and load the model.
@@ -935,9 +950,12 @@ namespace com.google.apps.peltzer.client.zandria
             // We have a thumbnail, fetch it before loading the model.
             GetThumbnailTexture(entry, delegate (Texture2D tex)
             {
-                Sprite thumbnailSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
-                  new Vector2(0.5f, 0.5f), THUMBNAIL_IMPORT_PIXELS_PER_UNIT);
-                creation.SetThumbnailSprite(thumbnailSprite);
+                if (tex != null)
+                {
+                    Sprite thumbnailSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
+                      new Vector2(0.5f, 0.5f), THUMBNAIL_IMPORT_PIXELS_PER_UNIT);
+                    creation.SetThumbnailSprite(thumbnailSprite);
+                }
                 load.pendingModelLoadRequestIndices.Add(indexInCreations);
             });
         }
@@ -948,8 +966,15 @@ namespace com.google.apps.peltzer.client.zandria
             if (entry.localThumbnailFile != null)
             {
                 Texture2D tex = new Texture2D(192, 192);
-                tex.LoadImage(File.ReadAllBytes(entry.localThumbnailFile));
-                thumbnailTextureCallback(tex);
+                if (tex.LoadImage(File.ReadAllBytes(entry.localThumbnailFile)))
+                {
+                    thumbnailTextureCallback(tex);
+                }
+                else
+                {
+                    UnityEngine.Object.Destroy(tex);
+                    thumbnailTextureCallback(null);
+                }
             }
             else
             {
@@ -999,6 +1024,7 @@ namespace com.google.apps.peltzer.client.zandria
                 if (isRecursion)
                 {
                     Debug.Log(AssetsServiceClient.GetDebugString(request, "Error when fetching a thumbnail for " + entry.id));
+                    thumbnailTextureCallback(null);
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
@@ -1007,7 +1033,12 @@ namespace com.google.apps.peltzer.client.zandria
             else
             {
                 Texture2D originalTex = new Texture2D(2, 2);
-                originalTex.LoadImage(responseBytes);
+                if (!originalTex.LoadImage(responseBytes))
+                {
+                    UnityEngine.Object.Destroy(originalTex);
+                    thumbnailTextureCallback(null);
+                    yield break;
+                }
 
                 Texture2D resizedTex = new Texture2D(512, 384);
                 RenderTexture rt = RenderTexture.GetTemporary(512, 384);
@@ -1061,12 +1092,14 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         /// <param name="creation">The creation that was not successfully loaded.</param>
         /// <param name="type">The type of entry.</param>
-        public void OnLoadFailure(Creation creation, PolyMenuMain.CreationType type)
+        public void OnLoadFailure(Creation creation, PolyMenuMain.CreationType type,
+          string reason = "Model could not be loaded.")
         {
             lock (mutex)
             {
                 // Update the status of the load.
                 creation.entry.loadStatus = LoadStatus.FAILED;
+                creation.loadFailureReason = string.IsNullOrEmpty(reason) ? "Model could not be loaded." : reason;
                 creation.errorThumbnail.SetActive(true);
                 creation.thumbnail.SetActive(false);
             }
@@ -1251,6 +1284,7 @@ namespace com.google.apps.peltzer.client.zandria
             // Check if rawFileData is null (e.g., download failed or unsupported format)
             if (rawFileData == null || rawFileData.Length == 0)
             {
+                creation.loadFailureReason = "Downloaded model file was empty.";
                 isValidCreation = false;
                 return;
             }
@@ -1268,7 +1302,8 @@ namespace com.google.apps.peltzer.client.zandria
         {
             if (!isValidCreation)
             {
-                creationsManager.OnLoadFailure(creation, type);
+                creationsManager.OnLoadFailure(creation, type,
+                  creation.loadFailureReason ?? creationHandler.lastLoadFailureReason);
                 return;
             }
 
@@ -1346,7 +1381,7 @@ namespace com.google.apps.peltzer.client.zandria
                 else
                 {
                     // Make a new load request if the preview returned null.
-                    creationsManager.OnLoadFailure(creation, type);
+                    creationsManager.OnLoadFailure(creation, type, "Preview generation failed.");
                 }
             });
         }

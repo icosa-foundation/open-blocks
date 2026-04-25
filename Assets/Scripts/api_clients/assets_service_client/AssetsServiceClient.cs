@@ -289,7 +289,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             SearchText = "",
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.REMIXABLE,
-            OrderBy = OrderByChoices.BEST,
+            OrderBy = OrderByChoices.NEWEST,
             Formats = new[] { FormatChoices.BLOCKS },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
@@ -571,6 +571,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 {
                     objectStoreEntries.Add(objectStoreEntry);
                 }
+                else
+                {
+                    LogFilteredTileAssetWarning(asset, type);
+                }
             }
 
             UpdateMostRecentAssetIds(assets, type);
@@ -589,6 +593,14 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
             objectStoreSearchResult.results = objectStoreEntries.ToArray();
             return true;
+        }
+
+        private static void LogFilteredTileAssetWarning(JToken asset, PolyMenuMain.CreationType type)
+        {
+            string assetId = asset?["assetId"]?.ToString() ?? "<missing assetId>";
+            string displayName = asset?["displayName"]?.ToString() ?? "<missing displayName>";
+            Debug.LogWarning(
+              $"Remote API asset was filtered out before tile display. type={type}, assetId={assetId}, displayName={displayName}");
         }
 
         public static bool ParseFinalize(JToken asset, out ObjectStoreEntry objectStoreEntry)
@@ -652,6 +664,78 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
               ?? formatRoot?["zip"]?["url"]?.ToString();
         }
 
+        private static bool IsLoadableGltfFormat(string formatType)
+        {
+            return formatType == "GLTF2" || formatType == "GLB";
+        }
+
+        private static bool ShouldReplaceGltfAsset(ObjectStoreGltfPackageAssets existing, ObjectStoreGltfPackageAssets candidate)
+        {
+            if (candidate == null)
+            {
+                return false;
+            }
+
+            if (existing == null)
+            {
+                return true;
+            }
+
+            return GetGltfAssetPriority(candidate) > GetGltfAssetPriority(existing);
+        }
+
+        private static int GetGltfAssetPriority(ObjectStoreGltfPackageAssets gltfAssets)
+        {
+            if (gltfAssets == null)
+            {
+                return int.MinValue;
+            }
+
+            int priority = 0;
+            if (!string.IsNullOrEmpty(gltfAssets.rootUrl))
+            {
+                priority += 1;
+            }
+
+            if (IsLoadableGltfFormat(gltfAssets.version))
+            {
+                priority += 100;
+            }
+
+            if (gltfAssets.isPreferredForDownload)
+            {
+                priority += 10;
+            }
+
+            return priority;
+        }
+
+        private static string BuildApiFormatsSummary(JToken asset)
+        {
+            var formats = asset["formats"].AsJEnumerable();
+            if (formats == null)
+            {
+                return "formats=<null>";
+            }
+
+            List<string> summaries = new List<string>();
+            foreach (JToken format in formats)
+            {
+                string formatType = format?["formatType"]?.ToString() ?? "<null>";
+                string role = format?["role"]?.ToString() ?? "<null>";
+                string rootUrl = format?["root"]?["url"]?.ToString();
+                bool isPreferredForDownload = format?["isPreferredForDownload"]?.ToObject<bool>() ?? false;
+                summaries.Add($"{formatType}(role={role}, rootUrl={DescribeNullableValue(rootUrl)}, preferred={isPreferredForDownload})");
+            }
+
+            return summaries.Count == 0 ? "formats=[]" : string.Join("; ", summaries);
+        }
+
+        private static string DescribeNullableValue(string value)
+        {
+            return string.IsNullOrEmpty(value) ? "<null>" : value;
+        }
+
         /// <summary>
         ///   Parses a single asset as defined in vr/assets/asset.proto
         /// </summary>
@@ -659,6 +743,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public static bool ParseAsset(JToken asset, out ObjectStoreEntry objectStoreEntry)
         {
             objectStoreEntry = new ObjectStoreEntry();
+            objectStoreEntry.apiFormatsSummary = BuildApiFormatsSummary(asset);
 
             if (asset["visibility"] == null)
             {
@@ -782,6 +867,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                         case "GLTF":
                         case "GLTF1":
                         case "GLTF2":
+                        case "GLB":
                             ParseFormatPaths(format, out string gltfRootUrl, out string gltfBaseFile,
                               out string[] gltfSupportingFiles);
                             if (!string.IsNullOrEmpty(gltfRootUrl))
@@ -795,19 +881,26 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                                     isPreferredForDownload = format?["isPreferredForDownload"]?.ToObject<bool>() ?? false
                                 };
 
-                                bool looksLikeGlb = (!string.IsNullOrEmpty(gltfBaseFile) && gltfBaseFile.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
+                                bool looksLikeGlb = formatType == "GLB"
+                                  || (!string.IsNullOrEmpty(gltfBaseFile) && gltfBaseFile.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
                                   || gltfRootUrl.EndsWith(".glb", StringComparison.OrdinalIgnoreCase);
 
                                 if (looksLikeGlb)
                                 {
-                                    entryAssets.gltf_package = entryAssets.gltf_package ?? gltfAssets;
+                                    if (ShouldReplaceGltfAsset(entryAssets.gltf_package, gltfAssets))
+                                    {
+                                        entryAssets.gltf_package = gltfAssets;
+                                    }
                                 }
                                 else
                                 {
-                                    entryAssets.gltf = entryAssets.gltf ?? gltfAssets;
+                                    if (ShouldReplaceGltfAsset(entryAssets.gltf, gltfAssets))
+                                    {
+                                        entryAssets.gltf = gltfAssets;
+                                    }
                                 }
 
-                                if (formatType == "GLTF2")
+                                if (IsLoadableGltfFormat(formatType))
                                 {
                                     hasSupportedFormat = true;
                                 }
