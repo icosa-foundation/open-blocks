@@ -36,6 +36,7 @@ namespace com.google.apps.peltzer.client.zandria
         public string creationTitle { get; private set; }
         public string creationAssetId { get; private set; }
         public string creationLocalId { get; private set; }
+        public string lastLoadFailureReason { get; private set; }
         public bool isActiveOnMenu { get; set; }
         public bool hasPublishedRotation { get; set; }
         public float recommendedRotation { get; private set; }
@@ -51,6 +52,7 @@ namespace com.google.apps.peltzer.client.zandria
             creationTitle = objectStoreEntry.title;
             creationAssetId = objectStoreEntry.id;
             creationLocalId = objectStoreEntry.localId;
+            lastLoadFailureReason = null;
             // If the model was published and the camera forward is available, rotate the model about the
             // y-axis so it faces the camera forward when positioned on the Poly menu.
             if (objectStoreEntry.cameraForward != null && objectStoreEntry.cameraForward != Vector3.zero)
@@ -75,6 +77,7 @@ namespace com.google.apps.peltzer.client.zandria
         /// <returns>Whether the file was valid.</returns>
         public bool GetMMeshesFromPeltzerFile(byte[] rawFileData, System.Action<List<MMesh>, float> callback)
         {
+            lastLoadFailureReason = null;
             PeltzerFile peltzerFile;
             bool validFile = PeltzerFileHandler.PeltzerFileFromBytes(rawFileData, out peltzerFile);
 
@@ -102,6 +105,7 @@ namespace com.google.apps.peltzer.client.zandria
             }
             else
             {
+                lastLoadFailureReason = "Model file could not be parsed.";
                 Debug.LogError("Invalid file with asset id " + creationAssetId + " and local id " + creationLocalId);
                 // If the file is small enough, print the response to the console.
                 if (rawFileData.Length < 1024)
