@@ -196,95 +196,22 @@ namespace com.google.apps.peltzer.client.tools
 
         private void DeleteVertex(VertexKey vertexKey)
         {
-            MMesh mesh = model.GetMesh(vertexKey.meshId).Clone();
-            MMesh.GeometryOperation deleteVertOp = mesh.StartOperation();
+            MMesh originalMesh = model.GetMesh(vertexKey.meshId);
+            MMesh mesh = originalMesh.Clone();
+            MeshUtil.DeleteVertexAndMergeAdjacentFaces(mesh, vertexKey.vertexId);
+            MeshFixer.FixMutatedMesh(originalMesh, mesh, new HashSet<int>(mesh.GetVertexIds()),
+                /* splitNonCoplanarFaces */ true, /* mergeAdjacentCoplanarFaces */ false);
 
-            // Keep track of the starting vert of each face's list of retained verts.  We use this to determine which order
-            // to join the lists in.
-            Dictionary<int, int> startVertToFace = new Dictionary<int, int>();
-            Dictionary<int, List<int>> faceToRetainedVerts = new Dictionary<int, List<int>>();
-
-            int nextFaceId = -1;
-            foreach (int faceId in mesh.reverseTable[vertexKey.vertexId])
+            if (MeshValidator.IsValidMesh(mesh, new HashSet<int>(mesh.GetVertexIds())))
             {
-                if (nextFaceId == -1)
-                {
-                    nextFaceId = faceId;
-                }
-                Face f = mesh.GetFace(faceId);
-                for (int i = 0; i < f.vertexIds.Count; i++)
-                {
-                    if (f.vertexIds[i] == vertexKey.vertexId)
-                    {
-                        List<int> retainedVerts = new List<int>();
-                        int startIndex = (i + 1) % f.vertexIds.Count;
-                        startVertToFace[f.vertexIds[startIndex]] = faceId;
-                        int count = 0;
-                        while (count < f.vertexIds.Count)
-                        {
-                            if (f.vertexIds[startIndex] != vertexKey.vertexId)
-                            {
-                                retainedVerts.Add(f.vertexIds[startIndex]);
-                            }
-                            startIndex = (startIndex + 1) % f.vertexIds.Count;
-                            count++;
-                        }
-                        faceToRetainedVerts[faceId] = retainedVerts;
-                    }
-                }
+                model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
             }
-
-            List<int> newFaceVertexIds = new List<int>();
-            HashSet<int> faces = new HashSet<int>(mesh.reverseTable[vertexKey.vertexId]);
-
-            // Could probably just be faces.Count
-            // but I'm not 100% sure if there are any exceptions to this
-            // without analyzing the mesh code - so just to be safe, double it
-            int infiniteLoopFailsafeLimit = faces.Count * 2;
-            int failSafeCount = 0;
-            while (faces.Count > 0 && failSafeCount <= infiniteLoopFailsafeLimit)
+            else
             {
-                List<int> retainedVerts = faceToRetainedVerts[nextFaceId];
-
-                faces.Remove(nextFaceId);
-                deleteVertOp.DeleteFace(nextFaceId);
-
-                if (retainedVerts.Count == 0)
-                {
-                    // get another face
-                    foreach (var face in faces)
-                    {
-                        nextFaceId = face;
-                        break;
-                    }
-                }
-                else
-                {
-                    newFaceVertexIds.AddRange(retainedVerts);
-                    nextFaceId = startVertToFace[retainedVerts[^1]];
-                }
-
-                failSafeCount++;
-
-            }
-
-            // If we hit the limit then something has gone wrong
-            if (failSafeCount > infiniteLoopFailsafeLimit)
-            {
-                Debug.LogError("Failed to delete vertex - infinite loop detected.");
+                Debug.LogWarning($"Deleter: Cannot delete vertex {vertexKey.vertexId} in mesh {mesh.id} - resulting mesh would be invalid.");
                 audioLibrary.PlayClip(audioLibrary.errorSound);
                 peltzerController.TriggerHapticFeedback();
-                return;
             }
-
-            deleteVertOp.DeleteVertex(vertexKey.vertexId);
-            if (nextFaceId != -1 && newFaceVertexIds.Count > 0)
-            {
-                deleteVertOp.AddFace(newFaceVertexIds, mesh.GetFace(nextFaceId).properties);
-            }
-            deleteVertOp.Commit();
-
-            model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
         }
 
         private int FindLastEdgeVertexInFace(EdgeKey edge, Face face)
@@ -452,9 +379,21 @@ namespace com.google.apps.peltzer.client.tools
 
         private void DeleteFace(FaceKey faceKey)
         {
-            MMesh mesh = model.GetMesh(faceKey.meshId).Clone();
+            MMesh originalMesh = model.GetMesh(faceKey.meshId);
+            MMesh mesh = originalMesh.Clone();
             MeshUtil.DeleteFaceAndMergeAdjacentFaces(mesh, faceKey.faceId);
-            model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
+            MeshFixer.FixMutatedMesh(originalMesh, mesh, new HashSet<int>(mesh.GetVertexIds()),
+                /* splitNonCoplanarFaces */ true, /* mergeAdjacentCoplanarFaces */ false);
+            if (MeshValidator.IsValidMesh(mesh, new HashSet<int>(mesh.GetVertexIds())))
+            {
+                model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
+            }
+            else
+            {
+                Debug.LogWarning($"Deleter: Cannot delete face {faceKey.faceId} in mesh {mesh.id} - resulting mesh would be invalid.");
+                audioLibrary.PlayClip(audioLibrary.errorSound);
+                peltzerController.TriggerHapticFeedback();
+            }
         }
 
         private void StartDeleting()

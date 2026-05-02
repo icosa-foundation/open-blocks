@@ -423,6 +423,89 @@ namespace com.google.apps.peltzer.client.model.core
             deleteFaceOperation.Commit();
         }
 
+        /// <summary>
+        /// Deletes a vertex by removing all incident faces and stitching the surrounding boundary into one face.
+        /// </summary>
+        public static void DeleteVertexAndMergeAdjacentFaces(MMesh mesh, int vertexId)
+        {
+            MMesh.GeometryOperation deleteVertexOperation = mesh.StartOperation();
+
+            Dictionary<int, int> startVertToFace = new Dictionary<int, int>();
+            Dictionary<int, List<int>> faceToRetainedVerts = new Dictionary<int, List<int>>();
+
+            int nextFaceId = -1;
+            foreach (int faceId in mesh.reverseTable[vertexId])
+            {
+                if (nextFaceId == -1)
+                {
+                    nextFaceId = faceId;
+                }
+
+                Face face = mesh.GetFace(faceId);
+                for (int i = 0; i < face.vertexIds.Count; i++)
+                {
+                    if (face.vertexIds[i] != vertexId)
+                    {
+                        continue;
+                    }
+
+                    List<int> retainedVerts = new List<int>();
+                    int startIndex = (i + 1) % face.vertexIds.Count;
+                    startVertToFace[face.vertexIds[startIndex]] = faceId;
+                    int count = 0;
+                    while (count < face.vertexIds.Count)
+                    {
+                        if (face.vertexIds[startIndex] != vertexId)
+                        {
+                            retainedVerts.Add(face.vertexIds[startIndex]);
+                        }
+                        startIndex = (startIndex + 1) % face.vertexIds.Count;
+                        count++;
+                    }
+                    faceToRetainedVerts[faceId] = retainedVerts;
+                }
+            }
+
+            List<int> newFaceVertexIds = new List<int>();
+            HashSet<int> faces = new HashSet<int>(mesh.reverseTable[vertexId]);
+            int infiniteLoopFailsafeLimit = faces.Count * 2;
+            int failSafeCount = 0;
+
+            while (faces.Count > 0 && failSafeCount <= infiniteLoopFailsafeLimit)
+            {
+                List<int> retainedVerts = faceToRetainedVerts[nextFaceId];
+
+                faces.Remove(nextFaceId);
+                deleteVertexOperation.DeleteFace(nextFaceId);
+
+                if (retainedVerts.Count == 0)
+                {
+                    foreach (int faceId in faces)
+                    {
+                        nextFaceId = faceId;
+                        break;
+                    }
+                }
+                else
+                {
+                    newFaceVertexIds.AddRange(retainedVerts);
+                    nextFaceId = startVertToFace[retainedVerts[^1]];
+                }
+
+                failSafeCount++;
+            }
+
+            AssertOrThrow.True(failSafeCount <= infiniteLoopFailsafeLimit,
+                $"DeleteVertexAndMergeAdjacentFaces failed for vertex {vertexId}: infinite loop detected.");
+
+            deleteVertexOperation.DeleteVertex(vertexId);
+            if (nextFaceId != -1 && newFaceVertexIds.Count > 0)
+            {
+                deleteVertexOperation.AddFace(newFaceVertexIds, mesh.GetFace(nextFaceId).properties);
+            }
+            deleteVertexOperation.Commit();
+        }
+
         private static HashSet<int> FindAdjacentFaceIds(MMesh mesh, Face face)
         {
             HashSet<int> adjacentFaceIds = new HashSet<int>();
