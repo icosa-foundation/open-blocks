@@ -333,11 +333,6 @@ namespace com.google.apps.peltzer.client.zandria
         // The number of different types of creations. Currently we are support: Your models, featured, liked.
         private const int NUMBER_OF_CREATION_TYPES = 3;
 
-        // We implement polling for the "Featured" and "Liked" sections in order to show any
-        // new models that get featured or liked by the user while Blocks is running.
-        // TODO Can we ask the server for a timestamp of the last update and only poll if it's changed?
-        // Could the timestamp be specific to each API call?
-        private const float POLLING_INTERVAL_SECONDS = 60;
         private const float SAVED_POLLING_INTERVAL_SECONDS = 5;
 
         // WARNING: All dictionaries in ZandriaCreationsManager are private because they are not threadsafe. They must be
@@ -352,9 +347,6 @@ namespace com.google.apps.peltzer.client.zandria
         private GameObject creationPrefab;
         private readonly object mutex = new object();
         private WorldSpace identityWorldSpace;
-
-        // When we last polled for updates to the menu.
-        private float timeLastPolled;
 
         private float timeLastPolledSavedModels;
         private bool hasNewSave;
@@ -432,29 +424,8 @@ namespace com.google.apps.peltzer.client.zandria
                 }
             }
 
-            // Poll for new featured or liked models periodically if the menu is open.
-            // Note: we don't poll the "Your models" section because (1) it's harder to optimize (it's not ordered
-            // by modified time) and (2) that flow is already covered in an ad-hoc way: we update the poly menu
-            // manually when the user saves a model.
             if (PeltzerMain.Instance.polyMenuMain.PolyMenuIsActive())
             {
-                if (Time.time - timeLastPolled > POLLING_INTERVAL_SECONDS)
-                {
-                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.FEATURED))
-                    {
-                        Poll(PolyMenuMain.CreationType.FEATURED);
-                    }
-                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.ALL))
-                    {
-                        Poll(PolyMenuMain.CreationType.ALL);
-                    }
-                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
-                    {
-                        Poll(PolyMenuMain.CreationType.LIKED);
-                    }
-                    timeLastPolled = Time.time;
-                }
-
                 if (hasNewSave && Time.time - timeLastPolledSavedModels > SAVED_POLLING_INTERVAL_SECONDS)
                 {
                     if (loadsByType.ContainsKey(PolyMenuMain.CreationType.YOUR) && OAuth2Identity.Instance.LoggedIn)
@@ -527,49 +498,6 @@ namespace com.google.apps.peltzer.client.zandria
                     polyMenu.RefreshPolyMenu();
                     pendingLoadsByType.Remove(type);
                 }
-            });
-        }
-
-        public void Poll(PolyMenuMain.CreationType type)
-        {
-            // TODO this presumes Featured and Liked will only add new items at the front
-            // This assumption will sometimes break when orderBy is changes
-            // Also - new featured items might be added that don't appear at the front even when ordered by "BEST"
-
-            lock (mutex)
-            {
-                if (pendingLoadsByType.Contains(type)) { return; }
-            }
-
-            // Start a coroutine which will create a UnityWebRequest and wait for it to send and return with results.
-            GetAssetsServiceSearchResults(type, delegate (ObjectStoreSearchResult objectStoreResults)
-            {
-                if (objectStoreResults.results.Length == 0) { return; }
-
-                // Success! Load the new models onto the front of the menu.
-                lock (mutex)
-                {
-                    Load load;
-                    if (!loadsByType.TryGetValue(type, out load))
-                    {
-                        load = new Load(creationPrefab);
-                        loadsByType.Add(type, load);
-                    }
-
-                    for (int i = 0; i < objectStoreResults.results.Length; i++)
-                    {
-                        load.AddEntryToStartOfMenu(new Entry(objectStoreResults.results[i]), isLocal: false, isSave: false);
-
-                        // The load has completed and is now managed in loadsByType so we can remove it from pendingLoads.
-                        pendingLoadsByType.Remove(type);
-                    }
-                }
-                // Refresh the PolyMenu now that there are creations available.
-                PeltzerMain.Instance.GetPolyMenuMain().RefreshPolyMenu();
-            },
-            delegate ()
-            {
-                // Nothing has changed since the last time we polled.
             });
         }
 
