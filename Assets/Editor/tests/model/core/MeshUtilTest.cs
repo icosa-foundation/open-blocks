@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
+using com.google.apps.peltzer.client.model.util;
 
 namespace com.google.apps.peltzer.client.model.core
 {
@@ -152,6 +153,47 @@ namespace com.google.apps.peltzer.client.model.core
             NUnit.Framework.Assert.NotNull(newFace);
             NUnit.Framework.Assert.AreEqual(3, newFace.vertexIds.Count);
             NUnit.Framework.Assert.True(newFace.vertexIds.Contains(vertToMove), "Vertex should be in new face.");
+        }
+
+        [Test]
+        public void TestDeleteCubeFaceMergesNeighborsToSingleVertex()
+        {
+            MMesh mesh = Primitives.AxisAlignedBox(1, Vector3.zero, Vector3.one, 2);
+
+            MeshUtil.DeleteFaceAndMergeAdjacentFaces(mesh, 3);
+
+            NUnit.Framework.Assert.AreEqual(5, mesh.faceCount);
+            NUnit.Framework.Assert.AreEqual(5, mesh.vertexCount);
+            NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(mesh, true));
+
+            int apexVertexId = -1;
+            foreach (Vertex vertex in mesh.GetVertices())
+            {
+                if (mesh.reverseTable[vertex.id].Count == 4)
+                {
+                    apexVertexId = vertex.id;
+                    break;
+                }
+            }
+
+            NUnit.Framework.Assert.AreNotEqual(-1, apexVertexId, "Expected a single shared apex vertex.");
+
+            int triangleCount = 0;
+            foreach (Face face in mesh.GetFaces())
+            {
+                if (face.vertexIds.Count == 3)
+                {
+                    triangleCount++;
+                    NUnit.Framework.Assert.True(face.vertexIds.Contains(apexVertexId));
+                }
+                else
+                {
+                    NUnit.Framework.Assert.AreEqual(4, face.vertexIds.Count);
+                    NUnit.Framework.Assert.False(face.vertexIds.Contains(apexVertexId));
+                }
+            }
+
+            NUnit.Framework.Assert.AreEqual(4, triangleCount);
         }
     }
 }

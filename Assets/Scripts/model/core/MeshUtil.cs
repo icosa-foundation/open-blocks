@@ -384,5 +384,95 @@ namespace com.google.apps.peltzer.client.model.core
             }
             return edgeKeysToFaceIds;
         }
+
+        /// <summary>
+        /// Deletes a face by collapsing its boundary ring to a single merged vertex and rebuilding the
+        /// edge-adjacent faces to reference that shared vertex.
+        /// </summary>
+        public static void DeleteFaceAndMergeAdjacentFaces(MMesh mesh, int faceId)
+        {
+            Face faceToDelete = mesh.GetFace(faceId);
+            MMesh.GeometryOperation deleteFaceOperation = mesh.StartOperation();
+
+            Vector3 mergedVertexPositionMeshSpace = Vector3.zero;
+            foreach (int vertexId in faceToDelete.vertexIds)
+            {
+                mergedVertexPositionMeshSpace += mesh.VertexPositionInMeshCoords(vertexId);
+            }
+            mergedVertexPositionMeshSpace /= faceToDelete.vertexIds.Count;
+
+            Vertex mergedVertex = deleteFaceOperation.AddVertexMeshSpace(mergedVertexPositionMeshSpace);
+            HashSet<int> deletedVertexIds = new HashSet<int>(faceToDelete.vertexIds);
+
+            foreach (int adjacentFaceId in FindAdjacentFaceIds(mesh, faceToDelete))
+            {
+                Face adjacentFace = mesh.GetFace(adjacentFaceId);
+                List<int> replacementVertexIds = ReplaceDeletedFaceVerticesWithMergedVertex(
+                    adjacentFace, deletedVertexIds, mergedVertex.id);
+
+                deleteFaceOperation.DeleteFace(adjacentFaceId);
+                deleteFaceOperation.AddFace(replacementVertexIds, adjacentFace.properties);
+            }
+
+            foreach (int vertexId in faceToDelete.vertexIds)
+            {
+                deleteFaceOperation.DeleteVertex(vertexId);
+            }
+
+            deleteFaceOperation.DeleteFace(faceToDelete.id);
+            deleteFaceOperation.Commit();
+        }
+
+        private static HashSet<int> FindAdjacentFaceIds(MMesh mesh, Face face)
+        {
+            HashSet<int> adjacentFaceIds = new HashSet<int>();
+            Dictionary<EdgeKey, List<int>> edgeKeysToFaceIds = ComputeEdgeKeysToFaceIdsMap(mesh);
+
+            int previousVertexId = face.vertexIds[face.vertexIds.Count - 1];
+            foreach (int currentVertexId in face.vertexIds)
+            {
+                EdgeKey edgeKey = new EdgeKey(mesh.id, currentVertexId, previousVertexId);
+                List<int> faceIds;
+                if (edgeKeysToFaceIds.TryGetValue(edgeKey, out faceIds))
+                {
+                    foreach (int adjacentFaceId in faceIds)
+                    {
+                        if (adjacentFaceId != face.id)
+                        {
+                            adjacentFaceIds.Add(adjacentFaceId);
+                        }
+                    }
+                }
+                previousVertexId = currentVertexId;
+            }
+
+            return adjacentFaceIds;
+        }
+
+        private static List<int> ReplaceDeletedFaceVerticesWithMergedVertex(
+            Face face, HashSet<int> deletedVertexIds, int mergedVertexId)
+        {
+            List<int> replacementVertexIds = new List<int>();
+            bool mergedVertexAdded = false;
+
+            foreach (int vertexId in face.vertexIds)
+            {
+                if (!deletedVertexIds.Contains(vertexId))
+                {
+                    replacementVertexIds.Add(vertexId);
+                    continue;
+                }
+
+                if (mergedVertexAdded)
+                {
+                    continue;
+                }
+
+                mergedVertexAdded = true;
+                replacementVertexIds.Add(mergedVertexId);
+            }
+
+            return replacementVertexIds;
+        }
     }
 }
