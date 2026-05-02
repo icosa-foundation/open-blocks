@@ -376,6 +376,10 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
                 }
+                else
+                {
+                    Debug.LogWarning($"Deleter: Cannot delete internal edge {edgeKey} - resulting mesh would be invalid.");
+                }
                 return;
             }
 
@@ -384,9 +388,17 @@ namespace com.google.apps.peltzer.client.tools
             edgeDeletionOperation.DeleteFace(face2.id);
 
             int face1EdgeKey1Index = FindLastEdgeVertexInFace(edgeKey, face1);
-            if (face1EdgeKey1Index == -1) return;
+            if (face1EdgeKey1Index == -1)
+            {
+                Debug.LogWarning($"Deleter: Cannot delete edge {edgeKey} - edge vertices not found in face {face1.id}.");
+                return;
+            }
             int face2EdgeKeyIndex = FindLastEdgeVertexInFace(edgeKey, face2);
-            if (face2EdgeKeyIndex == -1) return;
+            if (face2EdgeKeyIndex == -1)
+            {
+                Debug.LogWarning($"Deleter: Cannot delete edge {edgeKey} - edge vertices not found in face {face2.id}.");
+                return;
+            }
 
             List<int> vertexIds = new List<int>();
             vertexIds.Add(face1.vertexIds[face1EdgeKey1Index]);
@@ -407,6 +419,10 @@ namespace com.google.apps.peltzer.client.tools
             if (MeshValidator.IsValidMesh(mesh, new HashSet<int>(vertexIds)))
             {
                 model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
+            }
+            else
+            {
+                Debug.LogWarning($"Deleter: Cannot delete edge {edgeKey} - resulting mesh would be invalid.");
             }
             return;
         }

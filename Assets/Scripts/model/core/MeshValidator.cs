@@ -131,7 +131,13 @@ namespace com.google.apps.peltzer.client.model.core
 
                 // Check all the test rays. If one of them doesn't exit the mesh, it means this back face can see the sky,
                 // so the mesh is invalid.
-                if (!RaysExitMesh(mesh, geometry, triangleInfo, testRays, i)) return false;
+                if (!RaysExitMesh(mesh, geometry, triangleInfo, testRays, i))
+                {
+                    Debug.LogWarning($"MeshValidator: mesh {mesh.id} invalid - triangle {i} " +
+                        $"(verts {triangle.vertId0},{triangle.vertId1},{triangle.vertId2}) has an exposed back face. " +
+                        $"Center: {thisTriangleInfo.center}, normal: {thisTriangleInfo.normal}");
+                    return false;
+                }
             }
             // We found no reason to suspect the mesh is invalid.
             return true;
