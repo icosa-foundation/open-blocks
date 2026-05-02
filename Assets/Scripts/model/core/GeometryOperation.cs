@@ -149,16 +149,18 @@ namespace com.google.apps.peltzer.client.model.core
             public Face GetCurrentFace(int id)
             {
                 Face face;
+                if (deletedFaces.Contains(id))
+                {
+#if UNITY_EDITOR
+                    throw new Exception("GetCurrentFace called for deleted face " + id);
+#else
+                    return null;
+#endif
+                }
                 if (modifiedFaces.TryGetValue(id, out face))
                 {
                     return face;
                 }
-#if UNITY_EDITOR
-        // Only perform check when in editor.
-        if (deletedFaces.Contains(id)) {
-          throw new Exception("GetCurrentFace called for deleted face " + id);
-        }
-#endif
 
                 return targetMesh.GetFace(id);
             }
@@ -170,13 +172,13 @@ namespace com.google.apps.peltzer.client.model.core
             {
                 outFace = null;
 
-                if (modifiedFaces.TryGetValue(id, out outFace))
-                {
-                    return true;
-                }
                 if (deletedFaces.Contains(id))
                 {
                     return false;
+                }
+                if (modifiedFaces.TryGetValue(id, out outFace))
+                {
+                    return true;
                 }
 
                 return targetMesh.TryGetFace(id, out outFace);
@@ -440,6 +442,7 @@ namespace com.google.apps.peltzer.client.model.core
 #if GEOM_OP_VERBOSE_LOGGING
           Debug.Log("Deleting face " + id);
 #endif
+                modifiedFaces.Remove(id);
                 deletedFaces.Add(id);
             }
 

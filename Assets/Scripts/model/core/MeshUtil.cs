@@ -119,6 +119,72 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         /// <summary>
+        /// Determines whether two faces lie on the same plane.
+        /// </summary>
+        public static bool AreFacesCoplanar(MMesh mesh, Face face1, Face face2)
+        {
+            Plane facePlane;
+            int indexOfThird;
+            if (!CalculateCommonPlane(mesh, face1.vertexIds, out facePlane, out indexOfThird))
+            {
+                return false;
+            }
+
+            foreach (int vertexId in face2.vertexIds)
+            {
+                Vector3 pos = mesh.VertexPositionInMeshCoords(vertexId);
+                if (Mathf.Abs(facePlane.GetDistanceToPoint(pos)) > MAX_COPLANAR_DISTANCE)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Deletes an edge by merging its two incident faces into one planar face, if the remaining
+        /// boundary vertices define a clear plane. The two edge endpoints are preserved and moved onto
+        /// that plane.
+        /// </summary>
+        public static bool TryDeleteEdgeAndMakePlanar(
+            MMesh mesh, EdgeKey edgeKey, Face face1, Face face2, ReadOnlyCollection<int> mergedFaceVertexIds)
+        {
+            List<int> planeVertexIds = new List<int>();
+            foreach (int vertexId in mergedFaceVertexIds)
+            {
+                if (edgeKey.ContainsVertex(vertexId) || planeVertexIds.Contains(vertexId))
+                {
+                    continue;
+                }
+
+                planeVertexIds.Add(vertexId);
+            }
+
+            Plane targetPlane;
+            int indexOfThird;
+            if (planeVertexIds.Count < 3
+                || !AreVerticesCoplanar(mesh, planeVertexIds.AsReadOnly())
+                || !CalculateCommonPlane(mesh, planeVertexIds.AsReadOnly(), out targetPlane, out indexOfThird))
+            {
+                return false;
+            }
+
+            MMesh.GeometryOperation planarDeleteOperation = mesh.StartOperation();
+            planarDeleteOperation.ModifyVertexMeshSpace(
+                edgeKey.vertexId1,
+                ProjectPointOntoPlane(mesh.VertexPositionInMeshCoords(edgeKey.vertexId1), targetPlane));
+            planarDeleteOperation.ModifyVertexMeshSpace(
+                edgeKey.vertexId2,
+                ProjectPointOntoPlane(mesh.VertexPositionInMeshCoords(edgeKey.vertexId2), targetPlane));
+            planarDeleteOperation.DeleteFace(face1.id);
+            planarDeleteOperation.DeleteFace(face2.id);
+            planarDeleteOperation.AddFace(new List<int>(mergedFaceVertexIds), face1.properties);
+            planarDeleteOperation.Commit();
+            return true;
+        }
+
+        /// <summary>
         /// Determines whether or not the given vertices are all coplanar in an ongoing GeometryOperation. 
         /// </summary>
         /// <param name="operation">The current operation on the mutated mesh.</param>
@@ -506,6 +572,42 @@ namespace com.google.apps.peltzer.client.model.core
             deleteVertexOperation.Commit();
         }
 
+        /// <summary>
+        /// Deletes an edge by collapsing its endpoints to a single merged vertex and rebuilding all
+        /// incident faces to reference that shared vertex.
+        ///
+        /// Retained for a future explicit "collapse edge" UI action. To wire that up, branch in
+        /// Deleter.DeleteEdge based on the user's selected delete/collapse mode and call this helper
+        /// instead of the default planarized edge-delete path.
+        /// </summary>
+        public static void DeleteEdgeAndCollapse(MMesh mesh, EdgeKey edgeKey)
+        {
+            MMesh.GeometryOperation collapseEdgeOperation = mesh.StartOperation();
+
+            Vector3 mergedVertexPositionMeshSpace =
+                (mesh.VertexPositionInMeshCoords(edgeKey.vertexId1) + mesh.VertexPositionInMeshCoords(edgeKey.vertexId2))
+                * 0.5f;
+            Vertex mergedVertex = collapseEdgeOperation.AddVertexMeshSpace(mergedVertexPositionMeshSpace);
+
+            HashSet<int> deletedVertexIds = new HashSet<int> { edgeKey.vertexId1, edgeKey.vertexId2 };
+            HashSet<int> incidentFaceIds = new HashSet<int>(mesh.reverseTable[edgeKey.vertexId1]);
+            incidentFaceIds.UnionWith(mesh.reverseTable[edgeKey.vertexId2]);
+
+            foreach (int incidentFaceId in incidentFaceIds)
+            {
+                Face incidentFace = mesh.GetFace(incidentFaceId);
+                List<int> replacementVertexIds = ReplaceDeletedFaceVerticesWithMergedVertex(
+                    incidentFace, deletedVertexIds, mergedVertex.id);
+
+                collapseEdgeOperation.DeleteFace(incidentFaceId);
+                collapseEdgeOperation.AddFace(replacementVertexIds, incidentFace.properties);
+            }
+
+            collapseEdgeOperation.DeleteVertex(edgeKey.vertexId1);
+            collapseEdgeOperation.DeleteVertex(edgeKey.vertexId2);
+            collapseEdgeOperation.Commit();
+        }
+
         private static HashSet<int> FindAdjacentFaceIds(MMesh mesh, Face face)
         {
             HashSet<int> adjacentFaceIds = new HashSet<int>();
@@ -556,6 +658,11 @@ namespace com.google.apps.peltzer.client.model.core
             }
 
             return replacementVertexIds;
+        }
+
+        private static Vector3 ProjectPointOntoPlane(Vector3 point, Plane plane)
+        {
+            return point - plane.normal * plane.GetDistanceToPoint(point);
         }
     }
 }

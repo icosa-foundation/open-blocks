@@ -641,7 +641,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4122917613200010
 Transform:
   m_ObjectHideFlags: 0
@@ -34607,12 +34607,11 @@ MonoBehaviour:
   isHovered: 0
   action: 7
   enabled: 0
-  featureStringOn: +enablePartDeletion,+allowNoncoplanarFaces
-  featureStringOff: -enablePartDeletion
+  featureStringOn: +allowNoncoplanarFaces
+  featureStringOff: -allowNoncoplanarFaces
   enabledText: {fileID: 1654989518751050}
   disabledText: {fileID: 1698558353509786}
-  enableDepedentToggles:
-  - {fileID: 114076865584420310}
+  enableDepedentToggles: []
   disableDependentToggles: []
 --- !u!1 &1542697715486286
 GameObject:
@@ -36060,12 +36059,11 @@ MonoBehaviour:
   isHovered: 0
   action: 7
   enabled: 0
-  featureStringOn: +loopSubdivideEnabled,+allowNoncoplanarFaces
-  featureStringOff: -loopSubdivideEnabled
+  featureStringOn: +allowNoncoplanarFaces
+  featureStringOff: -allowNoncoplanarFaces
   enabledText: {fileID: 1020161159173412}
   disabledText: {fileID: 1595566955007860}
-  enableDepedentToggles:
-  - {fileID: 114076865584420310}
+  enableDepedentToggles: []
   disableDependentToggles: []
 --- !u!1 &1557163985967070
 GameObject:
@@ -45657,7 +45655,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4831516864672488
 Transform:
   m_ObjectHideFlags: 0
@@ -58935,16 +58933,12 @@ MonoBehaviour:
   isHovered: 0
   action: 7
   enabled: 0
-  featureStringOn: +allowNoncoplanarFaces,+loopSubdivideEnabled,+enablePartDeletion
-  featureStringOff: -allowNoncoplanarFaces,-loopSubdivideEnabled,-enablePartDeletion
+  featureStringOn: +allowNoncoplanarFaces
+  featureStringOff: -allowNoncoplanarFaces
   enabledText: {fileID: 1281125377313110}
   disabledText: {fileID: 1910825626944300}
-  enableDepedentToggles:
-  - {fileID: 114978086692741080}
-  - {fileID: 114978312471721952}
-  disableDependentToggles:
-  - {fileID: 114978086692741080}
-  - {fileID: 114978312471721952}
+  enableDepedentToggles: []
+  disableDependentToggles: []
 --- !u!1 &1924473878440848
 GameObject:
   m_ObjectHideFlags: 0

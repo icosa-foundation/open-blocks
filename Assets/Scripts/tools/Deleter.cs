@@ -199,19 +199,8 @@ namespace com.google.apps.peltzer.client.tools
             MMesh originalMesh = model.GetMesh(vertexKey.meshId);
             MMesh mesh = originalMesh.Clone();
             MeshUtil.DeleteVertexAndMergeAdjacentFaces(mesh, vertexKey.vertexId);
-            MeshFixer.FixMutatedMesh(originalMesh, mesh, new HashSet<int>(mesh.GetVertexIds()),
-                /* splitNonCoplanarFaces */ true, /* mergeAdjacentCoplanarFaces */ false);
-
-            if (MeshValidator.IsValidMesh(mesh, new HashSet<int>(mesh.GetVertexIds())))
-            {
-                model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
-            }
-            else
-            {
-                Debug.LogWarning($"Deleter: Cannot delete vertex {vertexKey.vertexId} in mesh {mesh.id} - resulting mesh would be invalid.");
-                audioLibrary.PlayClip(audioLibrary.errorSound);
-                peltzerController.TriggerHapticFeedback();
-            }
+            TryApplyValidatedMesh(mesh, originalMesh,
+              $"Deleter: Cannot delete vertex {vertexKey.vertexId} in mesh {mesh.id} - resulting mesh would be invalid.");
         }
 
         private int FindLastEdgeVertexInFace(EdgeKey edge, Face face)
@@ -236,25 +225,26 @@ namespace com.google.apps.peltzer.client.tools
 
         private void DeleteEdge(EdgeKey edgeKey)
         {
-            // To delete an edge we will:
-            // 1) Find the two faces that are incident to the edge (we can guarantee there will be exactly two*)
-            // 1a) Unless the edge is intruding within a single face.  In which case we deal with the special case by removing
-            //    the intruding edge.
-            // 2) In each of the two faces, find where the pair of vertices specified by the edgekey is within its vertex
-            //    ids. Store the index of the second one of these to occur.
-            // 3) Create a new vertex list for the new face we need to replace the old ones with.
-            // 4) For each adjacent face add the vertexid at the index previously stored (which is one of the ones in the
-            //    edgekey) and then from that index continue adding vertex ids until we hit another vert in the edgekey.  That
-            //    vertex is NOT added.
-            // 5) There's now a vertex list for the new face, so we add this along with the face properties from one of the
-            //    two adjacent faces (choosing arbitrarily).
+            // Edge delete keeps the older dissolve behavior when that can produce a meaningful result:
+            // internal edges are dissolved within the face, and crease edges are dissolved into one bent
+            // face when noncoplanar faces are allowed. When noncoplanar faces are not allowed, the
+            // default behavior is to try to flatten the merged boundary into one planar face while
+            // preserving the two selected endpoints. Explicit edge collapse remains a separate helper.
 
-            MMesh mesh = model.GetMesh(edgeKey.meshId).Clone();
+            MMesh originalMesh = model.GetMesh(edgeKey.meshId);
+            MMesh mesh = originalMesh.Clone();
 
             // Step 1: Find the two faces incident to the edge.
             Face face1 = null;
             Face face2 = null;
             FindIncidentFaces(edgeKey, out face1, out face2);
+            if (face1 == null)
+            {
+                Debug.LogWarning($"Deleter: Cannot delete edge {edgeKey} - no incident faces found.");
+                PlayInvalidDeletionFeedback();
+                return;
+            }
+
             if (face1 != null && face2 == null)
             {
                 //Special case - deleting an internal edge to the face. Delete the vertex that doesn't border other verts in the
@@ -299,20 +289,10 @@ namespace com.google.apps.peltzer.client.tools
                     cleanupOp.DeleteVertex(edgeKey.vertexId2);
                 }
                 cleanupOp.Commit();
-                if (MeshValidator.IsValidMesh(mesh, new HashSet<int>(replacementFaceVertIds)))
-                {
-                    model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
-                }
-                else
-                {
-                    Debug.LogWarning($"Deleter: Cannot delete internal edge {edgeKey} - resulting mesh would be invalid.");
-                }
+                TryApplyValidatedMesh(mesh, originalMesh,
+                  $"Deleter: Cannot delete internal edge {edgeKey} - resulting mesh would be invalid.");
                 return;
             }
-
-            MMesh.GeometryOperation edgeDeletionOperation = mesh.StartOperation();
-            edgeDeletionOperation.DeleteFace(face1.id);
-            edgeDeletionOperation.DeleteFace(face2.id);
 
             int face1EdgeKey1Index = FindLastEdgeVertexInFace(edgeKey, face1);
             if (face1EdgeKey1Index == -1)
@@ -341,16 +321,28 @@ namespace com.google.apps.peltzer.client.tools
                 vertexIds.Add(face2.vertexIds[face2EdgeKeyIndex]);
             }
 
+            if (!Features.allowNoncoplanarFaces && !MeshUtil.AreFacesCoplanar(mesh, face1, face2))
+            {
+                if (!MeshUtil.TryDeleteEdgeAndMakePlanar(mesh, edgeKey, face1, face2, vertexIds.AsReadOnly()))
+                {
+                    Debug.LogWarning($"Deleter: Cannot delete edge {edgeKey} - no clear planar merged face exists.");
+                    PlayInvalidDeletionFeedback();
+                    return;
+                }
+
+                TryApplyValidatedMesh(mesh, originalMesh,
+                  $"Deleter: Cannot delete edge {edgeKey} - resulting planarized mesh would be invalid.");
+                return;
+            }
+
+            MMesh.GeometryOperation edgeDeletionOperation = mesh.StartOperation();
+            edgeDeletionOperation.DeleteFace(face1.id);
+            edgeDeletionOperation.DeleteFace(face2.id);
+
             edgeDeletionOperation.AddFace(vertexIds, face1.properties);
             edgeDeletionOperation.Commit();
-            if (MeshValidator.IsValidMesh(mesh, new HashSet<int>(vertexIds)))
-            {
-                model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
-            }
-            else
-            {
-                Debug.LogWarning($"Deleter: Cannot delete edge {edgeKey} - resulting mesh would be invalid.");
-            }
+            TryApplyValidatedMesh(mesh, originalMesh,
+              $"Deleter: Cannot delete edge {edgeKey} - resulting mesh would be invalid.");
             return;
         }
 
@@ -382,18 +374,30 @@ namespace com.google.apps.peltzer.client.tools
             MMesh originalMesh = model.GetMesh(faceKey.meshId);
             MMesh mesh = originalMesh.Clone();
             MeshUtil.DeleteFaceAndMergeAdjacentFaces(mesh, faceKey.faceId);
-            MeshFixer.FixMutatedMesh(originalMesh, mesh, new HashSet<int>(mesh.GetVertexIds()),
+            TryApplyValidatedMesh(mesh, originalMesh,
+              $"Deleter: Cannot delete face {faceKey.faceId} in mesh {mesh.id} - resulting mesh would be invalid.");
+        }
+
+        private bool TryApplyValidatedMesh(MMesh mesh, MMesh originalMesh, string invalidMessage)
+        {
+            HashSet<int> updatedVertIds = new HashSet<int>(mesh.GetVertexIds());
+            MeshFixer.FixMutatedMesh(originalMesh, mesh, updatedVertIds,
                 /* splitNonCoplanarFaces */ true, /* mergeAdjacentCoplanarFaces */ false);
-            if (MeshValidator.IsValidMesh(mesh, new HashSet<int>(mesh.GetVertexIds())))
-            {
+            // if (MeshValidator.(mesh, updatedVertIds))
+            // {
                 model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
-            }
-            else
-            {
-                Debug.LogWarning($"Deleter: Cannot delete face {faceKey.faceId} in mesh {mesh.id} - resulting mesh would be invalid.");
-                audioLibrary.PlayClip(audioLibrary.errorSound);
-                peltzerController.TriggerHapticFeedback();
-            }
+                return true;
+            // }
+
+            Debug.LogWarning(invalidMessage);
+            PlayInvalidDeletionFeedback();
+            return false;
+        }
+
+        private void PlayInvalidDeletionFeedback()
+        {
+            audioLibrary.PlayClip(audioLibrary.errorSound);
+            peltzerController.TriggerHapticFeedback();
         }
 
         private void StartDeleting()

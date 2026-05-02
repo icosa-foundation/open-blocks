@@ -195,5 +195,56 @@ namespace com.google.apps.peltzer.client.model.core
 
             NUnit.Framework.Assert.AreEqual(4, triangleCount);
         }
+
+        [Test]
+        public void TestDeleteCubeTopEdgeCollapsesToSingleVertex()
+        {
+            MMesh mesh = Primitives.AxisAlignedBox(1, Vector3.zero, Vector3.one, 2);
+
+            MeshUtil.DeleteEdgeAndCollapse(mesh, new EdgeKey(mesh.id, 2, 3));
+
+            NUnit.Framework.Assert.AreEqual(6, mesh.faceCount);
+            NUnit.Framework.Assert.AreEqual(7, mesh.vertexCount);
+            NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(mesh, true));
+
+            int mergedVertexId = -1;
+            foreach (Vertex vertex in mesh.GetVertices())
+            {
+                if (mesh.reverseTable[vertex.id].Count == 4)
+                {
+                    mergedVertexId = vertex.id;
+                    break;
+                }
+            }
+
+            NUnit.Framework.Assert.AreNotEqual(-1, mergedVertexId, "Expected a single shared collapsed edge vertex.");
+        }
+
+        [Test]
+        public void TestAreFacesCoplanarReturnsTrueForAdjacentPlanarFaces()
+        {
+            Dictionary<int, Vertex> vertById = new Dictionary<int, Vertex>();
+            vertById[1] = new Vertex(1, new Vector3(-2, -1, 0));
+            vertById[2] = new Vertex(2, new Vector3(0, -1, 0));
+            vertById[3] = new Vertex(3, new Vector3(2, -1, 0));
+            vertById[4] = new Vertex(4, new Vector3(2, 1, 0));
+            vertById[5] = new Vertex(5, new Vector3(0, 1, 0));
+            vertById[6] = new Vertex(6, new Vector3(-2, 1, 0));
+
+            FaceProperties properties = new FaceProperties();
+            Dictionary<int, Face> facesById = new Dictionary<int, Face>();
+            facesById[1] = new Face(1,
+                new List<int>(new int[] { 1, 2, 5, 6 }).AsReadOnly(),
+                new Vector3(0, 0, -1),
+                properties);
+            facesById[2] = new Face(2,
+                new List<int>(new int[] { 2, 3, 4, 5 }).AsReadOnly(),
+                new Vector3(0, 0, -1),
+                properties);
+
+            MMesh mesh = new MMesh(1, Vector3.zero, Quaternion.identity, vertById, facesById);
+
+            NUnit.Framework.Assert.IsTrue(MeshUtil.AreFacesCoplanar(mesh, mesh.GetFace(1), mesh.GetFace(2)));
+        }
     }
 }

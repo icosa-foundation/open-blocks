@@ -1278,20 +1278,13 @@ namespace com.google.apps.peltzer.client.model.controller
                 }
                 else if (IsDeleteMode(mode))
                 {
-                    if (!Features.enablePartDeletion)
+                    if (location == TouchpadLocation.RIGHT && mode != ControllerMode.deletePart)
+                    {
+                        ChangeMode(ControllerMode.deletePart);
+                    }
+                    else if (location == TouchpadLocation.LEFT && mode != ControllerMode.delete)
                     {
                         ChangeMode(ControllerMode.delete);
-                    }
-                    else
-                    {
-                        if (location == TouchpadLocation.RIGHT && mode != ControllerMode.deletePart)
-                        {
-                            ChangeMode(ControllerMode.deletePart);
-                        }
-                        else if (location == TouchpadLocation.LEFT && mode != ControllerMode.delete)
-                        {
-                            ChangeMode(ControllerMode.delete);
-                        }
                     }
                 }
             }
@@ -1781,9 +1774,9 @@ namespace com.google.apps.peltzer.client.model.controller
                     break;
                 case ControllerMode.delete:
                     controllerGeometry.deleteOverlay.GetComponent<Overlay>().leftIcon.gameObject
-                      .SetActive(Features.enablePartDeletion);
+                      .SetActive(true);
                     controllerGeometry.deleteOverlay.GetComponent<Overlay>().rightIcon.gameObject
-                      .SetActive(Features.enablePartDeletion);
+                      .SetActive(true);
                     // Delete part.
                     controllerGeometry.deleteOverlay.GetComponent<Overlay>().rightIcon.color = halfWhite;
                     // Delete mesh.
@@ -1791,9 +1784,9 @@ namespace com.google.apps.peltzer.client.model.controller
                     break;
                 case ControllerMode.deletePart:
                     controllerGeometry.deleteOverlay.GetComponent<Overlay>().leftIcon.gameObject
-                      .SetActive(Features.enablePartDeletion);
+                      .SetActive(true);
                     controllerGeometry.deleteOverlay.GetComponent<Overlay>().rightIcon.gameObject
-                      .SetActive(Features.enablePartDeletion);
+                      .SetActive(true);
                     // Delete part.
                     controllerGeometry.deleteOverlay.GetComponent<Overlay>().rightIcon.color = fullWhite;
                     // Delete mesh.
