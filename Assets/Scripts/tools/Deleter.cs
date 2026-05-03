@@ -388,8 +388,8 @@ namespace com.google.apps.peltzer.client.tools
                 /* splitNonCoplanarFaces */ true, /* mergeAdjacentCoplanarFaces */ false);
             // if (MeshValidator.(mesh, updatedVertIds))
             // {
-                model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
-                return true;
+            model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
+            return true;
             // }
 
             Debug.LogWarning(invalidMessage);
