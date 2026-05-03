@@ -146,7 +146,6 @@ namespace com.google.apps.peltzer.client.menu
 
         private SelectablePaginationMenuItem pageLeftScript;
         private SelectablePaginationMenuItem pageRightScript;
-        private RefreshMenuItem refreshScript;
 
         // Menu titles.
         private GameObject optionsTitle;
@@ -281,8 +280,6 @@ namespace com.google.apps.peltzer.client.menu
               .GetComponent<SelectablePaginationMenuItem>();
             pageRightScript = polyMenu.transform.Find("Models/Pagination/Right/panel")
               .GetComponent<SelectablePaginationMenuItem>();
-            refreshScript = polyMenu.transform.Find("Models/Pagination/Refresh/panel")
-              .GetComponent<RefreshMenuItem>();
 
             optionsTitle = polyMenu.transform.Find("Titles/options_title").gameObject;
             yourModelsTitle = polyMenu.transform.Find("Titles/your_models_title").gameObject;

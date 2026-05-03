@@ -19,7 +19,7 @@ namespace com.google.apps.peltzer.client.model.controller
     /// <summary>
     ///   Button that reloads the current menu tab from the server.
     /// </summary>
-    public class RefreshMenuItem : PolyMenuButton
+    public class RefreshMenuItem : ActionButton
     {
         public override void ApplyMenuOptions(PeltzerMain main)
         {
