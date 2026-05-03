@@ -42,7 +42,6 @@ namespace com.google.apps.peltzer.client.tools
             // Gated by Features.planeSubdivideEnabled
             PLANE_SUBDIVIDE,
             // Experimental tool that loops around the geometry creating subdivisions.
-            // Gated by Features.loopSubdivideEnabled and Features.allowNoncoplanarFaces.
             LOOP_SUBDIVIDE
         };
 
@@ -117,12 +116,11 @@ namespace com.google.apps.peltzer.client.tools
         private Mode currentMode = Mode.SINGLE_FACE_SUBDIVIDE;
 
         /// <summary>
-        /// If true, the trigger can be held to transition to a different tool. Currently only
-        /// used when loop subdivide is enabled.
+        /// If true, the trigger can be held to transition to loop subdivide.
         /// </summary>
         private bool pressAndHoldEnabled
         {
-            get { return Features.loopSubdivideEnabled; }
+            get { return true; }
         }
 
         /// <summary>
@@ -178,6 +176,8 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private int completedSnaps = 0;
         private const int SNAP_KNOW_HOW_COUNT = 3;
+
+        private const string SUBDIVIDER_VALIDATION_LOG_PREFIX = "[SUBDIVIDER_VALIDATE_20260502]";
 
         /// <summary>
         ///   Every tool is implemented as MonoBehaviour, which means it may do no work in its constructor.
@@ -988,6 +988,7 @@ namespace com.google.apps.peltzer.client.tools
 
             // Keys are mesh IDs, values are the actual meshes.
             Dictionary<int, MMesh> modifiedMeshes = new Dictionary<int, MMesh>();
+            Dictionary<int, MMesh> originalMeshes = new Dictionary<int, MMesh>();
 
             // Keys are mesh IDs, values are collections of IDs of created verts.
             // This is needed to reuse verts created over multiple GeometryOperations without
@@ -1002,6 +1003,7 @@ namespace com.google.apps.peltzer.client.tools
                 MMesh modifiedMesh;
                 if (!modifiedMeshes.TryGetValue(subdivision.mesh.id, out modifiedMesh))
                 {
+                    originalMeshes[subdivision.mesh.id] = subdivision.mesh;
                     modifiedMesh = subdivision.mesh.Clone();
                     modifiedMeshes[subdivision.mesh.id] = modifiedMesh;
                 }
@@ -1177,7 +1179,8 @@ namespace com.google.apps.peltzer.client.tools
             bool errorOccurred = false;
             foreach (var modifiedMesh in modifiedMeshes.Values)
             {
-                if (model.CanAddMesh(modifiedMesh))
+                MMesh originalMesh = originalMeshes[modifiedMesh.id];
+                if (FinalizeSubdividedMesh(originalMesh, modifiedMesh) && model.CanAddMesh(modifiedMesh))
                 {
                     model.ApplyCommand(new ReplaceMeshCommand(modifiedMesh.id, modifiedMesh));
                 }
@@ -1198,6 +1201,21 @@ namespace com.google.apps.peltzer.client.tools
                 audioLibrary.PlayClip(audioLibrary.errorSound);
                 peltzerController.TriggerHapticFeedback();
             }
+        }
+
+        private static bool FinalizeSubdividedMesh(MMesh originalMesh, MMesh modifiedMesh)
+        {
+            HashSet<int> updatedVertIds = new HashSet<int>(modifiedMesh.GetVertexIds());
+            MeshFixer.FixMutatedMesh(originalMesh, modifiedMesh, updatedVertIds,
+              /* splitNonCoplanarFaces */ true, /* mergeAdjacentCoplanarFaces */ false);
+            if (MeshValidator.IsValidMesh(modifiedMesh, updatedVertIds))
+            {
+                return true;
+            }
+
+            Debug.LogWarning(
+              $"{SUBDIVIDER_VALIDATION_LOG_PREFIX} Mesh {modifiedMesh.id} invalid after subdivision fixup.");
+            return false;
         }
 
         /// <summary>
