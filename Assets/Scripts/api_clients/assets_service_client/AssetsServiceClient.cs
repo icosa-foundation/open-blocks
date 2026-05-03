@@ -289,7 +289,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             SearchText = "",
             TriangleCountMax = defaultMaxPolyModelTriangles,
             License = LicenseChoices.REMIXABLE,
-            OrderBy = OrderByChoices.BEST,
+            OrderBy = OrderByChoices.NEWEST,
             Formats = new[] { FormatChoices.BLOCKS },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY

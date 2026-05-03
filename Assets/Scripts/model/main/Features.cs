@@ -40,9 +40,6 @@ namespace com.google.apps.peltzer.client.model.main
         // If true, enable controller swapping by bumping controllers together (like TiltBrush).
         public static bool enableControllerSwapping = true;
 
-        // If true, enable deletion of parts (vertices, edges, and faces)
-        public static bool enablePartDeletion = false;
-
         // If true, try to merge adjacent coplanar faces (to remove unnecessary face splits).
         public static bool mergeAdjacentCoplanarFaces = false;
 
@@ -81,10 +78,6 @@ namespace com.google.apps.peltzer.client.model.main
 
         // If true, shows tooltips when the user touches the touchpad/thumbstick whilst on the Poly menu.
         public static bool showModelsMenuTooltips = false;
-
-        // If true, the subdivide tool will turn into the experimental loop subdivide form.
-        // Incompatible with planeSubdivideEnabled.
-        public static bool loopSubdivideEnabled = false;
 
         // If true, allow noncoplanar faces to remain during mesh fixing.
         public static bool allowNoncoplanarFaces = false;

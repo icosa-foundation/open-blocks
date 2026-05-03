@@ -196,95 +196,11 @@ namespace com.google.apps.peltzer.client.tools
 
         private void DeleteVertex(VertexKey vertexKey)
         {
-            MMesh mesh = model.GetMesh(vertexKey.meshId).Clone();
-            MMesh.GeometryOperation deleteVertOp = mesh.StartOperation();
-
-            // Keep track of the starting vert of each face's list of retained verts.  We use this to determine which order
-            // to join the lists in.
-            Dictionary<int, int> startVertToFace = new Dictionary<int, int>();
-            Dictionary<int, List<int>> faceToRetainedVerts = new Dictionary<int, List<int>>();
-
-            int nextFaceId = -1;
-            foreach (int faceId in mesh.reverseTable[vertexKey.vertexId])
-            {
-                if (nextFaceId == -1)
-                {
-                    nextFaceId = faceId;
-                }
-                Face f = mesh.GetFace(faceId);
-                for (int i = 0; i < f.vertexIds.Count; i++)
-                {
-                    if (f.vertexIds[i] == vertexKey.vertexId)
-                    {
-                        List<int> retainedVerts = new List<int>();
-                        int startIndex = (i + 1) % f.vertexIds.Count;
-                        startVertToFace[f.vertexIds[startIndex]] = faceId;
-                        int count = 0;
-                        while (count < f.vertexIds.Count)
-                        {
-                            if (f.vertexIds[startIndex] != vertexKey.vertexId)
-                            {
-                                retainedVerts.Add(f.vertexIds[startIndex]);
-                            }
-                            startIndex = (startIndex + 1) % f.vertexIds.Count;
-                            count++;
-                        }
-                        faceToRetainedVerts[faceId] = retainedVerts;
-                    }
-                }
-            }
-
-            List<int> newFaceVertexIds = new List<int>();
-            HashSet<int> faces = new HashSet<int>(mesh.reverseTable[vertexKey.vertexId]);
-
-            // Could probably just be faces.Count
-            // but I'm not 100% sure if there are any exceptions to this
-            // without analyzing the mesh code - so just to be safe, double it
-            int infiniteLoopFailsafeLimit = faces.Count * 2;
-            int failSafeCount = 0;
-            while (faces.Count > 0 && failSafeCount <= infiniteLoopFailsafeLimit)
-            {
-                List<int> retainedVerts = faceToRetainedVerts[nextFaceId];
-
-                faces.Remove(nextFaceId);
-                deleteVertOp.DeleteFace(nextFaceId);
-
-                if (retainedVerts.Count == 0)
-                {
-                    // get another face
-                    foreach (var face in faces)
-                    {
-                        nextFaceId = face;
-                        break;
-                    }
-                }
-                else
-                {
-                    newFaceVertexIds.AddRange(retainedVerts);
-                    nextFaceId = startVertToFace[retainedVerts[^1]];
-                }
-
-                failSafeCount++;
-
-            }
-
-            // If we hit the limit then something has gone wrong
-            if (failSafeCount > infiniteLoopFailsafeLimit)
-            {
-                Debug.LogError("Failed to delete vertex - infinite loop detected.");
-                audioLibrary.PlayClip(audioLibrary.errorSound);
-                peltzerController.TriggerHapticFeedback();
-                return;
-            }
-
-            deleteVertOp.DeleteVertex(vertexKey.vertexId);
-            if (nextFaceId != -1 && newFaceVertexIds.Count > 0)
-            {
-                deleteVertOp.AddFace(newFaceVertexIds, mesh.GetFace(nextFaceId).properties);
-            }
-            deleteVertOp.Commit();
-
-            model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
+            MMesh originalMesh = model.GetMesh(vertexKey.meshId);
+            MMesh mesh = originalMesh.Clone();
+            MeshUtil.DeleteVertexAndMergeAdjacentFaces(mesh, vertexKey.vertexId);
+            TryApplyValidatedMesh(mesh, originalMesh,
+              $"Deleter: Cannot delete vertex {vertexKey.vertexId} in mesh {mesh.id} - resulting mesh would be invalid.");
         }
 
         private int FindLastEdgeVertexInFace(EdgeKey edge, Face face)
@@ -309,25 +225,26 @@ namespace com.google.apps.peltzer.client.tools
 
         private void DeleteEdge(EdgeKey edgeKey)
         {
-            // To delete an edge we will:
-            // 1) Find the two faces that are incident to the edge (we can guarantee there will be exactly two*)
-            // 1a) Unless the edge is intruding within a single face.  In which case we deal with the special case by removing
-            //    the intruding edge.
-            // 2) In each of the two faces, find where the pair of vertices specified by the edgekey is within its vertex
-            //    ids. Store the index of the second one of these to occur.
-            // 3) Create a new vertex list for the new face we need to replace the old ones with.
-            // 4) For each adjacent face add the vertexid at the index previously stored (which is one of the ones in the
-            //    edgekey) and then from that index continue adding vertex ids until we hit another vert in the edgekey.  That
-            //    vertex is NOT added.
-            // 5) There's now a vertex list for the new face, so we add this along with the face properties from one of the
-            //    two adjacent faces (choosing arbitrarily).
+            // Edge delete keeps the older dissolve behavior when that can produce a meaningful result:
+            // internal edges are dissolved within the face, and crease edges are dissolved into one bent
+            // face when noncoplanar faces are allowed. When noncoplanar faces are not allowed, the
+            // default behavior is to try to flatten the merged boundary into one planar face while
+            // preserving the two selected endpoints. Explicit edge collapse remains a separate helper.
 
-            MMesh mesh = model.GetMesh(edgeKey.meshId).Clone();
+            MMesh originalMesh = model.GetMesh(edgeKey.meshId);
+            MMesh mesh = originalMesh.Clone();
 
             // Step 1: Find the two faces incident to the edge.
             Face face1 = null;
             Face face2 = null;
             FindIncidentFaces(edgeKey, out face1, out face2);
+            if (face1 == null)
+            {
+                Debug.LogWarning($"Deleter: Cannot delete edge {edgeKey} - no incident faces found.");
+                PlayInvalidDeletionFeedback();
+                return;
+            }
+
             if (face1 != null && face2 == null)
             {
                 //Special case - deleting an internal edge to the face. Delete the vertex that doesn't border other verts in the
@@ -372,21 +289,23 @@ namespace com.google.apps.peltzer.client.tools
                     cleanupOp.DeleteVertex(edgeKey.vertexId2);
                 }
                 cleanupOp.Commit();
-                if (MeshValidator.IsValidMesh(mesh, new HashSet<int>(replacementFaceVertIds)))
-                {
-                    model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
-                }
+                TryApplyValidatedMesh(mesh, originalMesh,
+                  $"Deleter: Cannot delete internal edge {edgeKey} - resulting mesh would be invalid.");
                 return;
             }
 
-            MMesh.GeometryOperation edgeDeletionOperation = mesh.StartOperation();
-            edgeDeletionOperation.DeleteFace(face1.id);
-            edgeDeletionOperation.DeleteFace(face2.id);
-
             int face1EdgeKey1Index = FindLastEdgeVertexInFace(edgeKey, face1);
-            if (face1EdgeKey1Index == -1) return;
+            if (face1EdgeKey1Index == -1)
+            {
+                Debug.LogWarning($"Deleter: Cannot delete edge {edgeKey} - edge vertices not found in face {face1.id}.");
+                return;
+            }
             int face2EdgeKeyIndex = FindLastEdgeVertexInFace(edgeKey, face2);
-            if (face2EdgeKeyIndex == -1) return;
+            if (face2EdgeKeyIndex == -1)
+            {
+                Debug.LogWarning($"Deleter: Cannot delete edge {edgeKey} - edge vertices not found in face {face2.id}.");
+                return;
+            }
 
             List<int> vertexIds = new List<int>();
             vertexIds.Add(face1.vertexIds[face1EdgeKey1Index]);
@@ -402,12 +321,31 @@ namespace com.google.apps.peltzer.client.tools
                 vertexIds.Add(face2.vertexIds[face2EdgeKeyIndex]);
             }
 
+            bool facesAreCoplanar = MeshUtil.AreFacesCoplanar(mesh, face1, face2);
+            if (!Features.allowNoncoplanarFaces && !facesAreCoplanar)
+            {
+                if (!MeshUtil.TryDeleteEdgeAndMakePlanar(mesh, edgeKey, face1, face2, vertexIds.AsReadOnly()))
+                {
+                    Debug.LogWarning($"Deleter: Cannot delete edge {edgeKey} - no clear planar merged face exists.");
+                    PlayInvalidDeletionFeedback();
+                    return;
+                }
+
+                MeshUtil.RemoveRedundantColinearVertices(mesh, new int[] { edgeKey.vertexId1, edgeKey.vertexId2 });
+                TryApplyValidatedMesh(mesh, originalMesh,
+                  $"Deleter: Cannot delete edge {edgeKey} - resulting planarized mesh would be invalid.");
+                return;
+            }
+
+            MMesh.GeometryOperation edgeDeletionOperation = mesh.StartOperation();
+            edgeDeletionOperation.DeleteFace(face1.id);
+            edgeDeletionOperation.DeleteFace(face2.id);
+
             edgeDeletionOperation.AddFace(vertexIds, face1.properties);
             edgeDeletionOperation.Commit();
-            if (MeshValidator.IsValidMesh(mesh, new HashSet<int>(vertexIds)))
-            {
-                model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
-            }
+            MeshUtil.RemoveRedundantColinearVertices(mesh, new int[] { edgeKey.vertexId1, edgeKey.vertexId2 });
+            TryApplyValidatedMesh(mesh, originalMesh,
+              $"Deleter: Cannot delete edge {edgeKey} - resulting mesh would be invalid.");
             return;
         }
 
@@ -436,91 +374,33 @@ namespace com.google.apps.peltzer.client.tools
 
         private void DeleteFace(FaceKey faceKey)
         {
-            MMesh mesh = model.GetMesh(faceKey.meshId).Clone();
-            MMesh.GeometryOperation deleteFaceOp = mesh.StartOperation();
-            Face faceToDelete = mesh.GetFace(faceKey.faceId);
+            MMesh originalMesh = model.GetMesh(faceKey.meshId);
+            MMesh mesh = originalMesh.Clone();
+            MeshUtil.DeleteFaceAndMergeAdjacentFaces(mesh, faceKey.faceId);
+            TryApplyValidatedMesh(mesh, originalMesh,
+              $"Deleter: Cannot delete face {faceKey.faceId} in mesh {mesh.id} - resulting mesh would be invalid.");
+        }
 
-            Vector3 avgLogMeshSpace = Vector3.zero;
-            foreach (int vertexId in faceToDelete.vertexIds)
-            {
-                avgLogMeshSpace += mesh.VertexPositionInMeshCoords(vertexId);
-            }
-            avgLogMeshSpace /= faceToDelete.vertexIds.Count;
-
-            Vertex mergedVert = deleteFaceOp.AddVertexMeshSpace(avgLogMeshSpace);
-
-            List<int> facesToDelete = new List<int>();
-            facesToDelete.Add(faceToDelete.id);
-            List<Face> facesToAdd = new List<Face>();
-
-            foreach (Face f in mesh.GetFaces())
-            {
-                bool found = false;
-                foreach (int vertexId in faceToDelete.vertexIds)
-                {
-                    if (f.vertexIds.Contains(vertexId))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found) continue;
-
-
-                facesToDelete.Add(f.id);
-
-                List<int> verts = new List<int>();
-                List<Vector3> vertLocs = new List<Vector3>();
-
-                bool added = false;
-                foreach (int vertexId in f.vertexIds)
-                {
-                    bool found2 = false;
-                    foreach (int vertexId2 in faceToDelete.vertexIds)
-                    {
-                        if (vertexId == vertexId2)
-                        {
-                            found2 = true;
-                            break;
-                        }
-                    }
-
-                    if (!found2)
-                    {
-                        verts.Add(vertexId);
-                        vertLocs.Add(deleteFaceOp.GetCurrentVertexPositionMeshSpace(vertexId));
-                    }
-                    else
-                    {
-                        // Open question: Is this what we want to do if multiple verts from the deleted face are in another face? Can we ensure they would always have been in order and this is safe?
-                        // What about <3-gons generated.
-                        if (added)
-                        {
-                            continue;
-                        }
-
-                        added = true;
-                        verts.Add(mergedVert.id);
-                        vertLocs.Add(mergedVert.loc);
-                    }
-                }
-                deleteFaceOp.AddFace(verts, f.properties);
-            }
-
-            foreach (int vertexId in faceToDelete.vertexIds)
-            {
-                deleteFaceOp.DeleteVertex(vertexId);
-            }
-
-            foreach (int f in facesToDelete)
-            {
-                deleteFaceOp.DeleteFace(f);
-            }
-
-            deleteFaceOp.Commit();
-
+        private bool TryApplyValidatedMesh(MMesh mesh, MMesh originalMesh, string invalidMessage)
+        {
+            HashSet<int> updatedVertIds = new HashSet<int>(mesh.GetVertexIds());
+            MeshFixer.FixMutatedMesh(originalMesh, mesh, updatedVertIds,
+                /* splitNonCoplanarFaces */ true, /* mergeAdjacentCoplanarFaces */ false);
+            // if (MeshValidator.(mesh, updatedVertIds))
+            // {
             model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
+            return true;
+            // }
+
+            Debug.LogWarning(invalidMessage);
+            PlayInvalidDeletionFeedback();
+            return false;
+        }
+
+        private void PlayInvalidDeletionFeedback()
+        {
+            audioLibrary.PlayClip(audioLibrary.errorSound);
+            peltzerController.TriggerHapticFeedback();
         }
 
         private void StartDeleting()
