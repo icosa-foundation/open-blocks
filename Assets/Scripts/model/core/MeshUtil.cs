@@ -143,6 +143,134 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         /// <summary>
+        /// Removes boundary vertices that are colinear with their neighbors while preserving winding order.
+        /// </summary>
+        public static List<int> RemoveColinearVertexIds(MMesh mesh, ReadOnlyCollection<int> vertexIds)
+        {
+            int numVertices = vertexIds.Count;
+            if (numVertices < 3)
+            {
+                return new List<int>(vertexIds);
+            }
+
+            List<int> simplifiedVertexIds = new List<int>(numVertices);
+            Vector3 previous = mesh.VertexPositionInMeshCoords(vertexIds[numVertices - 1]);
+            Vector3 current = mesh.VertexPositionInMeshCoords(vertexIds[0]);
+            Vector3 next;
+            for (int i = 0; i < numVertices; i++)
+            {
+                next = mesh.VertexPositionInMeshCoords(vertexIds[(i + 1) % numVertices]);
+                if (!Math3d.AreColinear(previous, current, next))
+                {
+                    simplifiedVertexIds.Add(vertexIds[i]);
+                }
+
+                previous = current;
+                current = next;
+            }
+
+            return simplifiedVertexIds;
+        }
+
+        /// <summary>
+        /// Removes boundary vertices that are colinear with their neighbors while preserving winding order.
+        /// Uses the current in-operation vertex positions.
+        /// </summary>
+        public static List<int> RemoveColinearVertexIds(MMesh.GeometryOperation operation, ReadOnlyCollection<int> vertexIds)
+        {
+            int numVertices = vertexIds.Count;
+            if (numVertices < 3)
+            {
+                return new List<int>(vertexIds);
+            }
+
+            List<int> simplifiedVertexIds = new List<int>(numVertices);
+            Vector3 previous = operation.GetCurrentVertexPositionMeshSpace(vertexIds[numVertices - 1]);
+            Vector3 current = operation.GetCurrentVertexPositionMeshSpace(vertexIds[0]);
+            Vector3 next;
+            for (int i = 0; i < numVertices; i++)
+            {
+                next = operation.GetCurrentVertexPositionMeshSpace(vertexIds[(i + 1) % numVertices]);
+                if (!Math3d.AreColinear(previous, current, next))
+                {
+                    simplifiedVertexIds.Add(vertexIds[i]);
+                }
+
+                previous = current;
+                current = next;
+            }
+
+            return simplifiedVertexIds;
+        }
+
+        /// <summary>
+        /// Removes candidate vertices that have become redundant because they are colinear in every face
+        /// that still references them. All incident faces are updated together to preserve topology.
+        /// </summary>
+        public static bool RemoveRedundantColinearVertices(MMesh mesh, IEnumerable<int> candidateVertexIds)
+        {
+            bool mutated = false;
+            HashSet<int> processedVertexIds = new HashSet<int>();
+            foreach (int vertexId in candidateVertexIds)
+            {
+                if (!processedVertexIds.Add(vertexId) || !mesh.HasVertex(vertexId))
+                {
+                    continue;
+                }
+
+                HashSet<int> incidentFaceIds = new HashSet<int>(mesh.reverseTable[vertexId]);
+                if (incidentFaceIds.Count == 0)
+                {
+                    continue;
+                }
+
+                List<Face> incidentFaces = new List<Face>(incidentFaceIds.Count);
+                bool canRemoveVertex = true;
+                foreach (int faceId in incidentFaceIds)
+                {
+                    Face face;
+                    if (!mesh.TryGetFace(faceId, out face))
+                    {
+                        continue;
+                    }
+
+                    if (face.vertexIds.Count <= 3 || !IsVertexColinearInFace(mesh, face, vertexId))
+                    {
+                        canRemoveVertex = false;
+                        break;
+                    }
+
+                    incidentFaces.Add(face);
+                }
+
+                if (!canRemoveVertex || incidentFaces.Count == 0)
+                {
+                    continue;
+                }
+
+                MMesh.GeometryOperation removeVertexFromFacesOperation = mesh.StartOperation();
+                foreach (Face face in incidentFaces)
+                {
+                    List<int> updatedVertexIds = new List<int>(face.vertexIds);
+                    updatedVertexIds.Remove(vertexId);
+                    removeVertexFromFacesOperation.ModifyFace(face.id, updatedVertexIds, face.properties);
+                }
+                removeVertexFromFacesOperation.Commit();
+
+                if (mesh.reverseTable[vertexId].Count == 0)
+                {
+                    MMesh.GeometryOperation deleteVertexOperation = mesh.StartOperation();
+                    deleteVertexOperation.DeleteVertex(vertexId);
+                    deleteVertexOperation.CommitWithoutRecalculation();
+                }
+
+                mutated = true;
+            }
+
+            return mutated;
+        }
+
+        /// <summary>
         /// Deletes an edge by merging its two incident faces into one planar face, if the remaining
         /// boundary vertices define a clear plane. The two edge endpoints are preserved and moved onto
         /// that plane.
@@ -182,6 +310,22 @@ namespace com.google.apps.peltzer.client.model.core
             planarDeleteOperation.AddFace(new List<int>(mergedFaceVertexIds), face1.properties);
             planarDeleteOperation.Commit();
             return true;
+        }
+
+        private static bool IsVertexColinearInFace(MMesh mesh, Face face, int vertexId)
+        {
+            int vertexIndex = face.vertexIds.IndexOf(vertexId);
+            if (vertexIndex == -1)
+            {
+                return false;
+            }
+
+            int previousIndex = (vertexIndex - 1 + face.vertexIds.Count) % face.vertexIds.Count;
+            int nextIndex = (vertexIndex + 1) % face.vertexIds.Count;
+            return Math3d.AreColinear(
+                mesh.VertexPositionInMeshCoords(face.vertexIds[previousIndex]),
+                mesh.VertexPositionInMeshCoords(vertexId),
+                mesh.VertexPositionInMeshCoords(face.vertexIds[nextIndex]));
         }
 
         /// <summary>

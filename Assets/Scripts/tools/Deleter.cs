@@ -321,7 +321,8 @@ namespace com.google.apps.peltzer.client.tools
                 vertexIds.Add(face2.vertexIds[face2EdgeKeyIndex]);
             }
 
-            if (!Features.allowNoncoplanarFaces && !MeshUtil.AreFacesCoplanar(mesh, face1, face2))
+            bool facesAreCoplanar = MeshUtil.AreFacesCoplanar(mesh, face1, face2);
+            if (!Features.allowNoncoplanarFaces && !facesAreCoplanar)
             {
                 if (!MeshUtil.TryDeleteEdgeAndMakePlanar(mesh, edgeKey, face1, face2, vertexIds.AsReadOnly()))
                 {
@@ -330,6 +331,7 @@ namespace com.google.apps.peltzer.client.tools
                     return;
                 }
 
+                MeshUtil.RemoveRedundantColinearVertices(mesh, new int[] { edgeKey.vertexId1, edgeKey.vertexId2 });
                 TryApplyValidatedMesh(mesh, originalMesh,
                   $"Deleter: Cannot delete edge {edgeKey} - resulting planarized mesh would be invalid.");
                 return;
@@ -341,6 +343,7 @@ namespace com.google.apps.peltzer.client.tools
 
             edgeDeletionOperation.AddFace(vertexIds, face1.properties);
             edgeDeletionOperation.Commit();
+            MeshUtil.RemoveRedundantColinearVertices(mesh, new int[] { edgeKey.vertexId1, edgeKey.vertexId2 });
             TryApplyValidatedMesh(mesh, originalMesh,
               $"Deleter: Cannot delete edge {edgeKey} - resulting mesh would be invalid.");
             return;
