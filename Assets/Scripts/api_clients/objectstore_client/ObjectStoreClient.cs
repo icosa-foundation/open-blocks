@@ -1521,7 +1521,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     var uriPath = $"file:///{normalizedPath}";
 
                     importer = new UnityGLTF.GLTFSceneImporter(uriPath, importOptions);
-                    importer.CustomShaderName = "Universal Render Pipeline/Unlit";
+                    importer.CustomShaderName = "Universal Render Pipeline/OpenBlocksLit";
                     if (importRoot != null)
                     {
                         importer.SceneParent = importRoot.transform;
