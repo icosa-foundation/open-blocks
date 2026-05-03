@@ -38,6 +38,11 @@ namespace com.google.apps.peltzer.client.model.core
         private const float TRIANGLE_INTERSECTION_TOLERANCE = 1.005f;
 
         /// <summary>
+        /// Relative tolerance used when rejecting solids that have collapsed to effectively zero enclosed volume.
+        /// </summary>
+        private const float MIN_RELATIVE_VOLUME = 1e-12f;
+
+        /// <summary>
         /// Tests whether or not the given mesh is valid (heuristically).
         ///
         /// For the purposes of Poly, a mesh is defined to be valid if no back faces are exposed. In other words, a mesh
@@ -70,6 +75,12 @@ namespace com.google.apps.peltzer.client.model.core
 
             // Calculate the normals and vertex positions of each triangle.
             List<TriangleInfo> triangleInfo = CalculateTriangleInfo(mesh, geometry);
+
+            if (!HasNonZeroVolume(mesh, geometry))
+            {
+                Debug.LogWarning($"MeshValidator: mesh {mesh.id} invalid - enclosed volume collapsed to zero.");
+                return false;
+            }
 
             // Test rays we will use during the main loop.
             Ray[] testRays = new Ray[4];
@@ -131,10 +142,35 @@ namespace com.google.apps.peltzer.client.model.core
 
                 // Check all the test rays. If one of them doesn't exit the mesh, it means this back face can see the sky,
                 // so the mesh is invalid.
-                if (!RaysExitMesh(mesh, geometry, triangleInfo, testRays, i)) return false;
+                if (!RaysExitMesh(mesh, geometry, triangleInfo, testRays, i))
+                {
+                    Debug.LogWarning($"MeshValidator: mesh {mesh.id} invalid - triangle {i} " +
+                        $"(verts {triangle.vertId0},{triangle.vertId1},{triangle.vertId2}) has an exposed back face. " +
+                        $"Center: {thisTriangleInfo.center}, normal: {thisTriangleInfo.normal}");
+                    return false;
+                }
             }
             // We found no reason to suspect the mesh is invalid.
             return true;
+        }
+
+        private static bool HasNonZeroVolume(MMesh mesh, List<Triangle> geometry)
+        {
+            float signedVolume = 0.0f;
+            for (int i = 0; i < geometry.Count; i++)
+            {
+                Triangle triangle = geometry[i];
+                Vector3 v0 = mesh.VertexPositionInMeshCoords(triangle.vertId0);
+                Vector3 v1 = mesh.VertexPositionInMeshCoords(triangle.vertId1);
+                Vector3 v2 = mesh.VertexPositionInMeshCoords(triangle.vertId2);
+                signedVolume += Vector3.Dot(v0, Vector3.Cross(v1, v2)) / 6.0f;
+            }
+
+            float maxDimension = Mathf.Max(mesh.localBounds.size.x,
+                Mathf.Max(mesh.localBounds.size.y, mesh.localBounds.size.z));
+            float minValidVolume = maxDimension * maxDimension * maxDimension * MIN_RELATIVE_VOLUME;
+
+            return Mathf.Abs(signedVolume) > minValidVolume;
         }
 
         private static bool RaysExitMesh(MMesh mesh, List<Triangle> geometry, List<TriangleInfo> triangleInfo,
