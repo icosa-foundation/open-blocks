@@ -346,22 +346,15 @@ namespace com.google.apps.peltzer.client.model.import
                 return null;
             }
 
-            if (material.HasTexture(BaseMapId))
-            {
-                return material.GetTexture(BaseMapId);
-            }
+            // Use HasProperty + explicit null check: Material.HasTexture(int) is a Unity built-in that only
+            // checks property existence, not whether a texture is actually assigned.
+            Texture tex = material.HasProperty(BaseMapId) ? material.GetTexture(BaseMapId) : null;
+            if (tex != null) return tex;
 
-            if (material.HasTexture(MainTexId))
-            {
-                return material.GetTexture(MainTexId);
-            }
+            tex = material.HasProperty(MainTexId) ? material.GetTexture(MainTexId) : null;
+            if (tex != null) return tex;
 
             return material.mainTexture;
-        }
-
-        private static bool HasTexture(this Material material, int propertyId)
-        {
-            return material != null && material.HasProperty(propertyId) && material.GetTexture(propertyId) != null;
         }
 
         private static Color SampleFaceColor(
