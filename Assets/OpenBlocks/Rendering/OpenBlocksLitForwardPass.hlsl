@@ -375,8 +375,17 @@ void OpenBlocksLitPassFragment(OpenBlocksVaryings input, bool facing : SV_IsFron
     float stp = step(1.0, facing);
     v.normalWS = stp * ennoisenedNormal + (1.0 - stp) * -ennoisenedNormal;
     _BaseColor = stp * _BaseColor + (1.0 - stp) * float4(0.4432, 0.3382, 1, 1);
+    #else
+    // Flip normal for back faces (two-sided lighting).
+    // Then flip again if normal still points away from camera — handles imported
+    // models where stored normals are inverted relative to intended outward direction.
+    if (!facing)
+        v.normalWS = -v.normalWS;
+    half3 viewDir = normalize(_WorldSpaceCameraPos.xyz - v.positionWS);
+    if (dot(v.normalWS, viewDir) < 0)
+        v.normalWS = -v.normalWS;
     #endif
-    
+
     LitPassFragment(v, outColor
     #ifdef  _WRITE_RENDERING_LAYERS
     , out
