@@ -1637,9 +1637,13 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     return Color.white;
                 }
 
+                // UnityGLTF maps baseColorFactor to _Color (legacy property) when using a custom shader name,
+                // leaving _BaseColor at its default white. Fall through to _Color if _BaseColor is white.
                 if (material.HasProperty("_BaseColor"))
                 {
-                    return material.GetColor("_BaseColor");
+                    Color c = material.GetColor("_BaseColor");
+                    if (c != Color.white || !material.HasProperty("_Color"))
+                        return c;
                 }
 
                 if (material.HasProperty("_Color"))
@@ -1720,7 +1724,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 {
                     int materialIndex = Mathf.Clamp(subMeshIndex, 0, materials.Length - 1);
                     Material sourceMaterial = materials[materialIndex];
-                    if (TextureToFaceColorApproximator.TryComputeFaceColors(mesh, triangles, sourceMaterial, out List<Color> faceColors, out string debugMessage) && faceColors != null)
+                    bool gotFaceColors = TextureToFaceColorApproximator.TryComputeFaceColors(mesh, triangles, sourceMaterial, out List<Color> faceColors, out string debugMessage);
+                    if (gotFaceColors && faceColors != null)
                     {
                         List<FaceProperties> overrides = new List<FaceProperties>(faceColors.Count);
                         foreach (Color color in faceColors)
