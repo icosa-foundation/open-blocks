@@ -584,6 +584,7 @@ namespace com.google.apps.peltzer.client.entitlement
         //private const string m_AccessTokenUri = "https://accounts.google.com/o/oauth2/token";
         private static string m_UserInfoUri;
         private static string m_LoginUrl;
+        private const string kDeviceLoginLogPrefix = "[OBDL_20260505]";
         private string m_DeviceCodeUrl;
         private const string m_OAuthScope = "profile email " +
             "https://www.googleapis.com/auth/plus.me " +
@@ -903,29 +904,33 @@ namespace com.google.apps.peltzer.client.entitlement
 
             if (String.IsNullOrEmpty(m_RefreshToken) && !String.IsNullOrEmpty(m_VerificationCode))
             {
-                // TODO: For Unity 2021+
-                var www = UnityWebRequest.PostWwwForm($"{m_LoginUrl}?device_code={m_VerificationCode}", "{}");
+                var loginUri = $"{m_LoginUrl}?device_code={Uri.EscapeDataString(m_VerificationCode)}" +
+                    $"&client_secret={Uri.EscapeDataString(m_ClientSecret)}";
 
-                yield return www.SendWebRequest();
-                if (www.isNetworkError)
+                // The device login endpoint currently validates these fields as query parameters.
+                using (var www = UnityWebRequest.PostWwwForm(loginUri, "{}"))
                 {
-                    Debug.LogError("Network error");
-                    m_WaitingOnAuthorization = false;
-                    yield break;
-                }
+                    yield return www.SendWebRequest();
+                    if (www.result == UnityWebRequest.Result.ConnectionError)
+                    {
+                        Debug.LogError("Network error");
+                        m_WaitingOnAuthorization = false;
+                        yield break;
+                    }
 
-                if (www.responseCode >= 400)
-                {
-                    Debug.LogError("Authorization failed");
-                    Debug.LogFormat("Authorization error {0}", www.downloadHandler.text);
-                    m_WaitingOnAuthorization = false;
-                    yield break;
-                }
+                    if (www.responseCode >= 400)
+                    {
+                        Debug.LogError($"{kDeviceLoginLogPrefix} Authorization failed ({www.responseCode})");
+                        Debug.LogError($"{kDeviceLoginLogPrefix} Authorization error {www.downloadHandler.text}");
+                        m_WaitingOnAuthorization = false;
+                        yield break;
+                    }
 
-                JObject json = JObject.Parse(www.downloadHandler.text);
-                if (json != null)
-                {
-                    m_AccessToken = json["access_token"].ToString();
+                    JObject json = JObject.Parse(www.downloadHandler.text);
+                    if (json != null)
+                    {
+                        m_AccessToken = json["access_token"].ToString();
+                    }
                 }
                 m_WaitingOnAuthorization = false;
             }
