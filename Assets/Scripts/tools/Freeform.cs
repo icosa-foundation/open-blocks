@@ -426,6 +426,9 @@ namespace com.google.apps.peltzer.client.tools
                 AddSpine();
             }
 
+            peltzerController.SetApplicationButtonOverlay(
+                isManualCheckpointing ? ButtonMode.ACTIVE : ButtonMode.WAITING);
+
             UpdatePreviewPositionAndRotation();
         }
 
@@ -1118,6 +1121,10 @@ namespace com.google.apps.peltzer.client.tools
                 SetCheckpointingMode(/*isManualCheckpointing*/ false);
                 peltzerController.ChangeTouchpadOverlay(TouchpadOverlay.FREEFORM);
                 recordedSnapThisStroke = false;
+            }
+            else if (IsToggleCheckpointingModeEvent(args))
+            {
+                SetCheckpointingMode(!isManualCheckpointing);
             }
             else if (IsScaleEvent(args))
             {

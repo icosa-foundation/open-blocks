@@ -328,6 +328,9 @@ namespace com.google.apps.peltzer.client.tools
                         PeltzerMain.Instance.highlightUtils.SetFaceStyleToSelect(faceKey, selector.selectorPosition);
                     }
                 }
+
+                peltzerController.SetApplicationButtonOverlay(
+                    selector.CoplanarFaceSelectionModeEnabled ? ButtonMode.ACTIVE : ButtonMode.WAITING);
             }
         }
 
