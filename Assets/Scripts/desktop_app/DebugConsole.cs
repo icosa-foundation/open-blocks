@@ -30,9 +30,12 @@ using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.app;
+using Polyhydra.Core;
 using com.google.apps.peltzer.client.entitlement;
 using extApi;
 using UnityEngine.InputSystem;
+using Face = com.google.apps.peltzer.client.model.core.Face;
+using Vertex = com.google.apps.peltzer.client.model.core.Vertex;
 using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.desktop_app
