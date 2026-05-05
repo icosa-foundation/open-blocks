@@ -32,6 +32,7 @@ using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.app;
 using Polyhydra.Core;
 using com.google.apps.peltzer.client.entitlement;
+using extApi;
 using UnityEngine.InputSystem;
 using Face = com.google.apps.peltzer.client.model.core.Face;
 using Vertex = com.google.apps.peltzer.client.model.core.Vertex;
@@ -44,28 +45,6 @@ namespace com.google.apps.peltzer.client.desktop_app
     /// </summary>
     public class DebugConsole : MonoBehaviour
     {
-        private const string HELP_TEXT = "COMMANDS:\n" +
-          "dump\n  dump debug logs/state to a file\n" +
-          "env\n  change environment (background)\n" +
-          "flag\n  lists/sets feature flags\n" +
-          "fuse\n  fuses all selected meshes into a single mesh.\n" +
-          "help\n  shows this help text\n" +
-          "import\n  import 3d model\n" +
-          "insert\n  insert primitives\n" +
-          "insertduration <duration>\n  sets the mesh insert effect duration (e.g. 0.6).\n" +
-          "loadfile <path>\n  loads a model from the given file (use full path).\n" +
-          "loadres <path>\n  loads a model from the given resource file.\n" +
-          "login <code>\n  logs in using either a device code or a bearer token.\n" +
-          "minfo\n  prints info about the selected meshes.\n" +
-          "movev\n  moves vertices by a given delta.\n" +
-          "publish\n  saves & publishes the current scene.\n" +
-          "rest\n  change restrictions.\n" +
-          "savefile <path>\n  saves model to the given file (use full path).\n" +
-          "setgid <gid>\n  sets the group ID of selected mesh group.\n" +
-          "setmid <mid>\n  sets the mesh ID of selected mesh.\n" +
-          "setmaxundo <size>\n  sets the maximum number of undos to store.\n" +
-          "tut\n  tutorial-related commands.\n";
-
         // Set from the Unity editor:
         public GameObject consoleObject;
         public Text consoleOutput;
@@ -75,12 +54,16 @@ namespace com.google.apps.peltzer.client.desktop_app
         private string lastCommand = "";
 
         private Material originalSkybox;
+        private readonly Dictionary<string, ConsoleCommandRegistration> commandHandlers =
+            new Dictionary<string, ConsoleCommandRegistration>(StringComparer.Ordinal);
+        private bool commandsInitialized;
 
         // Results of the last search, null if none.
         ObjectStoreEntry[] objectStoreSearchResults;
 
         public void Start()
         {
+            InitializeCommands();
             modelImportController = gameObject.GetComponent<ModelImportController>();
             consoleOutput.text = "DEBUG CONSOLE\n" +
               "Blocks version: " + Config.Instance.version + "\n" +
@@ -132,104 +115,303 @@ namespace com.google.apps.peltzer.client.desktop_app
 
         private void RunCommand(string command)
         {
+            InitializeCommands();
             lastCommand = command;
             consoleOutput.text = "";
-            string[] parts = command.Split(' ');
-            switch (parts[0])
-            {
-                case "dump":
-                    CommandDump(parts);
-                    break;
-                case "env":
-                    CommandEnv(parts);
-                    break;
-                case "flag":
-                    CommandFlag(parts);
-                    break;
-                case "fuse":
-                    CommandFuse(parts);
-                    break;
-                case "help":
-                    PrintLn(HELP_TEXT);
-                    break;
-                case "insert":
-                    CommandInsert(parts);
-                    break;
-                case "insertduration":
-                    CommandInsertDuration(parts);
-                    break;
-                case "loadfile":
-                    CommandLoadFile(parts);
-                    break;
-                case "login":
-                    CommandLogin(parts);
-                    break;
-                case "loadres":
-                    CommandLoadRes(parts);
-                    break;
-                case "minfo":
-                    CommandMInfo(parts);
-                    break;
-                case "movev":
-                    CommandMoveV(parts);
-                    break;
-                case "publish":
-                    CommandPublish(parts);
-                    break;
-                case "ram":
-                    CommandLogRam(parts);
-                    break;
-                case "rest":
-                    CommandRest(parts);
-                    break;
-                case "savefile":
-                    CommandSaveFile(parts);
-                    break;
-                case "setgid":
-                    CommandSetGid(parts);
-                    break;
-                case "setmid":
-                    CommandSetMid(parts);
-                    break;
-                case "setmaxundo":
-                    CommandSetMaxUndo(parts);
-                    break;
-                case "tut":
-                    CommandTut(parts);
-                    break;
-                case "import":
-                    CommandImport(parts);
-                    break;
-                default:
-                    PrintLn("Unrecognized command: " + command);
-                    PrintLn("Type 'help' for a list of commands.");
-                    break;
-            }
-        }
+            string[] parts = command
+                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-        private void PrintImportCommandHelp()
-        {
-            PrintLn("Syntax: import {relative path}");
-            PrintLn("Path is relative to your Documents/Blocks folder.");
-            PrintLn("For example:");
-            PrintLn("   import mymodels/Andy.obj");
-            PrintLn("Supported filetypes: .obj, .off, .gltf, .glb");
-        }
+            if (parts.Length == 0)
+                return;
 
-        private void CommandImport(string[] parts)
-        {
-            if (parts.Length < 2)
+            var matchedCommandName = commandHandlers.Keys
+                .Where(name => MatchesCommand(parts, name))
+                .OrderByDescending(name => name.Count(character => character == ' '))
+                .ThenByDescending(name => name.Length)
+                .FirstOrDefault();
+
+            if (matchedCommandName != null && commandHandlers.TryGetValue(matchedCommandName, out var commandRegistration))
             {
-                PrintImportCommandHelp();
+                var commandTokenCount = matchedCommandName
+                    .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Length;
+                var handlerParts = new[] { matchedCommandName }
+                    .Concat(parts.Skip(commandTokenCount))
+                    .ToArray();
+                commandRegistration.Handler(handlerParts);
                 return;
             }
-            string userPath = PeltzerMain.Instance.userPath;
-            modelImportController.Import(parts.Skip(1).Select(p => Path.Combine(userPath, p)).ToArray());
+
+            if (TryRunApiCommand(parts))
+                return;
+
+            PrintLn("Unrecognized command: " + command);
+            PrintLn("Type 'help' for a list of commands.");
+        }
+
+        private void InitializeCommands()
+        {
+            if (commandsInitialized)
+                return;
+
+            RegisterConsoleCommand("dump", CommandDump, "dump", "write a debug report bundle to disk");
+            RegisterConsoleCommand("env", CommandEnv, "env ...", "adjust debug environment/background");
+            RegisterConsoleCommand("flag", CommandFlag, "flag ...", "list or set feature flags");
+            RegisterConsoleCommand("help", parts => PrintLn(BuildHelpText()), "help", "show available commands");
+            RegisterConsoleCommand("insertduration", CommandInsertDuration, "insertduration <seconds>", "set insert effect duration");
+            RegisterConsoleCommand("login", CommandLogin, "login <code>", "log in using a device code or bearer token");
+            RegisterConsoleCommand("loadres", CommandLoadRes, "loadres <path>", "load a bundled resource model");
+            RegisterConsoleCommand("minfo", CommandMInfo, "minfo", "print model or selection info");
+            RegisterConsoleCommand("movev", CommandMoveV, "movev <delta>", "move selected vertices by x,y,z");
+            RegisterConsoleCommand("ram", CommandLogRam, "ram", "show runtime memory information");
+            RegisterConsoleCommand("rest", CommandRest, "rest ...", "change restriction modes");
+            RegisterConsoleCommand("setgid", CommandSetGid, "setgid <id>", "set selected group id");
+            RegisterConsoleCommand("setmid", CommandSetMid, "setmid <id>", "set selected mesh id");
+            RegisterConsoleCommand("setmaxundo", CommandSetMaxUndo, "setmaxundo <size>", "set max undo history");
+            RegisterConsoleCommand("tut", CommandTut, "tut ...", "tutorial commands");
+
+            commandsInitialized = true;
+        }
+
+        private void RegisterConsoleCommand(
+            string name,
+            Action<string[]> handler,
+            string helpText = null,
+            string description = null)
+        {
+            commandHandlers[name] = new ConsoleCommandRegistration(handler, helpText ?? name, description);
+        }
+
+        private string BuildHelpText()
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("COMMANDS");
+
+            var apiCommands = GetApiConsoleCommands();
+            if (apiCommands.Count > 0)
+            {
+                builder.AppendLine("API");
+                foreach (var command in apiCommands)
+                {
+                    AppendHelpEntry(builder, command.HelpText, command.Description);
+                }
+            }
+
+            var consoleOnlyCommands = commandHandlers.Keys
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToList();
+
+            if (consoleOnlyCommands.Count > 0)
+            {
+                builder.AppendLine("CONSOLE-ONLY");
+                foreach (var command in consoleOnlyCommands)
+                {
+                    var registration = commandHandlers[command];
+                    AppendHelpEntry(builder, registration.HelpText, registration.Description);
+                }
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private static void AppendHelpEntry(StringBuilder builder, string helpText, string description)
+        {
+            builder.AppendLine(helpText);
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                builder.AppendLine($"  {description}");
+            }
+        }
+
+        private bool TryRunApiCommand(IReadOnlyList<string> parts)
+        {
+            var command = GetApiConsoleCommands()
+                .Where(candidate => MatchesCommand(parts, candidate.CommandName))
+                .Where(candidate => candidate.AcceptsArgumentCount(parts.Count - candidate.CommandTokenCount))
+                .OrderByDescending(candidate => candidate.CommandTokenCount)
+                .ThenByDescending(candidate => candidate.RequiredParameterCount)
+                .ThenByDescending(candidate => candidate.Parameters.Count)
+                .FirstOrDefault();
+
+            if (command == null)
+                return false;
+
+            var argumentValues = parts.Skip(command.CommandTokenCount).ToArray();
+            var path = command.Route.Path;
+            var queryParameters = new Dictionary<string, string>(StringComparer.Ordinal);
+
+            for (var i = 0; i < command.Parameters.Count && i < argumentValues.Length; i++)
+            {
+                var parameter = command.Parameters[i];
+                var argumentValue = argumentValues[i];
+
+                if (parameter.BindingSources.Contains("route"))
+                {
+                    path = path.Replace($"{{{parameter.Name}}}", argumentValue);
+                }
+                else
+                {
+                    queryParameters[parameter.Name] = argumentValue;
+                }
+            }
+
+            PrintApiResult(ApiManager.Instance?.InvokeLocalGet(path, queryParameters));
+            return true;
+        }
+
+        private static bool MatchesCommand(IReadOnlyList<string> parts, string commandName)
+        {
+            var commandTokens = commandName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Count < commandTokens.Length)
+                return false;
+
+            for (var i = 0; i < commandTokens.Length; i++)
+            {
+                if (!string.Equals(parts[i], commandTokens[i], StringComparison.Ordinal))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private List<ApiConsoleCommand> GetApiConsoleCommands()
+        {
+            var routes = ApiManager.Instance?.GetRoutesDocument()?.Routes;
+            if (routes == null)
+                return new List<ApiConsoleCommand>();
+
+            return routes
+                .Where(IsConsoleEligibleApiRoute)
+                .Select(route => new ApiConsoleCommand(route, ToConsoleCommandName(route), BuildConsoleParameterMetadata(route)))
+                .OrderBy(command => command.CommandName, StringComparer.Ordinal)
+                .ThenBy(command => command.Parameters.Count)
+                .ToList();
+        }
+
+        private static bool IsConsoleEligibleApiRoute(ApiRouteDescription route)
+        {
+            return string.Equals(route.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase) &&
+                   route.ConsoleEnabled &&
+                   route.Parameters.All(parameter => !parameter.BindingSources.Contains("body")) &&
+                   route.Path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static List<ApiConsoleParameter> BuildConsoleParameterMetadata(ApiRouteDescription route)
+        {
+            return route.Parameters
+                .Where(parameter => !parameter.BindingSources.Contains("body"))
+                .Select(parameter => new ApiConsoleParameter(parameter.Name, parameter.Required, parameter.BindingSources))
+                .ToList();
+        }
+
+        private static string ToConsoleCommandName(string routePath)
+        {
+            var segments = routePath
+                .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (segments.Length >= 3 &&
+                string.Equals(segments[0], "api", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(segments[1], "v1", StringComparison.OrdinalIgnoreCase))
+            {
+                segments = segments.Skip(2).ToArray();
+            }
+
+            var commandSegments = segments
+                .Where(segment => !(segment.StartsWith("{", StringComparison.Ordinal) && segment.EndsWith("}", StringComparison.Ordinal)))
+                .ToArray();
+
+            return string.Join(" ", commandSegments);
+        }
+
+        private static string ToConsoleCommandName(ApiRouteDescription route)
+        {
+            if (!string.IsNullOrWhiteSpace(route.ConsoleAlias))
+                return route.ConsoleAlias;
+
+            return ToConsoleCommandName(route.Path);
+        }
+
+        private static string FormatParameterToken(string name, bool required)
+        {
+            return required ? $"<{name}>" : $"[{name}]";
+        }
+
+        private static bool TryParseIntList(string value, out int[] values)
+        {
+            values = Array.Empty<int>();
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            var parts = value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                return false;
+
+            var parsed = new List<int>(parts.Length);
+            foreach (var part in parts)
+            {
+                if (!int.TryParse(part.Trim(), out var parsedValue))
+                    return false;
+
+                parsed.Add(parsedValue);
+            }
+
+            values = parsed.ToArray();
+            return true;
         }
 
         private void PrintLn(string message)
         {
             consoleOutput.text += message + "\n";
+        }
+
+        private void PrintCommandResult(ApiCommandResult result)
+        {
+            if (result.success)
+            {
+                PrintLn(result.message);
+                if (!string.IsNullOrEmpty(result.redirectUrl))
+                {
+                    PrintLn($"redirectUrl: {result.redirectUrl}");
+                }
+
+                if (result.id.HasValue)
+                {
+                    PrintLn($"id: {result.id.Value}");
+                }
+
+                return;
+            }
+
+            PrintLn($"Error ({result.statusCode}): {result.error}");
+        }
+
+        private void PrintApiResult(ApiResult result)
+        {
+            if (result == null)
+            {
+                PrintLn("Error (500): API manager is not available.");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(result.Location))
+            {
+                PrintLn($"Redirect ({(int)result.StatusCode}): {result.Location}");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(result.RawBody))
+            {
+                PrintLn(result.RawBody);
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(result.Json))
+            {
+                PrintLn(result.Json);
+                return;
+            }
+
+            PrintLn(((int)result.StatusCode).ToString());
         }
 
         private void CommandLogRam(string[] parts)
@@ -330,7 +512,7 @@ namespace com.google.apps.peltzer.client.desktop_app
             StartCoroutine(objectStoreClient.GetPeltzerFile(entry, (PeltzerFile peltzerFile) =>
             {
                 PrintLn("Loaded successfully!");
-                PeltzerMain.Instance.CreateNewModel();
+                PrintCommandResult(ApiCommandService.CreateNewScene());
                 PeltzerMain.Instance.LoadPeltzerFileIntoModel(peltzerFile);
             }));
         }
@@ -356,22 +538,21 @@ namespace com.google.apps.peltzer.client.desktop_app
             {
                 PrintLn("Loaded successfully, now trying to save & publish\n.");
                 PrintLn("If no browser window opens after a minute or so, this might have failed.");
-                PeltzerMain.Instance.CreateNewModel();
+                PrintCommandResult(ApiCommandService.CreateNewScene());
                 PeltzerMain.Instance.LoadPeltzerFileIntoModel(peltzerFile);
-                PeltzerMain.Instance.SaveCurrentModel(publish: true, saveSelected: false, cloudSave: true);
+                PrintCommandResult(ApiCommandService.SaveSceneToIcosa(true));
             }));
         }
 
         private void CommandPublish(string[] parts)
         {
-            int index;
             if (parts.Length != 1)
             {
                 PrintLn("Syntax: publish");
                 PrintLn("Publishes the current scene");
                 return;
             }
-            PeltzerMain.Instance.SaveCurrentModel(publish: true, saveSelected: false, cloudSave: true);
+            PrintCommandResult(ApiCommandService.SaveSceneToIcosa(true));
         }
 
         private void CommandFlag(string[] parts)
@@ -818,121 +999,11 @@ namespace com.google.apps.peltzer.client.desktop_app
 #endif
         }
 
-        private void PrintInsertCommandHelp()
-        {
-            PrintLn("Syntax: insert {cone|cube|cylinder|sphere|torus} [<offset>] [<scale>]");
-            PrintLn("Where <offset> and <scale> are expressed as x,y,z (without any spaces).");
-            PrintLn("For example:");
-            PrintLn("   insert cube 2.5,3.12,6.5 1.1,2.0,3.0");
-            PrintLn("<offset> defaults to 0,0,0 and <scale> defaults to 1,1,1.");
-        }
-
         private void PrintInsertDurationCommandHelp()
         {
             PrintLn("Syntax: insertduration {time in seconds}");
             PrintLn("For example:");
             PrintLn("   insertduration 0.6");
-        }
-
-        private void CommandInsert(string[] parts)
-        {
-            if (parts.Length < 2)
-            {
-                PrintInsertCommandHelp();
-                return;
-            }
-
-            MMesh mesh;
-            int meshId = PeltzerMain.Instance.model.GenerateMeshId();
-            // Parse the desired primitive type.
-            if (Enum.TryParse(typeof(Primitives.Shape), parts[1], ignoreCase: true, out object result))
-            {
-                Primitives.Shape shape = (Primitives.Shape)result;
-                Vector3 offset = Vector3.zero;
-                Vector3 scale = Vector3.one;
-
-                // Parse the offset, if it was provided.
-                if (parts.Length >= 3 && !TryParseVector3(parts[2], out offset))
-                {
-                    PrintInsertCommandHelp();
-                    return;
-                }
-
-                // Parse the scale, if it was provided.
-                if (parts.Length >= 4 && !TryParseVector3(parts[3], out scale))
-                {
-                    PrintInsertCommandHelp();
-                    return;
-                }
-
-
-                mesh = Primitives.BuildPrimitive(shape, scale, offset, meshId, /* material */ 0);
-                PrintLn(string.Format("Inserted {0} at {1}, scale {2}, mesh ID {3}", shape, offset, scale, meshId));
-            }
-            else
-            {
-                PolyMesh poly;
-                switch (parts[1].ToLower())
-                {
-                    case "prism":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Prism, 6, 1, 1);
-                        break;
-                    case "antiprism":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Antiprism, 6, 1, 1);
-                        break;
-                    case "pyramid":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Pyramid, 6, 1, 1);
-                        break;
-                    case "elongatedpyramid":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedPyramid, 6, 1, 1);
-                        break;
-                    case "gyroelongatedpyramid":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedPyramid, 6, 1, 1);
-                        break;
-                    case "dipyramid":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Dipyramid, 6, 1, 1);
-                        break;
-                    case "elongateddipyramid":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedDipyramid, 6, 1, 1);
-                        break;
-                    case "gyroelongateddipyramid":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedDipyramid, 6, 1, 1);
-                        break;
-                    case "cupola":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Cupola, 6, 1, 1);
-                        break;
-                    case "elongatedcupola":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedCupola, 6, 1, 1);
-                        break;
-                    case "gyroelongatedcupola":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedCupola, 6, 1, 1);
-                        break;
-                    case "orthobicupola":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.OrthoBicupola, 6, 1, 1);
-                        break;
-                    case "gyrobicupola":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroBicupola, 6, 1, 1);
-                        break;
-                    case "elongatedorthobicupola":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedOrthoBicupola, 6, 1, 1);
-                        break;
-                    case "elongatedgyrobicupola":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.ElongatedGyroBicupola, 6, 1, 1);
-                        break;
-                    case "gyroelongatedbicupola":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.GyroelongatedBicupola, 6, 1, 1);
-                        break;
-                    case "trapezohedron":
-                        poly = RadialSolids.Build(RadialSolids.RadialPolyType.Trapezohedron, 6, 1, 1);
-                        break;
-                    default:
-                        PrintLn("Error: invalid primitive: " + parts[1]);
-                        PrintInsertCommandHelp();
-                        return;
-                }
-                mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, Quaternion.identity, 0);
-            }
-            PeltzerMain.Instance.model.AddMesh(mesh);
         }
 
         private void CommandInsertDuration(string[] parts)
@@ -1072,83 +1143,94 @@ namespace com.google.apps.peltzer.client.desktop_app
             PrintLn("Environment color set to " + bgColor);
         }
 
-        private void CommandLoadFile(string[] parts)
+        private sealed class ApiConsoleCommand
         {
-            if (parts.Length != 2)
+            public ApiConsoleCommand(ApiRouteDescription route, string commandName, List<ApiConsoleParameter> parameters)
             {
-                PrintLn("Syntax: loadfile <path>");
-                return;
+                Route = route;
+                CommandName = commandName;
+                Parameters = parameters;
+                CommandTokenCount = commandName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                RequiredParameterCount = parameters.Count(parameter => parameter.Required);
+                HelpText = parameters.Count == 0
+                    ? commandName
+                    : $"{commandName} {string.Join(" ", parameters.Select(parameter => FormatParameterToken(parameter.Name, parameter.Required)))}";
+                Description = string.IsNullOrWhiteSpace(route.Summary)
+                    ? HumanizeMethodName(route.Action)
+                    : route.Summary;
             }
-            string filePath = parts[1];
-            if (!File.Exists(filePath))
+
+            public ApiRouteDescription Route { get; }
+            public string CommandName { get; }
+            public List<ApiConsoleParameter> Parameters { get; }
+            public int CommandTokenCount { get; }
+            public int RequiredParameterCount { get; }
+            public string HelpText { get; }
+            public string Description { get; }
+
+            public bool AcceptsArgumentCount(int argumentCount)
             {
-                PrintLn("Error: file does not exist: " + filePath);
-                return;
+                return argumentCount >= RequiredParameterCount && argumentCount <= Parameters.Count;
             }
-            PrintLn("Loading model from file path: " + filePath + "...");
-            try
+        }
+
+        private sealed class ApiConsoleParameter
+        {
+            public ApiConsoleParameter(string name, bool required, IReadOnlyCollection<string> bindingSources)
             {
-                PeltzerFile peltzerFile;
-                byte[] fileBytes = File.ReadAllBytes(filePath);
-                if (!PeltzerFileHandler.PeltzerFileFromBytes(fileBytes, out peltzerFile))
+                Name = name;
+                Required = required;
+                BindingSources = bindingSources;
+            }
+
+            public string Name { get; }
+            public bool Required { get; }
+            public IReadOnlyCollection<string> BindingSources { get; }
+        }
+
+        private static string HumanizeMethodName(string methodName)
+        {
+            if (string.IsNullOrWhiteSpace(methodName))
+                return null;
+
+            var words = new List<string>();
+            var current = new StringBuilder();
+            for (var i = 0; i < methodName.Length; i++)
+            {
+                var character = methodName[i];
+                var startsNewWord =
+                    i > 0 &&
+                    char.IsUpper(character) &&
+                    (!char.IsUpper(methodName[i - 1]) ||
+                     (i + 1 < methodName.Length && char.IsLower(methodName[i + 1])));
+
+                if (startsNewWord)
                 {
-                    PrintLn("Failed to load. Bad format?");
-                    return;
+                    words.Add(current.ToString().ToLowerInvariant());
+                    current.Clear();
                 }
-                PeltzerMain.Instance.LoadPeltzerFileIntoModel(peltzerFile);
-                PrintLn("Loaded successfully: " + filePath);
+
+                current.Append(character);
             }
-            catch (Exception e)
-            {
-                PrintLn("Load failed (see logs).");
-                throw e;
-            }
+
+            if (current.Length > 0)
+                words.Add(current.ToString().ToLowerInvariant());
+
+            return string.Join(" ", words);
         }
 
-        private void CommandSaveFile(string[] parts)
+        private sealed class ConsoleCommandRegistration
         {
-            if (parts.Length != 2)
+            public ConsoleCommandRegistration(Action<string[]> handler, string helpText, string description)
             {
-                PrintLn("Syntax: savefile <path>");
-                return;
-            }
-            string filePath = parts[1];
-            PrintLn("Saving model to file path: " + filePath + "...");
-            try
-            {
-                File.WriteAllBytes(filePath, PeltzerFileHandler.PeltzerFileFromMeshes(PeltzerMain.Instance.model.GetAllMeshes()));
-                PrintLn("Saved successfully: " + filePath);
-            }
-            catch (Exception e)
-            {
-                PrintLn("Save failed (see logs).");
-                throw e;
-            }
-        }
-
-        private void CommandFuse(string[] parts)
-        {
-            HashSet<int> meshIds = new HashSet<int>(PeltzerMain.Instance.GetSelector().selectedMeshes);
-            if (meshIds.Count < 2)
-            {
-                PrintLn("Select at least 2 meshes to fuse.");
-                return;
-            }
-            List<MMesh> meshes = new List<MMesh>();
-            foreach (int meshId in meshIds)
-            {
-                meshes.Add(PeltzerMain.Instance.model.GetMesh(meshId));
-            }
-            int newId = PeltzerMain.Instance.model.GenerateMeshId();
-            PeltzerMain.Instance.model.AddMesh(Fuser.FuseMeshes(meshes, newId));
-
-            PeltzerMain.Instance.GetSelector().DeselectAll();
-            foreach (int meshId in meshIds)
-            {
-                PeltzerMain.Instance.model.DeleteMesh(meshId);
+                Handler = handler;
+                HelpText = helpText;
+                Description = description;
             }
 
-            PrintLn(string.Format("Created fused mesh from {0} meshes.", meshIds.Count));
+            public Action<string[]> Handler { get; }
+            public string HelpText { get; }
+            public string Description { get; }
         }
     }
 }

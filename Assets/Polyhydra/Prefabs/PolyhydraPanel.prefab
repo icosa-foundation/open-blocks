@@ -2040,11 +2040,15 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_SliderRenderer: {fileID: 0}
+  m_Label: {fileID: 0}
   m_Minimum: 0
   m_Maximum: 1
   m_Step: 0.1
   m_UpdateInterval: 1
   m_UpdateOnlyOnRelease: 0
+  m_MaxMeansNoLimit: 0
+  m_NoLimitSpecialValue: -9999
+  m_InitialValue: 0
   SliderType: 0
 --- !u!1 &4124398231447637952
 GameObject:
@@ -7525,11 +7529,15 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_SliderRenderer: {fileID: 0}
+  m_Label: {fileID: 0}
   m_Minimum: 0
   m_Maximum: 1
   m_Step: 0.1
   m_UpdateInterval: 1
   m_UpdateOnlyOnRelease: 0
+  m_MaxMeansNoLimit: 0
+  m_NoLimitSpecialValue: -9999
+  m_InitialValue: 0
   SliderType: 0
 --- !u!1 &6599302600879802590
 GameObject:
@@ -8042,11 +8050,15 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_SliderRenderer: {fileID: 0}
+  m_Label: {fileID: 0}
   m_Minimum: 0
   m_Maximum: 1
   m_Step: 0.1
   m_UpdateInterval: 1
   m_UpdateOnlyOnRelease: 0
+  m_MaxMeansNoLimit: 0
+  m_NoLimitSpecialValue: -9999
+  m_InitialValue: 0
   SliderType: 0
 --- !u!1 &8026347003302880390
 GameObject:
