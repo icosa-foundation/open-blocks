@@ -945,6 +945,11 @@ namespace com.google.apps.peltzer.client.model.main
             }
 
             referenceImageManager = gameObject.AddComponent<ReferenceImageManager>();
+            // Reference image insertion requires a file picker, which is only supported on Windows.
+            if (Application.platform != RuntimePlatform.WindowsPlayer && Application.platform != RuntimePlatform.WindowsEditor)
+            {
+                ObjectFinder.ObjectById("ID_add_ref_image").SetActive(false);
+            }
 
             // If the user logged in previously, then load their logged-in state, but don't prompt them to login otherwise.
             if (OAuth2Identity.Instance.HasAccessToken)
