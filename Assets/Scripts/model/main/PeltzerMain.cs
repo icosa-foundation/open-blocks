@@ -1425,7 +1425,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
             // They logged in, change the "Sign In" button to sign out.
-            // GetDesktopMain().SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
+            desktopMain?.SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
 
             paletteController.publishSignInPrompt.SetActive(false);
         }
@@ -1441,7 +1441,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignOut();
             // Update the desktop menu.
-            // desktopMain.SignOut();
+            desktopMain?.SignOut();
         }
 
         public void SignOut()
@@ -1459,7 +1459,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignOut();
             // Update the desktop menu.
-            // desktopMain.SignOut();
+            desktopMain?.SignOut();
         }
 
         /// <summary>

@@ -23,7 +23,7 @@ public class ApiController
         [ApiDoc(Example = "{\n  \"client_secret\": \"example-client-secret\",\n  \"device_code\": \"ABC123\"\n}")]
         [ApiBody] DeviceLoginRequest request)
     {
-        return FromOperationResult(ApiCommandService.DeviceLogin(request?.client_secret, request?.device_code));
+        return FromDeviceLoginResult(ApiCommandService.DeviceLogin(request?.client_secret, request?.device_code));
     }
 
     [ApiGet("device_login")]
@@ -34,7 +34,7 @@ public class ApiController
         [ApiDoc("OAuth client secret.", Example = "example-client-secret")][ApiQuery(required: true)] string client_secret,
         [ApiDoc("Short-lived device code.", Example = "ABC123")][ApiQuery(required: true)] string device_code)
     {
-        return FromOperationResult(ApiCommandService.DeviceLogin(client_secret, device_code));
+        return FromDeviceLoginResult(ApiCommandService.DeviceLogin(client_secret, device_code));
     }
 
     [ApiGet("scene/load")]
@@ -519,6 +519,16 @@ public class ApiController
                 message = result.message,
                 redirectUrl = result.redirectUrl
             });
+        }
+
+        return FromErrorResult(result);
+    }
+
+    private static ApiResult FromDeviceLoginResult(ApiCommandResult result)
+    {
+        if (result.success)
+        {
+            return ApiResult.Redirect(new Uri(result.redirectUrl));
         }
 
         return FromErrorResult(result);
