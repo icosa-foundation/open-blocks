@@ -454,7 +454,7 @@ namespace com.google.apps.peltzer.client.model.main
         /// We try it from Start() and retry it from Update() until we succeed.
         /// </summary>
         private bool setupDone;
-        // private DesktopMain desktopMain;
+        private DesktopMain desktopMain;
 
         public PolyMenuMain polyMenuMain;
 
@@ -763,8 +763,11 @@ namespace com.google.apps.peltzer.client.model.main
             // The previewController handles opening the image dialog and loading a reference.
             previewController = FindObjectOfType<PreviewController>();
 
-            // Get the desktop UI Main
-            // desktopMain = FindObjectOfType<DesktopMain>();
+            // Get the desktop UI Main (not used on mobile VR platforms like Quest)
+            if (!Application.isMobilePlatform || Config.Instance.sdkMode == SdkMode.Unset)
+            {
+                desktopMain = FindObjectOfType<DesktopMain>();
+            }
 
             // Get the ZandriaCreationsManager.
             zandriaCreationsManager = FindObjectOfType<ZandriaCreationsManager>();
@@ -915,7 +918,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Register cross controller handlers.
             paletteController.RegisterCrossControllerHandlers(peltzerController);
 
-            // desktopMain.Setup();
+            desktopMain?.Setup();
 
             // Model.
             exporter = gameObject.AddComponent<Exporter>();
