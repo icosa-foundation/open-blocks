@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections;
+using System.IO;
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -105,25 +107,20 @@ namespace com.google.apps.peltzer.client.desktop_app
             }
         }
 
-        public MoveableReferenceImage.SetupParams LoadTextureSync(string previewImagePath,
+        public LoadReferenceImageResult TryLoadTextureSync(string previewImagePath,
             Vector3 pos, Quaternion rot, float scale)
         {
-            MoveableReferenceImage.SetupParams? setupParams = null;
-            previewImagePath = previewImagePath.Replace('\\', '/');
-            string uri = "file:///" + System.Uri.EscapeUriString(previewImagePath);
-            using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(uri))
+            try
             {
-                while (!www.isDone)
-                {// TODO timeout?
+                var imageBytes = File.ReadAllBytes(previewImagePath);
+                var texture = new Texture2D(2, 2);
+                if (!texture.LoadImage(imageBytes))
+                {
+                    Destroy(texture);
+                    return LoadReferenceImageResult.BadRequest($"File is not a valid image: {previewImagePath}");
                 }
 
-                if (www.isNetworkError || www.isHttpError)
-                {
-                    Debug.LogError("Failed to load texture: " + www.error);
-                    return setupParams.Value;
-                }
-                Texture2D texture = DownloadHandlerTexture.GetContent(www);
-                setupParams = new MoveableReferenceImage.SetupParams()
+                var setupParams = new MoveableReferenceImage.SetupParams()
                 {
                     attachToController = false,
                     positionModelSpace = pos,
@@ -134,9 +131,22 @@ namespace com.google.apps.peltzer.client.desktop_app
                     initialInsertion = true
                 };
 
-                var cmd = new AddReferenceImageCommand(setupParams.Value);
+                var cmd = new AddReferenceImageCommand(setupParams);
                 PeltzerMain.Instance.model.ApplyCommand(cmd);
-                return setupParams.Value;
+                return LoadReferenceImageResult.Success(setupParams);
+            }
+            catch (IOException e)
+            {
+                return LoadReferenceImageResult.BadRequest($"Failed to read image file: {e.Message}");
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                return LoadReferenceImageResult.BadRequest($"Failed to read image file: {e.Message}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"ReferenceImageManager TryLoadTextureSync failed: {e}");
+                return LoadReferenceImageResult.InternalError($"Failed to load texture: {e.Message}");
             }
         }
 
@@ -168,6 +178,16 @@ namespace com.google.apps.peltzer.client.desktop_app
             }
         }
 
+        public bool HasReferenceImage(int refImageId)
+        {
+            return referenceImages.ContainsKey(refImageId);
+        }
+
+        public int[] GetReferenceImageIds()
+        {
+            return new List<int>(referenceImages.Keys).ToArray();
+        }
+
         /// <summary>
         /// Returns whether or not there is a grabbed reference image. There will be a grabbed image if the user is
         /// in the process of moving one around, either as a result of grabbing it directly, or because they have
@@ -193,6 +213,43 @@ namespace com.google.apps.peltzer.client.desktop_app
                     DeleteReferenceImage(id);
                 }
             }
+        }
+    }
+
+    public struct LoadReferenceImageResult
+    {
+        public bool success;
+        public bool isBadRequest;
+        public string error;
+        public MoveableReferenceImage.SetupParams setupParams;
+
+        public static LoadReferenceImageResult Success(MoveableReferenceImage.SetupParams setupParams)
+        {
+            return new LoadReferenceImageResult
+            {
+                success = true,
+                setupParams = setupParams
+            };
+        }
+
+        public static LoadReferenceImageResult BadRequest(string error)
+        {
+            return new LoadReferenceImageResult
+            {
+                success = false,
+                isBadRequest = true,
+                error = error
+            };
+        }
+
+        public static LoadReferenceImageResult InternalError(string error)
+        {
+            return new LoadReferenceImageResult
+            {
+                success = false,
+                isBadRequest = false,
+                error = error
+            };
         }
     }
 }
