@@ -147,7 +147,8 @@ namespace com.google.apps.peltzer.client.model.core
                     Debug.LogWarning($"MeshValidator: mesh {mesh.id} invalid - triangle {i} " +
                         $"(verts {triangle.vertId0},{triangle.vertId1},{triangle.vertId2}) has an exposed back face. " +
                         $"Center: {thisTriangleInfo.center}, normal: {thisTriangleInfo.normal}");
-                    return false;
+                    // We don't want to reject open meshes entirely any longer
+                    // return false;
                 }
             }
             // We found no reason to suspect the mesh is invalid.
