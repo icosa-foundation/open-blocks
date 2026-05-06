@@ -85,6 +85,9 @@ namespace com.google.apps.peltzer.client.model.main
         // If true, run the expensive MeshValidator ray pass that only emits exposed-backface warnings.
         public static bool meshValidatorExposedBackfaceWarnings = false;
 
+        // If true, emit editor/development timing logs for MeshValidator and BackgroundMeshValidator.
+        public static bool meshValidatorPerformanceLogging = false;
+
         // If true, show tooltips and ropes for multi-selecting.
         public static bool showMultiselectTooltip = false;
 

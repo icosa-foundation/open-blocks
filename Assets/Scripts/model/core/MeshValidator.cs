@@ -25,6 +25,8 @@ namespace com.google.apps.peltzer.client.model.core
 {
     public class MeshValidator
     {
+        private const string MESH_VALIDATOR_PERF_LOG_PREFIX = "[MVPERF_S1]";
+
         /// <summary>
         /// By how much we scale the mesh for validation purposes.
         /// This is for numerical stability and to avoid floating-point errors.
@@ -63,20 +65,91 @@ namespace com.google.apps.peltzer.client.model.core
         /// <returns>True if and only if the mesh is valid (heuristically).</returns>
         public static bool IsValidMesh(MMesh mesh, HashSet<int> updatedVertIds)
         {
+            bool shouldLogPerformance = ShouldLogPerformance;
+            System.Diagnostics.Stopwatch totalStopwatch = shouldLogPerformance ? System.Diagnostics.Stopwatch.StartNew() : null;
+            bool backfaceWarningsEnabled = Features.meshValidatorExposedBackfaceWarnings;
+
             // Our algorithm is very brittle on tiny meshes because of floating point and numerical stability issues,
             // so for the purposes of validation we work on a scaled-up copy that's more reliable to work with.
             // This fixes some problems related to working with tiny meshes.
             // The cost of this is making a MMesh copy per frame.
+            System.Diagnostics.Stopwatch cloneScaledStopwatch = shouldLogPerformance ? System.Diagnostics.Stopwatch.StartNew() : null;
             mesh = CloneScaled(mesh, STABILIZATION_SCALE_FACTOR);
+            if (cloneScaledStopwatch != null)
+            {
+                cloneScaledStopwatch.Stop();
+            }
+
+            // When the backface warning pass is disabled, validation only needs the volume check.
+            // In that case we can avoid triangulating the whole mesh and compute signed volume directly
+            // from each face's boundary ring.
+            if (!backfaceWarningsEnabled)
+            {
+                int triangleCountForVolume;
+                System.Diagnostics.Stopwatch volumeOnlyStopwatch = shouldLogPerformance ? System.Diagnostics.Stopwatch.StartNew() : null;
+                bool hasNonZeroVolume = HasNonZeroVolumeWithoutTriangulation(mesh, out triangleCountForVolume);
+                if (volumeOnlyStopwatch != null)
+                {
+                    volumeOnlyStopwatch.Stop();
+                }
+                if (!hasNonZeroVolume)
+                {
+                    LogPerformance(
+                        mesh,
+                        updatedVertIds,
+                        triangleCountForVolume,
+                        cloneScaledStopwatch,
+                        /* triangulateStopwatch */ null,
+                        volumeOnlyStopwatch,
+                        totalStopwatch,
+                        /* volumeValid */ false);
+                    Debug.LogWarning($"MeshValidator: mesh {mesh.id} invalid - enclosed volume collapsed to zero.");
+                    return false;
+                }
+
+                LogPerformance(
+                    mesh,
+                    updatedVertIds,
+                    triangleCountForVolume,
+                    cloneScaledStopwatch,
+                    /* triangulateStopwatch */ null,
+                    volumeOnlyStopwatch,
+                    totalStopwatch,
+                    /* volumeValid */ true);
+                return true;
+            }
 
             // For now we need to triangulate the whole mesh because the algorithm is hard-coded to triangular faces.
             // The affected faces have to be tested against all other faces, so all faces need to be available as triangles.
+            System.Diagnostics.Stopwatch triangulateStopwatch = shouldLogPerformance ? System.Diagnostics.Stopwatch.StartNew() : null;
             List<Triangle> geometry = FaceTriangulator.TriangulateMesh(mesh);
+            if (triangulateStopwatch != null)
+            {
+                triangulateStopwatch.Stop();
+            }
 
+            System.Diagnostics.Stopwatch volumeStopwatch = shouldLogPerformance ? System.Diagnostics.Stopwatch.StartNew() : null;
             if (!HasNonZeroVolume(mesh, geometry))
             {
+                if (volumeStopwatch != null)
+                {
+                    volumeStopwatch.Stop();
+                }
+                LogPerformance(
+                    mesh,
+                    updatedVertIds,
+                    geometry.Count,
+                    cloneScaledStopwatch,
+                    triangulateStopwatch,
+                    volumeStopwatch,
+                    totalStopwatch,
+                    /* volumeValid */ false);
                 Debug.LogWarning($"MeshValidator: mesh {mesh.id} invalid - enclosed volume collapsed to zero.");
                 return false;
+            }
+            if (volumeStopwatch != null)
+            {
+                volumeStopwatch.Stop();
             }
 
             // We've switched to disabling this check for
@@ -85,11 +158,6 @@ namespace com.google.apps.peltzer.client.model.core
             // 3. CSG sometimes breaks this and it's better to allow it than to reject the entire operation
             //
             // At some point we can add "auto-repair" functionality to mitigate what we have lost by removing this check
-            if (!Features.meshValidatorExposedBackfaceWarnings)
-            {
-                return true;
-            }
-
             // Calculate the normals and vertex positions of each triangle only when the diagnostic ray pass is enabled.
             List<TriangleInfo> triangleInfo = CalculateTriangleInfo(mesh, geometry);
 
@@ -155,6 +223,15 @@ namespace com.google.apps.peltzer.client.model.core
                 // so the mesh is invalid.
                 if (!RaysExitMesh(mesh, geometry, triangleInfo, testRays, i))
                 {
+                    LogPerformance(
+                        mesh,
+                        updatedVertIds,
+                        geometry.Count,
+                        cloneScaledStopwatch,
+                        triangulateStopwatch,
+                        volumeStopwatch,
+                        totalStopwatch,
+                        /* volumeValid */ true);
                     Debug.LogWarning($"MeshValidator: mesh {mesh.id} invalid - triangle {i} " +
                         $"(verts {triangle.vertId0},{triangle.vertId1},{triangle.vertId2}) has an exposed back face. " +
                         $"Center: {thisTriangleInfo.center}, normal: {thisTriangleInfo.normal}");
@@ -162,7 +239,58 @@ namespace com.google.apps.peltzer.client.model.core
                 }
             }
             // We found no reason to suspect the mesh is invalid.
+            LogPerformance(
+                mesh,
+                updatedVertIds,
+                geometry.Count,
+                cloneScaledStopwatch,
+                triangulateStopwatch,
+                volumeStopwatch,
+                totalStopwatch,
+                /* volumeValid */ true);
             return true;
+        }
+
+        private static void LogPerformance(
+            MMesh mesh,
+            HashSet<int> updatedVertIds,
+            int triangleCount,
+            System.Diagnostics.Stopwatch cloneScaledStopwatch,
+            System.Diagnostics.Stopwatch triangulateStopwatch,
+            System.Diagnostics.Stopwatch volumeStopwatch,
+            System.Diagnostics.Stopwatch totalStopwatch,
+            bool volumeValid)
+        {
+            if (!ShouldLogPerformance)
+            {
+                return;
+            }
+
+            if (totalStopwatch != null && totalStopwatch.IsRunning)
+            {
+                totalStopwatch.Stop();
+            }
+
+            Debug.Log(
+                $"{MESH_VALIDATOR_PERF_LOG_PREFIX} mesh={mesh.id} verts={mesh.vertexCount} faces={mesh.faceCount} " +
+                $"updatedVerts={updatedVertIds.Count} triangles={triangleCount} " +
+                $"cloneScaledMs={cloneScaledStopwatch?.Elapsed.TotalMilliseconds:F3} " +
+                $"triangulateMs={triangulateStopwatch?.Elapsed.TotalMilliseconds:F3} " +
+                $"volumeMs={volumeStopwatch?.Elapsed.TotalMilliseconds:F3} " +
+                $"totalMs={totalStopwatch?.Elapsed.TotalMilliseconds:F3} volumeValid={volumeValid} " +
+                $"backfaceWarningsEnabled={Features.meshValidatorExposedBackfaceWarnings}");
+        }
+
+        private static bool ShouldLogPerformance
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return Features.meshValidatorPerformanceLogging;
+#else
+                return false;
+#endif
+            }
         }
 
         private static bool HasNonZeroVolume(MMesh mesh, List<Triangle> geometry)
@@ -175,6 +303,34 @@ namespace com.google.apps.peltzer.client.model.core
                 Vector3 v1 = mesh.VertexPositionInMeshCoords(triangle.vertId1);
                 Vector3 v2 = mesh.VertexPositionInMeshCoords(triangle.vertId2);
                 signedVolume += Vector3.Dot(v0, Vector3.Cross(v1, v2)) / 6.0f;
+            }
+
+            float maxDimension = Mathf.Max(mesh.localBounds.size.x,
+                Mathf.Max(mesh.localBounds.size.y, mesh.localBounds.size.z));
+            float minValidVolume = maxDimension * maxDimension * maxDimension * MIN_RELATIVE_VOLUME;
+
+            return Mathf.Abs(signedVolume) > minValidVolume;
+        }
+
+        private static bool HasNonZeroVolumeWithoutTriangulation(MMesh mesh, out int triangleCount)
+        {
+            float signedVolume = 0.0f;
+            triangleCount = 0;
+            foreach (Face face in mesh.GetFaces())
+            {
+                if (face.vertexIds.Count < 3)
+                {
+                    continue;
+                }
+
+                Vector3 v0 = mesh.VertexPositionInMeshCoords(face.vertexIds[0]);
+                for (int i = 1; i < face.vertexIds.Count - 1; i++)
+                {
+                    Vector3 v1 = mesh.VertexPositionInMeshCoords(face.vertexIds[i]);
+                    Vector3 v2 = mesh.VertexPositionInMeshCoords(face.vertexIds[i + 1]);
+                    signedVolume += Vector3.Dot(v0, Vector3.Cross(v1, v2)) / 6.0f;
+                    triangleCount++;
+                }
             }
 
             float maxDimension = Mathf.Max(mesh.localBounds.size.x,
