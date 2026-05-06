@@ -757,6 +757,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             string tempDir = Path.Combine(Application.temporaryCachePath, $"gltf_{assetId}");
             string extension = expectBinary ? ".glb" : ".gltf";
             string mainFilePath = Path.Combine(tempDir, $"model{extension}");
+            string rootDir = string.IsNullOrEmpty(gltfAssets.rootUrl) ? string.Empty
+                : gltfAssets.rootUrl.Substring(0, gltfAssets.rootUrl.LastIndexOf('/') + 1);
 
             if (File.Exists(mainFilePath))
             {
@@ -767,9 +769,9 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     foreach (string supportingFile in gltfAssets.supportingFiles)
                     {
                         if (string.IsNullOrEmpty(supportingFile)) continue;
-                        string sanitizedKey = supportingFile.Replace("\\", "/").TrimStart('/');
-                        string decodedKey = Uri.UnescapeDataString(sanitizedKey);
-                        string filePath = Path.Combine(tempDir, decodedKey);
+                        string storageKey = ComputeStorageKey(supportingFile, rootDir);
+                        if (storageKey == null) continue;
+                        string filePath = Path.Combine(tempDir, storageKey);
                         if (!File.Exists(filePath))
                         {
                             cacheValid = false;
@@ -790,10 +792,10 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         foreach (string supportingFile in gltfAssets.supportingFiles)
                         {
                             if (string.IsNullOrEmpty(supportingFile)) continue;
-                            string sanitizedKey = supportingFile.Replace("\\", "/").TrimStart('/');
-                            string decodedKey = Uri.UnescapeDataString(sanitizedKey);
-                            string filePath = Path.Combine(tempDir, decodedKey);
-                            cachedAdditionalFiles[supportingFile] = File.ReadAllBytes(filePath);
+                            string storageKey = ComputeStorageKey(supportingFile, rootDir);
+                            if (storageKey == null) continue;
+                            string filePath = Path.Combine(tempDir, storageKey);
+                            cachedAdditionalFiles[storageKey] = File.ReadAllBytes(filePath);
                         }
                     }
 
@@ -826,7 +828,6 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       Dictionary<string, byte[]> additionalFiles = new Dictionary<string, byte[]>();
                       if (gltfAssets.supportingFiles != null && gltfAssets.supportingFiles.Length > 0)
                       {
-                          string rootDir = gltfAssets.rootUrl.Substring(0, gltfAssets.rootUrl.LastIndexOf('/') + 1);
                           int filesToDownload = 0;
                           int filesDownloaded = 0;
                           bool downloadFailed = false;
@@ -868,7 +869,11 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                                     {
                                         if (fileSuccess && fileBytes != null)
                                         {
-                                            additionalFiles[supportingFile] = fileBytes;
+                                            string storageKey = ComputeStorageKey(supportingFile, rootDir);
+                                            if (storageKey != null)
+                                            {
+                                                additionalFiles[storageKey] = fileBytes;
+                                            }
                                         }
                                         else
                                         {
@@ -1489,11 +1494,20 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
                     if (additionalFiles != null)
                     {
+                        // Resolve tempDir once for bounds checking below.
+                        string resolvedTempDir = Path.GetFullPath(tempDir) + Path.DirectorySeparatorChar;
                         foreach (var kvp in additionalFiles)
                         {
-                            string sanitizedKey = kvp.Key.Replace("\\", "/").TrimStart('/');
-                            string decodedKey = Uri.UnescapeDataString(sanitizedKey);
-                            string filePath = Path.Combine(tempDir, decodedKey);
+                            // Keys are already validated by ComputeStorageKey; this is a final
+                            // defense-in-depth check against any path that somehow escaped validation.
+                            string filePath = Path.Combine(tempDir, kvp.Key);
+                            string resolvedPath = Path.GetFullPath(filePath);
+                            if (!resolvedPath.StartsWith(resolvedTempDir))
+                            {
+                                Debug.LogWarning($"[GLTF] Skipping file write outside tempDir: {kvp.Key}");
+                                continue;
+                            }
+
                             string fileDir = Path.GetDirectoryName(filePath);
                             if (!Directory.Exists(fileDir))
                             {
@@ -1747,6 +1761,57 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 }
             }
 
+        }
+
+        /// <summary>
+        /// Derives the relative storage path for a supporting file given the GLTF root directory URL.
+        /// When supportingFiles contains full URLs (preferred), strips the rootDir prefix so the stored
+        /// path matches the URI the GLTF file uses internally (e.g. "new/foo.png" not just "foo.png").
+        /// Returns null if the derived path is unsafe (path traversal, rooted, or drive-letter paths).
+        /// </summary>
+        private static string ComputeStorageKey(string supportingFile, string rootDir)
+        {
+            string rawKey;
+            if (!string.IsNullOrEmpty(rootDir) && supportingFile.StartsWith(rootDir))
+            {
+                rawKey = supportingFile.Substring(rootDir.Length);
+            }
+            else if (supportingFile.StartsWith("http://") || supportingFile.StartsWith("https://"))
+            {
+                int lastSlash = supportingFile.LastIndexOf('/');
+                rawKey = lastSlash >= 0 ? supportingFile.Substring(lastSlash + 1) : supportingFile;
+            }
+            else
+            {
+                rawKey = supportingFile;
+            }
+
+            // Decode percent-encoding before any path validation so encoded traversal sequences
+            // like %2e%2e%2f are caught by the checks below.
+            try { rawKey = Uri.UnescapeDataString(rawKey); }
+            catch (UriFormatException) { return null; }
+
+            // Normalize to forward slashes and strip any leading separators.
+            rawKey = rawKey.Replace('\\', '/').TrimStart('/');
+
+            // Reject Windows drive-letter paths ("C:/…") and UNC-style paths ("//server").
+            if (rawKey.Length >= 2 && (rawKey[1] == ':' || rawKey.StartsWith("//")))
+            {
+                Debug.LogWarning($"[GLTF] Rejecting supporting file with rooted path: {supportingFile}");
+                return null;
+            }
+
+            // Reject any path containing ".." segments to prevent traversal out of tempDir.
+            foreach (string segment in rawKey.Split('/'))
+            {
+                if (segment == "..")
+                {
+                    Debug.LogWarning($"[GLTF] Rejecting supporting file with path traversal: {supportingFile}");
+                    return null;
+                }
+            }
+
+            return rawKey;
         }
 
         private static void NormalizeMeshesForImport(List<MMesh> meshes, float targetMaxSize)
