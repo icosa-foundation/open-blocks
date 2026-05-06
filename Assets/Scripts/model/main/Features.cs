@@ -82,6 +82,9 @@ namespace com.google.apps.peltzer.client.model.main
         // If true, allow noncoplanar faces to remain during mesh fixing.
         public static bool allowNoncoplanarFaces = false;
 
+        // If true, run the expensive MeshValidator ray pass that only emits exposed-backface warnings.
+        public static bool meshValidatorExposedBackfaceWarnings = false;
+
         // If true, show tooltips and ropes for multi-selecting.
         public static bool showMultiselectTooltip = false;
 

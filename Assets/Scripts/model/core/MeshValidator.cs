@@ -73,14 +73,25 @@ namespace com.google.apps.peltzer.client.model.core
             // The affected faces have to be tested against all other faces, so all faces need to be available as triangles.
             List<Triangle> geometry = FaceTriangulator.TriangulateMesh(mesh);
 
-            // Calculate the normals and vertex positions of each triangle.
-            List<TriangleInfo> triangleInfo = CalculateTriangleInfo(mesh, geometry);
-
             if (!HasNonZeroVolume(mesh, geometry))
             {
                 Debug.LogWarning($"MeshValidator: mesh {mesh.id} invalid - enclosed volume collapsed to zero.");
                 return false;
             }
+
+            // We've switched to disabling this check for
+            // 1. Performance reasons
+            // 2. Imported meshes often break this constraint making editing them impossible
+            // 3. CSG sometimes breaks this and it's better to allow it than to reject the entire operation
+            //
+            // At some point we can add "auto-repair" functionality to mitigate what we have lost by removing this check
+            if (!Features.meshValidatorExposedBackfaceWarnings)
+            {
+                return true;
+            }
+
+            // Calculate the normals and vertex positions of each triangle only when the diagnostic ray pass is enabled.
+            List<TriangleInfo> triangleInfo = CalculateTriangleInfo(mesh, geometry);
 
             // Test rays we will use during the main loop.
             Ray[] testRays = new Ray[4];
@@ -147,8 +158,7 @@ namespace com.google.apps.peltzer.client.model.core
                     Debug.LogWarning($"MeshValidator: mesh {mesh.id} invalid - triangle {i} " +
                         $"(verts {triangle.vertId0},{triangle.vertId1},{triangle.vertId2}) has an exposed back face. " +
                         $"Center: {thisTriangleInfo.center}, normal: {thisTriangleInfo.normal}");
-                    // We don't want to reject open meshes entirely any longer
-                    // return false;
+                    return false;
                 }
             }
             // We found no reason to suspect the mesh is invalid.
