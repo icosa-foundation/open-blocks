@@ -111,7 +111,12 @@ namespace com.google.apps.peltzer.client.model.import
                 List<int> mergedLoop = null;
                 for (int attemptSize = regionList.Count; attemptSize >= 2; attemptSize--)
                 {
-                    facesToMerge = new HashSet<int>(regionList.GetRange(0, attemptSize));
+                    facesToMerge = new HashSet<int>();
+                    for (int i = 0; i < attemptSize; i++)
+                    {
+                        facesToMerge.Add(regionList[i]);
+                    }
+
                     if (TryBuildMergedPolygon(mesh, facesToMerge, normalizedNormal, requireConvexResult,
                             out mergedLoop))
                     {

@@ -56,9 +56,10 @@ namespace com.google.apps.peltzer.client.model.render
         public override int GetHashCode()
         {
             // 10 bits for each id, ordered by size, beyond which collisions will occur.
-            int[] verts = { vertId0, vertId1, vertId2 };
-            Array.Sort(verts);
-            return verts[2] << 20 + verts[1] << 10 + verts[0];
+            int min = Math.Min(vertId0, Math.Min(vertId1, vertId2));
+            int max = Math.Max(vertId0, Math.Max(vertId1, vertId2));
+            int mid = vertId0 + vertId1 + vertId2 - min - max;
+            return (max << 20) + (mid << 10) + min;
         }
     }
 
@@ -422,7 +423,7 @@ namespace com.google.apps.peltzer.client.model.render
             }
 
             // Order holes by largest magnitude in arbitrary axis.
-            holeInfos = holeInfos.OrderByDescending(h => h.bestMagnitude).ToList();
+            holeInfos.Sort((left, right) => right.bestMagnitude.CompareTo(left.bestMagnitude));
 
             foreach (HoleInfo hole in holeInfos)
             {
