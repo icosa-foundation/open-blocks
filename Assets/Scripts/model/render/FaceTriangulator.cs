@@ -22,7 +22,7 @@ using UnityEngine;
 
 namespace com.google.apps.peltzer.client.model.render
 {
-    public struct Triangle
+    public struct Triangle : IEquatable<Triangle>
     {
         public int vertId0 { get; private set; }
         public int vertId1 { get; private set; }
