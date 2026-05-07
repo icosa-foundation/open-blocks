@@ -22,7 +22,7 @@ namespace com.google.apps.peltzer.client.model.util
     /// <summary>
     ///   A pair that represents a line segment.  Makes it easy to lookup segments in a Hashtable.
     /// </summary>
-    internal struct Edge
+    internal struct Edge : IEquatable<Edge>
     {
         private readonly int startId;
         private readonly int endId;
@@ -33,14 +33,14 @@ namespace com.google.apps.peltzer.client.model.util
             this.endId = endId;
         }
 
+        public bool Equals(Edge other)
+        {
+            return startId == other.startId && endId == other.endId;
+        }
+
         public override bool Equals(object obj)
         {
-            if (obj is Edge)
-            {
-                Edge other = (Edge)obj;
-                return startId == other.startId && endId == other.endId;
-            }
-            return false;
+            return obj is Edge other && Equals(other);
         }
 
         public Edge Reverse()

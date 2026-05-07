@@ -1085,8 +1085,7 @@ namespace com.google.apps.peltzer.client.tools
                   new FaceKey(seedFaceKey.meshId, currentFaceId);
                 yield return resultKey;
 
-                var adjacentFaceIds = GetAdjacentFaceIds(currentFace, facesByEdge).ToList();
-                foreach (int adjacentFaceId in adjacentFaceIds)
+                foreach (int adjacentFaceId in GetAdjacentFaceIds(currentFace, facesByEdge))
                 {
                     if (visitedFaces.Add(adjacentFaceId))
                     {
