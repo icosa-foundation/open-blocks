@@ -158,15 +158,6 @@ namespace com.google.apps.peltzer.client.model.core
             // 3. CSG sometimes breaks this and it's better to allow it than to reject the entire operation
             //
             // At some point we can add "auto-repair" functionality to mitigate what we have lost by removing this check
-            // Calculate the normals and vertex positions of each triangle only when the diagnostic ray pass is enabled.
-            List<TriangleInfo> triangleInfo = CalculateTriangleInfo(mesh, geometry);
-
-            // We've switched to disabling this check for
-            // 1. Performance reasons
-            // 2. Imported meshes often break this constraint making editing them impossible
-            // 3. CSG sometimes breaks this and it's better to allow it than to reject the entire operation
-            //
-            // At some point we can add "auto-repair" functionality to mitigate what we have lost by removing this check
             if (!Features.meshValidatorExposedBackfaceWarnings)
             {
                 return true;
