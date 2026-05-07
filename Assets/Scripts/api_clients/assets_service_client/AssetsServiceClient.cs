@@ -636,18 +636,21 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             if (resourcesToken.Type == JTokenType.Array)
             {
+                // Prefer the resource URL over relativePath: the URL contains the actual server path
+                // (including subdirectories like "new/"), while relativePath may omit them.
+                // The download code will strip rootDir to recover the correct relative storage path.
                 supportingFiles = resourcesToken
-                  .Select(res => res?["relativePath"]?.ToString()
-                    ?? res?["relative_path"]?.ToString()
-                    ?? res?["url"]?.ToString())
+                  .Select(res => res?["url"]?.ToString()
+                    ?? res?["relativePath"]?.ToString()
+                    ?? res?["relative_path"]?.ToString())
                   .Where(path => !string.IsNullOrEmpty(path))
                   .ToArray();
             }
             else if (resourcesToken.Type == JTokenType.Object)
             {
-                string path = resourcesToken?["relativePath"]?.ToString()
-                  ?? resourcesToken?["relative_path"]?.ToString()
-                  ?? resourcesToken?["url"]?.ToString();
+                string path = resourcesToken?["url"]?.ToString()
+                  ?? resourcesToken?["relativePath"]?.ToString()
+                  ?? resourcesToken?["relative_path"]?.ToString();
                 if (!string.IsNullOrEmpty(path))
                 {
                     supportingFiles = new[] { path };

@@ -207,12 +207,19 @@ namespace com.google.apps.peltzer.client.model.import
             Action<string[]> parseFace = tokens =>
             {
                 int numSides = int.Parse(tokens[0]);
-                var faceVertexIndices = tokens.Skip(1).Take(numSides).Select(int.Parse).ToList();
+                List<int> faceVertexIndices = new List<int>(numSides);
+                for (int i = 0; i < numSides; i++)
+                {
+                    faceVertexIndices.Add(int.Parse(tokens[i + 1]));
+                }
+
                 faces.Add(faceVertexIndices);
                 if (tokens.Length >= numSides + 4)
                 {
-                    var colValues = tokens.Skip(numSides + 1).Take(3).Select(float.Parse).ToList();
-                    colorsPerFace.Add(new Color(colValues[0], colValues[1], colValues[2]));
+                    float red = float.Parse(tokens[numSides + 1]);
+                    float green = float.Parse(tokens[numSides + 2]);
+                    float blue = float.Parse(tokens[numSides + 3]);
+                    colorsPerFace.Add(new Color(red, green, blue));
                 }
                 else if (hasColor)
                 {

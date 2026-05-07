@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -75,6 +76,15 @@ namespace com.google.apps.peltzer.client.model.import
                 Vector3 seedNormal = seedFace.normal;
                 if (seedNormal == Vector3.zero)
                 {
+                    List<Vector3> seedPositions = new List<Vector3>(seedFace.vertexIds.Count);
+                    foreach (int vid in seedFace.vertexIds)
+                    {
+                        seedPositions.Add(mesh.VertexPositionInMeshCoords(vid));
+                    }
+                    seedNormal = MeshMath.CalculateNormal(seedPositions);
+                }
+                if (seedNormal == Vector3.zero)
+                {
                     processedFaces.Add(faceId);
                     continue;
                 }
@@ -88,10 +98,11 @@ namespace com.google.apps.peltzer.client.model.import
                 HashSet<int> region = CollectCoplanarRegion(mesh, faceId, seedFace.properties.materialId,
                     plane, normalizedNormal, adjacency, removedFaces, regionVertexColors, regionList);
 
-                processedFaces.UnionWith(region);
-
+                // Don't mark all region faces processed upfront. Only the seed is marked processed
+                // on failure so that remaining faces can be retried under different seed orderings.
                 if (region.Count <= 1)
                 {
+                    processedFaces.Add(faceId);
                     continue;
                 }
 
@@ -101,7 +112,12 @@ namespace com.google.apps.peltzer.client.model.import
                 List<int> mergedLoop = null;
                 for (int attemptSize = regionList.Count; attemptSize >= 2; attemptSize--)
                 {
-                    facesToMerge = new HashSet<int>(regionList.GetRange(0, attemptSize));
+                    facesToMerge = new HashSet<int>();
+                    for (int i = 0; i < attemptSize; i++)
+                    {
+                        facesToMerge.Add(regionList[i]);
+                    }
+
                     if (TryBuildMergedPolygon(mesh, facesToMerge, normalizedNormal, requireConvexResult,
                             out mergedLoop))
                     {
@@ -112,7 +128,17 @@ namespace com.google.apps.peltzer.client.model.import
 
                 if (facesToMerge == null || mergedLoop == null)
                 {
+                    // Only mark the seed as processed; other region faces can become seeds
+                    // and their different BFS orderings will try different prefix subsets.
+                    processedFaces.Add(faceId);
                     continue;
+                }
+
+                if (facesToMerge.Count < region.Count)
+                {
+                }
+                else
+                {
                 }
 
                 foreach (int regionFaceId in facesToMerge)
@@ -362,7 +388,7 @@ namespace com.google.apps.peltzer.client.model.import
             return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
         }
 
-        private struct SpatialHashKey
+        private readonly struct SpatialHashKey : IEquatable<SpatialHashKey>
         {
             public readonly int x;
             public readonly int y;
@@ -383,15 +409,14 @@ namespace com.google.apps.peltzer.client.model.import
                     Mathf.FloorToInt(position.z / cellSize));
             }
 
+            public bool Equals(SpatialHashKey other)
+            {
+                return x == other.x && y == other.y && z == other.z;
+            }
+
             public override bool Equals(object obj)
             {
-                if (!(obj is SpatialHashKey))
-                {
-                    return false;
-                }
-
-                SpatialHashKey other = (SpatialHashKey)obj;
-                return x == other.x && y == other.y && z == other.z;
+                return obj is SpatialHashKey other && Equals(other);
             }
 
             public override int GetHashCode()
@@ -735,7 +760,7 @@ namespace com.google.apps.peltzer.client.model.import
             }
         }
 
-        private readonly struct EdgeKey
+        private readonly struct EdgeKey : IEquatable<EdgeKey>
         {
             public readonly int A;
             public readonly int B;
@@ -754,14 +779,14 @@ namespace com.google.apps.peltzer.client.model.import
                 }
             }
 
+            public bool Equals(EdgeKey other)
+            {
+                return A == other.A && B == other.B;
+            }
+
             public override bool Equals(object obj)
             {
-                if (obj is EdgeKey other)
-                {
-                    return A == other.A && B == other.B;
-                }
-
-                return false;
+                return obj is EdgeKey other && Equals(other);
             }
 
             public override int GetHashCode()

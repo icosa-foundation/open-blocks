@@ -14,7 +14,6 @@
 
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine.UI;
 using com.google.apps.peltzer.client.model.main;
 
@@ -78,8 +77,7 @@ public class Objectionary : MonoBehaviour
             audioClipsByName.Add(audioClip.name, audioClip);
             audioClipNames.Add(audioClip.name);
         }
-        // 'Randomly order' the list.
-        audioClipNames = audioClipNames.OrderBy(item => rnd.Next()).ToList();
+        ShuffleAudioClipNames();
     }
 
     /// <summary>
@@ -144,7 +142,7 @@ public class Objectionary : MonoBehaviour
         // Start over if they've heard everything.
         if (++nextClipToPlay == audioClipNames.Count)
         {
-            audioClipNames = audioClipNames.OrderBy(item => rnd.Next()).ToList();
+            ShuffleAudioClipNames();
             nextClipToPlay = 0;
         }
 
@@ -170,5 +168,16 @@ public class Objectionary : MonoBehaviour
         // Normal.
         source.PlayOneShot(toPlay);
         sources.Add(source);
+    }
+
+    private void ShuffleAudioClipNames()
+    {
+        for (int i = audioClipNames.Count - 1; i > 0; i--)
+        {
+            int swapIndex = rnd.Next(i + 1);
+            string clipName = audioClipNames[i];
+            audioClipNames[i] = audioClipNames[swapIndex];
+            audioClipNames[swapIndex] = clipName;
+        }
     }
 }

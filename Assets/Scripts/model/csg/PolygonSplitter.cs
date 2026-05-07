@@ -704,7 +704,11 @@ namespace com.google.apps.peltzer.client.model.csg
                         {
                             bottomPart.Add(poly.vertices[i]);
                         }
-                        bottomPart.AddRange(interiorPoints.Reverse<CsgVertex>().ToList());
+                        for (int i = interiorPoints.Count - 1; i >= 0; i--)
+                        {
+                            bottomPart.Add(interiorPoints[i]);
+                        }
+
                         newPolys.Add(bottomPart);
 
                         foreach (CsgVertex interiorPoint in interiorPoints)
