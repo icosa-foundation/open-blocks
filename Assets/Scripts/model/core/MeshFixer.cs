@@ -248,7 +248,7 @@ namespace com.google.apps.peltzer.client.model.core
 
                 foreach (int vertIndex in vertsToCheck)
                 {
-                    if (vertIndex == updatedVertId || updatedVertIds.Contains(vertIndex))
+                    if (vertIndex == updatedVertId || updatedVertIds.Contains(vertIndex) || !mesh.HasVertex(vertIndex))
                     {
                         continue;
                     }
