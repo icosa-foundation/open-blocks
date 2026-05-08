@@ -339,14 +339,11 @@ namespace com.google.apps.peltzer.client.tools.utils
         {
             this.worldSpace = worldSpace;
             this.model = model;
-            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            Destroy(cube);// only need the mesh for showing the edge highlights
-            Destroy(sphere);// only need the mesh for showing the vertex highlights
-            var sphereMesh = sphere.GetComponent<MeshFilter>().mesh;
+            Destroy(cube);
             var cubeMesh = cube.GetComponent<MeshFilter>().mesh;
             VertexSelectStyle.vertexMesh = cubeMesh;
-            // VertexInactiveStyle.vertexMesh = sphereMesh;
+            // VertexInactiveStyle.vertexMesh = cubeMesh;
             EdgeSelectStyle.edgeMesh = cubeMesh;
             // EdgeInactiveStyle.edgeMesh = cubeMesh;
             EdgeTemporaryStyle.edgeMesh = cubeMesh;
