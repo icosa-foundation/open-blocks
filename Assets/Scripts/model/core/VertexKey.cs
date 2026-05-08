@@ -21,14 +21,11 @@ namespace com.google.apps.peltzer.client.model.core
     {
         private readonly int _meshId;
         private readonly int _vertexId;
-        private readonly int _hashCode;
 
         public VertexKey(int meshId, int vertexId)
         {
             _meshId = meshId;
             _vertexId = vertexId;
-            // 31 is a good number: http://stackoverflow.com/questions/299304/why-does-javas-hashcode-in-string-use-31-as-a-multiplier
-            _hashCode = (151 + meshId) * 31 + vertexId;
         }
 
         public override bool Equals(object obj) => obj is VertexKey other && Equals(other);
@@ -39,7 +36,8 @@ namespace com.google.apps.peltzer.client.model.core
               && _meshId == otherKey._meshId;
         }
 
-        public override int GetHashCode() => _hashCode;
+        // 31 is a good number: http://stackoverflow.com/questions/299304/why-does-javas-hashcode-in-string-use-31-as-a-multiplier
+        public override int GetHashCode() => (151 + _meshId) * 31 + _vertexId;
 
         public static bool operator ==(VertexKey a, VertexKey b) => a.Equals(b);
         public static bool operator !=(VertexKey a, VertexKey b) => !a.Equals(b);

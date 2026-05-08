@@ -22,7 +22,6 @@ namespace com.google.apps.peltzer.client.model.core
         private readonly int _meshId;
         private readonly int _vertexId1;
         private readonly int _vertexId2;
-        private readonly int _hashCode;
 
         public EdgeKey(int meshId, int vertexId1, int vertexId2)
         {
@@ -37,13 +36,6 @@ namespace com.google.apps.peltzer.client.model.core
                 this._vertexId1 = vertexId2;
                 this._vertexId2 = vertexId1;
             }
-            // Hashcode suggested by Effective Java and Jon Skeet:
-            // http://stackoverflow.com/questions/11742593/what-is-the-hashcode-for-a-custom-class-having-just-two-int-properties
-            int hash = 17;
-            hash = hash * 31 + meshId;
-            hash = hash * 31 + this._vertexId1;
-            hash = hash * 31 + this._vertexId2;
-            _hashCode = hash;
         }
 
         public override bool Equals(object obj) => obj is EdgeKey other && Equals(other);
@@ -55,7 +47,16 @@ namespace com.google.apps.peltzer.client.model.core
               && _vertexId2 == otherKey._vertexId2;
         }
 
-        public override int GetHashCode() => _hashCode;
+        // Hashcode suggested by Effective Java and Jon Skeet:
+        // http://stackoverflow.com/questions/11742593/what-is-the-hashcode-for-a-custom-class-having-just-two-int-properties
+        public override int GetHashCode()
+        {
+            int hash = 17;
+            hash = hash * 31 + _meshId;
+            hash = hash * 31 + _vertexId1;
+            hash = hash * 31 + _vertexId2;
+            return hash;
+        }
 
         public static bool operator ==(EdgeKey a, EdgeKey b) => a.Equals(b);
         public static bool operator !=(EdgeKey a, EdgeKey b) => !a.Equals(b);
