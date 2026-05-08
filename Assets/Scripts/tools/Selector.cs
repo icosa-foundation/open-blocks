@@ -153,7 +153,7 @@ namespace com.google.apps.peltzer.client.tools
         /// <summary>
         ///   The vertex currently being hovered over.
         /// </summary>
-        public VertexKey hoverVertex { get; private set; }
+        public VertexKey? hoverVertex { get; private set; }
         /// <summary>
         ///   The face currently being hovered over, and its planar highlight.
         /// </summary>
@@ -161,7 +161,7 @@ namespace com.google.apps.peltzer.client.tools
         /// <summary>
         ///   The face currently being hovered over.
         /// </summary>
-        public EdgeKey hoverEdge { get; private set; }
+        public EdgeKey? hoverEdge { get; private set; }
 
         /// <summary>
         ///   The meshes currently being hovered over, and their mesh highlights.
@@ -667,8 +667,8 @@ namespace com.google.apps.peltzer.client.tools
             else
             {
                 // If there are no hovered items, this will return the empty enumeration, which is our intention.
-                return hoverVertex == null ?
-                  new List<VertexKey>() : new List<VertexKey> { hoverVertex };
+                return !hoverVertex.HasValue ?
+                  new List<VertexKey>() : new List<VertexKey> { hoverVertex.Value };
             }
         }
 
@@ -687,8 +687,8 @@ namespace com.google.apps.peltzer.client.tools
             else
             {
                 // If there are no hovered items, this will return the empty enumeration, which is our intention.
-                return hoverEdge == null ?
-                  new List<EdgeKey>() : new List<EdgeKey> { hoverEdge };
+                return !hoverEdge.HasValue ?
+                  new List<EdgeKey>() : new List<EdgeKey> { hoverEdge.Value };
             }
         }
 
@@ -1238,12 +1238,12 @@ namespace com.google.apps.peltzer.client.tools
             Deselect(NOT_EDGES, /*deselectSelectedHighlights*/ false, /*deselectHoveredHighlights*/ true);
 
             // In single-select mode, turn on highlights for the newly hovered edge if it is not already hovered.
-            if (hoverEdge == null || hoverEdge != edge)
+            if (!hoverEdge.HasValue || hoverEdge.Value != edge)
             {
                 // If there is an existing edge highlight destroy it.
-                if (hoverEdge != null)
+                if (hoverEdge.HasValue)
                 {
-                    highlightUtils.TurnOff(hoverEdge);
+                    highlightUtils.TurnOff(hoverEdge.Value);
                 }
 
                 highlightUtils.TurnOn(edge);
@@ -1259,7 +1259,7 @@ namespace com.google.apps.peltzer.client.tools
             selectedEdges.Add(edgeKey);
             undoEdgeMultiSelect.Push(edgeKey);
 
-            if (hoverEdge != null && hoverEdge == edgeKey)
+            if (hoverEdge.HasValue && hoverEdge.Value == edgeKey)
             {
                 hoverEdge = null;
             }
@@ -1308,12 +1308,12 @@ namespace com.google.apps.peltzer.client.tools
             Deselect(NOT_VERTICES, /*deselectSelectedHighlights*/ false, /*deselectHoveredHighlights*/ true);
 
             // In single-select mode, activate highlights for the newly hovered vertex if it is not already hovered.
-            if (hoverVertex == null || hoverVertex != vertex)
+            if (!hoverVertex.HasValue || hoverVertex.Value != vertex)
             {
                 // If there is an existing vertex highlight destroy it.
-                if (hoverVertex != null)
+                if (hoverVertex.HasValue)
                 {
-                    highlightUtils.TurnOff(hoverVertex);
+                    highlightUtils.TurnOff(hoverVertex.Value);
                 }
 
                 highlightUtils.TurnOn(vertex);
@@ -1556,9 +1556,9 @@ namespace com.google.apps.peltzer.client.tools
 
                     if (deselectHoveredHighlights)
                     {
-                        if (hoverEdge != null)
+                        if (hoverEdge.HasValue)
                         {
-                            highlightUtils.TurnOff(hoverEdge);
+                            highlightUtils.TurnOff(hoverEdge.Value);
                             hoverEdge = null;
                         }
                     }
@@ -1587,9 +1587,9 @@ namespace com.google.apps.peltzer.client.tools
 
                     if (deselectHoveredHighlights)
                     {
-                        if (hoverVertex != null)
+                        if (hoverVertex.HasValue)
                         {
-                            highlightUtils.TurnOff(hoverVertex);
+                            highlightUtils.TurnOff(hoverVertex.Value);
                             hoverVertex = null;
                         }
                     }

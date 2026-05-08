@@ -184,13 +184,13 @@ namespace com.google.apps.peltzer.client.tools
             {
                 DeleteFace(selector.hoverFace);
             }
-            else if (selector.hoverVertex != null)
+            else if (selector.hoverVertex.HasValue)
             {
-                DeleteVertex(selector.hoverVertex);
+                DeleteVertex(selector.hoverVertex.Value);
             }
-            else if (selector.hoverEdge != null)
+            else if (selector.hoverEdge.HasValue)
             {
-                DeleteEdge(selector.hoverEdge);
+                DeleteEdge(selector.hoverEdge.Value);
             }
         }
 
