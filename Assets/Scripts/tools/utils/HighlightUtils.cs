@@ -340,8 +340,8 @@ namespace com.google.apps.peltzer.client.tools.utils
             this.worldSpace = worldSpace;
             this.model = model;
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var cubeMesh = cube.GetComponent<MeshFilter>().sharedMesh;
             Destroy(cube);
-            var cubeMesh = cube.GetComponent<MeshFilter>().mesh;
             VertexSelectStyle.vertexMesh = cubeMesh;
             // VertexInactiveStyle.vertexMesh = cubeMesh;
             EdgeSelectStyle.edgeMesh = cubeMesh;
