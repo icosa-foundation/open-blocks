@@ -683,7 +683,7 @@ namespace com.google.apps.peltzer.client.tools
 
             // Could not find the next subdivision.
             nextSubdivision = null;
-            nextSubdivisionExitEdge = null;
+            nextSubdivisionExitEdge = default;
             return false;
         }
 

@@ -17,7 +17,7 @@ namespace com.google.apps.peltzer.client.model.core
     /// <summary>
     /// A canonical id for an edge, which includes the id of the mesh it belongs to.
     /// </summary>
-    public class EdgeKey
+    public readonly struct EdgeKey : System.IEquatable<EdgeKey>
     {
         private readonly int _meshId;
         private readonly int _vertexId1;
@@ -39,37 +39,31 @@ namespace com.google.apps.peltzer.client.model.core
             }
             // Hashcode suggested by Effective Java and Jon Skeet:
             // http://stackoverflow.com/questions/11742593/what-is-the-hashcode-for-a-custom-class-having-just-two-int-properties
-            _hashCode = 17;
-            _hashCode = _hashCode * 31 + _meshId;
-            _hashCode = _hashCode * 31 + _vertexId1;
-            _hashCode = _hashCode * 31 + _vertexId2;
+            int hash = 17;
+            hash = hash * 31 + meshId;
+            hash = hash * 31 + this._vertexId1;
+            hash = hash * 31 + this._vertexId2;
+            _hashCode = hash;
         }
 
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as EdgeKey);
-        }
+        public override bool Equals(object obj) => obj is EdgeKey other && Equals(other);
 
         public bool Equals(EdgeKey otherKey)
         {
-            return otherKey != null
-              && _meshId == otherKey._meshId
+            return _meshId == otherKey._meshId
               && _vertexId1 == otherKey._vertexId1
               && _vertexId2 == otherKey._vertexId2;
         }
 
-        public override int GetHashCode()
-        {
-            return _hashCode;
-        }
+        public override int GetHashCode() => _hashCode;
 
-        public bool ContainsVertex(int vertexId)
-        {
-            return _vertexId1 == vertexId || _vertexId2 == vertexId;
-        }
+        public static bool operator ==(EdgeKey a, EdgeKey b) => a.Equals(b);
+        public static bool operator !=(EdgeKey a, EdgeKey b) => !a.Equals(b);
 
-        public int meshId { get { return _meshId; } }
-        public int vertexId1 { get { return _vertexId1; } }
-        public int vertexId2 { get { return _vertexId2; } }
+        public bool ContainsVertex(int vertexId) => _vertexId1 == vertexId || _vertexId2 == vertexId;
+
+        public int meshId => _meshId;
+        public int vertexId1 => _vertexId1;
+        public int vertexId2 => _vertexId2;
     }
 }

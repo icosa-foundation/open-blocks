@@ -373,7 +373,7 @@ namespace com.google.apps.peltzer.client.tools.utils
 
             inactiveRenderer = new InactiveRenderer(model, worldSpace, materialLibrary);
             inactiveRenderer.edgeMesh = cubeMesh;
-            inactiveRenderer.vertexMesh = sphereMesh;
+            inactiveRenderer.vertexMesh = cubeMesh;
             vertexHighlights = new TrackedHighlightSet<VertexKey>(VERT_EDGE_ANIMATION_DURATION_IN,
               VERT_EDGE_ANIMATION_DURATION_OUT,
               new[] { (int)VertexStyles.VERTEX_SELECT, (int)VertexStyles.VERTEX_INACTIVE });
