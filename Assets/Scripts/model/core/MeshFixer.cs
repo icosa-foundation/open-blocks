@@ -248,7 +248,7 @@ namespace com.google.apps.peltzer.client.model.core
 
                 foreach (int vertIndex in vertsToCheck)
                 {
-                    if (vertIndex == updatedVertId || updatedVertIds.Contains(vertIndex))
+                    if (vertIndex == updatedVertId || updatedVertIds.Contains(vertIndex) || !mesh.HasVertex(vertIndex))
                     {
                         continue;
                     }
@@ -461,6 +461,7 @@ namespace com.google.apps.peltzer.client.model.core
             MMesh.GeometryOperation splitOperation = newMesh.StartOperation();
             foreach (int vertId in updatedVertIds)
             {
+                if (!newMesh.HasVertex(vertId)) continue;
                 foreach (int faceId in newMesh.reverseTable[vertId])
                 {
                     if (confirmedCoplanarFaceIds.Contains(faceId))

@@ -625,7 +625,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </param>
         /// <param name="nextSubdivision">The next subdivision in the chain, or null if this method can't find one.</param>
         /// <param name="nextSubdivisionExitEdge">
-        ///   The exit edge for nextSubdivision, or null if this method can't find one.
+        ///   The exit edge for nextSubdivision, or default(EdgeKey) if this method can't find one.
         /// </param>
         /// <returns> Whether a suitable subdivision was found to continue the chain. </returns>
         private bool FindNextSubdivisionForLoopSubdivide(Subdivision currentSubdivision,
@@ -683,7 +683,7 @@ namespace com.google.apps.peltzer.client.tools
 
             // Could not find the next subdivision.
             nextSubdivision = null;
-            nextSubdivisionExitEdge = null;
+            nextSubdivisionExitEdge = default;
             return false;
         }
 
