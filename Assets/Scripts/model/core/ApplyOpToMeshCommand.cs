@@ -55,8 +55,8 @@ namespace com.google.apps.peltzer.client.model.core
 
         public Command GetUndoCommand(Model model)
         {
-           var prevMesh = model.GetMesh(meshId);
-           return new ReplaceMeshCommand(meshId, prevMesh);
+            var prevMesh = model.GetMesh(meshId);
+            return new ReplaceMeshCommand(meshId, prevMesh);
         }
     }
 }
