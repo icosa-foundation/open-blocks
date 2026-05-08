@@ -141,11 +141,11 @@ namespace com.google.apps.peltzer.client.tools.utils
             highlightUtils.inactiveRenderer.showPoints = showVerts;
             if (showEdges)
             {
-                highlightUtils.inactiveRenderer.TurnOnEdgeWireframe(selectableMeshIds, selectedEdges, hoveredEdge);
+                highlightUtils.inactiveRenderer.TurnOnEdgeWireframe(selectableMeshIds, selectedEdges, hoveredEdge.GetValueOrDefault());
             }
             if (showVerts)
             {
-                highlightUtils.inactiveRenderer.TurnOnPointWireframe(selectableMeshIds, selectedVerts, hoveredVert);
+                highlightUtils.inactiveRenderer.TurnOnPointWireframe(selectableMeshIds, selectedVerts, hoveredVert.GetValueOrDefault());
             }
         }
 

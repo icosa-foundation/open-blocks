@@ -345,7 +345,7 @@ namespace com.google.apps.peltzer.client.tools.utils
             Destroy(sphere);// only need the mesh for showing the vertex highlights
             var sphereMesh = sphere.GetComponent<MeshFilter>().mesh;
             var cubeMesh = cube.GetComponent<MeshFilter>().mesh;
-            VertexSelectStyle.vertexMesh = sphereMesh;
+            VertexSelectStyle.vertexMesh = cubeMesh;
             // VertexInactiveStyle.vertexMesh = sphereMesh;
             EdgeSelectStyle.edgeMesh = cubeMesh;
             // EdgeInactiveStyle.edgeMesh = cubeMesh;
