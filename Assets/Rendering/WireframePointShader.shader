@@ -32,7 +32,6 @@ Shader "MogwaiProcedural/WireframePointShader"
 	{
 		Tags { "RenderType"="Transparent" "Queue"="Transparent"}
 		LOD 100
-    GrabPass {"PreTransparencyTexture"}
 		Pass
 		{
 		      Offset -2, -2
@@ -49,7 +48,6 @@ Shader "MogwaiProcedural/WireframePointShader"
       #include "shaderMath.cginc"
 
       float4 _MaterialColor;
-      sampler2D PreTransparencyTexture;
 
 			float _BaseEmissiveAmount;
 			float _HoverEmissiveAmount;
@@ -68,7 +66,6 @@ Shader "MogwaiProcedural/WireframePointShader"
         float4 worldPos : TEXCOORD2;
         float4 center : TEXCOORD3;
         float4 normal : TEXCOORD1;
-        float4 grabPos : TEXCOORD5;
 			};
 
       vs_out fakeVert (appdata v)
@@ -120,20 +117,16 @@ Shader "MogwaiProcedural/WireframePointShader"
         curVert.center = worldPos;
         curVert.worldPos = upLeftWorldPos;
         curVert.vertex = upLeftClipPos;
-        curVert.grabPos = ComputeGrabScreenPos(upLeftClipPos);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         curVert.worldPos = upRightWorldPos;
         curVert.vertex = upRightClipPos;
-        curVert.grabPos = ComputeGrabScreenPos(upRightClipPos);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         curVert.worldPos = downLeftWorldPos;
         curVert.vertex = downLeftClipPos;
-        curVert.grabPos = ComputeGrabScreenPos(downLeftClipPos);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         curVert.worldPos = downRightWorldPos;
         curVert.vertex = downRightClipPos;
-        curVert.grabPos = ComputeGrabScreenPos(downRightClipPos);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         OutputStream.RestartStrip();
       }
 

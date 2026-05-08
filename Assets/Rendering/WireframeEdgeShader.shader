@@ -32,7 +32,6 @@ Shader "MogwaiProcedural/WireframeEdgeShader"
 		Tags { "RenderType"="Transparent" "Queue"="Transparent+1"}
 		Offset -2, -2
 		LOD 100
-    GrabPass {"PreTransparencyTexture"}
 		Pass
 		{
       Blend SrcAlpha OneMinusSrcAlpha
@@ -49,7 +48,6 @@ Shader "MogwaiProcedural/WireframeEdgeShader"
       #include "shaderMath.cginc"
 
       float4 _MaterialColor;
-      sampler2D PreTransparencyTexture;
       float3 _SelectionPosWorld;
 
 			struct appdata
@@ -64,7 +62,6 @@ Shader "MogwaiProcedural/WireframeEdgeShader"
         float4 p1World : TEXCOORD4;
         float4 worldPos : TEXCOORD3;
         float4 normal : NORMAL;
-        float4 grabPos : TEXCOORD5;
         float4 color : COLOR;
 			};
 
@@ -178,23 +175,19 @@ Shader "MogwaiProcedural/WireframeEdgeShader"
         //0
         curVert.worldPos = frontUpLeft;
         curVert.vertex = frontUpLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //1
         curVert.worldPos = frontUpRight;
         curVert.vertex = frontUpRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //2
         curVert.worldPos = frontDownLeft;
         curVert.vertex = frontDownLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //3
         curVert.worldPos = frontDownRight;
         curVert.vertex = frontDownRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         OutputStream.RestartStrip();
 
         //Back Face
@@ -203,23 +196,19 @@ Shader "MogwaiProcedural/WireframeEdgeShader"
         //0
         curVert.worldPos = backUpRight;
         curVert.vertex = backUpRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
        OutputStream.Append(curVert);
         //1
         curVert.worldPos = backUpLeft;
         curVert.vertex = backUpLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //2
         curVert.worldPos = backDownRight;
         curVert.vertex = backDownRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //3
         curVert.worldPos = backDownLeft;
         curVert.vertex = backDownLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         OutputStream.RestartStrip();
 
         //Left Face
@@ -228,23 +217,19 @@ Shader "MogwaiProcedural/WireframeEdgeShader"
         //0
         curVert.worldPos = backUpLeft;
         curVert.vertex = backUpLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //1
         curVert.worldPos = frontUpLeft;
         curVert.vertex = frontUpLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //2
         curVert.worldPos = backDownLeft;
         curVert.vertex = backDownLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //3
         curVert.worldPos = frontDownLeft;
         curVert.vertex = frontDownLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         OutputStream.RestartStrip();
 
         //Right Face
@@ -253,23 +238,19 @@ Shader "MogwaiProcedural/WireframeEdgeShader"
         //0
         curVert.worldPos = backUpRight;
         curVert.vertex = backUpRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //1
         curVert.worldPos = backDownRight;
         curVert.vertex = backDownRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //2
         curVert.worldPos = frontUpRight;
         curVert.vertex = frontUpRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //3
         curVert.worldPos = frontDownRight;
         curVert.vertex = frontDownRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         OutputStream.RestartStrip();
 
         //Top Face
@@ -278,23 +259,19 @@ Shader "MogwaiProcedural/WireframeEdgeShader"
         //0
         curVert.worldPos = backUpLeft;
         curVert.vertex = backUpLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //1
         curVert.worldPos = backUpRight;
         curVert.vertex = backUpRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //2
         curVert.worldPos = frontUpLeft;
         curVert.vertex = frontUpLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //3
         curVert.worldPos = frontUpRight;
         curVert.vertex = frontUpRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         OutputStream.RestartStrip();
 
         //Bottom Face
@@ -303,23 +280,19 @@ Shader "MogwaiProcedural/WireframeEdgeShader"
         //0
         curVert.worldPos = backDownLeft;
         curVert.vertex = backDownLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //1
         curVert.worldPos = frontDownLeft;
         curVert.vertex = frontDownLeftClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //1
         curVert.worldPos = backDownRight;
         curVert.vertex = backDownRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         //3
         curVert.worldPos = frontDownRight;
         curVert.vertex = frontDownRightClip;
-        curVert.grabPos = ComputeGrabScreenPos(curVert.vertex);
-        OutputStream.Append(curVert);
+OutputStream.Append(curVert);
         OutputStream.RestartStrip();
         
       }
