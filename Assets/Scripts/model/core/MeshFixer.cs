@@ -461,6 +461,7 @@ namespace com.google.apps.peltzer.client.model.core
             MMesh.GeometryOperation splitOperation = newMesh.StartOperation();
             foreach (int vertId in updatedVertIds)
             {
+                if (!newMesh.HasVertex(vertId)) continue;
                 foreach (int faceId in newMesh.reverseTable[vertId])
                 {
                     if (confirmedCoplanarFaceIds.Contains(faceId))
