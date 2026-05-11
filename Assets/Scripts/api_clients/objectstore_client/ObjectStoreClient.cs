@@ -36,6 +36,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
     public class ObjectStoreClient
     {
         public static readonly string OBJECT_STORE_BASE_URL = "[Removed]";
+        private const string LOAD_ATTEMPT_LOG_PREFIX = "[LOADFMT-20260425]";
 
         public ObjectStoreClient() { }
 
@@ -100,6 +101,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         {
             if (entry.localPeltzerFile != null)
             {
+                entry.loadAttemptFormats = new[] { "blocks" };
+                entry.resolvedLoadFormat = "blocks";
                 callback(File.ReadAllBytes(entry.localPeltzerFile));
                 return;
             }
@@ -118,6 +121,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
             if (!string.IsNullOrEmpty(entry.localPeltzerFile))
             {
+                entry.loadAttemptFormats = new[] { "blocks" };
+                entry.resolvedLoadFormat = "blocks";
                 callback(File.ReadAllBytes(entry.localPeltzerFile));
                 return;
             }
@@ -125,68 +130,144 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             ObjectStoreObjectAssetsWrapper assets = entry.assets;
             if (assets == null)
             {
+                entry.loadAttemptFormats = null;
+                entry.resolvedLoadFormat = null;
                 callback(null);
                 return;
             }
 
             string assetId = entry.id;
-            List<System.Action<System.Action>> preferredAttempts = new List<System.Action<System.Action>>();
-            List<System.Action<System.Action>> nonPreferredAttempts = new List<System.Action<System.Action>>();
+            List<System.Action<System.Action<string>>> preferredAttempts = new List<System.Action<System.Action<string>>>();
+            List<System.Action<System.Action<string>>> nonPreferredAttempts = new List<System.Action<System.Action<string>>>();
+            List<string> preferredAttemptFormats = new List<string>();
+            List<string> nonPreferredAttemptFormats = new List<string>();
+            List<string> excludedCandidates = new List<string>();
 
-            void AddAttempt(bool condition, bool isPreferred, System.Action<System.Action> attempt)
+            void AddAttempt(string candidateName, string formatLabel, bool isPresent, string rootUrl, bool isPreferred,
+              bool isSupported, string unsupportedReason, System.Action<System.Action<string>> attempt)
             {
-                if (condition && attempt != null)
+                if (!isPresent)
                 {
-                    if (isPreferred)
-                    {
-                        preferredAttempts.Add(attempt);
-                    }
-                    else
-                    {
-                        nonPreferredAttempts.Add(attempt);
-                    }
+                    excludedCandidates.Add($"{candidateName}: not present in parsed assets");
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(rootUrl))
+                {
+                    excludedCandidates.Add($"{candidateName}: missing rootUrl");
+                    return;
+                }
+
+                if (!isSupported)
+                {
+                    excludedCandidates.Add($"{candidateName}: {unsupportedReason}");
+                    return;
+                }
+
+                if (attempt == null)
+                {
+                    excludedCandidates.Add($"{candidateName}: no attempt handler");
+                    return;
+                }
+
+                if (isPreferred)
+                {
+                    preferredAttempts.Add(attempt);
+                    preferredAttemptFormats.Add(formatLabel);
+                }
+                else
+                {
+                    nonPreferredAttempts.Add(attempt);
+                    nonPreferredAttemptFormats.Add(formatLabel);
                 }
             }
 
             AddAttempt(
-              assets.peltzer_package != null && !string.IsNullOrEmpty(assets.peltzer_package.rootUrl),
+              "peltzer_package",
+              "blocks",
+              assets.peltzer_package != null,
+              assets.peltzer_package?.rootUrl,
               assets.peltzer_package?.isPreferredForDownload ?? false,
+              true,
+              null,
               onFailure => AttemptPeltzerPackage(assets.peltzer_package, assetId, callback, onFailure));
 
             AddAttempt(
-              assets.peltzer != null && !string.IsNullOrEmpty(assets.peltzer.rootUrl),
+              "peltzer",
+              "blocks",
+              assets.peltzer != null,
+              assets.peltzer?.rootUrl,
               assets.peltzer?.isPreferredForDownload ?? false,
+              true,
+              null,
               onFailure => AttemptPeltzerFile(assets.peltzer, assetId, callback, onFailure));
 
             // VOX format - always prioritized regardless of isPreferredForDownload
             AddAttempt(
-              assets.vox != null && !string.IsNullOrEmpty(assets.vox.rootUrl),
+              "vox",
+              "vox",
+              assets.vox != null,
+              assets.vox?.rootUrl,
               true,
+              true,
+              null,
               onFailure => AttemptVoxFile(assets.vox, assetId, callback, onFailure));
 
             AddAttempt(
-              assets.object_package != null && !string.IsNullOrEmpty(assets.object_package.rootUrl),
+              "object_package",
+              "obj",
+              assets.object_package != null,
+              assets.object_package?.rootUrl,
               assets.object_package?.isPreferredForDownload ?? false,
+              true,
+              null,
               onFailure => AttemptObjPackage(assets.object_package, assets, assetId, callback, onFailure));
 
             AddAttempt(
-              assets.obj != null && !string.IsNullOrEmpty(assets.obj.rootUrl),
+              "obj",
+              "obj",
+              assets.obj != null,
+              assets.obj?.rootUrl,
               assets.obj?.isPreferredForDownload ?? false,
+              true,
+              null,
               onFailure => AttemptObjFile(assets.obj, assetId, callback, onFailure));
 
             AddAttempt(
-              assets.gltf_package != null && !string.IsNullOrEmpty(assets.gltf_package.rootUrl),
+              "gltf_package",
+              "glb",
+              assets.gltf_package != null,
+              assets.gltf_package?.rootUrl,
               assets.gltf_package?.isPreferredForDownload ?? false,
+              assets.gltf_package == null || (assets.gltf_package.version != "GLTF1" && assets.gltf_package.version != "GLTF"),
+              GetUnsupportedGltfReason(assets.gltf_package),
               onFailure => AttemptGltfBinary(assets.gltf_package, assetId, callback, onFailure));
 
             AddAttempt(
-              assets.gltf != null && !string.IsNullOrEmpty(assets.gltf.rootUrl),
+              "gltf",
+              "gltf",
+              assets.gltf != null,
+              assets.gltf?.rootUrl,
               assets.gltf?.isPreferredForDownload ?? false,
+              assets.gltf == null || (assets.gltf.version != "GLTF1" && assets.gltf.version != "GLTF"),
+              GetUnsupportedGltfReason(assets.gltf),
               onFailure => AttemptGltfFile(assets.gltf, assetId, callback, onFailure));
 
             // Combine lists: preferred formats first, then non-preferred as fallback
-            List<System.Action<System.Action>> attempts = new List<System.Action<System.Action>>(preferredAttempts);
+            List<System.Action<System.Action<string>>> attempts = new List<System.Action<System.Action<string>>>(preferredAttempts);
             attempts.AddRange(nonPreferredAttempts);
+            List<string> attemptFormats = new List<string>(preferredAttemptFormats);
+            attemptFormats.AddRange(nonPreferredAttemptFormats);
+            entry.loadAttemptFormats = attemptFormats.ToArray();
+
+            if (attempts.Count == 0)
+            {
+                entry.resolvedLoadFormat = null;
+                string sourceFormats = string.IsNullOrEmpty(entry?.apiFormatsSummary) ? "unavailable" : entry.apiFormatsSummary;
+                Debug.LogWarning($"{LOAD_ATTEMPT_LOG_PREFIX} asset={entry?.id ?? "unknown"} no valid download formats survived parsing into ObjectStoreEntry.assets. sourceFormats={sourceFormats} parsedAssets={DescribeParsedAssets(assets)} excluded={DescribeExcludedCandidates(excludedCandidates)}");
+                callback(null);
+                return;
+            }
 
             AttemptNext(0);
 
@@ -194,15 +275,26 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             {
                 if (index >= attempts.Count)
                 {
+                    Debug.LogWarning($"{LOAD_ATTEMPT_LOG_PREFIX} asset={entry?.id ?? "unknown"} exhausted {attempts.Count} download format attempts without success");
+                    if (entry.loadAttemptFormats == null || entry.loadAttemptFormats.Length != 1)
+                    {
+                        entry.resolvedLoadFormat = null;
+                    }
                     callback(null);
                     return;
                 }
 
-                attempts[index](() => AttemptNext(index + 1));
+                entry.resolvedLoadFormat = attemptFormats[index];
+                LogLoadAttemptStart(entry, attemptFormats[index], index, attempts.Count);
+                attempts[index](failureReason =>
+                {
+                    LogLoadAttemptFailure(entry, attemptFormats[index], index, attempts.Count, failureReason);
+                    AttemptNext(index + 1);
+                });
             }
         }
 
-        private static void AttemptPeltzerPackage(ObjectStorePeltzerPackageAssets peltzerPackage, string assetId, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptPeltzerPackage(ObjectStorePeltzerPackageAssets peltzerPackage, string assetId, System.Action<byte[]> callback, System.Action<string> onFailure)
         {
             // Check cache first
             string cacheDir = Path.Combine(Application.temporaryCachePath, $"peltzer_package_{assetId}");
@@ -232,7 +324,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       {
                           Debug.LogWarning($"Blocks package download failed - URL: {zipUrl}, Response code: {responseCode}");
                       }
-                      onFailure();
+                      onFailure(BuildHttpFailureReason("Blocks package download failed", responseCode, zipUrl.ToString()));
                   }
                   else
                   {
@@ -255,7 +347,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
               });
         }
 
-        private static void AttemptPeltzerFile(ObjectStorePeltzerAssets peltzerAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptPeltzerFile(ObjectStorePeltzerAssets peltzerAssets, string assetId, System.Action<byte[]> callback, System.Action<string> onFailure)
         {
             // Check cache first
             string cacheDir = Path.Combine(Application.temporaryCachePath, $"peltzer_{assetId}");
@@ -285,7 +377,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       {
                           Debug.LogWarning($"Blocks file download failed - URL: {url}, Response code: {responseCode}");
                       }
-                      onFailure();
+                      onFailure(BuildHttpFailureReason("Blocks file download failed", responseCode, url.ToString()));
                   }
                   else
                   {
@@ -308,7 +400,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
               });
         }
 
-        private static void AttemptObjPackage(ObjectStoreObjMtlPackageAssets objPackage, ObjectStoreObjectAssetsWrapper assets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptObjPackage(ObjectStoreObjMtlPackageAssets objPackage, ObjectStoreObjectAssetsWrapper assets, string assetId, System.Action<byte[]> callback, System.Action<string> onFailure)
         {
             // Check cache first
             string cacheDir = Path.Combine(Application.temporaryCachePath, $"obj_package_{assetId}");
@@ -338,7 +430,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       {
                           Debug.LogWarning($"OBJ package download failed - URL: {zipUrl}, Response code: {responseCode}");
                       }
-                      onFailure();
+                      onFailure(BuildHttpFailureReason("OBJ package download failed", responseCode, zipUrl.ToString()));
                       return;
                   }
 
@@ -350,7 +442,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                   if (!IsZipArchive(responseBytes))
                   {
                       Debug.LogWarning($"Downloaded OBJ package is not a ZIP archive (magic bytes: {DescribeMagicBytes(responseBytes)}). Falling back to {GetObjFallbackTarget(assets)}.");
-                      onFailure();
+                      onFailure($"Downloaded file was not a ZIP archive (magic bytes: {DescribeMagicBytes(responseBytes)})");
                       return;
                   }
 
@@ -372,7 +464,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
               });
         }
 
-        private static void AttemptObjFile(ObjectStoreObjectAssets objAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptObjFile(ObjectStoreObjectAssets objAssets, string assetId, System.Action<byte[]> callback, System.Action<string> onFailure)
         {
             // Check cache first
             string cacheDir = Path.Combine(Application.temporaryCachePath, $"obj_{assetId}");
@@ -426,7 +518,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       {
                           Debug.LogWarning($"OBJ file download failed - URL: {objUrl}, Response code: {responseCode}");
                       }
-                      onFailure();
+                      onFailure(BuildHttpFailureReason("OBJ file download failed", responseCode, objUrl.ToString()));
                       return;
                   }
 
@@ -496,7 +588,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             string objContents,
             string mtlContents,
             System.Action<byte[]> callback,
-            System.Action onFailure)
+            System.Action<string> onFailure)
         {
             Dictionary<string, byte[]> textureDataByName = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
 
@@ -590,7 +682,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             }
         }
 
-        private static void AttemptVoxFile(ObjectStoreVoxAssets voxAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptVoxFile(ObjectStoreVoxAssets voxAssets, string assetId, System.Action<byte[]> callback, System.Action<string> onFailure)
         {
             // Check cache first
             string cacheDir = Path.Combine(Application.temporaryCachePath, $"vox_{assetId}");
@@ -620,7 +712,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       {
                           Debug.LogWarning($"VOX file download failed - URL: {voxUrl}, Response code: {responseCode}");
                       }
-                      onFailure();
+                      onFailure(BuildHttpFailureReason("VOX file download failed", responseCode, voxUrl.ToString()));
                       return;
                   }
 
@@ -642,22 +734,22 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
               });
         }
 
-        private static void AttemptGltfBinary(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptGltfBinary(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action<string> onFailure)
         {
             AttemptGltfAsset(gltfAssets, assetId, callback, onFailure, expectBinary: true);
         }
 
-        private static void AttemptGltfFile(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure)
+        private static void AttemptGltfFile(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action<string> onFailure)
         {
             AttemptGltfAsset(gltfAssets, assetId, callback, onFailure, expectBinary: false);
         }
 
-        private static void AttemptGltfAsset(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action onFailure, bool expectBinary)
+        private static void AttemptGltfAsset(ObjectStoreGltfPackageAssets gltfAssets, string assetId, System.Action<byte[]> callback, System.Action<string> onFailure, bool expectBinary)
         {
             if (gltfAssets.version == "GLTF1" || gltfAssets.version == "GLTF")
             {
-                Debug.LogWarning($"Skipping GLTF 1.0 file (UnityGLTF only supports GLTF 2.0): {gltfAssets.rootUrl}");
-                onFailure();
+                Debug.LogWarning($"{LOAD_ATTEMPT_LOG_PREFIX} asset={assetId} unexpected unsupported glTF version reached AttemptGltfAsset: version={gltfAssets.version} url={gltfAssets.rootUrl}");
+                onFailure($"Internal parser bug: unsupported glTF version '{gltfAssets.version}' was scheduled for download");
                 return;
             }
 
@@ -665,6 +757,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             string tempDir = Path.Combine(Application.temporaryCachePath, $"gltf_{assetId}");
             string extension = expectBinary ? ".glb" : ".gltf";
             string mainFilePath = Path.Combine(tempDir, $"model{extension}");
+            string rootDir = string.IsNullOrEmpty(gltfAssets.rootUrl) ? string.Empty
+                : gltfAssets.rootUrl.Substring(0, gltfAssets.rootUrl.LastIndexOf('/') + 1);
 
             if (File.Exists(mainFilePath))
             {
@@ -675,9 +769,9 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     foreach (string supportingFile in gltfAssets.supportingFiles)
                     {
                         if (string.IsNullOrEmpty(supportingFile)) continue;
-                        string sanitizedKey = supportingFile.Replace("\\", "/").TrimStart('/');
-                        string decodedKey = Uri.UnescapeDataString(sanitizedKey);
-                        string filePath = Path.Combine(tempDir, decodedKey);
+                        string storageKey = ComputeStorageKey(supportingFile, rootDir);
+                        if (storageKey == null) continue;
+                        string filePath = Path.Combine(tempDir, storageKey);
                         if (!File.Exists(filePath))
                         {
                             cacheValid = false;
@@ -698,10 +792,10 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                         foreach (string supportingFile in gltfAssets.supportingFiles)
                         {
                             if (string.IsNullOrEmpty(supportingFile)) continue;
-                            string sanitizedKey = supportingFile.Replace("\\", "/").TrimStart('/');
-                            string decodedKey = Uri.UnescapeDataString(sanitizedKey);
-                            string filePath = Path.Combine(tempDir, decodedKey);
-                            cachedAdditionalFiles[supportingFile] = File.ReadAllBytes(filePath);
+                            string storageKey = ComputeStorageKey(supportingFile, rootDir);
+                            if (storageKey == null) continue;
+                            string filePath = Path.Combine(tempDir, storageKey);
+                            cachedAdditionalFiles[storageKey] = File.ReadAllBytes(filePath);
                         }
                     }
 
@@ -727,17 +821,17 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       {
                           Debug.LogWarning($"GLTF {(expectBinary ? "binary" : "text")} download failed - URL: {gltfUrl}, Response code: {responseCode}");
                       }
-                      onFailure();
+                      onFailure(BuildHttpFailureReason($"GLTF {(expectBinary ? "binary" : "text")} download failed", responseCode, gltfUrl.ToString()));
                   }
                   else
                   {
                       Dictionary<string, byte[]> additionalFiles = new Dictionary<string, byte[]>();
                       if (gltfAssets.supportingFiles != null && gltfAssets.supportingFiles.Length > 0)
                       {
-                          string rootDir = gltfAssets.rootUrl.Substring(0, gltfAssets.rootUrl.LastIndexOf('/') + 1);
                           int filesToDownload = 0;
                           int filesDownloaded = 0;
                           bool downloadFailed = false;
+                          string supportingFileFailureReason = null;
 
                           // Count only non-empty files
                           foreach (string file in gltfAssets.supportingFiles)
@@ -775,12 +869,20 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                                     {
                                         if (fileSuccess && fileBytes != null)
                                         {
-                                            additionalFiles[supportingFile] = fileBytes;
+                                            string storageKey = ComputeStorageKey(supportingFile, rootDir);
+                                            if (storageKey != null)
+                                            {
+                                                additionalFiles[storageKey] = fileBytes;
+                                            }
                                         }
                                         else
                                         {
                                             Debug.LogWarning($"Failed to download GLTF supporting file: {supportingUrl}");
                                             downloadFailed = true;
+                                            if (string.IsNullOrEmpty(supportingFileFailureReason))
+                                            {
+                                                supportingFileFailureReason = BuildHttpFailureReason($"GLTF supporting file download failed ({supportingFile})", fileResponseCode, supportingUrl.ToString());
+                                            }
                                         }
 
                                         filesDownloaded++;
@@ -788,7 +890,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                                         {
                                             if (downloadFailed)
                                             {
-                                                onFailure();
+                                                onFailure(supportingFileFailureReason ?? "GLTF supporting file download failed");
                                             }
                                             else
                                             {
@@ -805,6 +907,85 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                       }
                   }
               });
+        }
+
+        private static void LogLoadAttemptStart(ObjectStoreEntry entry, string format, int attemptIndex, int totalAttempts)
+        {
+            Debug.Log($"{LOAD_ATTEMPT_LOG_PREFIX} asset={entry?.id ?? "unknown"} attempt={attemptIndex + 1}/{totalAttempts} format={format} starting");
+        }
+
+        private static void LogLoadAttemptFailure(ObjectStoreEntry entry, string format, int attemptIndex, int totalAttempts, string reason)
+        {
+            string failureReason = string.IsNullOrEmpty(reason) ? "Unknown failure" : reason;
+            Debug.LogWarning($"{LOAD_ATTEMPT_LOG_PREFIX} asset={entry?.id ?? "unknown"} attempt={attemptIndex + 1}/{totalAttempts} format={format} failed: {failureReason}");
+        }
+
+        private static string GetUnsupportedGltfReason(ObjectStoreGltfPackageAssets gltfAssets)
+        {
+            if (gltfAssets == null)
+            {
+                return null;
+            }
+
+            if (gltfAssets.version == "GLTF1" || gltfAssets.version == "GLTF")
+            {
+                return $"unsupported version {gltfAssets.version}";
+            }
+
+            return null;
+        }
+
+        private static string DescribeParsedAssets(ObjectStoreObjectAssetsWrapper assets)
+        {
+            if (assets == null)
+            {
+                return "assets=null";
+            }
+
+            return string.Join("; ", new[]
+            {
+                DescribeAssetSlot("peltzer_package", assets.peltzer_package?.rootUrl, null, assets.peltzer_package?.isPreferredForDownload ?? false),
+                DescribeAssetSlot("peltzer", assets.peltzer?.rootUrl, null, assets.peltzer?.isPreferredForDownload ?? false),
+                DescribeAssetSlot("vox", assets.vox?.rootUrl, null, assets.vox?.isPreferredForDownload ?? false),
+                DescribeAssetSlot("object_package", assets.object_package?.rootUrl, null, assets.object_package?.isPreferredForDownload ?? false),
+                DescribeAssetSlot("obj", assets.obj?.rootUrl, null, assets.obj?.isPreferredForDownload ?? false),
+                DescribeAssetSlot("gltf_package", assets.gltf_package?.rootUrl, assets.gltf_package?.version, assets.gltf_package?.isPreferredForDownload ?? false),
+                DescribeAssetSlot("gltf", assets.gltf?.rootUrl, assets.gltf?.version, assets.gltf?.isPreferredForDownload ?? false)
+            });
+        }
+
+        private static string DescribeAssetSlot(string name, string rootUrl, string version, bool isPreferred)
+        {
+            string urlDescription = string.IsNullOrEmpty(rootUrl) ? "rootUrl=<null>" : $"rootUrl={rootUrl}";
+            string versionDescription = string.IsNullOrEmpty(version) ? null : $"version={version}";
+            return string.IsNullOrEmpty(versionDescription)
+              ? $"{name}({urlDescription}, preferred={isPreferred})"
+              : $"{name}({urlDescription}, {versionDescription}, preferred={isPreferred})";
+        }
+
+        private static string DescribeExcludedCandidates(List<string> excludedCandidates)
+        {
+            if (excludedCandidates == null || excludedCandidates.Count == 0)
+            {
+                return "none";
+            }
+
+            return string.Join("; ", excludedCandidates);
+        }
+
+        private static string BuildHttpFailureReason(string context, int responseCode, string url)
+        {
+            if (responseCode == 404)
+            {
+                return $"{context}: HTTP 404 at {url}";
+            }
+
+            if (responseCode > 0)
+            {
+                return $"{context}: HTTP {responseCode} at {url}";
+            }
+
+            return $"{context}: network error at {url}";
         }
 
         private static string GetObjFallbackTarget(ObjectStoreObjectAssetsWrapper assets)
@@ -1313,11 +1494,20 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
                     if (additionalFiles != null)
                     {
+                        // Resolve tempDir once for bounds checking below.
+                        string resolvedTempDir = Path.GetFullPath(tempDir) + Path.DirectorySeparatorChar;
                         foreach (var kvp in additionalFiles)
                         {
-                            string sanitizedKey = kvp.Key.Replace("\\", "/").TrimStart('/');
-                            string decodedKey = Uri.UnescapeDataString(sanitizedKey);
-                            string filePath = Path.Combine(tempDir, decodedKey);
+                            // Keys are already validated by ComputeStorageKey; this is a final
+                            // defense-in-depth check against any path that somehow escaped validation.
+                            string filePath = Path.Combine(tempDir, kvp.Key);
+                            string resolvedPath = Path.GetFullPath(filePath);
+                            if (!resolvedPath.StartsWith(resolvedTempDir))
+                            {
+                                Debug.LogWarning($"[GLTF] Skipping file write outside tempDir: {kvp.Key}");
+                                continue;
+                            }
+
                             string fileDir = Path.GetDirectoryName(filePath);
                             if (!Directory.Exists(fileDir))
                             {
@@ -1345,6 +1535,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     var uriPath = $"file:///{normalizedPath}";
 
                     importer = new UnityGLTF.GLTFSceneImporter(uriPath, importOptions);
+                    importer.CustomShaderName = "Universal Render Pipeline/OpenBlocksLit";
                     if (importRoot != null)
                     {
                         importer.SceneParent = importRoot.transform;
@@ -1460,9 +1651,13 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                     return Color.white;
                 }
 
+                // UnityGLTF maps baseColorFactor to _Color (legacy property) when using a custom shader name,
+                // leaving _BaseColor at its default white. Fall through to _Color if _BaseColor is white.
                 if (material.HasProperty("_BaseColor"))
                 {
-                    return material.GetColor("_BaseColor");
+                    Color c = material.GetColor("_BaseColor");
+                    if (c != Color.white || !material.HasProperty("_Color"))
+                        return c;
                 }
 
                 if (material.HasProperty("_Color"))
@@ -1543,7 +1738,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 {
                     int materialIndex = Mathf.Clamp(subMeshIndex, 0, materials.Length - 1);
                     Material sourceMaterial = materials[materialIndex];
-                    if (TextureToFaceColorApproximator.TryComputeFaceColors(mesh, triangles, sourceMaterial, out List<Color> faceColors, out string debugMessage) && faceColors != null)
+                    bool gotFaceColors = TextureToFaceColorApproximator.TryComputeFaceColors(mesh, triangles, sourceMaterial, out List<Color> faceColors, out string debugMessage);
+                    if (gotFaceColors && faceColors != null)
                     {
                         List<FaceProperties> overrides = new List<FaceProperties>(faceColors.Count);
                         foreach (Color color in faceColors)
@@ -1565,6 +1761,57 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                 }
             }
 
+        }
+
+        /// <summary>
+        /// Derives the relative storage path for a supporting file given the GLTF root directory URL.
+        /// When supportingFiles contains full URLs (preferred), strips the rootDir prefix so the stored
+        /// path matches the URI the GLTF file uses internally (e.g. "new/foo.png" not just "foo.png").
+        /// Returns null if the derived path is unsafe (path traversal, rooted, or drive-letter paths).
+        /// </summary>
+        private static string ComputeStorageKey(string supportingFile, string rootDir)
+        {
+            string rawKey;
+            if (!string.IsNullOrEmpty(rootDir) && supportingFile.StartsWith(rootDir))
+            {
+                rawKey = supportingFile.Substring(rootDir.Length);
+            }
+            else if (supportingFile.StartsWith("http://") || supportingFile.StartsWith("https://"))
+            {
+                int lastSlash = supportingFile.LastIndexOf('/');
+                rawKey = lastSlash >= 0 ? supportingFile.Substring(lastSlash + 1) : supportingFile;
+            }
+            else
+            {
+                rawKey = supportingFile;
+            }
+
+            // Decode percent-encoding before any path validation so encoded traversal sequences
+            // like %2e%2e%2f are caught by the checks below.
+            try { rawKey = Uri.UnescapeDataString(rawKey); }
+            catch (UriFormatException) { return null; }
+
+            // Normalize to forward slashes and strip any leading separators.
+            rawKey = rawKey.Replace('\\', '/').TrimStart('/');
+
+            // Reject Windows drive-letter paths ("C:/…") and UNC-style paths ("//server").
+            if (rawKey.Length >= 2 && (rawKey[1] == ':' || rawKey.StartsWith("//")))
+            {
+                Debug.LogWarning($"[GLTF] Rejecting supporting file with rooted path: {supportingFile}");
+                return null;
+            }
+
+            // Reject any path containing ".." segments to prevent traversal out of tempDir.
+            foreach (string segment in rawKey.Split('/'))
+            {
+                if (segment == "..")
+                {
+                    Debug.LogWarning($"[GLTF] Rejecting supporting file with path traversal: {supportingFile}");
+                    return null;
+                }
+            }
+
+            return rawKey;
         }
 
         private static void NormalizeMeshesForImport(List<MMesh> meshes, float targetMaxSize)

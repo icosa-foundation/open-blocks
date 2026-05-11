@@ -881,7 +881,10 @@ namespace com.google.apps.peltzer.client.model.import
                     foreach (FFace face in faceList.Value)
                     {
                         currentMaterial = faceList.Key;
+                        // OBJ is right-handed (CCW = front face); Unity is left-handed (CW = front face).
+                        // Reversing winding on every face corrects the handedness mismatch.
                         var singleFaceIndices = new List<int>(face.vertexIds);
+                        singleFaceIndices.Reverse();
 
                         Material sourceMaterial = null;
                         materials.TryGetValue(currentMaterial, out sourceMaterial);

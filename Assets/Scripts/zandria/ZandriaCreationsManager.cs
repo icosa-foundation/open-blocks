@@ -58,6 +58,10 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         public Sprite thumbnailSprite;
         /// <summary>
+        /// The reason the creation failed to load, if known.
+        /// </summary>
+        public string loadFailureReason;
+        /// <summary>
         /// The handler script for the creation that handles converting queries into usuable information.
         /// </summary>
         public ZandriaCreationHandler handler;
@@ -81,6 +85,7 @@ namespace com.google.apps.peltzer.client.zandria
             errorThumbnail.SetActive(false);
             preview.GetComponent<SelectableDetailsMenuItem>().creation = this;
             handler = preview.GetComponent<ZandriaCreationHandler>();
+            loadFailureReason = null;
             this.isLocal = isLocal;
             this.isSave = isSave;
         }
@@ -328,11 +333,6 @@ namespace com.google.apps.peltzer.client.zandria
         // The number of different types of creations. Currently we are support: Your models, featured, liked.
         private const int NUMBER_OF_CREATION_TYPES = 3;
 
-        // We implement polling for the "Featured" and "Liked" sections in order to show any
-        // new models that get featured or liked by the user while Blocks is running.
-        // TODO Can we ask the server for a timestamp of the last update and only poll if it's changed?
-        // Could the timestamp be specific to each API call?
-        private const float POLLING_INTERVAL_SECONDS = 60;
         private const float SAVED_POLLING_INTERVAL_SECONDS = 5;
 
         // WARNING: All dictionaries in ZandriaCreationsManager are private because they are not threadsafe. They must be
@@ -347,9 +347,6 @@ namespace com.google.apps.peltzer.client.zandria
         private GameObject creationPrefab;
         private readonly object mutex = new object();
         private WorldSpace identityWorldSpace;
-
-        // When we last polled for updates to the menu.
-        private float timeLastPolled;
 
         private float timeLastPolledSavedModels;
         private bool hasNewSave;
@@ -370,6 +367,7 @@ namespace com.google.apps.peltzer.client.zandria
                 pendingLoadsByType = new HashSet<PolyMenuMain.CreationType>();
 
                 StartLoad(PolyMenuMain.CreationType.FEATURED);
+                StartLoad(PolyMenuMain.CreationType.ALL);
                 LoadOfflineModels();
             }
         }
@@ -407,8 +405,9 @@ namespace com.google.apps.peltzer.client.zandria
                         if (loadIndex >= pair.Value.creations.Count) { continue; } // Preventing bug
                         Creation creation = pair.Value.creations[loadIndex];
 
-                        // Update the progress of the load.
-                        creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
+                        // Automatic model loading is disabled here, so do not leave the entry in a fake
+                        // in-progress state before the user explicitly opens details.
+                        creation.entry.loadStatus = LoadStatus.NONE;
                         // Execute the load.
                         // Note: Calling this will eventually down the line call SetupPreview() in SavePreview.cs
                         // which is responsible for ending the "Saving..." animation on the controller
@@ -425,25 +424,8 @@ namespace com.google.apps.peltzer.client.zandria
                 }
             }
 
-            // Poll for new featured or liked models periodically if the menu is open.
-            // Note: we don't poll the "Your models" section because (1) it's harder to optimize (it's not ordered
-            // by modified time) and (2) that flow is already covered in an ad-hoc way: we update the poly menu
-            // manually when the user saves a model.
             if (PeltzerMain.Instance.polyMenuMain.PolyMenuIsActive())
             {
-                if (Time.time - timeLastPolled > POLLING_INTERVAL_SECONDS)
-                {
-                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.FEATURED))
-                    {
-                        Poll(PolyMenuMain.CreationType.FEATURED);
-                    }
-                    if (loadsByType.ContainsKey(PolyMenuMain.CreationType.LIKED) && OAuth2Identity.Instance.LoggedIn)
-                    {
-                        Poll(PolyMenuMain.CreationType.LIKED);
-                    }
-                    timeLastPolled = Time.time;
-                }
-
                 if (hasNewSave && Time.time - timeLastPolledSavedModels > SAVED_POLLING_INTERVAL_SECONDS)
                 {
                     if (loadsByType.ContainsKey(PolyMenuMain.CreationType.YOUR) && OAuth2Identity.Instance.LoggedIn)
@@ -516,49 +498,6 @@ namespace com.google.apps.peltzer.client.zandria
                     polyMenu.RefreshPolyMenu();
                     pendingLoadsByType.Remove(type);
                 }
-            });
-        }
-
-        public void Poll(PolyMenuMain.CreationType type)
-        {
-            // TODO this presumes Featured and Liked will only add new items at the front
-            // This assumption will sometimes break when orderBy is changes
-            // Also - new featured items might be added that don't appear at the front even when ordered by "BEST"
-
-            lock (mutex)
-            {
-                if (pendingLoadsByType.Contains(type)) { return; }
-            }
-
-            // Start a coroutine which will create a UnityWebRequest and wait for it to send and return with results.
-            GetAssetsServiceSearchResults(type, delegate (ObjectStoreSearchResult objectStoreResults)
-            {
-                if (objectStoreResults.results.Length == 0) { return; }
-
-                // Success! Load the new models onto the front of the menu.
-                lock (mutex)
-                {
-                    Load load;
-                    if (!loadsByType.TryGetValue(type, out load))
-                    {
-                        load = new Load(creationPrefab);
-                        loadsByType.Add(type, load);
-                    }
-
-                    for (int i = 0; i < objectStoreResults.results.Length; i++)
-                    {
-                        load.AddEntryToStartOfMenu(new Entry(objectStoreResults.results[i]), isLocal: false, isSave: false);
-
-                        // The load has completed and is now managed in loadsByType so we can remove it from pendingLoads.
-                        pendingLoadsByType.Remove(type);
-                    }
-                }
-                // Refresh the PolyMenu now that there are creations available.
-                PeltzerMain.Instance.GetPolyMenuMain().RefreshPolyMenu();
-            },
-            delegate ()
-            {
-                // Nothing has changed since the last time we polled.
             });
         }
 
@@ -804,6 +743,9 @@ namespace com.google.apps.peltzer.client.zandria
                 case PolyMenuMain.CreationType.FEATURED:
                     assetsServiceClient.GetFeaturedModels(successCallback, failureCallback);
                     break;
+                case PolyMenuMain.CreationType.ALL:
+                    assetsServiceClient.GetAllModels(successCallback, failureCallback);
+                    break;
                 case PolyMenuMain.CreationType.YOUR:
                     assetsServiceClient.GetYourModels(successCallback, failureCallback);
                     break;
@@ -822,6 +764,8 @@ namespace com.google.apps.peltzer.client.zandria
             {
                 case PolyMenuMain.CreationType.FEATURED:
                     return AssetsServiceClient.QueryParamsFeatured;
+                case PolyMenuMain.CreationType.ALL:
+                    return AssetsServiceClient.QueryParamsAll;
                 case PolyMenuMain.CreationType.YOUR:
                     return AssetsServiceClient.QueryParamsUser;
                 case PolyMenuMain.CreationType.LIKED:
@@ -838,6 +782,9 @@ namespace com.google.apps.peltzer.client.zandria
             {
                 case PolyMenuMain.CreationType.FEATURED:
                     AssetsServiceClient.QueryParamsFeatured = q;
+                    break;
+                case PolyMenuMain.CreationType.ALL:
+                    AssetsServiceClient.QueryParamsAll = q;
                     break;
                 case PolyMenuMain.CreationType.YOUR:
                     AssetsServiceClient.QueryParamsUser = q;
@@ -870,9 +817,11 @@ namespace com.google.apps.peltzer.client.zandria
         public void LoadModelForCreation(Creation creation, PolyMenuMain.CreationType type)
         {
             ObjectStoreEntry entry = creation.entry.queryEntry;
+            creation.loadFailureReason = null;
+            creation.entry.loadStatus = LoadStatus.LOADING_MODEL;
             if (!EntryHasLoadableAsset(entry))
             {
-                OnLoadFailure(creation, type);
+                OnLoadFailure(creation, type, "No supported model asset is available for this creation.");
                 return;
             }
 
@@ -885,7 +834,17 @@ namespace com.google.apps.peltzer.client.zandria
                 // On failure replace this load attempt with another by generating a pending load request.
                 if (rawFileData == null)
                 {
-                    OnLoadFailure(creation, type);
+                    if (entry.loadAttemptFormats != null
+                      && entry.loadAttemptFormats.Length == 1
+                      && !string.IsNullOrEmpty(entry.loadAttemptFormats[0]))
+                    {
+                        OnLoadFailure(creation, type, $"Failed to download {entry.loadAttemptFormats[0]} model.");
+                    }
+                    else
+                    {
+                        OnLoadFailure(creation, type, "Multiple download formats attempted.");
+                    }
+                    return;
                 }
 
                 // On successful return of the raw byte data for the creation start background work and create the preview
@@ -907,7 +866,7 @@ namespace com.google.apps.peltzer.client.zandria
             ObjectStoreEntry entry = creation.entry.queryEntry;
             if (entry == null)
             {
-                OnLoadFailure(creation, type);
+                OnLoadFailure(creation, type, "Creation metadata is unavailable.");
                 yield break;
             }
             // No thumbnail, just go ahead and load the model.
@@ -919,9 +878,12 @@ namespace com.google.apps.peltzer.client.zandria
             // We have a thumbnail, fetch it before loading the model.
             GetThumbnailTexture(entry, delegate (Texture2D tex)
             {
-                Sprite thumbnailSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
-                  new Vector2(0.5f, 0.5f), THUMBNAIL_IMPORT_PIXELS_PER_UNIT);
-                creation.SetThumbnailSprite(thumbnailSprite);
+                if (tex != null)
+                {
+                    Sprite thumbnailSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
+                      new Vector2(0.5f, 0.5f), THUMBNAIL_IMPORT_PIXELS_PER_UNIT);
+                    creation.SetThumbnailSprite(thumbnailSprite);
+                }
                 load.pendingModelLoadRequestIndices.Add(indexInCreations);
             });
         }
@@ -932,8 +894,15 @@ namespace com.google.apps.peltzer.client.zandria
             if (entry.localThumbnailFile != null)
             {
                 Texture2D tex = new Texture2D(192, 192);
-                tex.LoadImage(File.ReadAllBytes(entry.localThumbnailFile));
-                thumbnailTextureCallback(tex);
+                if (tex.LoadImage(File.ReadAllBytes(entry.localThumbnailFile)))
+                {
+                    thumbnailTextureCallback(tex);
+                }
+                else
+                {
+                    UnityEngine.Object.Destroy(tex);
+                    thumbnailTextureCallback(null);
+                }
             }
             else
             {
@@ -983,6 +952,7 @@ namespace com.google.apps.peltzer.client.zandria
                 if (isRecursion)
                 {
                     Debug.Log(AssetsServiceClient.GetDebugString(request, "Error when fetching a thumbnail for " + entry.id));
+                    thumbnailTextureCallback(null);
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
@@ -991,7 +961,12 @@ namespace com.google.apps.peltzer.client.zandria
             else
             {
                 Texture2D originalTex = new Texture2D(2, 2);
-                originalTex.LoadImage(responseBytes);
+                if (!originalTex.LoadImage(responseBytes))
+                {
+                    UnityEngine.Object.Destroy(originalTex);
+                    thumbnailTextureCallback(null);
+                    yield break;
+                }
 
                 Texture2D resizedTex = new Texture2D(512, 384);
                 RenderTexture rt = RenderTexture.GetTemporary(512, 384);
@@ -1033,7 +1008,7 @@ namespace com.google.apps.peltzer.client.zandria
                 PeltzerMain.Instance.polyMenuMain.SwitchToYourModelsSection();
             }
 
-            if (type == PolyMenuMain.CreationType.FEATURED)
+            if (type is PolyMenuMain.CreationType.FEATURED or PolyMenuMain.CreationType.ALL)
             {
                 PeltzerMain.Instance.menuHint.AddPreview(mwmRenderer);
             }
@@ -1045,12 +1020,14 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         /// <param name="creation">The creation that was not successfully loaded.</param>
         /// <param name="type">The type of entry.</param>
-        public void OnLoadFailure(Creation creation, PolyMenuMain.CreationType type)
+        public void OnLoadFailure(Creation creation, PolyMenuMain.CreationType type,
+          string reason = "Model could not be loaded.")
         {
             lock (mutex)
             {
                 // Update the status of the load.
                 creation.entry.loadStatus = LoadStatus.FAILED;
+                creation.loadFailureReason = string.IsNullOrEmpty(reason) ? "Model could not be loaded." : reason;
                 creation.errorThumbnail.SetActive(true);
                 creation.thumbnail.SetActive(false);
             }
@@ -1235,6 +1212,7 @@ namespace com.google.apps.peltzer.client.zandria
             // Check if rawFileData is null (e.g., download failed or unsupported format)
             if (rawFileData == null || rawFileData.Length == 0)
             {
+                creation.loadFailureReason = "Downloaded model file was empty.";
                 isValidCreation = false;
                 return;
             }
@@ -1252,7 +1230,8 @@ namespace com.google.apps.peltzer.client.zandria
         {
             if (!isValidCreation)
             {
-                creationsManager.OnLoadFailure(creation, type);
+                creationsManager.OnLoadFailure(creation, type,
+                  creation.loadFailureReason ?? creationHandler.lastLoadFailureReason);
                 return;
             }
 
@@ -1278,7 +1257,8 @@ namespace com.google.apps.peltzer.client.zandria
                         PeltzerMain.Instance.polyMenuMain.SwitchToYourModelsSection();
                     });
                 }
-                else if (type == PolyMenuMain.CreationType.FEATURED && PeltzerMain.Instance.menuHint.IsPopulating())
+                else if (type is PolyMenuMain.CreationType.FEATURED or PolyMenuMain.CreationType.ALL
+                         && PeltzerMain.Instance.menuHint.IsPopulating())
                 {
                     MeshHelper.GameObjectFromMMeshesForMenu(identityWorldSpace, meshes, delegate (GameObject meshPreview)
                     {
@@ -1329,7 +1309,7 @@ namespace com.google.apps.peltzer.client.zandria
                 else
                 {
                     // Make a new load request if the preview returned null.
-                    creationsManager.OnLoadFailure(creation, type);
+                    creationsManager.OnLoadFailure(creation, type, "Preview generation failed.");
                 }
             });
         }

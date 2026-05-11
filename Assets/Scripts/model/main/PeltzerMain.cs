@@ -454,7 +454,7 @@ namespace com.google.apps.peltzer.client.model.main
         /// We try it from Start() and retry it from Update() until we succeed.
         /// </summary>
         private bool setupDone;
-        // private DesktopMain desktopMain;
+        private DesktopMain desktopMain;
 
         public PolyMenuMain polyMenuMain;
 
@@ -763,8 +763,11 @@ namespace com.google.apps.peltzer.client.model.main
             // The previewController handles opening the image dialog and loading a reference.
             previewController = FindObjectOfType<PreviewController>();
 
-            // Get the desktop UI Main
-            // desktopMain = FindObjectOfType<DesktopMain>();
+            // Get the desktop UI Main (not used on mobile VR platforms like Quest)
+            if (!Application.isMobilePlatform || Config.Instance.sdkMode == SdkMode.Unset)
+            {
+                desktopMain = FindObjectOfType<DesktopMain>();
+            }
 
             // Get the ZandriaCreationsManager.
             zandriaCreationsManager = FindObjectOfType<ZandriaCreationsManager>();
@@ -925,7 +928,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Register cross controller handlers.
             paletteController.RegisterCrossControllerHandlers(peltzerController);
 
-            // desktopMain.Setup();
+            desktopMain?.Setup();
 
             // Model.
             exporter = gameObject.AddComponent<Exporter>();
@@ -952,6 +955,11 @@ namespace com.google.apps.peltzer.client.model.main
             }
 
             referenceImageManager = gameObject.AddComponent<ReferenceImageManager>();
+            // Reference image insertion requires a file picker, which is only supported on Windows.
+            if (Application.platform != RuntimePlatform.WindowsPlayer && Application.platform != RuntimePlatform.WindowsEditor)
+            {
+                ObjectFinder.ObjectById("ID_add_ref_image").SetActive(false);
+            }
 
             // If the user logged in previously, then load their logged-in state, but don't prompt them to login otherwise.
             if (OAuth2Identity.Instance.HasAccessToken)
@@ -1432,7 +1440,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
             // They logged in, change the "Sign In" button to sign out.
-            // GetDesktopMain().SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
+            desktopMain?.SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
 
             paletteController.publishSignInPrompt.SetActive(false);
         }
@@ -1448,7 +1456,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignOut();
             // Update the desktop menu.
-            // desktopMain.SignOut();
+            desktopMain?.SignOut();
         }
 
         public void SignOut()
@@ -1466,7 +1474,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignOut();
             // Update the desktop menu.
-            // desktopMain.SignOut();
+            desktopMain?.SignOut();
         }
 
         /// <summary>
@@ -1763,6 +1771,43 @@ namespace com.google.apps.peltzer.client.model.main
                 polyMenuMain.SwitchToLocalModelsSection();
                 HasShownMenuTooltipThisSession = true;
             }
+        }
+
+        /// <summary>
+        ///   Fetches an Icosa model by its remote asset ID and loads it directly into the current scene.
+        /// </summary>
+        public void ImportIcosaModelById(string assetId, System.Action<bool> callback = null)
+        {
+            zandriaCreationsManager.GetAssetFromAssetsService(assetId, delegate (ObjectStoreEntry objectStoreResult)
+            {
+                if (objectStoreResult == null)
+                {
+                    Debug.LogWarning($"[ImportIcosa] No asset found for id: {assetId}");
+                    callback?.Invoke(false);
+                    return;
+                }
+                ObjectStoreClient.GetRawFileData(objectStoreResult, delegate (byte[] rawFileData)
+                {
+                    if (rawFileData == null || rawFileData.Length == 0)
+                    {
+                        Debug.LogWarning($"[ImportIcosa] Failed to download file data for id: {assetId}");
+                        callback?.Invoke(false);
+                        return;
+                    }
+                    PeltzerFile peltzerFile;
+                    if (!PeltzerFileHandler.PeltzerFileFromBytes(rawFileData, out peltzerFile))
+                    {
+                        Debug.LogWarning($"[ImportIcosa] Failed to parse file for id: {assetId}");
+                        callback?.Invoke(false);
+                        return;
+                    }
+                    LoadOptions options = new LoadOptions();
+                    options.cloneBeforeLoad = true;
+                    options.overrideRemixId = assetId;
+                    LoadPeltzerFileIntoModel(peltzerFile, options);
+                    callback?.Invoke(true);
+                });
+            }, /* isSave */ false);
         }
 
         /// <summary>

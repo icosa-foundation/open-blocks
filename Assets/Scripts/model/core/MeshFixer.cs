@@ -23,6 +23,8 @@ namespace com.google.apps.peltzer.client.model.core
 
     public class MeshFixer
     {
+        private const string MESH_FIXER_PERF_LOG_PREFIX = "[MVPERF_S1_6]";
+
         /// <summary>
         ///   Modify a mesh by moving the vertices as supplied, then tries to fix it as much as is possible.
         /// </summary>
@@ -78,28 +80,123 @@ namespace com.google.apps.peltzer.client.model.core
         public static bool FixMutatedMesh(MMesh originalMesh, MMesh alteredMesh, HashSet<int> updatedVertIds,
           bool splitNonCoplanarFaces, bool mergeAdjacentCoplanarFaces)
         {
+            bool shouldLogPerformance = ShouldLogPerformance;
+            System.Diagnostics.Stopwatch totalStopwatch = shouldLogPerformance
+                ? System.Diagnostics.Stopwatch.StartNew()
+                : null;
+            System.Diagnostics.Stopwatch stepStopwatch = shouldLogPerformance
+                ? new System.Diagnostics.Stopwatch()
+                : null;
             bool mutated = false;
+            bool joinMutated = false;
+            bool splitMutated = false;
+            bool zeroLengthMutated = false;
+            bool zeroAreaMutated = false;
+            bool invalidFaceMutated = false;
+            double joinMs = 0;
+            double splitMs = 0;
+            double collectFacesMs = 0;
+            double zeroLengthMs = 0;
+            double zeroAreaMs = 0;
+            double invalidFacesMs = 0;
 
-            mutated |= JoinDuplicateVertices(alteredMesh, updatedVertIds);
+            if (stepStopwatch != null)
+            {
+                stepStopwatch.Restart();
+            }
+            joinMutated = JoinDuplicateVertices(alteredMesh, updatedVertIds);
+            mutated |= joinMutated;
+            if (stepStopwatch != null)
+            {
+                stepStopwatch.Stop();
+                joinMs = stepStopwatch.Elapsed.TotalMilliseconds;
+            }
 
             if (splitNonCoplanarFaces && !Features.allowNoncoplanarFaces)
             {
                 // Face split needs to be first since it results in duplicate vertices when patching holes.
-                mutated |= SplitNonCoplanarFaces(originalMesh, alteredMesh, updatedVertIds);
+                if (stepStopwatch != null)
+                {
+                    stepStopwatch.Restart();
+                }
+                splitMutated = SplitNonCoplanarFaces(originalMesh, alteredMesh, updatedVertIds);
+                mutated |= splitMutated;
+                if (stepStopwatch != null)
+                {
+                    stepStopwatch.Stop();
+                    splitMs = stepStopwatch.Elapsed.TotalMilliseconds;
+                }
             }
 
             // The next three operations are all scoped to the set of faces that may have been changed.
             // Generate this once here to avoid duplicate work.
+            if (stepStopwatch != null)
+            {
+                stepStopwatch.Restart();
+            }
             HashSet<int> potentiallyChangedFaces = new HashSet<int>();
             foreach (int vertId in updatedVertIds)
             {
                 potentiallyChangedFaces.UnionWith(alteredMesh.reverseTable[vertId]);
             }
+            if (stepStopwatch != null)
+            {
+                stepStopwatch.Stop();
+                collectFacesMs = stepStopwatch.Elapsed.TotalMilliseconds;
+            }
 
             // Similarly, these methods rely on duplicate vertices being merged.
-            mutated |= RemoveZeroLengthSegments(alteredMesh, potentiallyChangedFaces);
-            mutated |= RemoveZeroAreaSegments(alteredMesh, potentiallyChangedFaces);
-            mutated |= RemoveInvalidFacesAndHoles(alteredMesh, potentiallyChangedFaces);
+            if (stepStopwatch != null)
+            {
+                stepStopwatch.Restart();
+            }
+            zeroLengthMutated = RemoveZeroLengthSegments(alteredMesh, potentiallyChangedFaces);
+            mutated |= zeroLengthMutated;
+            if (stepStopwatch != null)
+            {
+                stepStopwatch.Stop();
+                zeroLengthMs = stepStopwatch.Elapsed.TotalMilliseconds;
+            }
+
+            if (stepStopwatch != null)
+            {
+                stepStopwatch.Restart();
+            }
+            zeroAreaMutated = RemoveZeroAreaSegments(alteredMesh, potentiallyChangedFaces);
+            mutated |= zeroAreaMutated;
+            if (stepStopwatch != null)
+            {
+                stepStopwatch.Stop();
+                zeroAreaMs = stepStopwatch.Elapsed.TotalMilliseconds;
+            }
+
+            if (stepStopwatch != null)
+            {
+                stepStopwatch.Restart();
+            }
+            invalidFaceMutated = RemoveInvalidFacesAndHoles(alteredMesh, potentiallyChangedFaces);
+            mutated |= invalidFaceMutated;
+            if (stepStopwatch != null)
+            {
+                stepStopwatch.Stop();
+                invalidFacesMs = stepStopwatch.Elapsed.TotalMilliseconds;
+            }
+
+            if (totalStopwatch != null)
+            {
+                totalStopwatch.Stop();
+                Debug.Log(
+                    $"{MESH_FIXER_PERF_LOG_PREFIX} mesh={alteredMesh.id} verts={alteredMesh.vertexCount} " +
+                    $"faces={alteredMesh.faceCount} updatedVerts={updatedVertIds.Count} " +
+                    $"potentiallyChangedFaces={potentiallyChangedFaces.Count} " +
+                    $"joinMs={joinMs:F3} splitMs={splitMs:F3} collectFacesMs={collectFacesMs:F3} " +
+                    $"zeroLengthMs={zeroLengthMs:F3} zeroAreaMs={zeroAreaMs:F3} invalidFacesMs={invalidFacesMs:F3} " +
+                    $"totalMs={totalStopwatch.Elapsed.TotalMilliseconds:F3} mutated={mutated} " +
+                    $"joinMutated={joinMutated} splitMutated={splitMutated} zeroLengthMutated={zeroLengthMutated} " +
+                    $"zeroAreaMutated={zeroAreaMutated} invalidFaceMutated={invalidFaceMutated} " +
+                    $"splitEnabled={splitNonCoplanarFaces && !Features.allowNoncoplanarFaces} " +
+                    $"mergeAdjacentCoplanarFaces={mergeAdjacentCoplanarFaces}");
+            }
 
             return mutated;
         }
@@ -124,9 +221,8 @@ namespace com.google.apps.peltzer.client.model.core
         {
 
             bool mutated = false;
-
-            List<int> newlyUpdatedVertexIds = new List<int>();
-            List<int> deletedVertexIds = new List<int>();
+            float mergeDistanceSqr = Math3d.MERGE_DISTANCE * Math3d.MERGE_DISTANCE;
+            HashSet<int> vertsToCheck = new HashSet<int>();
 
             // Iterates through updatedVertIds to find duplicates. If a duplicate is found, then
             // all references to vert.id are moved to updatedVertId, and then vert.id is
@@ -137,7 +233,7 @@ namespace com.google.apps.peltzer.client.model.core
             foreach (int updatedVertId in updatedVertIds)
             {
                 Vector3 vertLoc = mesh.VertexPositionInMeshCoords(updatedVertId);
-                HashSet<int> vertsToCheck = new HashSet<int>();
+                vertsToCheck.Clear();
                 HashSet<int> facesForVert = mesh.reverseTable[updatedVertId];
 
                 foreach (int faceId in facesForVert)
@@ -152,30 +248,25 @@ namespace com.google.apps.peltzer.client.model.core
 
                 foreach (int vertIndex in vertsToCheck)
                 {
+                    if (vertIndex == updatedVertId || updatedVertIds.Contains(vertIndex) || !mesh.HasVertex(vertIndex))
+                    {
+                        continue;
+                    }
+
                     Vector3 vertexToCheckPositionMeshCoords = mesh.VertexPositionInMeshCoords(vertIndex);
-                    bool areCloseEnough = (Vector3.Distance(vertLoc, vertexToCheckPositionMeshCoords) < Math3d.MERGE_DISTANCE);
+                    bool areCloseEnough =
+                        (vertexToCheckPositionMeshCoords - vertLoc).sqrMagnitude < mergeDistanceSqr;
                     if (!areCloseEnough)
                     {
                         continue;
                     }
 
-                    // Only attempt to merge vertices that are not being moved by the user (merging vertices that are being
-                    // actively moved would break things)
-                    if (!updatedVertIds.Contains(vertIndex))
-                    {
-                        MMesh.GeometryOperation joinOperation = mesh.StartOperation();
-                        JoinVerts(joinOperation, vertIndex, updatedVertId);
-                        joinOperation.DeleteVertex(vertIndex);
-                        deletedVertexIds.Add(vertIndex);
-                        joinOperation.Commit();
-                        mutated = true;
-                    }
+                    MMesh.GeometryOperation joinOperation = mesh.StartOperation();
+                    JoinVerts(joinOperation, vertIndex, updatedVertId);
+                    joinOperation.DeleteVertex(vertIndex);
+                    joinOperation.Commit();
+                    mutated = true;
                 }
-            }
-
-            foreach (int newlyUpdatedVertexId in newlyUpdatedVertexIds)
-            {
-                updatedVertIds.Add(newlyUpdatedVertexId);
             }
 
             return mutated;
@@ -228,6 +319,7 @@ namespace com.google.apps.peltzer.client.model.core
             foreach (int faceId in potentiallyChangedFaces)
             {
                 Face face = segmentReplaceOperation.GetCurrentFace(faceId);
+                bool faceMutated = false;
                 bool changed;
                 do
                 {
@@ -239,13 +331,17 @@ namespace com.google.apps.peltzer.client.model.core
                             face = new Face(
                               face.id, RemoveAt(face.vertexIds, i), face.normal, face.properties);
                             changed = true;
+                            faceMutated = true;
                             break;
                         }
                     }
 
                 } while (changed);
-                segmentReplaceOperation.ModifyFace(face);
-                mutated = true;
+                if (faceMutated)
+                {
+                    segmentReplaceOperation.ModifyFace(face);
+                    mutated = true;
+                }
             }
             // As long as the face was coplanar, removing a segment won't change the normal
             segmentReplaceOperation.CommitWithoutRecalculation();
@@ -265,6 +361,7 @@ namespace com.google.apps.peltzer.client.model.core
             foreach (int faceId in potentiallyChangedFaces)
             {
                 Face face = zeroAreaOperation.GetCurrentFace(faceId);
+                bool faceMutated = false;
                 bool changed;
                 do
                 {
@@ -282,12 +379,16 @@ namespace com.google.apps.peltzer.client.model.core
                             face = new Face(face.id, RemoveTwoCyclicallyAfter(face.vertexIds, i),
                               face.normal, face.properties);
                             changed = true;
+                            faceMutated = true;
                             break;
                         }
                     }
                 } while (changed);
-                zeroAreaOperation.ModifyFace(face);
-                mutated = true;
+                if (faceMutated)
+                {
+                    zeroAreaOperation.ModifyFace(face);
+                    mutated = true;
+                }
             }
             // As long as the face was already coplanar, removing a segment won't change the normal
             zeroAreaOperation.CommitWithoutRecalculation();
@@ -356,22 +457,46 @@ namespace com.google.apps.peltzer.client.model.core
             // Generate a map of vertex ids to list of ids of faces that contain them.
 
             bool mutated = false;
+            HashSet<int> confirmedCoplanarFaceIds = new HashSet<int>();
             MMesh.GeometryOperation splitOperation = newMesh.StartOperation();
             foreach (int vertId in updatedVertIds)
             {
+                if (!newMesh.HasVertex(vertId)) continue;
                 foreach (int faceId in newMesh.reverseTable[vertId])
                 {
+                    if (confirmedCoplanarFaceIds.Contains(faceId))
+                    {
+                        continue;
+                    }
+
                     Face face;
                     // Note: some faces may not exist in the new mesh because they were deleted as a result of merges.
                     if (splitOperation.TryGetCurrentFace(faceId, out face))
                     {
-                        mutated |= MeshUtil.SplitFaceIfNeeded(splitOperation, face, vertId);
+                        bool faceWasSplit = MeshUtil.SplitFaceIfNeeded(splitOperation, face, vertId);
+                        mutated |= faceWasSplit;
+                        if (!faceWasSplit)
+                        {
+                            confirmedCoplanarFaceIds.Add(faceId);
+                        }
                     }
                 }
             }
             splitOperation.Commit();
 
             return mutated;
+        }
+
+        private static bool ShouldLogPerformance
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return Features.meshValidatorPerformanceLogging;
+#else
+                return false;
+#endif
+            }
         }
     }
 }

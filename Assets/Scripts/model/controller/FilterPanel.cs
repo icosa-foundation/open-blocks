@@ -120,6 +120,9 @@ namespace com.google.apps.peltzer.client.model.controller
             switch (menuMain.CurrentCreationType())
             {
                 case PolyMenuMain.CreationType.FEATURED:
+                    titleText += "Featured Models";
+                    break;
+                case PolyMenuMain.CreationType.ALL:
                     titleText += "All Models";
                     break;
                 case PolyMenuMain.CreationType.LIKED:
