@@ -5,7 +5,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "14165d7515a7b55582d5030864cf0c21a7dad245"
+      "hash": "22092b007366f1f9e1ca32e4e915b1e8290f85de"
     },
     "com.meta.xr.sdk.platform": {
       "version": "74.0.0",
@@ -18,7 +18,7 @@
     },
     "com.unity.burst": {
       "version": "1.8.28",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1",
@@ -26,9 +26,20 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.cloud.draco": {
+      "version": "5.4.3",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.burst": "1.8.24",
+        "com.unity.collections": "1.2.4",
+        "com.unity.mathematics": "1.2.6"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.collections": {
       "version": "2.6.2",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.8.23",
@@ -53,7 +64,7 @@
       "dependencies": {}
     },
     "com.unity.ide.rider": {
-      "version": "3.0.39",
+      "version": "3.0.40",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -62,7 +73,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.26",
+      "version": "2.0.27",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -93,17 +104,19 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.unity.multiplayer.center": {
-      "version": "1.0.1",
+    "com.unity.meshopt.decompress": {
+      "version": "0.1.0-preview.7",
       "depth": 0,
-      "source": "builtin",
+      "source": "registry",
       "dependencies": {
-        "com.unity.modules.uielements": "1.0.0"
-      }
+        "com.unity.burst": "1.4.11",
+        "com.unity.mathematics": "1.2.1"
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
-      "depth": 3,
+      "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -175,7 +188,7 @@
     },
     "com.unity.test-framework.performance": {
       "version": "3.2.0",
-      "depth": 3,
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.test-framework": "1.1.33",
@@ -184,7 +197,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.timeline": {
-      "version": "1.8.10",
+      "version": "1.8.12",
       "depth": 0,
       "source": "registry",
       "dependencies": {
