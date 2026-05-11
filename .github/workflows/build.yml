@@ -507,7 +507,7 @@ jobs:
             Support/macos
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: MacOS
           path: build_macos
@@ -561,7 +561,7 @@ jobs:
 
           tar -c -v -z -f OpenBlocks.tgz StandaloneOSX
       - name: Upload signed app
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: MacOS (signed)
           path: |
@@ -586,7 +586,7 @@ jobs:
             Support/macos
 
       - name: Download Build Artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: MacOS (signed)
           path: build_macos
@@ -618,7 +618,7 @@ jobs:
           xcrun stapler staple dist/OpenBlocks.dmg
 
       - name: Upload notarized dmg
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: MacOS (DMG)
           path: |
@@ -677,25 +677,25 @@ jobs:
         run: echo "$CHANGELOG"
 
       - name: Download Build Artifacts (Windows OpenXR)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: Windows OpenXR
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Android OpenXR)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: Android OpenXR
           path: build_android_openxr
 
       - name: Download Build Artifacts (Android 2D)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: Android 2D
           path: build_android_2D
 
       - name: Download Build Artifacts (Linux)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: Linux
           path: build_linux
@@ -837,12 +837,12 @@ jobs:
           name: Windows OpenXR
           path: build_windows_openxr
       - name: Download Build Artifacts (MacOS Signed)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: MacOS (signed)
           path: build_macos
       - name: Download Build Artifacts (Linux)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: Linux
           path: build_linux
