@@ -317,7 +317,9 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
+          restore-keys: |
+            Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
@@ -454,7 +456,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v5
-        if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove
+        if: github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -462,7 +464,7 @@ jobs:
           key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
 
       - name: Clean Library before caching
-        if: steps.cache_library.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'
         run: |
           # Remove the large files from the Library directory that we know we'll rebuild. As our il2cpp caches are huge and barely fit in the Github quota, it's better not to save an unneeded 1GB of space (or so). If a new Unity version is taken, this may need to be updated
           # Debugging
@@ -481,7 +483,7 @@ jobs:
 
       - name: Save Library/ cache
         uses: actions/cache/save@v5
-        if: steps.cache_library.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
