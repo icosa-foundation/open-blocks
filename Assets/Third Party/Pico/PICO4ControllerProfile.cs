@@ -325,7 +325,7 @@ namespace UnityEngine.XR.OpenXR.Features.Interactions
         /// <inheritdoc/>
         protected override void RegisterDeviceLayout()
         {
-            InputSystem.RegisterLayout(typeof(PICO4TouchController),
+            InputSystem.InputSystem.RegisterLayout(typeof(PICO4TouchController),
                         matches: new InputDeviceMatcher()
                         .WithInterface(XRUtilities.InterfaceMatchAnyVersion)
                         .WithProduct(kDeviceLocalizedName));
@@ -334,7 +334,7 @@ namespace UnityEngine.XR.OpenXR.Features.Interactions
         /// <inheritdoc/>
         protected override void UnregisterDeviceLayout()
         {
-            InputSystem.RemoveLayout(nameof(PICO4TouchController));
+            InputSystem.InputSystem.RemoveLayout(nameof(PICO4TouchController));
         }
 
         /// <inheritdoc/>
