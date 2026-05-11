@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine.Scripting;
 using UnityEngine.XR.OpenXR.Input;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Layouts;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.XR;
@@ -324,7 +325,7 @@ namespace UnityEngine.XR.OpenXR.Features.Interactions
         /// <inheritdoc/>
         protected override void RegisterDeviceLayout()
         {
-            InputSystem.InputSystem.RegisterLayout(typeof(PICO4TouchController),
+            InputSystem.RegisterLayout(typeof(PICO4TouchController),
                         matches: new InputDeviceMatcher()
                         .WithInterface(XRUtilities.InterfaceMatchAnyVersion)
                         .WithProduct(kDeviceLocalizedName));
@@ -333,7 +334,7 @@ namespace UnityEngine.XR.OpenXR.Features.Interactions
         /// <inheritdoc/>
         protected override void UnregisterDeviceLayout()
         {
-            InputSystem.InputSystem.RemoveLayout(nameof(PICO4TouchController));
+            InputSystem.RemoveLayout(nameof(PICO4TouchController));
         }
 
         /// <inheritdoc/>

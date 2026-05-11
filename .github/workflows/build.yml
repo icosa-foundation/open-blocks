@@ -549,7 +549,7 @@ jobs:
         run: |
           tar xvfz build_macos/*tgz
 
-          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
+          export FILENAME=$(basename StandaloneOSX/OpenBlocks*.app)
 
           cd StandaloneOSX/
           # codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
@@ -597,7 +597,7 @@ jobs:
         run: |
           tar xvfz build_macos/*tgz
 
-          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
+          export FILENAME=$(basename StandaloneOSX/OpenBlocks*.app)
           mkdir dist
 
           cp Support/macos/background.png StandaloneOSX/
@@ -711,7 +711,7 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          mv build_oculus_quest/*/OpenBlocks*apk releases/OpenBlocks_OpenXR_$VERSION.apk
+          mv build_android_openxr/*/OpenBlocks*apk releases/OpenBlocks_OpenXR_$VERSION.apk
           mv build_android_2D/*/OpenBlocks*apk releases/OpenBlocks_Android2D_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBlocks_Desktop_$VERSION/
           mv build_macos/*.dmg releases/OpenBlocks_Mac_$VERSION.dmg
@@ -891,11 +891,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android Quest)
+      - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android Quest
-          path: build_android_quest
+          name: Android OpenXR
+          path: build_android_openxr
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -915,8 +915,8 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_Quest_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_OpenXR_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_OpenXR_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
           fi
