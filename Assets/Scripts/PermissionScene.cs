@@ -64,8 +64,8 @@ namespace TiltBrush
             catch (AndroidJavaException e)
             {
                 m_FolderPermissionOverride = true;
-                Debug.LogError("Java Exception caught and ignored: " + e.Message);
-                Debug.LogError("Assuming this means we don't need android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION (e.g., Android SDK < 30)");
+                Debug.LogWarning("Java Exception caught and ignored: " + e.Message);
+                Debug.LogWarning("Assuming this means we don't need android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION (e.g., Android SDK < 30)");
             }
         }
 #endif
