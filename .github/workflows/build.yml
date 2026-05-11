@@ -549,7 +549,7 @@ jobs:
         run: |
           tar xvfz build_macos/*tgz
 
-          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
+          export FILENAME=$(basename StandaloneOSX/OpenBlocks*.app)
 
           cd StandaloneOSX/
           # codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBlocks.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
@@ -597,7 +597,7 @@ jobs:
         run: |
           tar xvfz build_macos/*tgz
 
-          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBlocks*.app))
+          export FILENAME=$(basename StandaloneOSX/OpenBlocks*.app)
           mkdir dist
 
           cp Support/macos/background.png StandaloneOSX/
