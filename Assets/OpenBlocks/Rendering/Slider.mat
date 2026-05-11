@@ -21,19 +21,17 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Slider
-  m_Shader: {fileID: 4800000, guid: 54336307c5ed482abd543b22c9ee877c, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 05248216d17ddb645ac8a9716feed3fa,
+    type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _SLIDER
-  m_InvalidKeywords:
-  - _SLIDER_ON
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2000
-  stringTagMap:
-    RenderType: Opaque
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
   disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
@@ -125,11 +123,14 @@ Material:
     - _OverrideAmount: 0
     - _Parallax: 0.005
     - _PointSphereRadius: 0.01
+    - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _RefractiveIndex: 1.3
+    - _Roughness: 0.8
     - _SLIDER: 1
     - _Shininess: 0
-    - _SlideValue: 0.507
+    - _SlideValue: 0.5
     - _SliderEnabled: 0
     - _Smoothness: 0.5
     - _SmoothnessSource: 0
@@ -142,11 +143,11 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.36547703, g: 0.3813464, b: 0.40566036, a: 0.103}
+    - _BaseColor: {r: 0.31238872, g: 0.32328227, b: 0.33962262, a: 0.103}
     - _Color: {r: 0.365477, g: 0.38134637, b: 0.40566033, a: 0.103}
     - _EmissionColor: {r: 0.13207549, g: 0.13207549, b: 0.13207549, a: 1}
     - _EmissiveColor: {r: 0, g: 0, b: 0, a: 0}
     - _MaterialColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
-    - _OverrideColor: {r: 1, g: 1, b: 1, a: 1}
+    - _OverrideColor: {r: 0.6037736, g: 0.5838377, b: 0.5838377, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []

@@ -40,11 +40,13 @@ namespace com.google.apps.peltzer.client.model.render
     /// TODO(bug): Support meshes with more than 65k verts.
     public class ReMesher
     {
+        // Constraint: MAX_VERTS_PER_MESH >= MAX_VERTS_PER_MMESH
+
         // Maximum number of vertices we'd put into a coalesced Mesh.
-        public const int MAX_VERTS_PER_MESH = 20000;
+        public const int MAX_VERTS_PER_MESH = 32768;
 
         // Maximum number of vertices we allow for any mesh.
-        private const int MAX_VERTS_PER_MMESH = 20000;
+        private const int MAX_VERTS_PER_MMESH = 32768;
 
         // Maximum number of MMeshes in a single MeshInfo.
         private const int MAX_MMESH_PER_MESHINFO = 128;

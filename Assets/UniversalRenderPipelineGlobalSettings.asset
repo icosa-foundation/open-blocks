@@ -102,7 +102,7 @@ MonoBehaviour:
       m_Values: []
     obsoleteHasProbeVolumes:
       m_Keys: []
-      m_Values: 
+      m_Values:
   references:
     version: 2
     RefIds:
@@ -400,7 +400,7 @@ MonoBehaviour:
       data:
         m_Version: 0
         m_ExportShaderVariants: 1
-        m_ShaderVariantLogLevel: 2
+        m_ShaderVariantLogLevel: 0
         m_StripRuntimeDebugShaders: 1
     - rid: 5879692570121994261
       type: {class: RenderingDebuggerRuntimeResources, ns: UnityEngine.Rendering,
@@ -502,7 +502,7 @@ MonoBehaviour:
         m_version: 0
         m_IncludeReferencedInScenes: 0
         m_IncludeAssetsByLabel: 0
-        m_LabelToInclude: 
+        m_LabelToInclude:
     - rid: 7574541182034247680
       type: {class: RayTracingRenderPipelineResources, ns: UnityEngine.Rendering.UnifiedRayTracing,
         asm: Unity.UnifiedRayTracing.Runtime}

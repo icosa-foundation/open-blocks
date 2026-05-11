@@ -72,6 +72,10 @@ namespace com.google.apps.peltzer.client.desktop_app
             /// Whether this is the initial insertion of the image (and hence undo should reattach it to the controller)
             /// </summary>
             public bool initialInsertion;
+            /// <summary>
+            /// Source file path for the image, when known.
+            /// </summary>
+            public string filePath;
         }
 
         /// <summary>
@@ -99,6 +103,11 @@ namespace com.google.apps.peltzer.client.desktop_app
         /// </summary>
         public int referenceImageId { get; set; }
 
+        /// <summary>
+        /// Source file path for the image, when known.
+        /// </summary>
+        public string sourceFilePath { get; set; }
+
         private bool initialInsertion;
 
         public void Setup(SetupParams setupParams)
@@ -106,6 +115,7 @@ namespace com.google.apps.peltzer.client.desktop_app
             base.Setup();
             referenceImageTexture = setupParams.texture;
             referenceImageId = setupParams.refImageId;
+            sourceFilePath = setupParams.filePath;
             float halfAspect = (setupParams.texture.width / (float)setupParams.texture.height) * .5f;
             initialInsertion = setupParams.initialInsertion;
             gameObject.name = REFERENCE_IMAGE_NAME_PREFIX + setupParams.refImageId;
@@ -181,6 +191,7 @@ namespace com.google.apps.peltzer.client.desktop_app
             setupParams.scaleModelSpace = scaleModelSpace;
             setupParams.texture = referenceImageTexture;
             setupParams.refImageId = referenceImageId;
+            setupParams.filePath = sourceFilePath;
             PeltzerMain.Instance.GetModel().ApplyCommand(new DeleteReferenceImageCommand(setupParams));
         }
 
@@ -197,6 +208,7 @@ namespace com.google.apps.peltzer.client.desktop_app
             oldParams.scaleModelSpace = scaleAtStartOfMove;
             oldParams.texture = referenceImageTexture;
             oldParams.refImageId = referenceImageId;
+            oldParams.filePath = sourceFilePath;
 
             SetupParams newParams = oldParams;
             newParams.positionModelSpace = positionModelSpace;
@@ -230,6 +242,7 @@ namespace com.google.apps.peltzer.client.desktop_app
                 oldParams.scaleModelSpace = oldScale;
                 oldParams.texture = referenceImageTexture;
                 oldParams.refImageId = referenceImageId;
+                oldParams.filePath = sourceFilePath;
 
                 SetupParams newParams = oldParams;
                 newParams.scaleModelSpace = scaleModelSpace;

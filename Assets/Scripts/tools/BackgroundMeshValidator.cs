@@ -17,6 +17,7 @@ using System.Linq;
 using System.Threading;
 
 using com.google.apps.peltzer.client.model.core;
+using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.client.model.util;
 using UnityEngine;
 using System;
@@ -37,6 +38,8 @@ namespace com.google.apps.peltzer.client.tools
     /// </summary>
     public class BackgroundMeshValidator
     {
+        private const string MESH_VALIDATOR_PERF_LOG_PREFIX = "[MVPERF_S1]";
+
         /// <summary>
         /// Worker thread that runs in the background doing validation. If this is not null, then the background thread
         /// is currently running.
@@ -98,6 +101,18 @@ namespace com.google.apps.peltzer.client.tools
         /// GUARDED_BY(lockObject)
         /// </summary>
         private HashSet<VertexKey> updatedVerts;
+
+        /// <summary>
+        /// Number of snapshot offers dropped because the worker was busy since the last accepted snapshot.
+        /// GUARDED_BY(lockObject)
+        /// </summary>
+        private int snapshotOffersDroppedWhileBusy;
+
+        /// <summary>
+        /// Busy-offer count associated with the currently accepted snapshot.
+        /// GUARDED_BY(lockObject)
+        /// </summary>
+        private int busySnapshotOffersForCurrentWork;
 
         /// <summary>
         /// Last valid state of the meshes (dictionary from mesh ID to MMesh).
@@ -164,6 +179,8 @@ namespace com.google.apps.peltzer.client.tools
             lastValidState = new Dictionary<int, MMesh>();
             validationCopies = null;
             updatedVerts = null;
+            snapshotOffersDroppedWhileBusy = 0;
+            busySnapshotOffersForCurrentWork = 0;
 
             workerThread = new Thread(new ThreadStart(WorkerThreadMain));
             workerThread.IsBackground = true;
@@ -212,21 +229,44 @@ namespace com.google.apps.peltzer.client.tools
             AssertOrThrow.True(workerThread != null,
               "Can't call UpdateMeshes when BackgroundMeshValidator is not running.");
 
+            bool shouldLogPerformance = ShouldLogPerformance;
             lock (lockObject)
             {
                 if (state != State.WAITING_FOR_DATA)
                 {
                     // Worker thread is busy and doesn't have an appetite for new data right now.
                     // Caller should try again later (as documented above).
+                    snapshotOffersDroppedWhileBusy++;
                     return;
                 }
+
+                System.Diagnostics.Stopwatch snapshotCloneStopwatch = shouldLogPerformance
+                    ? System.Diagnostics.Stopwatch.StartNew()
+                    : null;
+
                 // Take a snapshot of the preview meshes so we can work offline.
                 validationCopies = new List<MMesh>(meshes.Count());
+                int totalFaceCount = 0;
+                int totalVertexCount = 0;
                 foreach (int meshId in meshes.Keys)
                 {
-                    validationCopies.Add(meshes[meshId].Clone());
+                    MMesh mesh = meshes[meshId];
+                    totalFaceCount += mesh.faceCount;
+                    totalVertexCount += mesh.vertexCount;
+                    validationCopies.Add(mesh.Clone());
                 }
                 this.updatedVerts = new HashSet<VertexKey>(updatedVerts);
+                busySnapshotOffersForCurrentWork = snapshotOffersDroppedWhileBusy;
+                snapshotOffersDroppedWhileBusy = 0;
+                if (snapshotCloneStopwatch != null)
+                {
+                    snapshotCloneStopwatch.Stop();
+                    Debug.Log(
+                        $"{MESH_VALIDATOR_PERF_LOG_PREFIX} snapshotAccepted meshes={validationCopies.Count} " +
+                        $"verts={totalVertexCount} faces={totalFaceCount} updatedVerts={updatedVerts.Count} " +
+                        $"snapshotCloneMs={snapshotCloneStopwatch.Elapsed.TotalMilliseconds:F3} " +
+                        $"busyOffersSinceLastAccept={busySnapshotOffersForCurrentWork}");
+                }
                 // Ok, now that we have data, we transition into the VALIDATING state.
                 state = State.VALIDATING;
                 // Poke the worker thread to tell it to wake up, because there's work to do.
@@ -262,6 +302,10 @@ namespace com.google.apps.peltzer.client.tools
             {
                 while (true)
                 {
+                    int busyOffersForThisWork = 0;
+                    bool shouldLogPerformance = ShouldLogPerformance;
+                    System.Diagnostics.Stopwatch validationStopwatch = null;
+
                     // Try to get the next set of validation copies, waiting as necessary.
                     lock (lockObject)
                     {
@@ -283,6 +327,12 @@ namespace com.google.apps.peltzer.client.tools
                         if (state == State.QUITTING) return;
                         // Indicate that we are now working on validating the meshes.
                         state = State.VALIDATING;
+                        busyOffersForThisWork = busySnapshotOffersForCurrentWork;
+                    }
+
+                    if (shouldLogPerformance)
+                    {
+                        validationStopwatch = System.Diagnostics.Stopwatch.StartNew();
                     }
 
                     // Validate the copies.
@@ -319,6 +369,15 @@ namespace com.google.apps.peltzer.client.tools
                         }
                     }
 
+                    if (validationStopwatch != null)
+                    {
+                        validationStopwatch.Stop();
+                        Debug.Log(
+                            $"{MESH_VALIDATOR_PERF_LOG_PREFIX} workerValidation meshes={validationCopies.Count} " +
+                            $"updatedVerts={updatedVerts.Count} totalMs={validationStopwatch.Elapsed.TotalMilliseconds:F3} " +
+                            $"allMeshesValid={allMeshesValid} busyOffersDuringPreviousWork={busyOffersForThisWork}");
+                    }
+
                     // Publish our findings.
                     lock (lockObject)
                     {
@@ -337,6 +396,18 @@ namespace com.google.apps.peltzer.client.tools
             catch (Exception ex)
             {
                 Debug.LogError(ex);
+            }
+        }
+
+        private static bool ShouldLogPerformance
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return Features.meshValidatorPerformanceLogging;
+#else
+                return false;
+#endif
             }
         }
     }

@@ -119,6 +119,216 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         /// <summary>
+        /// Determines whether two faces lie on the same plane.
+        /// </summary>
+        public static bool AreFacesCoplanar(MMesh mesh, Face face1, Face face2)
+        {
+            Plane facePlane;
+            int indexOfThird;
+            if (!CalculateCommonPlane(mesh, face1.vertexIds, out facePlane, out indexOfThird))
+            {
+                return false;
+            }
+
+            foreach (int vertexId in face2.vertexIds)
+            {
+                Vector3 pos = mesh.VertexPositionInMeshCoords(vertexId);
+                if (Mathf.Abs(facePlane.GetDistanceToPoint(pos)) > MAX_COPLANAR_DISTANCE)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Removes boundary vertices that are colinear with their neighbors while preserving winding order.
+        /// </summary>
+        public static List<int> RemoveColinearVertexIds(MMesh mesh, ReadOnlyCollection<int> vertexIds)
+        {
+            int numVertices = vertexIds.Count;
+            if (numVertices < 3)
+            {
+                return new List<int>(vertexIds);
+            }
+
+            List<int> simplifiedVertexIds = new List<int>(numVertices);
+            Vector3 previous = mesh.VertexPositionInMeshCoords(vertexIds[numVertices - 1]);
+            Vector3 current = mesh.VertexPositionInMeshCoords(vertexIds[0]);
+            Vector3 next;
+            for (int i = 0; i < numVertices; i++)
+            {
+                next = mesh.VertexPositionInMeshCoords(vertexIds[(i + 1) % numVertices]);
+                if (!Math3d.AreColinear(previous, current, next))
+                {
+                    simplifiedVertexIds.Add(vertexIds[i]);
+                }
+
+                previous = current;
+                current = next;
+            }
+
+            return simplifiedVertexIds;
+        }
+
+        /// <summary>
+        /// Removes boundary vertices that are colinear with their neighbors while preserving winding order.
+        /// Uses the current in-operation vertex positions.
+        /// </summary>
+        public static List<int> RemoveColinearVertexIds(MMesh.GeometryOperation operation, ReadOnlyCollection<int> vertexIds)
+        {
+            int numVertices = vertexIds.Count;
+            if (numVertices < 3)
+            {
+                return new List<int>(vertexIds);
+            }
+
+            List<int> simplifiedVertexIds = new List<int>(numVertices);
+            Vector3 previous = operation.GetCurrentVertexPositionMeshSpace(vertexIds[numVertices - 1]);
+            Vector3 current = operation.GetCurrentVertexPositionMeshSpace(vertexIds[0]);
+            Vector3 next;
+            for (int i = 0; i < numVertices; i++)
+            {
+                next = operation.GetCurrentVertexPositionMeshSpace(vertexIds[(i + 1) % numVertices]);
+                if (!Math3d.AreColinear(previous, current, next))
+                {
+                    simplifiedVertexIds.Add(vertexIds[i]);
+                }
+
+                previous = current;
+                current = next;
+            }
+
+            return simplifiedVertexIds;
+        }
+
+        /// <summary>
+        /// Removes candidate vertices that have become redundant because they are colinear in every face
+        /// that still references them. All incident faces are updated together to preserve topology.
+        /// </summary>
+        public static bool RemoveRedundantColinearVertices(MMesh mesh, IEnumerable<int> candidateVertexIds)
+        {
+            bool mutated = false;
+            HashSet<int> processedVertexIds = new HashSet<int>();
+            foreach (int vertexId in candidateVertexIds)
+            {
+                if (!processedVertexIds.Add(vertexId) || !mesh.HasVertex(vertexId))
+                {
+                    continue;
+                }
+
+                HashSet<int> incidentFaceIds = new HashSet<int>(mesh.reverseTable[vertexId]);
+                if (incidentFaceIds.Count == 0)
+                {
+                    continue;
+                }
+
+                List<Face> incidentFaces = new List<Face>(incidentFaceIds.Count);
+                bool canRemoveVertex = true;
+                foreach (int faceId in incidentFaceIds)
+                {
+                    Face face;
+                    if (!mesh.TryGetFace(faceId, out face))
+                    {
+                        continue;
+                    }
+
+                    if (face.vertexIds.Count <= 3 || !IsVertexColinearInFace(mesh, face, vertexId))
+                    {
+                        canRemoveVertex = false;
+                        break;
+                    }
+
+                    incidentFaces.Add(face);
+                }
+
+                if (!canRemoveVertex || incidentFaces.Count == 0)
+                {
+                    continue;
+                }
+
+                MMesh.GeometryOperation removeVertexFromFacesOperation = mesh.StartOperation();
+                foreach (Face face in incidentFaces)
+                {
+                    List<int> updatedVertexIds = new List<int>(face.vertexIds);
+                    updatedVertexIds.Remove(vertexId);
+                    removeVertexFromFacesOperation.ModifyFace(face.id, updatedVertexIds, face.properties);
+                }
+                removeVertexFromFacesOperation.Commit();
+
+                if (mesh.reverseTable[vertexId].Count == 0)
+                {
+                    MMesh.GeometryOperation deleteVertexOperation = mesh.StartOperation();
+                    deleteVertexOperation.DeleteVertex(vertexId);
+                    deleteVertexOperation.CommitWithoutRecalculation();
+                }
+
+                mutated = true;
+            }
+
+            return mutated;
+        }
+
+        /// <summary>
+        /// Deletes an edge by merging its two incident faces into one planar face, if the remaining
+        /// boundary vertices define a clear plane. The two edge endpoints are preserved and moved onto
+        /// that plane.
+        /// </summary>
+        public static bool TryDeleteEdgeAndMakePlanar(
+            MMesh mesh, EdgeKey edgeKey, Face face1, Face face2, ReadOnlyCollection<int> mergedFaceVertexIds)
+        {
+            List<int> planeVertexIds = new List<int>();
+            foreach (int vertexId in mergedFaceVertexIds)
+            {
+                if (edgeKey.ContainsVertex(vertexId) || planeVertexIds.Contains(vertexId))
+                {
+                    continue;
+                }
+
+                planeVertexIds.Add(vertexId);
+            }
+
+            Plane targetPlane;
+            int indexOfThird;
+            if (planeVertexIds.Count < 3
+                || !AreVerticesCoplanar(mesh, planeVertexIds.AsReadOnly())
+                || !CalculateCommonPlane(mesh, planeVertexIds.AsReadOnly(), out targetPlane, out indexOfThird))
+            {
+                return false;
+            }
+
+            MMesh.GeometryOperation planarDeleteOperation = mesh.StartOperation();
+            planarDeleteOperation.ModifyVertexMeshSpace(
+                edgeKey.vertexId1,
+                ProjectPointOntoPlane(mesh.VertexPositionInMeshCoords(edgeKey.vertexId1), targetPlane));
+            planarDeleteOperation.ModifyVertexMeshSpace(
+                edgeKey.vertexId2,
+                ProjectPointOntoPlane(mesh.VertexPositionInMeshCoords(edgeKey.vertexId2), targetPlane));
+            planarDeleteOperation.DeleteFace(face1.id);
+            planarDeleteOperation.DeleteFace(face2.id);
+            planarDeleteOperation.AddFace(new List<int>(mergedFaceVertexIds), face1.properties);
+            planarDeleteOperation.Commit();
+            return true;
+        }
+
+        private static bool IsVertexColinearInFace(MMesh mesh, Face face, int vertexId)
+        {
+            int vertexIndex = face.vertexIds.IndexOf(vertexId);
+            if (vertexIndex == -1)
+            {
+                return false;
+            }
+
+            int previousIndex = (vertexIndex - 1 + face.vertexIds.Count) % face.vertexIds.Count;
+            int nextIndex = (vertexIndex + 1) % face.vertexIds.Count;
+            return Math3d.AreColinear(
+                mesh.VertexPositionInMeshCoords(face.vertexIds[previousIndex]),
+                mesh.VertexPositionInMeshCoords(vertexId),
+                mesh.VertexPositionInMeshCoords(face.vertexIds[nextIndex]));
+        }
+
+        /// <summary>
         /// Determines whether or not the given vertices are all coplanar in an ongoing GeometryOperation. 
         /// </summary>
         /// <param name="operation">The current operation on the mutated mesh.</param>
@@ -383,6 +593,220 @@ namespace com.google.apps.peltzer.client.model.core
                 }
             }
             return edgeKeysToFaceIds;
+        }
+
+        /// <summary>
+        /// Deletes a face by collapsing its boundary ring to a single merged vertex and rebuilding the
+        /// edge-adjacent faces to reference that shared vertex.
+        /// </summary>
+        public static void DeleteFaceAndMergeAdjacentFaces(MMesh mesh, int faceId)
+        {
+            Face faceToDelete = mesh.GetFace(faceId);
+            MMesh.GeometryOperation deleteFaceOperation = mesh.StartOperation();
+
+            Vector3 mergedVertexPositionMeshSpace = Vector3.zero;
+            foreach (int vertexId in faceToDelete.vertexIds)
+            {
+                mergedVertexPositionMeshSpace += mesh.VertexPositionInMeshCoords(vertexId);
+            }
+            mergedVertexPositionMeshSpace /= faceToDelete.vertexIds.Count;
+
+            Vertex mergedVertex = deleteFaceOperation.AddVertexMeshSpace(mergedVertexPositionMeshSpace);
+            HashSet<int> deletedVertexIds = new HashSet<int>(faceToDelete.vertexIds);
+
+            foreach (int adjacentFaceId in FindAdjacentFaceIds(mesh, faceToDelete))
+            {
+                Face adjacentFace = mesh.GetFace(adjacentFaceId);
+                List<int> replacementVertexIds = ReplaceDeletedFaceVerticesWithMergedVertex(
+                    adjacentFace, deletedVertexIds, mergedVertex.id);
+
+                deleteFaceOperation.DeleteFace(adjacentFaceId);
+                deleteFaceOperation.AddFace(replacementVertexIds, adjacentFace.properties);
+            }
+
+            foreach (int vertexId in faceToDelete.vertexIds)
+            {
+                deleteFaceOperation.DeleteVertex(vertexId);
+            }
+
+            deleteFaceOperation.DeleteFace(faceToDelete.id);
+            deleteFaceOperation.Commit();
+        }
+
+        /// <summary>
+        /// Deletes a vertex by removing all incident faces and stitching the surrounding boundary into one face.
+        /// </summary>
+        public static void DeleteVertexAndMergeAdjacentFaces(MMesh mesh, int vertexId)
+        {
+            MMesh.GeometryOperation deleteVertexOperation = mesh.StartOperation();
+
+            Dictionary<int, int> startVertToFace = new Dictionary<int, int>();
+            Dictionary<int, List<int>> faceToRetainedVerts = new Dictionary<int, List<int>>();
+
+            int nextFaceId = -1;
+            foreach (int faceId in mesh.reverseTable[vertexId])
+            {
+                if (nextFaceId == -1)
+                {
+                    nextFaceId = faceId;
+                }
+
+                Face face = mesh.GetFace(faceId);
+                for (int i = 0; i < face.vertexIds.Count; i++)
+                {
+                    if (face.vertexIds[i] != vertexId)
+                    {
+                        continue;
+                    }
+
+                    List<int> retainedVerts = new List<int>();
+                    int startIndex = (i + 1) % face.vertexIds.Count;
+                    startVertToFace[face.vertexIds[startIndex]] = faceId;
+                    int count = 0;
+                    while (count < face.vertexIds.Count)
+                    {
+                        if (face.vertexIds[startIndex] != vertexId)
+                        {
+                            retainedVerts.Add(face.vertexIds[startIndex]);
+                        }
+                        startIndex = (startIndex + 1) % face.vertexIds.Count;
+                        count++;
+                    }
+                    faceToRetainedVerts[faceId] = retainedVerts;
+                }
+            }
+
+            List<int> newFaceVertexIds = new List<int>();
+            HashSet<int> faces = new HashSet<int>(mesh.reverseTable[vertexId]);
+            int infiniteLoopFailsafeLimit = faces.Count * 2;
+            int failSafeCount = 0;
+
+            while (faces.Count > 0 && failSafeCount <= infiniteLoopFailsafeLimit)
+            {
+                List<int> retainedVerts = faceToRetainedVerts[nextFaceId];
+
+                faces.Remove(nextFaceId);
+                deleteVertexOperation.DeleteFace(nextFaceId);
+
+                if (retainedVerts.Count == 0)
+                {
+                    foreach (int faceId in faces)
+                    {
+                        nextFaceId = faceId;
+                        break;
+                    }
+                }
+                else
+                {
+                    newFaceVertexIds.AddRange(retainedVerts);
+                    nextFaceId = startVertToFace[retainedVerts[^1]];
+                }
+
+                failSafeCount++;
+            }
+
+            AssertOrThrow.True(failSafeCount <= infiniteLoopFailsafeLimit,
+                $"DeleteVertexAndMergeAdjacentFaces failed for vertex {vertexId}: infinite loop detected.");
+
+            deleteVertexOperation.DeleteVertex(vertexId);
+            if (nextFaceId != -1 && newFaceVertexIds.Count > 0)
+            {
+                deleteVertexOperation.AddFace(newFaceVertexIds, mesh.GetFace(nextFaceId).properties);
+            }
+            deleteVertexOperation.Commit();
+        }
+
+        /// <summary>
+        /// Deletes an edge by collapsing its endpoints to a single merged vertex and rebuilding all
+        /// incident faces to reference that shared vertex.
+        ///
+        /// Retained for a future explicit "collapse edge" UI action. To wire that up, branch in
+        /// Deleter.DeleteEdge based on the user's selected delete/collapse mode and call this helper
+        /// instead of the default planarized edge-delete path.
+        /// </summary>
+        public static void DeleteEdgeAndCollapse(MMesh mesh, EdgeKey edgeKey)
+        {
+            MMesh.GeometryOperation collapseEdgeOperation = mesh.StartOperation();
+
+            Vector3 mergedVertexPositionMeshSpace =
+                (mesh.VertexPositionInMeshCoords(edgeKey.vertexId1) + mesh.VertexPositionInMeshCoords(edgeKey.vertexId2))
+                * 0.5f;
+            Vertex mergedVertex = collapseEdgeOperation.AddVertexMeshSpace(mergedVertexPositionMeshSpace);
+
+            HashSet<int> deletedVertexIds = new HashSet<int> { edgeKey.vertexId1, edgeKey.vertexId2 };
+            HashSet<int> incidentFaceIds = new HashSet<int>(mesh.reverseTable[edgeKey.vertexId1]);
+            incidentFaceIds.UnionWith(mesh.reverseTable[edgeKey.vertexId2]);
+
+            foreach (int incidentFaceId in incidentFaceIds)
+            {
+                Face incidentFace = mesh.GetFace(incidentFaceId);
+                List<int> replacementVertexIds = ReplaceDeletedFaceVerticesWithMergedVertex(
+                    incidentFace, deletedVertexIds, mergedVertex.id);
+
+                collapseEdgeOperation.DeleteFace(incidentFaceId);
+                collapseEdgeOperation.AddFace(replacementVertexIds, incidentFace.properties);
+            }
+
+            collapseEdgeOperation.DeleteVertex(edgeKey.vertexId1);
+            collapseEdgeOperation.DeleteVertex(edgeKey.vertexId2);
+            collapseEdgeOperation.Commit();
+        }
+
+        private static HashSet<int> FindAdjacentFaceIds(MMesh mesh, Face face)
+        {
+            HashSet<int> adjacentFaceIds = new HashSet<int>();
+            Dictionary<EdgeKey, List<int>> edgeKeysToFaceIds = ComputeEdgeKeysToFaceIdsMap(mesh);
+
+            int previousVertexId = face.vertexIds[face.vertexIds.Count - 1];
+            foreach (int currentVertexId in face.vertexIds)
+            {
+                EdgeKey edgeKey = new EdgeKey(mesh.id, currentVertexId, previousVertexId);
+                List<int> faceIds;
+                if (edgeKeysToFaceIds.TryGetValue(edgeKey, out faceIds))
+                {
+                    foreach (int adjacentFaceId in faceIds)
+                    {
+                        if (adjacentFaceId != face.id)
+                        {
+                            adjacentFaceIds.Add(adjacentFaceId);
+                        }
+                    }
+                }
+                previousVertexId = currentVertexId;
+            }
+
+            return adjacentFaceIds;
+        }
+
+        private static List<int> ReplaceDeletedFaceVerticesWithMergedVertex(
+            Face face, HashSet<int> deletedVertexIds, int mergedVertexId)
+        {
+            List<int> replacementVertexIds = new List<int>();
+            bool mergedVertexAdded = false;
+
+            foreach (int vertexId in face.vertexIds)
+            {
+                if (!deletedVertexIds.Contains(vertexId))
+                {
+                    replacementVertexIds.Add(vertexId);
+                    continue;
+                }
+
+                if (mergedVertexAdded)
+                {
+                    continue;
+                }
+
+                mergedVertexAdded = true;
+                replacementVertexIds.Add(mergedVertexId);
+            }
+
+            return replacementVertexIds;
+        }
+
+        private static Vector3 ProjectPointOntoPlane(Vector3 point, Plane plane)
+        {
+            return point - plane.normal * plane.GetDistanceToPoint(point);
         }
     }
 }

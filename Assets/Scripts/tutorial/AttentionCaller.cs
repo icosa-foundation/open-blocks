@@ -116,6 +116,7 @@ namespace com.google.apps.peltzer.client.tutorial
             SAVE_SELECTED_BUTTON,
             MODEL_FILTER_BUTTON,
             MODEL_SEARCH_BUTTON,
+            MODEL_REFRESH_BUTTON
         }
 
         private List<ControllerMode> supportedModes = new() {
@@ -299,6 +300,7 @@ namespace com.google.apps.peltzer.client.tutorial
             elements[Element.SAVE_SELECTED_BUTTON] = FindOrDie(pgo, "ID_PanelTools/ToolSide/Menu-Save/Save-Selected");
             elements[Element.MODEL_FILTER_BUTTON] = FindOrDie(pgo, "Panel-Menu/Models/OpenFiltersBtn");
             elements[Element.MODEL_SEARCH_BUTTON] = FindOrDie(pgo, "Panel-Menu/Models/OpenSearchBtn");
+            elements[Element.MODEL_REFRESH_BUTTON] = FindOrDie(pgo, "Panel-Menu/Models/Refresh");
 
             spherePrefab = Resources.Load<GameObject>("Prefabs/GlowOrb");
 
@@ -350,6 +352,7 @@ namespace com.google.apps.peltzer.client.tutorial
         {
             elements[Element.MODEL_FILTER_BUTTON].SetActive(show);
             elements[Element.MODEL_SEARCH_BUTTON].SetActive(show);
+            elements[Element.MODEL_REFRESH_BUTTON].SetActive(show);
         }
 
         private void StartGlowing(GameObject[] components, Glow glow = null)

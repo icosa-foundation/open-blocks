@@ -339,14 +339,11 @@ namespace com.google.apps.peltzer.client.tools.utils
         {
             this.worldSpace = worldSpace;
             this.model = model;
-            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            Destroy(cube);// only need the mesh for showing the edge highlights
-            Destroy(sphere);// only need the mesh for showing the vertex highlights
-            var sphereMesh = sphere.GetComponent<MeshFilter>().mesh;
-            var cubeMesh = cube.GetComponent<MeshFilter>().mesh;
-            VertexSelectStyle.vertexMesh = sphereMesh;
-            // VertexInactiveStyle.vertexMesh = sphereMesh;
+            var cubeMesh = cube.GetComponent<MeshFilter>().sharedMesh;
+            Destroy(cube);
+            VertexSelectStyle.vertexMesh = cubeMesh;
+            // VertexInactiveStyle.vertexMesh = cubeMesh;
             EdgeSelectStyle.edgeMesh = cubeMesh;
             // EdgeInactiveStyle.edgeMesh = cubeMesh;
             EdgeTemporaryStyle.edgeMesh = cubeMesh;
@@ -373,7 +370,7 @@ namespace com.google.apps.peltzer.client.tools.utils
 
             inactiveRenderer = new InactiveRenderer(model, worldSpace, materialLibrary);
             inactiveRenderer.edgeMesh = cubeMesh;
-            inactiveRenderer.vertexMesh = sphereMesh;
+            inactiveRenderer.vertexMesh = cubeMesh;
             vertexHighlights = new TrackedHighlightSet<VertexKey>(VERT_EDGE_ANIMATION_DURATION_IN,
               VERT_EDGE_ANIMATION_DURATION_OUT,
               new[] { (int)VertexStyles.VERTEX_SELECT, (int)VertexStyles.VERTEX_INACTIVE });
