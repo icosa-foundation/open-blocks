@@ -34,7 +34,8 @@ namespace com.google.apps.peltzer.client.app
         Unset = -1,
         Oculus = 0,
         // SteamVR = 1,
-        OpenXR = 2
+        OpenXR = 2,
+        Desktop = 3
     }
 
     public class Config : MonoBehaviour
