@@ -17,7 +17,7 @@ using UnityEngine;
 namespace com.google.apps.peltzer.client.model.controller
 {
     /// <summary>
-    ///   Controller SDK logic for OpenXR
+    ///   Desktop controller implementation that provides default/no-op input behavior
     /// </summary>
     public class ControllerDeviceDesktop : ControllerDevice
     {
