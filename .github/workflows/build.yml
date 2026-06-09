@@ -951,7 +951,7 @@ jobs:
           PICO_APP_SECRET: ${{ secrets.PICO_APP_SECRET }}
         run: |
           mkdir releases
-          mv build_android_openxr/*/com.Icosa.OpenBlocks*apk releases/OpenBrush_Pico_$VERSION.apk
+          mv build_android_openxr/*/OpenBlocks*apk releases/OpenBlocks_Pico_$VERSION.apk
 
           cd releases
           # pico-cli v1.0.3
