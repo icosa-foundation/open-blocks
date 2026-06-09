@@ -829,10 +829,10 @@ namespace com.google.apps.peltzer.client.model.main
                     userConfig = JsonUtility.FromJson<UserConfig>(File.ReadAllText(configPath));
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 userConfig = new UserConfig();
-                Debug.LogWarning("Could not read OpenBlocks.cfg, using default user config.");
+                Debug.LogWarning("Could not read OpenBlocks.cfg, using default user config. " + e.Message);
             }
 
             if (userConfig.GalleryUrl == "")

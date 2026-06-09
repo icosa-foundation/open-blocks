@@ -70,7 +70,7 @@ namespace com.google.apps.peltzer.client.model.controller
         }
         public TouchpadLocation GetTouchpadLocation()
         {
-            return new TouchpadLocation();
+            return TouchpadLocation.NONE;
         }
         public Vector2 GetTriggerScale()
         {

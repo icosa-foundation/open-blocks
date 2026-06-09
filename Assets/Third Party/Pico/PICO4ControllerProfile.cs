@@ -40,7 +40,7 @@ namespace UnityEngine.XR.OpenXR.Features.Interactions
         public const string featureId = "com.unity.openxr.feature.input.PICO4touch";
 
         /// <summary>
-        /// An Input System device based on the hand interaction profile in the PICO Touch Controller</a>.
+        /// An Input System device based on the hand interaction profile in the PICO Touch Controller.
         /// </summary>
         [Preserve, InputControlLayout(displayName = "PICO4 Touch Controller (OpenXR)", commonUsages = new[] { "LeftHand", "RightHand" })]
         public class PICO4TouchController : XRControllerWithRumble
