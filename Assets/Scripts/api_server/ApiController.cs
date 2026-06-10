@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,9 @@ using com.google.apps.peltzer.client.model.export;
 using com.google.apps.peltzer.client.model.main;
 using com.google.apps.peltzer.video;
 using extApi;
+using Polyhydra.Core;
+using Polyhydra.Wythoff;
+using TiltBrush;
 using UnityEngine;
 
 [ApiRoute("api/v1")]
@@ -570,6 +574,79 @@ public class ApiController
         {
             error = $"Mesh {meshId} was not found."
         });
+    }
+
+    [ApiPost("meshes/create-polyhydra")]
+    [ApiSummary("Create a mesh from a polyhydra recipe.")]
+    [ApiResponse(200, typeof(ApiIdResponse))]
+    [ApiResponse(400, typeof(ApiErrorResponse))]
+    [ApiResponse(500, typeof(ApiErrorResponse))]
+    public ApiResult CreatePolyhydraMesh([ApiBody] Dictionary<string, object> kwargs)
+    {
+        var recipe = BuildPolyRecipe(kwargs);
+        var poly = PolyBuilder.BuildPolyMesh(recipe);
+        int meshId = PeltzerMain.Instance.model.GenerateMeshId();
+        var mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, Quaternion.identity, 0);
+        if (mesh == null)
+            return ApiResult.InternalServerError(new ApiErrorResponse { error = "Failed to create polyhydra mesh." });
+        PeltzerMain.Instance.model.AddMesh(mesh);
+        return ApiResult.Ok(new ApiIdResponse { ok = true, id = meshId, message = $"Created polyhydra mesh {meshId}." });
+    }
+
+    [ApiGet("meshes/{meshId}/apply-op")]
+    [ApiSummary("Apply a polyhydra operation to a mesh.")]
+    [ApiResponse(200, typeof(ApiOperationResponse))]
+    [ApiResponse(400, typeof(ApiErrorResponse))]
+    [ApiResponse(404, typeof(ApiErrorResponse))]
+    public ApiResult ApplyMeshOp(
+        [ApiRouteParam] int meshId,
+        [ApiDoc("Operation name.", Example = "Kis")][ApiQuery(required: true)] string op,
+        [ApiDoc("First operation parameter.", Example = "0")][ApiQuery] float a,
+        [ApiDoc("Second operation parameter.", Example = "0")][ApiQuery] float b)
+    {
+        if (PeltzerMain.Instance.model.GetMesh(meshId) == null)
+            return MeshNotFound(meshId);
+        if (!Enum.TryParse(op, true, out PolyMesh.Operation operation))
+            return BadRequest($"Unknown operation: {op}");
+        var cmd = new ApplyOpToMeshCommand(meshId, operation, a, b, FilterTypes.All, 0);
+        PeltzerMain.Instance.model.ApplyCommand(cmd);
+        return Ok($"Applied operation {op} to mesh {meshId}.");
+    }
+
+    private static PolyRecipe BuildPolyRecipe(Dictionary<string, object> kwargs)
+    {
+        var recipe = new PolyRecipe();
+
+        T ParseEnum<T>(string key) where T : Enum =>
+            (T)Enum.Parse(typeof(T), kwargs[key].ToString());
+
+        recipe.GeneratorType = ParseEnum<GeneratorTypes>("generator");
+        recipe.generatorParams = kwargs;
+
+        switch (recipe.GeneratorType)
+        {
+            case GeneratorTypes.RegularGrids:
+            case GeneratorTypes.CatalanGrids:
+            case GeneratorTypes.OneUniformGrids:
+            case GeneratorTypes.TwoUniformGrids:
+            case GeneratorTypes.DurerGrids:
+                recipe.GridType = ParseEnum<GridEnums.GridTypes>("gridType");
+                recipe.GridShape = ParseEnum<GridEnums.GridShapes>("gridShape");
+                break;
+            case GeneratorTypes.Shapes:
+                recipe.ShapeType = ParseEnum<ShapeTypes>("shapeName");
+                break;
+            case GeneratorTypes.Radial:
+                recipe.RadialPolyType = ParseEnum<RadialSolids.RadialPolyType>("RadialPolyType");
+                break;
+            case GeneratorTypes.Uniform:
+                recipe.UniformPolyType = ParseEnum<UniformTypes>("shapeName");
+                break;
+            case GeneratorTypes.Various:
+                recipe.VariousSolidsType = ParseEnum<VariousSolidTypes>("shapeName");
+                break;
+        }
+        return recipe;
     }
 }
 
