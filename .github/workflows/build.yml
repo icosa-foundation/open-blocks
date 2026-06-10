@@ -477,7 +477,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -556,7 +556,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -824,6 +824,11 @@ jobs:
         with:
           name: Linux
           path: build_linux
+      - name: Download Build Artifacts (Android OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_openxr
       - name: Upload Build
         run: |
           cd build_macos
@@ -834,6 +839,7 @@ jobs:
           jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
           jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
           jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
+          jinjanate Support/steam/main_depot.android.vdf.j2 > build_android_openxr/main_depot.vdf
           # jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
@@ -844,6 +850,7 @@ jobs:
           OPEN_BLOCKS_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
           OPEN_BLOCKS_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
           OPEN_BLOCKS_LINUX_DEPOT_ID: ${{ vars.STEAM_LINUX_DEPOT_ID }}
+          OPEN_BLOCKS_ANDROID_DEPOT_ID: ${{ vars.STEAM_ANDROID_DEPOT_ID }}
           OPEN_BLOCKS_WINDOWS_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Update steam login secret
@@ -897,4 +904,44 @@ jobs:
           else
             CHANGELOG="${RAW_CHANGELOG}"
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_OpenXR_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
+          fi
+  publish_pico:
+    name: Publish Pico Releases
+    needs: [configuration, build]
+    runs-on: ubuntu-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-blocks' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Android OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_openxr
+      - name: Publish Pico Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          PICO_APP_ID: ${{ vars.PICO_APP_ID }}
+          PICO_APP_SECRET: ${{ secrets.PICO_APP_SECRET }}
+        run: |
+          mkdir releases
+          mv build_android_openxr/*/OpenBlocks*apk releases/OpenBlocks_Pico_$VERSION.apk
+
+          cd releases
+          # pico-cli v1.0.3
+          curl -L 'https://p16-platform-static-va.ibyteimg.com/tos-maliva-i-jo6vmmv194-us/linux-noncn/202304111056/pico-cli?r=1681181814847245000' -o pico-cli
+          chmod 755 pico-cli
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBlocks_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            # Disable Mainland China build for now
+            # ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBlocks_Pico_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
+          else
+            # For Pico, Beta channels can only get one build, not a separate China / non-China build
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBlocks_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
           fi
