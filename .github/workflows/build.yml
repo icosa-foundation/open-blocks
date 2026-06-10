@@ -43,6 +43,7 @@ jobs:
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
       fastlanelane: ${{ steps.version.outputs.fastlanelane}}
+      googleplaytrack: ${{ steps.version.outputs.googleplaytrack }}
       uid: ${{ steps.github.outputs.uid }}
       gid: ${{ steps.github.outputs.gid }}
       flavors: ${{ steps.flavors.outputs.flavors }}
@@ -94,6 +95,7 @@ jobs:
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
+            echo "googleplaytrack=production" >> $GITHUB_OUTPUT
 
           else
             # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
@@ -101,6 +103,7 @@ jobs:
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
+            echo "googleplaytrack=beta" >> $GITHUB_OUTPUT
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -400,22 +403,6 @@ jobs:
           for DEFINE in ${{ matrix.extra_defines }}; do
             echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
           done
-
-      - name: Check Google Play Android signing credentials
-        if: matrix.name == 'Android OpenXR Google Play'
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
-          ANDROID_KEYALIAS_NAME: ${{ secrets.ANDROID_KEYALIAS_NAME }}
-          ANDROID_KEYALIAS_PASS: ${{ secrets.ANDROID_KEYALIAS_PASS }}
-        run: |
-          if [ -z "$ANDROID_KEYSTORE_BASE64" ] ||
-             [ -z "$ANDROID_KEYSTORE_PASS" ] ||
-             [ -z "$ANDROID_KEYALIAS_NAME" ] ||
-             [ -z "$ANDROID_KEYALIAS_PASS" ]; then
-            echo "Missing Android signing secrets for Google Play publishing" >&2
-            exit 1
-          fi
 
       - name: Build project
         uses: Wandalen/wretry.action@v3
@@ -933,7 +920,6 @@ jobs:
         id: google_play_release
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
-          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
         run: |
           mkdir releases
           AAB="$(find build_android_openxr_google_play -name 'OpenBlocks*.aab' -print -quit)"
@@ -950,28 +936,13 @@ jobs:
             echo "debugSymbols=releases/OpenBlocks_OpenXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
           fi
 
-          if [ "$PRERELEASE" == "false" ]; then
-            echo "track=${{ vars.GOOGLE_PLAY_RELEASE_TRACK || 'production' }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "track=${{ vars.GOOGLE_PLAY_PRERELEASE_TRACK || 'beta' }}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Check Google Play credentials
-        env:
-          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-        run: |
-          if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
-            echo "Missing GOOGLE_PLAY_SERVICE_ACCOUNT_JSON secret for Google Play publishing" >&2
-            exit 1
-          fi
-
       - name: Publish Google Play Build
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: ${{ vars.GOOGLE_PLAY_PACKAGE_NAME || 'foundation.icosa.openblocks' }}
+          packageName: foundation.icosa.openblocks
           releaseFiles: releases/OpenBlocks_OpenXR_${{ needs.configuration.outputs.version }}.aab
-          tracks: ${{ steps.google_play_release.outputs.track }}
+          tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: completed
           debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
