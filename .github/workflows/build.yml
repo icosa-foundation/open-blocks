@@ -14,7 +14,7 @@ on:  # yamllint disable-line rule:truthy
     - cron: "31 18 * * sat"  # Weekly, Saturday at 18:31 UTC
 
 env:
-  UNITY_VERSION: "2022.3.62f2"
+  UNITY_VERSION: "6000.3.10f1"
 jobs:
   configuration:
     if: |
@@ -286,28 +286,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
-
-      - name: Install TextMesh Pro package
-        run: |
-          # version 3.0.6; must be updated if the version changes
-          # This replaces the GUI's "Window -> TextMesh Pro -> Import TMP Essential Resources". I don't know why Unity makes this sort of thing so hard!
-          mkdir tmp.plugin
-          wget -q https://download.packages.unity.com/com.unity.textmeshpro/-/com.unity.textmeshpro-3.0.6.tgz -O tmp.plugin/plugin.tgz
-          tar -C tmp.plugin -xzf tmp.plugin/plugin.tgz
-          mkdir tmp.package
-          tar -C tmp.package -xzf 'tmp.plugin/package/Package Resources/TMP Essential Resources.unitypackage'
-          for pn in tmp.package/*/pathname; do
-            id=${pn%/*}
-            id=${id#*/}
-            p=$(head -1 $pn)
-            d=${p%/*}
-            mkdir -p "tmp.package/$d"
-            [ -f "tmp.package/$id/asset" ] && cp -v "tmp.package/$id/asset" "tmp.package/$p"
-            cp "tmp.package/$id/asset.meta" "tmp.package/${p}.meta"
-          done
-          mkdir -p 'Assets/TextMesh Pro'
-          cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
-          rm -rf tmp.plugin tmp.package
 
       - name: Restore Library/
         id: cache_library
