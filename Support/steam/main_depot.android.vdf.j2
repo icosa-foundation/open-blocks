@@ -1,9 +1,9 @@
 "DepotBuildConfig"
 {
     // # Set your assigned depot ID here
-    "DepotID" "{{ OPEN_BLOCKS_WINDOWS_DEPOT_ID }}"
+    "DepotID" "{{ OPEN_BLOCKS_ANDROID_DEPOT_ID }}"
 
-    "ContentRoot" "build_windows_openxr/StandaloneWindows64"
+    "ContentRoot" "build_android_openxr/Android"
 
     "FileMapping"
     {
@@ -16,7 +16,7 @@
         // If LocalPath contains wildcards, setting this means that all
         // matching files within subdirectories of LocalPath will also
         // be included.
-        "recursive" "1"
+        "recursive" "0"
     }
 
     // Install scripts
@@ -26,7 +26,7 @@
     //}
     //"InstallScript" "../installscript_win.vdf"
 
-    // but exclude all symbol files
-    "FileExclusion" "*.pdb"
+    // Exclide symbols zip
+    "FileExclusion" "*.zip"
     "FileExclusion" "build_log.txt"
 }

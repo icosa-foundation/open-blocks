@@ -22,6 +22,7 @@ MonoBehaviour:
   KHR_materials_sheen: 1
   KHR_materials_pbrSpecularGlossiness: 1
   KHR_materials_emissive_strength: 1
+  KHR_materials_anisotropy: 1
 --- !u!114 &-6912520435580454227
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -69,6 +70,7 @@ MonoBehaviour:
   KHR_materials_clearcoat: 1
   KHR_materials_emissive_strength: 1
   KHR_materials_sheen: 1
+  KHR_materials_anisotropy: 1
 --- !u!114 &-6127576863130929297
 MonoBehaviour:
   m_ObjectHideFlags: 3
