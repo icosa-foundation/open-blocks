@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using com.google.apps.peltzer.client.model.main;
 using extApi;
 using UnityEngine;
 
@@ -22,15 +24,30 @@ public class ApiManager : MonoBehaviour
         Instance = this;
     }
 
-    void Start()
+    IEnumerator Start()
+    {
+        var peltzerMain = FindObjectOfType<PeltzerMain>();
+        while (peltzerMain != null && peltzerMain.userConfig == null)
+        {
+            yield return null;
+        }
+
+        StartApi();
+    }
+
+    private void StartApi()
     {
         _api = new Api(ThreadMode.MainThread);
+        _api.ConfigureAccess(CreateAccessOptions());
         _api.AddController(new ApiController());
         _api.Listen(HTTP_PORT);
     }
 
     void Update()
     {
+        if (_api == null)
+            return;
+
         _api.Update();
     }
 
@@ -42,5 +59,21 @@ public class ApiManager : MonoBehaviour
     public ApiResult InvokeLocalGet(string path, IReadOnlyDictionary<string, string> queryParameters = null)
     {
         return _api?.InvokeLocalGet(path, queryParameters) ?? ApiResult.InternalServerError();
+    }
+
+    private static ApiAccessOptions CreateAccessOptions()
+    {
+        var userConfig = FindObjectOfType<PeltzerMain>()?.userConfig;
+        var allowedOrigins = userConfig?.ApiCorsAllowedOrigins;
+        if (allowedOrigins == null || allowedOrigins.Length == 0)
+        {
+            allowedOrigins = UserConfig.DefaultApiCorsAllowedOrigins;
+        }
+
+        return new ApiAccessOptions
+        {
+            EnableRemoteRequests = userConfig?.EnableApiRemoteCalls ?? false,
+            AllowedCorsOrigins = allowedOrigins
+        };
     }
 }

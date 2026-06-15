@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
@@ -6,7 +7,9 @@ using com.google.apps.peltzer.client.desktop_app;
 using com.google.apps.peltzer.client.entitlement;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.export;
+using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.main;
+using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.tools;
 using UnityEngine;
 
@@ -93,6 +96,86 @@ public static class ApiCommandService
         return ApiCommandResult.Ok($"Created mesh {meshId}.", id: meshId);
     }
 
+    public static ApiCommandResult ImportGeometry(ApiGeometryImportRequest request)
+    {
+        if (request == null)
+            return ApiCommandResult.BadRequest("Request body is required.");
+
+        if (request.vertices == null || request.vertices.Length == 0)
+            return ApiCommandResult.BadRequest("At least one vertex is required.");
+
+        if (request.faces == null || request.faces.Length == 0)
+            return ApiCommandResult.BadRequest("At least one face is required.");
+
+        var meshId = PeltzerMain.Instance.model.GenerateMeshId();
+        var verticesById = new Dictionary<int, Vertex>(request.vertices.Length);
+        for (var i = 0; i < request.vertices.Length; i++)
+        {
+            verticesById[i] = new Vertex(i, ToVector3(request.vertices[i]));
+        }
+
+        var facesById = new Dictionary<int, Face>(request.faces.Length);
+        for (var i = 0; i < request.faces.Length; i++)
+        {
+            var face = request.faces[i];
+            if (face?.vertices == null || face.vertices.Length < 3)
+                return ApiCommandResult.BadRequest($"Face {i} must contain at least three vertex indices.");
+
+            var vertexIds = new List<int>(face.vertices);
+            if (request.reverseWinding)
+            {
+                vertexIds.Reverse();
+            }
+
+            for (var j = 0; j < vertexIds.Count; j++)
+            {
+                var vertexId = vertexIds[j];
+                if (vertexId < 0 || vertexId >= request.vertices.Length)
+                    return ApiCommandResult.BadRequest($"Face {i} references vertex index {vertexId}, but valid indices are 0 through {request.vertices.Length - 1}.");
+            }
+
+            if (vertexIds.Distinct().Count() != vertexIds.Count)
+                return ApiCommandResult.BadRequest($"Face {i} contains duplicate vertex indices.");
+
+            if (!TryResolveFaceMaterialId(face, request.materialId, out var materialId, out var materialError))
+                return ApiCommandResult.BadRequest($"Face {i} has invalid color/material data: {materialError}");
+
+            try
+            {
+                facesById[i] = new Face(
+                    i,
+                    vertexIds.AsReadOnly(),
+                    verticesById,
+                    new FaceProperties(materialId));
+            }
+            catch (Exception e)
+            {
+                return ApiCommandResult.BadRequest($"Face {i} is invalid: {e.Message}");
+            }
+        }
+
+        var offset = request.offset != null ? ToVector3(request.offset) : Vector3.zero;
+        var rotation = request.rotationEuler != null
+            ? Quaternion.Euler(ToVector3(request.rotationEuler))
+            : Quaternion.identity;
+
+        try
+        {
+            var mesh = new MMesh(meshId, offset, rotation, verticesById, facesById);
+            if (request.mergeCoplanarFaces)
+            {
+                CoplanarFaceMerger.MergeCoplanarFaces(mesh);
+            }
+
+            PeltzerMain.Instance.model.ApplyCommand(new AddMeshCommand(mesh, request.useInsertEffect));
+            return ApiCommandResult.Ok($"Imported geometry mesh {meshId}.", id: meshId);
+        }
+        catch (Exception e)
+        {
+            return ApiCommandResult.InternalServerError($"Geometry import failed: {e.Message}");
+        }
+    }
+
     public static ApiCommandResult FuseMeshes(int[] meshIds)
     {
         if (meshIds == null || meshIds.Length < 2)
@@ -175,6 +258,45 @@ public static class ApiCommandService
 
         PeltzerMain.Instance.SaveCurrentModel(publish, saveSelected: false, cloudSave: true);
         return ApiCommandResult.Ok(publish ? "Started save and publish to Icosa." : "Started save to Icosa.");
+    }
+
+    private static Vector3 ToVector3(ApiVector3Dto value)
+    {
+        return value == null ? Vector3.zero : new Vector3(value.x, value.y, value.z);
+    }
+
+    private static bool TryResolveFaceMaterialId(
+        ApiGeometryFaceDto face,
+        int fallbackMaterialId,
+        out int materialId,
+        out string error)
+    {
+        materialId = face.materialId != 0 ? face.materialId : fallbackMaterialId;
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(face.color))
+            return true;
+
+        if (!TryParseHtmlColor(face.color, out var color))
+        {
+            error = $"Expected color as #RRGGBB or #RRGGBBAA but got \"{face.color}\".";
+            return false;
+        }
+
+        materialId = MaterialRegistry.GetMaterialIdClosestToColor(color);
+        return true;
+    }
+
+    private static bool TryParseHtmlColor(string value, out Color color)
+    {
+        color = Color.white;
+        var normalized = value.Trim();
+        if (!normalized.StartsWith("#"))
+        {
+            normalized = $"#{normalized}";
+        }
+
+        return ColorUtility.TryParseHtmlString(normalized, out color);
     }
 }
 
