@@ -67,7 +67,7 @@ public class ApiManager : MonoBehaviour
     {
         var userConfig = FindObjectOfType<PeltzerMain>()?.userConfig;
         var allowedOrigins = userConfig?.ApiCorsAllowedOrigins;
-        if (allowedOrigins == null || allowedOrigins.Length == 0)
+        if (allowedOrigins == null)
         {
             allowedOrigins = UserConfig.DefaultApiCorsAllowedOrigins;
         }
