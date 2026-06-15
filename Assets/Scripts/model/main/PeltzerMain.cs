@@ -835,23 +835,41 @@ namespace com.google.apps.peltzer.client.model.main
                 Debug.LogWarning("Could not read OpenBlocks.cfg, using default user config. " + e.Message);
             }
 
-            if (userConfig.GalleryUrl == "")
+            userConfig ??= new UserConfig();
+            AssetsServiceClient.ResetBaseUrls();
+            PlayerPrefs.DeleteKey(AssetsServiceClient.WEB_BASE_URL_KEY);
+            PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
+            PlayerPrefs.Save();
+
+            ApplyConfiguredBaseUrl(
+                "GalleryUrl",
+                userConfig.GalleryUrl,
+                value => AssetsServiceClient.WebBaseUrl = value);
+            ApplyConfiguredBaseUrl(
+                "ApiUrl",
+                userConfig.ApiUrl,
+                value => AssetsServiceClient.ApiBaseUrl = value);
+
+            Debug.Log($"[OBCFG_20260615] Resolved GalleryUrl={AssetsServiceClient.WebBaseUrl}");
+            Debug.Log($"[OBCFG_20260615] Resolved ApiUrl={AssetsServiceClient.ApiBaseUrl}");
+        }
+
+        private static void ApplyConfiguredBaseUrl(string fieldName, string configuredUrl, Action<string> apply)
+        {
+            if (string.IsNullOrWhiteSpace(configuredUrl))
             {
-                PlayerPrefs.DeleteKey(AssetsServiceClient.WEB_BASE_URL_KEY);
-            }
-            else
-            {
-                AssetsServiceClient.WebBaseUrl = userConfig.GalleryUrl;
+                return;
             }
 
-            if (userConfig.ApiUrl == "")
+            var trimmedUrl = configuredUrl.Trim().TrimEnd('/');
+            if (!Uri.TryCreate(trimmedUrl, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
             {
-                PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
+                Debug.LogWarning($"[OBCFG_20260615] Ignoring invalid {fieldName}: {configuredUrl}");
+                return;
             }
-            else
-            {
-                AssetsServiceClient.ApiBaseUrl = userConfig.ApiUrl;
-            }
+
+            apply(trimmedUrl);
         }
 
         /// <summary>
