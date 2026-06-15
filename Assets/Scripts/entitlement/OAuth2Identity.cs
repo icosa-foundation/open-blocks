@@ -783,7 +783,7 @@ namespace com.google.apps.peltzer.client.entitlement
                     }
                     else
                     {
-                        Debug.LogError($"{www.responseCode}\n{www.error}\n{www.downloadHandler.text}");
+                        Debug.LogError($"Response Code: {www.responseCode}\n{www.error}\n{www.downloadHandler.text}");
                     }
                 }
             }
