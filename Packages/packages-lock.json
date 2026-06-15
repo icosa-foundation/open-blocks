@@ -22,7 +22,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "04efd793165e6e3f40b8c54567f0ec6b8dafb620"
+      "hash": "64faab1db6689d2cc8bc09ca04f7165b5b127689"
     },
     "com.meta.xr.sdk.platform": {
       "version": "74.0.0",
