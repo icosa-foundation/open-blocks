@@ -12,7 +12,7 @@ public class UserConfig
     };
 
     public bool EnableApiRemoteCalls;
-    public string[] ApiCorsAllowedOrigins = DefaultApiCorsAllowedOrigins;
+    public string[] ApiCorsAllowedOrigins = (string[])DefaultApiCorsAllowedOrigins.Clone();
     public string GalleryUrl;
     public string ApiUrl;
 }
