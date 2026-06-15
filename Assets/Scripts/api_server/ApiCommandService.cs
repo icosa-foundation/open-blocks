@@ -15,6 +15,8 @@ using UnityEngine;
 
 public static class ApiCommandService
 {
+    private const int DefaultGeometryMaterialId = 0;
+
     public static ApiCommandResult DeviceLogin(string clientSecret, string deviceCode)
     {
         if (string.IsNullOrEmpty(clientSecret) || string.IsNullOrEmpty(deviceCode))
@@ -271,7 +273,11 @@ public static class ApiCommandService
         out int materialId,
         out string error)
     {
-        materialId = face.materialId != 0 ? face.materialId : fallbackMaterialId;
+        materialId = face.materialId >= 0
+            ? face.materialId
+            : fallbackMaterialId >= 0
+                ? fallbackMaterialId
+                : DefaultGeometryMaterialId;
         error = null;
 
         if (string.IsNullOrWhiteSpace(face.color))
