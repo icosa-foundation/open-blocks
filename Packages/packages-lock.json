@@ -1,11 +1,28 @@
 {
   "dependencies": {
+    "com.coplaydev.unity-mcp": {
+      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.screencapture": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.nuget.newtonsoft-json": "3.0.2",
+        "com.unity.test-framework": "1.1.31"
+      },
+      "hash": "dccecd689072dce4c319e15c812006005c68ad0b"
+    },
     "com.iam1337.extapi": {
       "version": "https://github.com/icosa-mirror/extApi.git#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "04efd793165e6e3f40b8c54567f0ec6b8dafb620"
+      "hash": "64faab1db6689d2cc8bc09ca04f7165b5b127689"
     },
     "com.meta.xr.sdk.platform": {
       "version": "74.0.0",
