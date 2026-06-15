@@ -75,9 +75,10 @@ public class ApiManager : MonoBehaviour
         return new ApiAccessOptions
         {
             EnableRemoteRequests = userConfig?.EnableApiRemoteCalls ?? false,
+            EnableCorsHeaders = userConfig?.EnableApiCorsHeaders ?? false,
             AllowedCorsOrigins = userConfig?.EnableApiCorsHeaders == true
-                ? new[] { "*" }
-                : allowedOrigins
+                ? allowedOrigins
+                : Array.Empty<string>()
         };
     }
 }
