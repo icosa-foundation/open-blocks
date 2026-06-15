@@ -10,7 +10,7 @@ public class UserConfig
     };
 
     public bool EnableApiRemoteCalls;
-    public bool EnableApiCorsHeaders;
+    public bool EnableApiCorsHeaders = true;
     public string[] ApiCorsAllowedOrigins = (string[])DefaultApiCorsAllowedOrigins.Clone();
     public string GalleryUrl;
     public string ApiUrl;
