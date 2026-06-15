@@ -170,7 +170,10 @@ public static class ApiCommandService
             }
 
             PeltzerMain.Instance.model.ApplyCommand(new AddMeshCommand(mesh, request.useInsertEffect));
-            return ApiCommandResult.Ok($"Imported geometry mesh {meshId}.", id: meshId);
+            var importedName = string.IsNullOrWhiteSpace(request.name)
+                ? $"mesh {meshId}"
+                : $"\"{request.name}\" as mesh {meshId}";
+            return ApiCommandResult.Ok($"Imported geometry {importedName}.", id: meshId);
         }
         catch (Exception e)
         {
