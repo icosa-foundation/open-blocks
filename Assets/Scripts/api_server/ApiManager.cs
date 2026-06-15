@@ -26,11 +26,13 @@ public class ApiManager : MonoBehaviour
 
     IEnumerator Start()
     {
-        var peltzerMain = FindObjectOfType<PeltzerMain>();
-        while (peltzerMain != null && peltzerMain.userConfig == null)
+        PeltzerMain peltzerMain;
+        do
         {
+            peltzerMain = FindObjectOfType<PeltzerMain>();
             yield return null;
         }
+        while (peltzerMain == null || peltzerMain.userConfig == null);
 
         StartApi();
     }
