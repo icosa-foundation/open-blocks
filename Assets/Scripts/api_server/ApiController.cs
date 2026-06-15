@@ -625,7 +625,7 @@ public class ApiGeometryImportRequest
 public class ApiGeometryFaceDto
 {
     public int[] vertices;
-    public int materialId;
+    public int materialId = -1;
     public string color;
 }
 
