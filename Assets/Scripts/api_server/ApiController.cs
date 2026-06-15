@@ -615,7 +615,7 @@ public class ApiGeometryImportRequest
     public ApiGeometryFaceDto[] faces;
     public ApiVector3Dto offset;
     public ApiVector3Dto rotationEuler;
-    public int materialId;
+    public int materialId = -1;
     public bool reverseWinding;
     public bool mergeCoplanarFaces;
     public bool useInsertEffect;
