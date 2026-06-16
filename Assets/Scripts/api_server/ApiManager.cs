@@ -66,12 +66,18 @@ public class ApiManager : MonoBehaviour
     private static ApiAccessOptions CreateAccessOptions()
     {
         var userConfig = FindObjectOfType<PeltzerMain>()?.userConfig;
+        var allowedOrigins = userConfig?.ApiCorsAllowedOrigins;
+        if (allowedOrigins == null)
+        {
+            allowedOrigins = UserConfig.DefaultApiCorsAllowedOrigins;
+        }
 
         return new ApiAccessOptions
         {
             EnableRemoteRequests = userConfig?.EnableApiRemoteCalls ?? false,
+            EnableCorsHeaders = userConfig?.EnableApiCorsHeaders ?? false,
             AllowedCorsOrigins = userConfig?.EnableApiCorsHeaders == true
-                ? new[] { "*" }
+                ? allowedOrigins
                 : Array.Empty<string>()
         };
     }
