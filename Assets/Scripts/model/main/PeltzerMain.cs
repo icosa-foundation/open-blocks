@@ -837,9 +837,23 @@ namespace com.google.apps.peltzer.client.model.main
 
             userConfig ??= new UserConfig();
             AssetsServiceClient.ResetBaseUrls();
-            PlayerPrefs.DeleteKey(AssetsServiceClient.WEB_BASE_URL_KEY);
-            PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
-            PlayerPrefs.Save();
+            var removedLegacyBaseUrlPrefs = false;
+            if (PlayerPrefs.HasKey(AssetsServiceClient.WEB_BASE_URL_KEY))
+            {
+                PlayerPrefs.DeleteKey(AssetsServiceClient.WEB_BASE_URL_KEY);
+                removedLegacyBaseUrlPrefs = true;
+            }
+
+            if (PlayerPrefs.HasKey(AssetsServiceClient.API_BASE_URL_KEY))
+            {
+                PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
+                removedLegacyBaseUrlPrefs = true;
+            }
+
+            if (removedLegacyBaseUrlPrefs)
+            {
+                PlayerPrefs.Save();
+            }
 
             ApplyConfiguredBaseUrl(
                 "GalleryUrl",
@@ -849,9 +863,6 @@ namespace com.google.apps.peltzer.client.model.main
                 "ApiUrl",
                 userConfig.ApiUrl,
                 value => AssetsServiceClient.ApiBaseUrl = value);
-
-            Debug.Log($"[OBCFG_20260615] Resolved GalleryUrl={AssetsServiceClient.WebBaseUrl}");
-            Debug.Log($"[OBCFG_20260615] Resolved ApiUrl={AssetsServiceClient.ApiBaseUrl}");
         }
 
         private static void ApplyConfiguredBaseUrl(string fieldName, string configuredUrl, Action<string> apply)
