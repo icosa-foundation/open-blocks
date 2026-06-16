@@ -120,10 +120,13 @@ public static class ApiCommandService
         for (var i = 0; i < request.faces.Length; i++)
         {
             var face = request.faces[i];
-            if (face?.vertices == null || face.vertices.Length < 3)
-                return ApiCommandResult.BadRequest($"Face {i} must contain at least three vertex indices.");
+            if (face?.vertices == null)
+                continue;
 
-            var vertexIds = new List<int>(face.vertices);
+            var vertexIds = RemoveDuplicateFaceVertices(face.vertices);
+            if (vertexIds.Count < 3)
+                continue;
+
             if (request.reverseWinding)
             {
                 vertexIds.Reverse();
@@ -136,16 +139,14 @@ public static class ApiCommandService
                     return ApiCommandResult.BadRequest($"Face {i} references vertex index {vertexId}, but valid indices are 0 through {request.vertices.Length - 1}.");
             }
 
-            if (vertexIds.Distinct().Count() != vertexIds.Count)
-                return ApiCommandResult.BadRequest($"Face {i} contains duplicate vertex indices.");
-
             if (!TryResolveFaceMaterialId(face, request.materialId, out var materialId, out var materialError))
                 return ApiCommandResult.BadRequest($"Face {i} has invalid color/material data: {materialError}");
 
             try
             {
-                facesById[i] = new Face(
-                    i,
+                var faceId = facesById.Count;
+                facesById[faceId] = new Face(
+                    faceId,
                     vertexIds.AsReadOnly(),
                     verticesById,
                     new FaceProperties(materialId));
@@ -155,6 +156,9 @@ public static class ApiCommandService
                 return ApiCommandResult.BadRequest($"Face {i} is invalid: {e.Message}");
             }
         }
+
+        if (facesById.Count == 0)
+            return ApiCommandResult.BadRequest("At least one valid face is required.");
 
         var offset = request.offset != null ? ToVector3(request.offset) : Vector3.zero;
         var rotation = request.rotationEuler != null
@@ -268,6 +272,21 @@ public static class ApiCommandService
     private static Vector3 ToVector3(ApiVector3Dto value)
     {
         return value == null ? Vector3.zero : new Vector3(value.x, value.y, value.z);
+    }
+
+    private static List<int> RemoveDuplicateFaceVertices(IEnumerable<int> vertexIds)
+    {
+        var uniqueVertexIds = new List<int>();
+        var seenVertexIds = new HashSet<int>();
+        foreach (var vertexId in vertexIds)
+        {
+            if (seenVertexIds.Add(vertexId))
+            {
+                uniqueVertexIds.Add(vertexId);
+            }
+        }
+
+        return uniqueVertexIds;
     }
 
     private static bool TryResolveFaceMaterialId(
