@@ -847,22 +847,27 @@ namespace com.google.apps.peltzer.client.entitlement
 
         private IEnumerator _ManualDeviceCodeEntry(Action onSuccess, Action onFailure, bool promptUserIfNoToken)
         {
+            void onSubmit(object sender, string deviceCode)
+            {
+                m_VerificationCode = deviceCode;
+            }
+
             if (String.IsNullOrEmpty(m_RefreshToken) && promptUserIfNoToken)
             {
-                var secret = Guid.NewGuid().ToString();
-                m_DeviceLoginSecret = secret;
-                m_DeviceLoginSecretCreationTime = DateTime.UtcNow;
-                string url = $"{m_DeviceCodeUrl}?appId=openblocks&secret={secret}";
-                PeltzerMain.OpenURLInExternalBrowser(url);
-
-                void onSubmit(object sender, string deviceCode)
-                {
-                    m_VerificationCode = deviceCode;
-                }
-
-                // We are now automatically entering the device code, so we don't need to show the keyboard
                 // TODO Allow optional use of keyboard if people want to enter the code manually
-                //PeltzerMain.Instance.paletteController.EnableKeyboard(onSubmit);
+                if (PeltzerMain.Instance.DeviceCanOpenSystemBrowser)
+                {
+                    var secret = Guid.NewGuid().ToString();
+                    m_DeviceLoginSecret = secret;
+                    m_DeviceLoginSecretCreationTime = DateTime.UtcNow;
+                    string url = $"{m_DeviceCodeUrl}?appId=openblocks&secret={secret}";
+                    PeltzerMain.OpenURLInExternalBrowser(url);
+                }
+                else
+                {
+                    PeltzerMain.OpenURLInExternalBrowser(m_DeviceCodeUrl);
+                    PeltzerMain.Instance.paletteController.EnableKeyboard(onSubmit);
+                }
                 PeltzerMain.Instance.paletteController.publishedTakeOffHeadsetPrompt.SetActive(false);
 
                 if (m_WaitingOnAuthorization)

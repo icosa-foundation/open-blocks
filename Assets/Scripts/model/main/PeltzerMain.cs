@@ -289,6 +289,8 @@ namespace com.google.apps.peltzer.client.model.main
         /// This must be reasonably big in order to avoid reallocation when saving models.
         /// </summary>
         private const int SERIALIZER_BUFFER_INITIAL_SIZE = 64 * 1024 * 1024;  // 128 MB
+        // TODO Wire this up to something
+        public bool DeviceCanOpenSystemBrowser => false;
 
         /// <summary>
         /// The (singleton) instance. Lazily cached when the Instance property is read for the first time.
