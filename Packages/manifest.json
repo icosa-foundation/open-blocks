@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
     "com.iam1337.extapi": "https://github.com/icosa-mirror/extApi.git#upm",
     "com.meta.xr.sdk.platform": "74.0.0",
     "com.unity.cloud.draco": "5.4.0",
