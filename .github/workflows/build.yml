@@ -48,7 +48,7 @@ jobs:
       flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -283,13 +283,13 @@ jobs:
           df -h /
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
       - name: Restore Library/
         id: cache_library
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -299,7 +299,7 @@ jobs:
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -431,7 +431,7 @@ jobs:
           echo "diff returned: $CHANGES"
 
       - name: Save Library/PackageCache cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -458,7 +458,7 @@ jobs:
           du -mcsh Library
 
       - name: Save Library/ cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: steps.cache_library.outputs.cache-hit != 'true'
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -477,7 +477,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -556,7 +556,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -758,7 +758,7 @@ jobs:
             }
 
       - name: Get the current contents of the docs repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: icosa-foundation/open-blocks-docs
           path: open-blocks-docs
@@ -796,7 +796,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           sparse-checkout: |

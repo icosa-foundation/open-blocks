@@ -251,6 +251,18 @@ public class ApiController
         return FromIdResult(ApiCommandService.CreateMesh(shape, parsedScale, parsedOffset));
     }
 
+    [ApiPost("meshes/import-geometry")]
+    [ApiSummary("Create a mesh from posted polygon geometry.")]
+    [ApiResponse(200, typeof(ApiIdResponse))]
+    [ApiResponse(400, typeof(ApiErrorResponse))]
+    [ApiResponse(500, typeof(ApiErrorResponse))]
+    public ApiResult ImportGeometry(
+        [ApiDoc(Example = "{\n  \"name\": \"example\",\n  \"vertices\": [{\"x\": -0.5, \"y\": -0.5, \"z\": 0}, {\"x\": 0.5, \"y\": -0.5, \"z\": 0}, {\"x\": 0, \"y\": 0.5, \"z\": 0}],\n  \"faces\": [{\"vertices\": [0, 1, 2], \"materialId\": 0}],\n  \"offset\": {\"x\": 0, \"y\": 0, \"z\": 0},\n  \"rotationEuler\": {\"x\": 0, \"y\": 0, \"z\": 0},\n  \"reverseWinding\": false\n}")]
+        [ApiBody] ApiGeometryImportRequest request)
+    {
+        return FromIdResult(ApiCommandService.ImportGeometry(request));
+    }
+
     [ApiGet("meshes/fuse")]
     [ApiSummary("Fuse multiple meshes into one mesh.")]
     [ApiResponse(200, typeof(ApiIdResponse))]
@@ -593,6 +605,28 @@ public class ApiIdResponse
 public class ApiMeshIdsResponse
 {
     public int[] meshIds;
+}
+
+[Serializable]
+public class ApiGeometryImportRequest
+{
+    public string name;
+    public ApiVector3Dto[] vertices;
+    public ApiGeometryFaceDto[] faces;
+    public ApiVector3Dto offset;
+    public ApiVector3Dto rotationEuler;
+    public int materialId = -1;
+    public bool reverseWinding;
+    public bool mergeCoplanarFaces;
+    public bool useInsertEffect;
+}
+
+[Serializable]
+public class ApiGeometryFaceDto
+{
+    public int[] vertices;
+    public int materialId = -1;
+    public string color;
 }
 
 [Serializable]
