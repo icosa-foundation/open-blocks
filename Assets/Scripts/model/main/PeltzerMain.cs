@@ -832,7 +832,7 @@ namespace com.google.apps.peltzer.client.model.main
             catch (Exception e)
             {
                 userConfig = new UserConfig();
-                Debug.LogWarning("Could not read OpenBlocks.cfg, using default user config. " + e.Message);
+                Debug.LogWarning($"Could not read OpenBlocks.cfg, using default user config. {e.Message}");
             }
 
             userConfig ??= new UserConfig();
