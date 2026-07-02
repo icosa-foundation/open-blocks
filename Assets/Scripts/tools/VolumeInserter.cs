@@ -70,6 +70,9 @@ namespace com.google.apps.peltzer.client.tools
         // We use the selector in copy mode to allow the user to select a set of meshes to use as a primitive.
         private Selector selector;
 
+        // Copy mode toolhead GameObject
+        private GameObject copyModeToolheadObject;
+
         // Insertion.
         // The mesh(es) currently being held which will be inserted on a trigger click.
         private HeldMeshes heldMeshes;
@@ -146,6 +149,9 @@ namespace com.google.apps.peltzer.client.tools
                 selector.SelectMeshAtPosition(peltzerController.LastPositionModel, Selector.MESHES_ONLY);
             }
 
+            // Update copy mode toolhead visibility
+            UpdateCopyModeToolheadVisibility();
+
             bool activeMode = (peltzerController.mode == ControllerMode.insertVolume
               || peltzerController.mode == ControllerMode.csg)
               && !PeltzerMain.Instance.peltzerController.isPointingAtMenu
@@ -179,7 +185,7 @@ namespace com.google.apps.peltzer.client.tools
             {
                 float pctAnim = Mathf.Min(1f, timeSinceLastInsert / PREVIEW_RESHOW_DURATION);
                 float curvedAlpha = 0.1f + 0.9f * (pctAnim * pctAnim * pctAnim);
-                for (int i = 0; i < heldMeshes.heldMeshes.Count; i++)
+                for (int i = 0; i < (heldMeshes?.heldMeshes?.Count ?? 0); i++)
                 {
                     MeshWithMaterialRenderer renderer =
                       heldMeshes.heldMeshes[i].Preview.GetComponent<MeshWithMaterialRenderer>();
@@ -357,7 +363,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         /// <param name="oldScaleDeltaToAnimateFrom">If not null, this indicates the previous scaleDelta from
         /// which to animate from. Note: this is only honored when there is a single held mesh.</param>
-        private void CreateNewVolumeMesh(int? oldScaleDeltaToAnimateFrom = null)
+        public void CreateNewVolumeMesh(int? oldScaleDeltaToAnimateFrom = null)
         {
             Vector3? oldPosToAnimateFrom = null;
             Vector3? oldScaleToAnimateFrom = null;
@@ -403,6 +409,10 @@ namespace com.google.apps.peltzer.client.tools
                 newMesh = Primitives.BuildPrimitive(
                     selectedVolumeShape, scale, offset: Vector3.zero,
                     model.GenerateMeshId(), material);
+            }
+            else if (Features.stampingEnabled && id == ShapesMenu.COPY_MODE_ID)
+            {
+                newMesh = BuildCopyModeMesh(scale, model.GenerateMeshId(), material);
             }
             else if (Features.stampingEnabled && id == ShapesMenu.CUSTOM_SHAPE_ID)
             {
@@ -468,6 +478,70 @@ namespace com.google.apps.peltzer.client.tools
             }
         }
 
+        private void CreateCopyModeToolhead()
+        {
+            // Create GameObject with copyModeMesh
+            Mesh copyMesh = peltzerController.copyModeMesh;
+            if (copyMesh == null)
+            {
+                return;
+            }
+
+            copyModeToolheadObject = new GameObject("CopyModeToolhead");
+            // Parent to controller instead of wandTip to avoid inactive parent issues
+            copyModeToolheadObject.transform.SetParent(peltzerController.transform, false);
+
+            var renderer = copyModeToolheadObject.AddComponent<MeshWithMaterialRenderer>();
+            renderer.Init(worldSpace);
+            renderer.meshes = new List<MeshWithMaterial>
+            {
+                new (Instantiate(copyMesh), MaterialRegistry.GetMaterialAndColorById(peltzerController.currentMaterial))
+            };
+            renderer.ResetTransform();
+            renderer.UseGameObjectPosition = true;
+            renderer.IgnoreWorldRotation = true;
+            renderer.IgnoreWorldScale = true;
+
+            // Position at wandTip location and match shapes menu rotation with 90 degree X rotation
+            copyModeToolheadObject.transform.position = peltzerController.wandTip.transform.position;
+            copyModeToolheadObject.transform.rotation = peltzerController.LastRotationWorld * Quaternion.Euler(90, 0, 0);
+            copyModeToolheadObject.transform.localScale = Vector3.one * 0.05f;
+            copyModeToolheadObject.SetActive(false);
+        }
+
+        private void UpdateCopyModeToolheadVisibility()
+        {
+            // Create the toolhead on first call if it doesn't exist
+            if (copyModeToolheadObject == null && peltzerController.wandTip != null)
+            {
+                CreateCopyModeToolhead();
+            }
+
+            if (copyModeToolheadObject == null) return;
+
+            bool shouldShow = isCopyMode() &&
+                             peltzerController.mode == ControllerMode.insertVolume &&
+                             !PeltzerMain.Instance.peltzerController.isPointingAtMenu;
+
+            if (copyModeToolheadObject.activeSelf != shouldShow)
+            {
+                copyModeToolheadObject.SetActive(shouldShow);
+            }
+
+            // Update position and rotation to follow controller tip
+            if (copyModeToolheadObject.activeSelf)
+            {
+                copyModeToolheadObject.transform.position = peltzerController.wandTip.transform.position;
+                copyModeToolheadObject.transform.rotation = peltzerController.LastRotationWorld * Quaternion.Euler(-90, 0, 0);
+            }
+        }
+
+        private MMesh BuildCopyModeMesh(Vector3 scale, int generateMeshId, int materialId)
+        {
+            // Don't create held mesh for copy mode - we use the persistent GameObject toolhead instead
+            return null;
+        }
+
         private MMesh BuildCustomShape(Vector3 scale, int generateMeshId, int materialId)
         {
             FaceProperties faceProperties = new FaceProperties(materialId);
@@ -496,7 +570,7 @@ namespace com.google.apps.peltzer.client.tools
         /// Sets up the held meshes.
         /// </summary>
         /// <param name="newMeshes">The new meshes to be held, or null to indicate no held meshes.</param>
-        private void ResetHeldMeshes(IEnumerable<MMesh> newMeshes, Dictionary<int, Vector3> sizes = null)
+        public void ResetHeldMeshes(IEnumerable<MMesh> newMeshes, Dictionary<int, Vector3> sizes = null)
         {
             if (heldMeshes != null)
             {
@@ -841,6 +915,27 @@ namespace com.google.apps.peltzer.client.tools
                 StartInsertMesh();
 
             }
+            else if (IsStartInsertVolumeOrCopyEvent(args) && isCopyMode())
+            {
+                // Handle copy mode: copy the hovered mesh to custom shape
+                if (selector.SelectedOrHoveredMeshes().Any())
+                {
+                    peltzerController.shapesMenu.SetShapesMenuCustomShapes();
+                    audioLibrary.PlayClip(audioLibrary.insertVolumeSound);
+                    peltzerController.TriggerHapticFeedback(
+                        HapticFeedback.HapticFeedbackType.FEEDBACK_3,
+                        durationSeconds: 0.05f,
+                        strength: 0.3f);
+                    // Switch to the custom shape that was just created
+                    peltzerController.shapesMenu.SetShapeMenuItem(ShapesMenu.CUSTOM_SHAPE_ID, showMenu: true);
+                }
+                else
+                {
+                    // No mesh selected/hovered - play error sound
+                    audioLibrary.PlayClip(audioLibrary.errorSound);
+                    peltzerController.TriggerHapticFeedback();
+                }
+            }
             else if (IsEndInsertVolumeEvent(args) && !isCopyMode())
             {
                 if (heldMeshes != null && (heldMeshes.IsInserting || heldMeshes.IsFilling))
@@ -853,7 +948,7 @@ namespace com.google.apps.peltzer.client.tools
             else if (IsStartSnapDetectionEvent(args))
             {
                 // Show the snap guides if the trigger is slightly pressed.
-                heldMeshes.DetectSnap();
+                heldMeshes?.DetectSnap();
             }
             else if (IsStopSnapDetectionEvent(args))
             {
@@ -1026,6 +1121,7 @@ namespace com.google.apps.peltzer.client.tools
         private void MaterialChangeHandler(int newMaterialId)
         {
             FaceProperties newFaceProperties = new FaceProperties(newMaterialId);
+            if (!heldMeshes || heldMeshes.heldMeshes == null) return;
             foreach (HeldMeshes.HeldMesh heldMesh in heldMeshes.heldMeshes)
             {
                 foreach (Face face in heldMesh.Mesh.GetFaces())

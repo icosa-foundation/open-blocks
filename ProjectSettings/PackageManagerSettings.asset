@@ -31,6 +31,10 @@ MonoBehaviour:
     m_Url: https://package.openupm.com
     m_Scopes:
     - com.iam1337.extapi
+    - com.ixxy.polyhydra.core
+    - com.nition.unity-octree
+    - com.openupm
+    - com.syomus.proceduraltoolkit
     - org.nuget.sharpziplib
     - org.nuget.system
     m_IsDefault: 0

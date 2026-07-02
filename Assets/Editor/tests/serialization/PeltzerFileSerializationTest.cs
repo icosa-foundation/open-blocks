@@ -42,8 +42,7 @@ namespace com.google.apps.peltzer.client.serialization
             MMesh box =
               Primitives.AxisAlignedBox(1000, new Vector3(1.0f, 2.0f, 3.0f), new Vector3(1.0f, 20.0f, 5.0f), 100);
             MMesh cylinder =
-              Primitives.AxisAlignedCylinder(2000, new Vector3(1.0f, 2.0f, 3.0f), new Vector3(1.0f, 20.0f, 5.0f),
-                /* holeRadius */null, 200);
+              Primitives.AxisAlignedCylinder(2000, new Vector3(1.0f, 2.0f, 3.0f), new Vector3(1.0f, 20.0f, 5.0f), 200);
             MMesh sphere =
               Primitives.AxisAlignedIcosphere(3000, new Vector3(2000.0f, -4000.0f, 6000.0f), Vector3.one, 300);
             meshes.Add(box);

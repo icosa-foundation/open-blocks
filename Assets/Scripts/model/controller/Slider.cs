@@ -48,8 +48,10 @@ namespace com.google.apps.peltzer.client.model.controller
                 return val;
             }
         }
+        public int IntValue => Mathf.FloorToInt(Value);
 
         [NonSerialized] private float m_NormalizedValue;
+        public float m_InitialValue = 0;
 
         private bool m_IsDragging;
         private Material m_SliderMaterial;
@@ -57,8 +59,10 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public override void Start()
         {
+            m_SliderMaterial = m_SliderRenderer.material;
             base.Start();
             PeltzerMain.Instance.peltzerController.PeltzerControllerActionHandler += ControllerEventHandler;
+            SetInitialValue(m_InitialValue);
         }
 
         public override void Update()
@@ -76,24 +80,16 @@ namespace com.google.apps.peltzer.client.model.controller
 
         private static float GetNormalizedLocalPosition(RaycastHit hit)
         {
-            // Convert the hit point to the local space of the hit object.
             Transform hitTransform = hit.transform;
             Vector3 localHitPoint = hitTransform.InverseTransformPoint(hit.point);
 
-            // Get the collider component.
             Collider collider = hitTransform.GetComponent<Collider>();
+            var localBounds = collider is BoxCollider box ? box.size : hitTransform.InverseTransformVector(collider.bounds.size);
 
-            // Convert the collider's bounds center and size into local space.
-            Vector3 localCenter = hitTransform.InverseTransformPoint(collider.bounds.center);
-            Vector3 localSize = hitTransform.InverseTransformVector(collider.bounds.size);
-            localSize.x *= 0.8f;
-            float halfWidth = Mathf.Abs(localSize.x) / 2f;
+            float halfWidth = Mathf.Abs(localBounds.x) * 0.4f; // 0.8f / 2
+            float minX = -halfWidth;
+            float maxX = halfWidth;
 
-            // Compute the minimum and maximum x values based on the local center and half width.
-            float minX = localCenter.x - halfWidth;
-            float maxX = localCenter.x + halfWidth;
-
-            // Calculate and return the normalized value.
             float normalized = Mathf.InverseLerp(minX, maxX, localHitPoint.x);
             return normalized;
         }
@@ -104,6 +100,7 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 float normalizedLocalPosition = GetNormalizedLocalPosition(hit);
                 float val = Mathf.Lerp(m_Minimum, m_Maximum, normalizedLocalPosition);
+                // Quantize to m_Step
                 val = Mathf.Round(val / m_Step) * m_Step;
                 SetInitialValue(val);
             }
@@ -158,3 +155,4 @@ namespace com.google.apps.peltzer.client.model.controller
         }
     }
 }
+
