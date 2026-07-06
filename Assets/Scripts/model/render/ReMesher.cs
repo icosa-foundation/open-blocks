@@ -51,10 +51,10 @@ namespace com.google.apps.peltzer.client.model.render
         // Maximum number of MMeshes in a single MeshInfo.
         private const int MAX_MMESH_PER_MESHINFO = 128;
 
-        // A number of static Vector2 arrays, each of which is filled with the same constant Vector2 - ie, the first array
-        // is all Vector2(0,0), the second is Vector2(1, 0) and so on.  This allows us to use cheap Array.Copy() calls to
-        // fill an array with the same value.
-        private static List<Vector2[]> BufferCaches;
+        // Initial capacity (in vertices) of a MeshInfo's buffers. Buffers grow geometrically up to
+        // MAX_VERTS_PER_MESH as meshes are added, so a MeshInfo only costs memory proportional to its content
+        // instead of always paying for the ~1.6MB worst case up front.
+        private const int INITIAL_VERTS_PER_MESH = 1024;
 
         /// <summary>
         ///   Info about a Unity Mesh that will be drawn at render time.  MeshInfo batches a number of meshes together, and
@@ -68,17 +68,17 @@ namespace com.google.apps.peltzer.client.model.render
             // All MMeshes that contribute to this mesh.
             private HashSet<int> mmeshes = new HashSet<int>();
 
-            // It's cheaper to render extra data in the form of degenerate triangles than it is to resize our vertex array,
-            // so all of these are preallocated.
-            public Vector3[] verts = new Vector3[MAX_VERTS_PER_MESH];
-            public Color32[] colors = new Color32[MAX_VERTS_PER_MESH];
-            public Vector3[] normals = new Vector3[MAX_VERTS_PER_MESH];
+            // Vertex data buffers. These start small and grow geometrically (up to MAX_VERTS_PER_MESH) as needed;
+            // only the first numVerts entries are meaningful.
+            public Vector3[] verts = new Vector3[INITIAL_VERTS_PER_MESH];
+            public Color32[] colors = new Color32[INITIAL_VERTS_PER_MESH];
+            public Vector3[] normals = new Vector3[INITIAL_VERTS_PER_MESH];
             // List here because the number of triangles isn't predictable based on the number of vertices, so we may need
             // to eventually resize.
-            public List<int> triangles = new List<int>(3 * MAX_VERTS_PER_MESH);
+            public List<int> triangles = new List<int>();
 
             // Buffer that holds the transform index each vertex should use.
-            public Vector2[] transformIndexBuffer = new Vector2[MAX_VERTS_PER_MESH];
+            public Vector2[] transformIndexBuffer = new Vector2[INITIAL_VERTS_PER_MESH];
 
             // The number of vertices tracked by this MeshInfo - defaults to 2, because we start with 2 vertices due to a
             // hack to avoid the mesh being view frustum culled.
@@ -252,6 +252,24 @@ namespace com.google.apps.peltzer.client.model.render
             }
 
             /// <summary>
+            /// Grows the vertex data buffers so they can hold at least requiredVerts vertices.
+            /// </summary>
+            private void EnsureVertexCapacity(int requiredVerts)
+            {
+                if (requiredVerts <= verts.Length) return;
+                int newCapacity = verts.Length;
+                while (newCapacity < requiredVerts)
+                {
+                    newCapacity *= 2;
+                }
+                newCapacity = Math.Min(newCapacity, Math.Max(requiredVerts, MAX_VERTS_PER_MESH));
+                Array.Resize(ref verts, newCapacity);
+                Array.Resize(ref colors, newCapacity);
+                Array.Resize(ref normals, newCapacity);
+                Array.Resize(ref transformIndexBuffer, newCapacity);
+            }
+
+            /// <summary>
             ///   Add vertices and triangles to a MeshInfo.  This method assumes we've ensured there is "room" in the
             ///   MeshInfo for the new components.
             /// </summary>
@@ -261,16 +279,24 @@ namespace com.google.apps.peltzer.client.model.render
             {
                 // NOTE: Using numVerts here is correct - this method directly modifies buffers and maintains numVerts.
                 int transformIndex = mmeshToTransformIndex[meshId];
-                Array.Copy(source.verts.ToArray(), 0, verts, numVerts, source.verts.Count);
-                Array.Copy(source.normals.ToArray(), 0, normals, numVerts, source.verts.Count);
-                Array.Copy(source.colors.ToArray(), 0, colors, numVerts, source.verts.Count);
-                Array.Copy(BufferCaches[transformIndex], 0, transformIndexBuffer, numVerts, source.verts.Count);
+                int vertCount = source.verts.Count;
+                EnsureVertexCapacity(numVerts + vertCount);
+                // List.CopyTo copies straight into our arrays without the intermediate array that ToArray() +
+                // Array.Copy used to allocate.
+                source.verts.CopyTo(0, verts, numVerts, vertCount);
+                source.normals.CopyTo(0, normals, numVerts, vertCount);
+                source.colors.CopyTo(0, colors, numVerts, vertCount);
+                Vector2 transformIndexValue = new Vector2(transformIndex, 0f);
+                for (int i = 0; i < vertCount; i++)
+                {
+                    transformIndexBuffer[numVerts + i] = transformIndexValue;
+                }
                 int triCount = source.triangles.Count;
                 for (int i = 0; i < triCount; i++)
                 {
                     triangles.Add(source.triangles[i] + numVerts);
                 }
-                numVerts += source.verts.Count;
+                numVerts += vertCount;
             }
 
 
@@ -321,9 +347,10 @@ namespace com.google.apps.peltzer.client.model.render
                     return;
                 }
 
-                // Every vert we don't care about will form a degenerate triangle.  Keeps our first two verts.
+                // Rebuild from scratch, keeping our first two (sentinel) verts. Data beyond numVerts is stale but
+                // harmless: only the first numVerts entries are uploaded to the Unity mesh.
                 triangles.Clear();
-                Array.Clear(verts, 2, verts.Length - 2);
+                EnsureVertexCapacity(totalVerts);
                 numVerts = 2;
 
                 foreach (int meshId in mmeshes)
@@ -351,6 +378,9 @@ namespace com.google.apps.peltzer.client.model.render
                 verts[1] = new Vector3(-999999f, -999999f, -999999f);
                 numVerts = 2;
 
+                // This mesh is re-uploaded every time its contents change (i.e. constantly while editing).
+                mesh.MarkDynamic();
+
                 for (int i = 0; i < MAX_MMESH_PER_MESHINFO; i++)
                 {
                     xformMats[i] = Matrix4x4.identity;
@@ -377,25 +407,6 @@ namespace com.google.apps.peltzer.client.model.render
         {
             Flush();
             return allMeshInfos;
-        }
-
-        /// <summary>
-        /// Initializes a set of buffers that are used to efficiently add multiples of the same value to a list.
-        /// Each of these lists contains an array of identical Vector2 values, which lets us efficiently use Array.Copy
-        /// to set a large range to the same value.
-        /// </summary>
-        public static void InitBufferCaches()
-        {
-            BufferCaches = new List<Vector2[]>(MAX_MMESH_PER_MESHINFO);
-            for (int i = 0; i < MAX_MMESH_PER_MESHINFO; i++)
-            {
-                BufferCaches.Add(new Vector2[MAX_VERTS_PER_MESH]);
-                Vector2 val = new Vector2(i, 0f);
-                for (int j = 0; j < MAX_VERTS_PER_MESH; j++)
-                {
-                    BufferCaches[i][j] = val;
-                }
-            }
         }
 
         // All MeshInfos that have room for more triangles to be added, by material.
@@ -585,12 +596,17 @@ namespace com.google.apps.peltzer.client.model.render
             {
                 meshInfo.Regenerate();
             }
-            meshInfo.mesh.Clear();
-            meshInfo.mesh.vertices = meshInfo.verts;
-            meshInfo.mesh.SetTriangles(meshInfo.triangles, /* Submesh */ 0);
-            meshInfo.mesh.colors32 = meshInfo.colors;
-            meshInfo.mesh.normals = meshInfo.normals;
-            meshInfo.mesh.uv2 = meshInfo.transformIndexBuffer;
+            // Upload only the vertices actually in use. Assigning the full backing arrays (as this used to do)
+            // made every Unity mesh carry MAX_VERTS_PER_MESH vertices on both the CPU and GPU regardless of
+            // content, and re-uploaded all of it on every change.
+            Mesh mesh = meshInfo.mesh;
+            int numVerts = meshInfo.numVerts;
+            mesh.Clear();
+            mesh.SetVertices(meshInfo.verts, 0, numVerts);
+            mesh.SetTriangles(meshInfo.triangles, /* Submesh */ 0);
+            mesh.SetColors(meshInfo.colors, 0, numVerts);
+            mesh.SetNormals(meshInfo.normals, 0, numVerts);
+            mesh.SetUVs(/* channel (uv2) */ 1, meshInfo.transformIndexBuffer, 0, numVerts);
         }
 
         /// <summary>

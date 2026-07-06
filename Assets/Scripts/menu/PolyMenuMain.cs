@@ -29,6 +29,7 @@ using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.entitlement;
+using com.google.apps.peltzer.client.model.export;
 using TMPro;
 using com.google.apps.peltzer.client.model.util;
 
@@ -664,10 +665,23 @@ namespace com.google.apps.peltzer.client.menu
         private void OpenCreation(ZandriaCreationHandler creationHandler)
         {
             confirmSaveDialog.SetActive(false);
+
+            // The handler only retains the creation's compact raw file bytes; parse them into a fresh PeltzerFile.
+            // Do this before clearing the current model so a parse failure doesn't wipe the user's scene.
+            PeltzerFile peltzerFile;
+            if (!creationHandler.TryGetPeltzerFile(out peltzerFile))
+            {
+                Debug.LogError("Failed to load creation with asset id " + creationHandler.creationAssetId
+                  + " and local id " + creationHandler.creationLocalId);
+                return;
+            }
+
             PeltzerMain.Instance.CreateNewModel();
 
             PeltzerMain.LoadOptions options = new PeltzerMain.LoadOptions();
-            options.cloneBeforeLoad = true;
+            // The parsed file is a fresh, unshared copy, so its meshes can be moved into the model directly
+            // without the defensive (and, for large models, expensive) clone.
+            options.cloneBeforeLoad = false;
 
             if (CurrentCreationType() == CreationType.YOUR)
             {
@@ -688,7 +702,7 @@ namespace com.google.apps.peltzer.client.menu
                 // the remix ID of all meshes.
                 options.overrideRemixId = creationHandler.creationAssetId;
             }
-            PeltzerMain.Instance.LoadPeltzerFileIntoModel(currentCreationHandler.peltzerFile, options);
+            PeltzerMain.Instance.LoadPeltzerFileIntoModel(peltzerFile, options);
 
             if (Features.adjustWorldSpaceOnOpen)
             {
@@ -1101,7 +1115,31 @@ namespace com.google.apps.peltzer.client.menu
             }
             else
             {
-                detailSizedMeshes = Scaler.ScaleMeshes(creation.handler.originalMeshes, DETAIL_TILE_SIZE);
+                // The handler only retains the creation's compact raw file bytes, so parse and scale them for
+                // the details panel. This happens on a background thread to avoid stalling the main thread.
+                bool detailMeshesReady = false;
+                List<MMesh> scaledMeshes = null;
+                creation.handler.GetScaledMeshesAsync(DETAIL_TILE_SIZE, (List<MMesh> meshes) =>
+                {
+                    scaledMeshes = meshes;
+                    detailMeshesReady = true;
+                });
+                while (!detailMeshesReady)
+                {
+                    yield return null;
+                }
+                if (scaledMeshes == null)
+                {
+                    Sprite errorSprite = creation.errorThumbnail.GetComponent<SpriteRenderer>().sprite;
+                    detailsLoadingSpinner.SetActive(false);
+                    detailsThumbnail.GetComponent<SpriteRenderer>().sprite = errorSprite;
+                    detailsFailureReason.SetActive(true);
+                    detailsFailureReason.GetComponent<TextMeshPro>().text =
+                      creation.loadFailureReason ?? failedToLoadDetailsReason;
+                    ActivateOpenImportButtons(/*active*/ false);
+                    yield break;
+                }
+                detailSizedMeshes = scaledMeshes;
                 creation.handler.detailSizedMeshes = detailSizedMeshes;
             }
 

@@ -18,6 +18,7 @@ using com.google.apps.peltzer.client.api_clients.objectstore_client;
 using System.Collections.Generic;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.export;
+using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.tools;
 
 namespace com.google.apps.peltzer.client.zandria
@@ -27,10 +28,20 @@ namespace com.google.apps.peltzer.client.zandria
         // This is in Unity units where 1.0 = 1m.
         private const float MENU_TILE_SIZE = 0.05f;
 
-        public List<MMesh> originalMeshes { get; private set; }
-        public List<MMesh> previewMeshes { get; private set; }
+        /// <summary>
+        /// The raw .blocks file bytes for this creation.
+        /// This is the only long-lived copy of the creation's geometry that the handler retains: the parsed
+        /// MMesh representation costs an order of magnitude more memory than the raw bytes, and the Poly menu
+        /// can hold hundreds of creations at once (which was exhausting memory on mobile). Full mesh data is
+        /// re-parsed from these bytes on demand (opening details, opening or importing the creation).
+        /// </summary>
+        private byte[] rawFileData;
+
+        /// <summary>
+        /// Meshes scaled for the details panel, created lazily when the details panel is opened and cleared
+        /// when they are handed over to an import.
+        /// </summary>
         public List<MMesh> detailSizedMeshes { get; set; }
-        public PeltzerFile peltzerFile { get; private set; }
         public string creatorName { get; private set; }
         public string creationDate { get; private set; }
         public string creationTitle { get; private set; }
@@ -43,8 +54,7 @@ namespace com.google.apps.peltzer.client.zandria
 
         public void Setup(ObjectStoreEntry objectStoreEntry)
         {
-            previewMeshes = new List<MMesh>();
-            originalMeshes = new List<MMesh>();
+            rawFileData = null;
             detailSizedMeshes = new List<MMesh>();
 
             creatorName = objectStoreEntry.author;
@@ -83,20 +93,18 @@ namespace com.google.apps.peltzer.client.zandria
 
             if (validFile)
             {
-                // Keep a reference to the peltzerFile so that it can be loaded into the model.
-                this.peltzerFile = peltzerFile;
-
-                // Keep a reference to the original meshes so that they can be loaded into a scene at full scale.
-                originalMeshes = peltzerFile.meshes;
-                // Keep a reference to the meshes that have been scaled to be previews on the PolyMenu so they can
-                // be loaded into the scene at this size without re-scaling.
-                previewMeshes = Scaler.ScaleMeshes(originalMeshes, MENU_TILE_SIZE);
+                // Keep only the compact raw bytes; the full-size meshes can be re-parsed from them on demand.
+                this.rawFileData = rawFileData;
 
                 // If there was not a published rotation, recommend the rotation the model was saved with (if available).
                 if (!hasPublishedRotation)
                 {
                     recommendedRotation = peltzerFile.metadata.recommendedRotation;
                 }
+
+                // Scale the meshes to be previews on the PolyMenu. These are handed to the callback (which turns
+                // them into the preview GameObject) but deliberately not retained here.
+                List<MMesh> previewMeshes = Scaler.ScaleMeshes(peltzerFile.meshes, MENU_TILE_SIZE);
 
                 // Returns the scaled MMeshes with a recommended display rotation.
                 callback(previewMeshes, recommendedRotation);
@@ -116,6 +124,65 @@ namespace com.google.apps.peltzer.client.zandria
             }
 
             return false;
+        }
+
+        /// <summary>
+        ///   Parses this creation's retained raw file data into a PeltzerFile. The result is a fresh, unshared
+        ///   copy of the creation, so callers may mutate it (e.g. load it straight into the model) freely.
+        /// </summary>
+        /// <param name="peltzerFile">The parsed file.</param>
+        /// <returns>Whether the creation has file data and it parsed successfully.</returns>
+        public bool TryGetPeltzerFile(out PeltzerFile peltzerFile)
+        {
+            if (rawFileData == null)
+            {
+                peltzerFile = null;
+                return false;
+            }
+            return PeltzerFileHandler.PeltzerFileFromBytes(rawFileData, out peltzerFile);
+        }
+
+        /// <summary>
+        ///   Parses this creation's retained raw file data and scales the resulting meshes to the given size, doing
+        ///   the work on a background thread. Calls back on the main thread with the scaled meshes, or null if the
+        ///   creation has no file data or it failed to parse.
+        /// </summary>
+        public void GetScaledMeshesAsync(float desiredSize, System.Action<List<MMesh>> callback)
+        {
+            PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAndScaleWork(this, desiredSize, callback));
+        }
+
+        /// <summary>
+        ///   Background work that parses a creation's raw file data and scales the meshes, so that opening the
+        ///   details panel doesn't stall the main thread.
+        /// </summary>
+        private class ParseAndScaleWork : BackgroundWork
+        {
+            private readonly ZandriaCreationHandler handler;
+            private readonly float desiredSize;
+            private readonly System.Action<List<MMesh>> callback;
+            private List<MMesh> scaledMeshes;
+
+            public ParseAndScaleWork(ZandriaCreationHandler handler, float desiredSize,
+              System.Action<List<MMesh>> callback)
+            {
+                this.handler = handler;
+                this.desiredSize = desiredSize;
+                this.callback = callback;
+            }
+
+            public void BackgroundWork()
+            {
+                PeltzerFile peltzerFile;
+                scaledMeshes = handler.TryGetPeltzerFile(out peltzerFile)
+                  ? Scaler.ScaleMeshes(peltzerFile.meshes, desiredSize)
+                  : null;
+            }
+
+            public void PostWork()
+            {
+                callback(scaledMeshes);
+            }
         }
     }
 }

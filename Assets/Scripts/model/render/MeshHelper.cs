@@ -161,8 +161,10 @@ namespace com.google.apps.peltzer.client.model.render
             foreach (MeshWithMaterial uMesh in existing)
             {
                 List<Vector3> newPos;
+                // Note: vertexCount, not .vertices - accessing .vertices allocates a copy of the whole vertex
+                // array, and this method runs for every mesh update while a mesh is being manipulated.
                 if (!newPositionsPerMaterial.TryGetValue(uMesh.materialAndColor, out newPos) ||
-                    newPos.Count != uMesh.mesh.vertices.Count())
+                    newPos.Count != uMesh.mesh.vertexCount)
                 {
                     // If materials changed, easiest action is to remesh everything.
                     foreach (var mm in existing)
