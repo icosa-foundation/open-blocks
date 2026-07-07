@@ -1083,6 +1083,8 @@ namespace com.google.apps.peltzer.client.menu
             detailsThumbnail.GetComponent<SpriteRenderer>().sprite = creation.thumbnailSprite;
             detailsFailureReason.SetActive(false);
             detailsFailureReason.GetComponent<TextMeshPro>().text = "";
+            ActivateOpenImportButtons(/*active*/ false);
+            detailsPreviewHolder.GetComponent<SelectZandriaCreationMenuItem>().meshes = null;
 
             // Wait until the creation is loaded to do anything else. During this time the thumbnail is displayed and the
             // Open/Import buttons are inactive.
