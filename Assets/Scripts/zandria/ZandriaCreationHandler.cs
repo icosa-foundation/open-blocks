@@ -37,11 +37,6 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         private byte[] rawFileData;
 
-        /// <summary>
-        /// Meshes scaled for the details panel, created lazily when the details panel is opened and cleared
-        /// when they are handed over to an import.
-        /// </summary>
-        public List<MMesh> detailSizedMeshes { get; set; }
         public string creatorName { get; private set; }
         public string creationDate { get; private set; }
         public string creationTitle { get; private set; }
@@ -55,8 +50,6 @@ namespace com.google.apps.peltzer.client.zandria
         public void Setup(ObjectStoreEntry objectStoreEntry)
         {
             rawFileData = null;
-            detailSizedMeshes = new List<MMesh>();
-
             creatorName = objectStoreEntry.author;
             creationDate = objectStoreEntry.createdDate.ToString();
             creationTitle = objectStoreEntry.title;
@@ -143,45 +136,55 @@ namespace com.google.apps.peltzer.client.zandria
         }
 
         /// <summary>
-        ///   Parses this creation's retained raw file data and scales the resulting meshes to the given size, doing
-        ///   the work on a background thread. Calls back on the main thread with the scaled meshes, or null if the
-        ///   creation has no file data or it failed to parse.
+        ///   Parses this creation's retained raw file data and returns a fresh mesh list. Callers may mutate the
+        ///   returned meshes without affecting previews, future imports, or the saved file data.
         /// </summary>
-        public void GetScaledMeshesAsync(float desiredSize, System.Action<List<MMesh>> callback)
+        public bool TryGetMeshes(out List<MMesh> meshes)
         {
-            PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAndScaleWork(this, desiredSize, callback));
+            PeltzerFile peltzerFile;
+            if (!TryGetPeltzerFile(out peltzerFile))
+            {
+                meshes = null;
+                return false;
+            }
+
+            meshes = peltzerFile.meshes;
+            return true;
         }
 
         /// <summary>
-        ///   Background work that parses a creation's raw file data and scales the meshes, so that opening the
-        ///   details panel doesn't stall the main thread.
+        ///   Parses this creation's retained raw file data on a background thread. Calls back on the main thread with
+        ///   fresh meshes, or null if the creation has no file data or it failed to parse.
         /// </summary>
-        private class ParseAndScaleWork : BackgroundWork
+        public void GetMeshesAsync(System.Action<List<MMesh>> callback)
+        {
+            PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseMeshesWork(this, callback));
+        }
+
+        /// <summary>
+        ///   Background work that parses a creation's raw file data, so that opening the details panel doesn't stall
+        ///   the main thread.
+        /// </summary>
+        private class ParseMeshesWork : BackgroundWork
         {
             private readonly ZandriaCreationHandler handler;
-            private readonly float desiredSize;
             private readonly System.Action<List<MMesh>> callback;
-            private List<MMesh> scaledMeshes;
+            private List<MMesh> meshes;
 
-            public ParseAndScaleWork(ZandriaCreationHandler handler, float desiredSize,
-              System.Action<List<MMesh>> callback)
+            public ParseMeshesWork(ZandriaCreationHandler handler, System.Action<List<MMesh>> callback)
             {
                 this.handler = handler;
-                this.desiredSize = desiredSize;
                 this.callback = callback;
             }
 
             public void BackgroundWork()
             {
-                PeltzerFile peltzerFile;
-                scaledMeshes = handler.TryGetPeltzerFile(out peltzerFile)
-                  ? Scaler.ScaleMeshes(peltzerFile.meshes, desiredSize)
-                  : null;
+                handler.TryGetMeshes(out meshes);
             }
 
             public void PostWork()
             {
-                callback(scaledMeshes);
+                callback(meshes);
             }
         }
     }
