@@ -200,17 +200,22 @@ namespace com.google.apps.peltzer.client.model.core
           HashSet<string> remixIds = null)
         {
             _id = id;
-            System.Random rand = jitterRandom ?? (jitterRandom = new System.Random());
-
-            this._offsetJitter = new Vector3((float)(rand.NextDouble() - 0.5) / 5000f,
-              (float)(rand.NextDouble() - 0.5) / 5000f,
-              (float)(rand.NextDouble() - 0.5) / 5000f);
+            this._offsetJitter = CreateOffsetJitter();
             this._offset = offset;
             this._rotation = rotation;
             this.verticesById = verticesById;
             this.facesById = facesById;
             this.groupId = groupId;
             this.remixIds = remixIds;
+        }
+
+        private static Vector3 CreateOffsetJitter()
+        {
+            System.Random rand = jitterRandom ?? (jitterRandom = new System.Random());
+
+            return new Vector3((float)(rand.NextDouble() - 0.5) / 5000f,
+              (float)(rand.NextDouble() - 0.5) / 5000f,
+              (float)(rand.NextDouble() - 0.5) / 5000f);
         }
 
         /// <summary>
@@ -958,6 +963,7 @@ namespace com.google.apps.peltzer.client.model.core
             _id = serializer.ReadInt();
             _offset = PolySerializationUtils.ReadVector3(serializer);
             _rotation = PolySerializationUtils.ReadQuaternion(serializer);
+            _offsetJitter = CreateOffsetJitter();
             groupId = serializer.ReadInt();
 
             verticesById = new Dictionary<int, Vertex>();
