@@ -62,6 +62,9 @@ namespace com.google.apps.peltzer.client.model.render
         /// </summary>
         public class MeshInfo
         {
+            // Cached shader property id; SetMatrixArray is called for every MeshInfo every frame.
+            private static readonly int remesherMeshTransformsProperty = Shader.PropertyToID("_RemesherMeshTransforms");
+
             // The material we draw this mesh with.
             public MaterialAndColor materialAndColor;
 
@@ -316,7 +319,7 @@ namespace com.google.apps.peltzer.client.model.render
             /// </summary>
             public void SetTransforms(Material mat)
             {
-                mat.SetMatrixArray("_RemesherMeshTransforms", xformMats);
+                mat.SetMatrixArray(remesherMeshTransformsProperty, xformMats);
             }
 
             /// <summary>
