@@ -50,43 +50,42 @@ namespace com.google.apps.peltzer.client.model.csg
             }
         }
 
-        // Is the given point inside the given polygon.  Assumes all points are coplanar.
-        // Returns 1 if inside, -1 if outside and 0 if on boundary.
+        // Is the given point inside the given polygon.  Assumes all points are coplanar and the
+        // polygon is convex.  Returns 1 if inside, -1 if outside and 0 if on boundary.
+        //
+        // For each edge, we compute the signed distance from the point to the edge line within the
+        // polygon's plane (positive towards the polygon interior).  Using the polygon's plane
+        // normal as the orientation reference is robust to collinear consecutive vertices, which
+        // broke the previous approach of referencing the next vertex along.
         // public for testing.
         public static int IsInside(CsgPolygon poly, Vector3 point)
         {
             bool onEdge = false;
+            Vector3 planeNormal = poly.plane.normal;
 
             for (int i = 0; i < poly.vertices.Count; i++)
             {
                 Vector3 a = poly.vertices[i].loc;
                 Vector3 b = poly.vertices[(i + 1) % poly.vertices.Count].loc;
-                Vector3 c = poly.vertices[(i + 2) % poly.vertices.Count].loc;
-                int sameSide = SameSide(a, b, point, c);
-                if (sameSide < 0)
+                Vector3 edge = b - a;
+                float edgeLength = edge.magnitude;
+                if (edgeLength < EPSILON)
+                {
+                    // Degenerate edge, provides no side information.
+                    continue;
+                }
+                // Signed perpendicular distance from the point to the line through a-b.
+                float side = Vector3.Dot(Vector3.Cross(edge, point - a), planeNormal) / edgeLength;
+                if (side < -EPSILON)
                 {
                     return -1;
                 }
-                if (sameSide == 0)
+                if (side < EPSILON)
                 {
                     onEdge = true;
                 }
             }
             return onEdge ? 0 : 1;
-        }
-
-        // Returns 1 if inside, -1 if outside and 0 if on boundary.
-        private static int SameSide(Vector3 a, Vector3 b, Vector3 check, Vector3 reference)
-        {
-            Vector3 checkSide = MeshMath.CalculateNormal(a, b, check);
-            Vector3 referenceSide = MeshMath.CalculateNormal(a, b, reference);
-            if (checkSide.magnitude < EPSILON)
-            {
-                return 0;
-            }
-            // Empirically, I've found that == is too lenient and distance is too restrictive.
-            // squared distance is not only more efficient, but it also produces better results.
-            return (referenceSide - checkSide).sqrMagnitude < EPSILON ? 1 : -1;
         }
     }
 }
