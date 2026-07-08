@@ -679,27 +679,39 @@ namespace com.google.apps.peltzer.client.menu
                     return;
                 }
 
-                PrepareMeshesForImport(importMeshes);
+                importMeshes = PrepareMeshesForImport(importMeshes);
                 SelectCreation(importMeshes, importHandler.creationAssetId);
                 ActivateOpenImportButtons(/*active*/ true);
             });
         }
 
-        private static void PrepareMeshesForImport(List<MMesh> meshes)
+        private static List<MMesh> PrepareMeshesForImport(List<MMesh> meshes)
         {
             if (meshes == null || meshes.Count == 0)
             {
-                return;
+                return meshes;
             }
 
-            Scaler.TryScalingMeshes(meshes, GetPreviewScale(meshes, DETAIL_TILE_SIZE));
-            Scaler.TryScalingMeshes(meshes, 1f / PeltzerMain.Instance.worldSpace.scale);
+            // Scale the creation down to the import/preview size. We use ScaleMeshes (which always applies the
+            // scale) rather than TryScalingMeshes: the latter refuses - and leaves every mesh at full size - when
+            // any part would drop below the minimum grid size. For a multi-mesh creation with small decorative
+            // parts that caused the whole creation to import at its full saved size, spawning much larger and off
+            // the controller. The minimum-size guard exists to stop user edits shrinking geometry away; it is not
+            // appropriate for import sizing.
+            //
+            // The world-space adjustment is folded into the target size: scaling the largest dimension to
+            // (DETAIL_TILE_SIZE / worldSpace.scale) is equivalent to scaling to DETAIL_TILE_SIZE and then by
+            // 1 / worldSpace.scale, in a single pass that is likewise never rejected.
+            List<MMesh> scaledMeshes =
+              Scaler.ScaleMeshes(meshes, DETAIL_TILE_SIZE / PeltzerMain.Instance.worldSpace.scale);
 
-            Vector3 centroid = Math3d.FindCentroid(meshes);
-            for (int i = 0; i < meshes.Count; i++)
+            Vector3 centroid = Math3d.FindCentroid(scaledMeshes);
+            for (int i = 0; i < scaledMeshes.Count; i++)
             {
-                meshes[i].offset -= centroid;
+                scaledMeshes[i].offset -= centroid;
             }
+
+            return scaledMeshes;
         }
 
         /// <summary>
@@ -1209,23 +1221,6 @@ namespace com.google.apps.peltzer.client.menu
         private PolyMenuSection CurrentMenuSection()
         {
             return menuModes[menuIndex].menuSection;
-        }
-
-        private static float GetPreviewScale(List<MMesh> meshes, float desiredSize)
-        {
-            if (meshes == null || meshes.Count == 0)
-            {
-                return 1f;
-            }
-
-            Bounds bounds = meshes[0].bounds;
-            for (int i = 1; i < meshes.Count; i++)
-            {
-                bounds.Encapsulate(meshes[i].bounds);
-            }
-
-            float maxSize = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
-            return maxSize > 0f ? desiredSize / maxSize : 1f;
         }
 
         public CreationType CurrentCreationType()
