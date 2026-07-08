@@ -386,11 +386,11 @@ namespace com.google.apps.peltzer.client.tools
             HashSet<int> updatedVertIds = new HashSet<int>(mesh.GetVertexIds());
             MeshFixer.FixMutatedMesh(originalMesh, mesh, updatedVertIds,
                 /* splitNonCoplanarFaces */ true, /* mergeAdjacentCoplanarFaces */ false);
-            // if (MeshValidator.(mesh, updatedVertIds))
-            // {
-            model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
-            return true;
-            // }
+            if (MeshValidator.IsValidMesh(mesh, updatedVertIds))
+            {
+                model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
+                return true;
+            }
 
             Debug.LogWarning(invalidMessage);
             PlayInvalidDeletionFeedback();

@@ -679,9 +679,27 @@ namespace com.google.apps.peltzer.client.menu
                     return;
                 }
 
+                PrepareMeshesForImport(importMeshes);
                 SelectCreation(importMeshes, importHandler.creationAssetId);
                 ActivateOpenImportButtons(/*active*/ true);
             });
+        }
+
+        private static void PrepareMeshesForImport(List<MMesh> meshes)
+        {
+            if (meshes == null || meshes.Count == 0)
+            {
+                return;
+            }
+
+            Scaler.TryScalingMeshes(meshes, GetPreviewScale(meshes, DETAIL_TILE_SIZE));
+            Scaler.TryScalingMeshes(meshes, 1f / PeltzerMain.Instance.worldSpace.scale);
+
+            Vector3 centroid = Math3d.FindCentroid(meshes);
+            for (int i = 0; i < meshes.Count; i++)
+            {
+                meshes[i].offset -= centroid;
+            }
         }
 
         /// <summary>
@@ -1160,8 +1178,14 @@ namespace com.google.apps.peltzer.client.menu
 
             // Get a preview from the MMeshes on a background thread. When it's done it will call back with the preview
             // and attach it to the details menu.
-            float previewScale = GetPreviewScale(detailPreviewMeshes, DETAIL_TILE_SIZE);
-            MeshHelper.GameObjectFromMMeshesForMenu(new WorldSpace(PeltzerMain.DEFAULT_BOUNDS), detailPreviewMeshes,
+            //
+            // Scale the geometry down to the detail tile size (rather than applying a transform scale to the raw
+            // meshes). Scaling the meshes - the way the grid tiles are sized too - also re-centers the assembly
+            // about its centroid, which keeps the model framed correctly in the preview; applying a transform
+            // localScale to raw, offset meshes left them mis-framed and reading as much smaller. ScaleMeshes clones
+            // its input, so the retained-free raw meshes are not mutated.
+            List<MMesh> detailSizedMeshes = Scaler.ScaleMeshes(detailPreviewMeshes, DETAIL_TILE_SIZE);
+            MeshHelper.GameObjectFromMMeshesForMenu(new WorldSpace(PeltzerMain.DEFAULT_BOUNDS), detailSizedMeshes,
               delegate (GameObject meshPreview)
               {
                   // We have successfully loaded the creation as a preview so we attach it to the menu.
@@ -1172,7 +1196,6 @@ namespace com.google.apps.peltzer.client.menu
                       //  Parent the mesh preview to the details menu.
                       meshPreview.transform.parent = detailsPreviewHolder.transform;
                       meshPreview.transform.localPosition = Vector3.zero;
-                      meshPreview.transform.localScale = Vector3.one * previewScale;
                       meshPreview.transform.localRotation = Quaternion.Euler(
                   new Vector3(0, creation.handler.recommendedRotation, 0));
 
