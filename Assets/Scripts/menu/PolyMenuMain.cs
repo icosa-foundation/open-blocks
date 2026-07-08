@@ -102,6 +102,7 @@ namespace com.google.apps.peltzer.client.menu
         private ControllerMain controllerMain;
         public ZandriaCreationsManager creationsManager;
         private ZandriaCreationHandler currentCreationHandler;
+        private bool importInProgress;
 
         // The possible menuModes in the order they can be moved through using the palette touchpad.
         private PolyMenuMode[] menuModes;
@@ -548,6 +549,7 @@ namespace com.google.apps.peltzer.client.menu
                 }
 
                 currentCreationHandler = null;
+                importInProgress = false;
             }
 
             activeMenu = menu;
@@ -597,20 +599,7 @@ namespace com.google.apps.peltzer.client.menu
                     }
                     break;
                 case DetailsMenuAction.IMPORT:
-                    if (currentCreationHandler == null)
-                    {
-                        break;
-                    }
-
-                    List<MMesh> importMeshes;
-                    if (!currentCreationHandler.TryGetMeshes(out importMeshes))
-                    {
-                        Debug.LogError($"Failed to import creation with asset id {currentCreationHandler.creationAssetId}"
-                          + $" and local id {currentCreationHandler.creationLocalId}");
-                        break;
-                    }
-
-                    SelectCreation(importMeshes, currentCreationHandler.creationAssetId);
+                    StartImportCreation();
                     break;
                 case DetailsMenuAction.DELETE:
                     confirmDeleteDialog.SetActive(true);
@@ -660,6 +649,39 @@ namespace com.google.apps.peltzer.client.menu
                     PeltzerMain.Instance.SaveCurrentModel(publish: false, saveSelected: false, cloudSave: false);
                     break;
             }
+        }
+
+        private void StartImportCreation()
+        {
+            if (currentCreationHandler == null || importInProgress)
+            {
+                return;
+            }
+
+            importInProgress = true;
+            ActivateOpenImportButtons(/*active*/ false);
+
+            ZandriaCreationHandler importHandler = currentCreationHandler;
+            importHandler.GetMeshesAsync((List<MMesh> importMeshes) =>
+            {
+                if (currentCreationHandler != importHandler)
+                {
+                    return;
+                }
+
+                importInProgress = false;
+
+                if (importMeshes == null)
+                {
+                    Debug.LogError($"Failed to import creation with asset id {importHandler.creationAssetId}"
+                      + $" and local id {importHandler.creationLocalId}");
+                    ActivateOpenImportButtons(/*active*/ true);
+                    return;
+                }
+
+                SelectCreation(importMeshes, importHandler.creationAssetId);
+                ActivateOpenImportButtons(/*active*/ true);
+            });
         }
 
         /// <summary>
@@ -986,6 +1008,7 @@ namespace com.google.apps.peltzer.client.menu
 
             if (creation != null)
             {
+                importInProgress = false;
                 currentCreationHandler = creation.handler;
                 StartCoroutine(AttachPreviewToDetailsHolder(creation));
                 string loadFormat = creation.entry.queryEntry?.resolvedLoadFormat;
