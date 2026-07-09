@@ -313,33 +313,26 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
             }
         }
-        // Key names for player prefs
-        public static string WEB_BASE_URL_KEY = "WEB_BASE_URL";
-        public static string API_BASE_URL_KEY = "API_BASE_URL";
+        // Legacy PlayerPrefs keys. URL overrides now come from OpenBlocks.cfg only.
+        public const string WEB_BASE_URL_KEY = "WEB_BASE_URL";
+        public const string API_BASE_URL_KEY = "API_BASE_URL";
 
-        public static string WebBaseUrl
-        {
-            get => GetPlayerPrefOrDefault(WEB_BASE_URL_KEY, DEFAULT_WEB_BASE_URL);
-            set => PlayerPrefs.SetString(WEB_BASE_URL_KEY, value);
-        }
-        public static string ApiBaseUrl
-        {
-            get => GetPlayerPrefOrDefault(API_BASE_URL_KEY, DEFAULT_API_BASE_URL);
-            set => PlayerPrefs.SetString(API_BASE_URL_KEY, value);
-        }
+        public static string WebBaseUrl { get; set; } = DEFAULT_WEB_BASE_URL;
+        public static string ApiBaseUrl { get; set; } = DEFAULT_API_BASE_URL;
 
-        public static string GetPlayerPrefOrDefault(string key, string defaultValue)
+        public static void ResetBaseUrls()
         {
-            return PlayerPrefs.HasKey(key) ? PlayerPrefs.GetString(key) : defaultValue;
+            WebBaseUrl = DEFAULT_WEB_BASE_URL;
+            ApiBaseUrl = DEFAULT_API_BASE_URL;
         }
 
         // The base for the URL to be opened in a user's browser if they wish to publish.
-        public static string DEFAULT_PUBLISH_URL_BASE = WebBaseUrl + "/publish/";
+        public static string DEFAULT_PUBLISH_URL_BASE => WebBaseUrl + "/publish/";
 
         public static string PublishUrl => DEFAULT_PUBLISH_URL_BASE;
         // The base for the URL to be opened in a user's browser if they have saved.
         // Also used as the target for the "Your models" desktop menu
-        public static string DEFAULT_SAVE_URL = WebBaseUrl + "/uploads";
+        public static string DEFAULT_SAVE_URL => WebBaseUrl + "/uploads";
 
         private static string CommonQueryParams(ApiQueryParameters q)
         {

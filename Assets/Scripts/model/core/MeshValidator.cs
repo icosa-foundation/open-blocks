@@ -422,6 +422,9 @@ namespace com.google.apps.peltzer.client.model.core
                 cloneScaleOperation.ModifyVertexMeshSpace(id, clone.VertexPositionInMeshCoords(id) * factor);
             }
             cloneScaleOperation.Commit();
+            // Committing does not update bounds. The volume checks derive their threshold from localBounds,
+            // so the bounds must be consistent with the scaled vertices.
+            clone.RecalcBounds();
             return clone;
         }
 

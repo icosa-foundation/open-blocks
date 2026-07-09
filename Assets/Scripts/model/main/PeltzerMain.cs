@@ -580,9 +580,6 @@ namespace com.google.apps.peltzer.client.model.main
                 PlayerPrefs.Save();
             }
 
-            // Initializes static buffers we're using for optimizing setting of list values.
-            ReMesher.InitBufferCaches();
-
             userPath = GetUserPath();
 
             userPath = Path.Combine(userPath, "Blocks");
@@ -835,23 +832,52 @@ namespace com.google.apps.peltzer.client.model.main
                 Debug.LogWarning("Could not read OpenBlocks.cfg, using default user config. " + e.Message);
             }
 
-            if (userConfig.GalleryUrl == "")
+            userConfig ??= new UserConfig();
+            AssetsServiceClient.ResetBaseUrls();
+            var removedLegacyBaseUrlPrefs = false;
+            if (PlayerPrefs.HasKey(AssetsServiceClient.WEB_BASE_URL_KEY))
             {
                 PlayerPrefs.DeleteKey(AssetsServiceClient.WEB_BASE_URL_KEY);
-            }
-            else
-            {
-                AssetsServiceClient.WebBaseUrl = userConfig.GalleryUrl;
+                removedLegacyBaseUrlPrefs = true;
             }
 
-            if (userConfig.ApiUrl == "")
+            if (PlayerPrefs.HasKey(AssetsServiceClient.API_BASE_URL_KEY))
             {
                 PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
+                removedLegacyBaseUrlPrefs = true;
             }
-            else
+
+            if (removedLegacyBaseUrlPrefs)
             {
-                AssetsServiceClient.ApiBaseUrl = userConfig.ApiUrl;
+                PlayerPrefs.Save();
             }
+
+            ApplyConfiguredBaseUrl(
+                "GalleryUrl",
+                userConfig.GalleryUrl,
+                value => AssetsServiceClient.WebBaseUrl = value);
+            ApplyConfiguredBaseUrl(
+                "ApiUrl",
+                userConfig.ApiUrl,
+                value => AssetsServiceClient.ApiBaseUrl = value);
+        }
+
+        private static void ApplyConfiguredBaseUrl(string fieldName, string configuredUrl, Action<string> apply)
+        {
+            if (string.IsNullOrWhiteSpace(configuredUrl))
+            {
+                return;
+            }
+
+            var trimmedUrl = configuredUrl.Trim().TrimEnd('/');
+            if (!Uri.TryCreate(trimmedUrl, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                Debug.LogWarning($"[OBCFG_20260615] Ignoring invalid {fieldName}: {configuredUrl}");
+                return;
+            }
+
+            apply(trimmedUrl);
         }
 
         /// <summary>
@@ -1802,7 +1828,9 @@ namespace com.google.apps.peltzer.client.model.main
                         return;
                     }
                     LoadOptions options = new LoadOptions();
-                    options.cloneBeforeLoad = true;
+                    // The freshly parsed file is unshared, so its meshes can be moved into the model directly
+                    // without a defensive clone (which would transiently double memory for large models).
+                    options.cloneBeforeLoad = false;
                     options.overrideRemixId = assetId;
                     LoadPeltzerFileIntoModel(peltzerFile, options);
                     callback?.Invoke(true);

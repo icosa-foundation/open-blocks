@@ -31,6 +31,11 @@ namespace com.google.apps.peltzer.client.model.csg
         // Set to 10x the standard epsilon for robustness.
         private static float COPLANAR_EPS = 0.001f;
 
+        // Safety cap on split iterations per SplitObject call (each iteration performs at most
+        // one polygon split).  Prevents infinite loops when floating point issues cause the same
+        // degenerate split to be attempted repeatedly.
+        private const int MAX_SPLIT_ITERATIONS = 1000;
+
         public enum CsgOperation
         {
             INACTIVE,
@@ -47,8 +52,6 @@ namespace com.google.apps.peltzer.client.model.csg
         /// <returns>true if the brush intersects with meshes in the scene.</returns>
         public static bool CsgMeshFromModel(Model model, SpatialIndex spatialIndex, MMesh brush, CsgOperation csgOp = CsgOperation.SUBTRACT)
         {
-            Bounds bounds = brush.bounds;
-
             List<Command> commands = new List<Command>();
             HashSet<int> intersectingMeshIds;
             if (spatialIndex.FindIntersectingMeshes(brush.bounds, out intersectingMeshIds))
@@ -529,20 +532,40 @@ namespace com.google.apps.peltzer.client.model.csg
                             break;
                         }
                     }
-                    AssertOrThrow.True(poly.status != PolygonStatus.UNKNOWN, "Should have classified polygon.");
+                    if (poly.status == PolygonStatus.UNKNOWN)
+                    {
+                        // Vertex statuses were inconclusive (shouldn't normally happen).  Rather
+                        // than aborting the whole operation, classify by raycast, which is slower
+                        // but always produces an answer.
+                        ClassifyPolygonUsingRaycast(poly, wrt);
+                    }
                 }
             }
         }
 
-        // Fig 8.1: Propagate vertex status.
+        // Fig 8.1: Propagate vertex status.  Iterative to avoid stack overflow on large meshes.
         private static void PropagateVertexStatus(CsgVertex vertex, VertexStatus newStatus)
         {
-            if (vertex.status == VertexStatus.UNKNOWN)
+            if (vertex.status != VertexStatus.UNKNOWN)
             {
-                vertex.status = newStatus;
-                foreach (CsgVertex neighbor in vertex.neighbors)
+                return;
+            }
+            Stack<CsgVertex> pending = new Stack<CsgVertex>();
+            pending.Push(vertex);
+            while (pending.Count > 0)
+            {
+                CsgVertex current = pending.Pop();
+                if (current.status != VertexStatus.UNKNOWN)
                 {
-                    PropagateVertexStatus(neighbor, newStatus);
+                    continue;
+                }
+                current.status = newStatus;
+                foreach (CsgVertex neighbor in current.neighbors)
+                {
+                    if (neighbor.status == VertexStatus.UNKNOWN)
+                    {
+                        pending.Push(neighbor);
+                    }
                 }
             }
         }
@@ -585,31 +608,11 @@ namespace com.google.apps.peltzer.client.model.csg
             CsgPolygon closest = null;
             closestPolyDist = float.MaxValue;
 
-            // Deterministic perturbation directions (orthogonal basis + diagonals)
-            Vector3[] perturbationDirections = new Vector3[]
-            {
-                Vector3.zero,                    // Try unperturbed first
-                Vector3.right * 0.1f,            // X axis
-                Vector3.up * 0.1f,               // Y axis
-                Vector3.forward * 0.1f,          // Z axis
-                -Vector3.right * 0.1f,           // -X axis
-                -Vector3.up * 0.1f,              // -Y axis
-                -Vector3.forward * 0.1f,         // -Z axis
-                new Vector3(0.1f, 0.1f, 0.1f),   // Diagonal
-                new Vector3(-0.1f, 0.1f, 0.1f),  // Diagonal
-                new Vector3(0.1f, -0.1f, 0.1f),  // Diagonal
-                new Vector3(0.1f, 0.1f, -0.1f)   // Diagonal
-            };
-
             bool done;
             int perturbIndex = 0;
             do
             {
                 done = true;  // Done unless we hit a special case.
-
-                // Apply current perturbation
-                Vector3 perturbedNormal = (rayNormal + perturbationDirections[perturbIndex]).normalized;
-
                 foreach (CsgPolygon otherPoly in wrt.polygons)
                 {
                     float dot = Vector3.Dot(perturbedNormal, otherPoly.plane.normal);
@@ -665,13 +668,12 @@ namespace com.google.apps.peltzer.client.model.csg
 
                 if (!done)
                 {
-                    perturbIndex++;
-                    if (perturbIndex >= perturbationDirections.Length)
-                    {
-                        // Tried all perturbations, give up
-                        Debug.LogWarning($"CSG raycast classification failed after trying {perturbationDirections.Length} perturbations");
-                        break;
-                    }
+                    // Perturb the normal and try again.
+                    rayNormal += new Vector3(
+                      UnityEngine.Random.Range(-0.1f, 0.1f),
+                      UnityEngine.Random.Range(-0.1f, 0.1f),
+                      UnityEngine.Random.Range(-0.1f, 0.1f));
+                    rayNormal = rayNormal.normalized;
                 }
             } while (!done);
 
@@ -718,14 +720,15 @@ namespace com.google.apps.peltzer.client.model.csg
             do
             {
                 splitPoly = false;
+                // Temporary guard to prevent infinite loops while there are bugs.
+                // TODO(bug) figure out why csg creates so many rejected splits.
                 count++;
-                if (count > MAX_ITERATIONS)
+                if (count > 100)
                 {
-                    // Log detailed diagnostics when iteration limit is reached
-                    Debug.LogWarning(
-                        $"CSG split iteration limit ({MAX_ITERATIONS}) reached. " +
-                        $"Attempted {attemptedSplits.Count} unique splits, skipped {skippedRepeats} repeated attempts. " +
-                        $"Results may be incomplete. Consider increasing maxIterations or checking input geometry for degeneracies.");
+                    // This usually occurs when csg keeps trying to do the same invalid split over and over.
+                    // If the algorithm has reached this point, it usually means that the two meshes are
+                    // split enough to perform a pretty good looking csg subtraction. More investigation
+                    // should be done on bug and we may be able to remove this guard.
                     return;
                 }
 

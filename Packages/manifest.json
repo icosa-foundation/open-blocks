@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
     "com.iam1337.extapi": "https://github.com/icosa-mirror/extApi.git#upm",
     "com.ixxy.polyhydra.core": "https://github.com/ixxyXR/polyhydra-core.git#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git#upm",
