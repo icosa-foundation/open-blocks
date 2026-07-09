@@ -196,13 +196,13 @@ jobs:
             targetPlatform: StandaloneLinux64
             cache: Linux
             extra_defines: XR_DISABLED
-            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
+            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr com.unity.xr.androidxr-openxr
 
           - name: MacOS
             targetPlatform: StandaloneOSX
             cache: MacOS
             extra_defines: XR_DISABLED
-            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
+            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr com.unity.xr.androidxr-openxr
 
           - name: Android OpenXR
             targetPlatform: Android
@@ -217,7 +217,7 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 1
             extra_defines: XR_DISABLED
-            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
+            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr com.unity.xr.androidxr-openxr
 
     steps:
       - name: Set masking
