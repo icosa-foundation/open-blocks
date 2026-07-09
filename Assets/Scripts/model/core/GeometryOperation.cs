@@ -306,6 +306,9 @@ namespace com.google.apps.peltzer.client.model.core
 #if GEOM_OP_VERBOSE_LOGGING
           Debug.Log("Deleting vertex " + id);
 #endif
+                // Drop any pending modification, otherwise the commit's modified-vertices pass would
+                // re-insert the vertex after the deletion pass removed it.
+                modifiedVertices.Remove(id);
                 deletedVertices.Add(id);
             }
 
@@ -461,15 +464,23 @@ namespace com.google.apps.peltzer.client.model.core
             throw new Exception("Attempted to commit operation when mesh has no operation in progress.");
           }
 #endif
+                committed = true;
 
                 foreach (int id in deletedFaces)
                 {
-                    foreach (int vertIndex in targetMesh.facesById[id].vertexIds)
+                    Face deletedFace;
+                    // The face may not be in the mesh (e.g. it was added and deleted within this same operation).
+                    if (!targetMesh.facesById.TryGetValue(id, out deletedFace)) continue;
+                    foreach (int vertIndex in deletedFace.vertexIds)
                     {
 #if GEOM_OP_VERBOSE_LOGGING
               Debug.Log("RT Update: Removing face " + id + " from vert " + vertIndex);
 #endif
-                        targetMesh.reverseTable[vertIndex].Remove(id);
+                        HashSet<int> facesForVert;
+                        if (targetMesh.reverseTable.TryGetValue(vertIndex, out facesForVert))
+                        {
+                            facesForVert.Remove(id);
+                        }
                     }
 
                     targetMesh.facesById.Remove(id);
@@ -534,9 +545,14 @@ namespace com.google.apps.peltzer.client.model.core
               Debug.Log("RT Update: Modifying vertex " + pair.Key);
 #endif
                         targetMesh.verticesById[pair.Key] = pair.Value;
-                        foreach (int faceId in targetMesh.reverseTable[pair.Key])
+                        // A newly added vertex that no face references yet has no reverse table entry.
+                        HashSet<int> facesForVert;
+                        if (targetMesh.reverseTable.TryGetValue(pair.Key, out facesForVert))
                         {
-                            faceIdsToRecalc.Add(faceId);
+                            foreach (int faceId in facesForVert)
+                            {
+                                faceIdsToRecalc.Add(faceId);
+                            }
                         }
                     }
 
