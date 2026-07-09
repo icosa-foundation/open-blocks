@@ -327,7 +327,10 @@ namespace com.google.apps.peltzer.client.model.core
             {
                 if (dict.ContainsKey(meshId))
                 {
-                    normalTemplateForMeshId[meshId].GetComponent<MeshWithMaterialRenderer>().isPreview = false;
+                    // Clear isPreview on the template being destroyed so its OnDestroy releases its Unity meshes
+                    // (this previously poked the normal-template dictionary by mistake, which both leaked the
+                    // highlighted template's meshes and threw if the normal template didn't exist).
+                    dict[meshId].GetComponent<MeshWithMaterialRenderer>().isPreview = false;
                     GameObject.DestroyImmediate(dict[meshId]);
                     dict.Remove(meshId);
                 }
