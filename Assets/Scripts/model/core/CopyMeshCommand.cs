@@ -22,19 +22,21 @@ namespace com.google.apps.peltzer.client.model.core
     public class CopyMeshCommand : CompositeCommand
     {
         internal readonly int copiedFromId;
-        internal readonly MMesh copy;
+        private readonly int copyMeshId;
 
         public CopyMeshCommand(int copiedFromId, MMesh copy) : base(new List<Command>() {
       new AddMeshCommand(copy)
     })
         {
+            // Note: the copied mesh itself is deliberately not retained here; the inner AddMeshCommand holds a
+            // compact serialized snapshot of it.
             this.copiedFromId = copiedFromId;
-            this.copy = copy;
+            this.copyMeshId = copy.id;
         }
 
         public int GetCopyMeshId()
         {
-            return copy.id;
+            return copyMeshId;
         }
     }
 }

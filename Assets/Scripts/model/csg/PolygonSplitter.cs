@@ -99,7 +99,7 @@ namespace com.google.apps.peltzer.client.model.csg
                 return false;
             }
             float[] distBtoA = DistanceFromVertsToPlane(polyB, polyA.plane);
-            if (!CrossesPlane(distAtoB))
+            if (!CrossesPlane(distBtoA))
             {
                 // All verts on one side of plane, no intersection.
                 return false;
@@ -127,6 +127,14 @@ namespace com.google.apps.peltzer.client.model.csg
             {
                 return false;
             }
+
+            // Only now that we know the polygons actually intersect, mark the segment endpoints
+            // as boundary vertices.  Doing this any earlier (i.e. in CalcSegmentDescriptor) would
+            // flag vertices of polygons that never touch, corrupting the classification phase.
+            segA.startVertex.status = VertexStatus.BOUNDARY;
+            segA.endVertex.status = VertexStatus.BOUNDARY;
+            segB.startVertex.status = VertexStatus.BOUNDARY;
+            segB.endVertex.status = VertexStatus.BOUNDARY;
 
             TrimTo(segA, segB);
 
@@ -772,7 +780,12 @@ namespace com.google.apps.peltzer.client.model.csg
             List<CsgPolygon> newPolys = new List<CsgPolygon>();
             foreach (List<CsgVertex> verts in newPolyVerts)
             {
-                newPolys.Add(new CsgPolygon(verts, oldPoly.faceProperties, oldPoly.plane.normal));
+                List<CsgVertex> cleaned = RemoveConsecutiveDuplicates(verts);
+                if (!IsValidPolygon(cleaned))
+                {
+                    continue;
+                }
+                newPolys.Add(new CsgPolygon(cleaned, oldPoly.faceProperties, oldPoly.plane.normal));
             }
 
             bool dumpPolygons = DEBUG;
@@ -817,6 +830,35 @@ namespace com.google.apps.peltzer.client.model.csg
 
             return false;
         }
+        // Remove consecutive duplicate vertices (including a duplicated first/last vertex).
+        // Vertices are unified by CsgContext, so reference equality is sufficient.
+        private static List<CsgVertex> RemoveConsecutiveDuplicates(List<CsgVertex> verts)
+        {
+            bool hasDuplicate = false;
+            for (int i = 0; i < verts.Count; i++)
+            {
+                if (verts[i] == verts[(i + 1) % verts.Count])
+                {
+                    hasDuplicate = true;
+                    break;
+                }
+            }
+            if (!hasDuplicate)
+            {
+                return verts;
+            }
+            List<CsgVertex> cleaned = new List<CsgVertex>(verts.Count);
+            for (int i = 0; i < verts.Count; i++)
+            {
+                CsgVertex next = verts[(i + 1) % verts.Count];
+                if (verts[i] != next)
+                {
+                    cleaned.Add(next);
+                }
+            }
+            return cleaned;
+        }
+
         // Check if a polygon has a non-zero area and more than two vertices.
         private static bool IsValidPolygon(List<CsgVertex> verts)
         {
@@ -913,7 +955,6 @@ namespace com.google.apps.peltzer.client.model.csg
                         descriptor.start = Endpoint.EDGE;
                         descriptor.startDist = SignedDistance(linePt, lineDir, midPoint);
                         descriptor.startVertex = ctx.CreateOrGetVertexAt(midPoint);
-                        descriptor.startVertex.status = VertexStatus.BOUNDARY;
                         foundFirst = true;
                     }
                     else
@@ -922,7 +963,6 @@ namespace com.google.apps.peltzer.client.model.csg
                         descriptor.end = Endpoint.EDGE;
                         descriptor.endDist = SignedDistance(linePt, lineDir, midPoint);
                         descriptor.endVertex = ctx.CreateOrGetVertexAt(midPoint);
-                        descriptor.endVertex.status = VertexStatus.BOUNDARY;
                         foundSecond = true;
                     }
                 }
@@ -975,9 +1015,8 @@ namespace com.google.apps.peltzer.client.model.csg
                 descriptor.middle = Endpoint.FACE;
             }
 
-            // Mark endpoints as boundary.
-            descriptor.startVertex.status = VertexStatus.BOUNDARY;
-            descriptor.endVertex.status = VertexStatus.BOUNDARY;
+            // Note: endpoints are marked as boundary by the caller, once the intersection
+            // segments are confirmed to overlap.
 
             return descriptor;
         }
