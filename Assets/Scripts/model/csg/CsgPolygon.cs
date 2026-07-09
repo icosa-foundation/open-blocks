@@ -53,7 +53,28 @@ namespace com.google.apps.peltzer.client.model.csg
             }
             else
             {
-                plane = new Plane(vertices[0].loc, vertices[1].loc, vertices[2].loc);
+                // Newell's method over all vertices.  Deriving the plane from just the first three
+                // vertices produces a garbage normal when they are (nearly) collinear, which is
+                // common for polygons produced by CSG splits.
+                Vector3 newellNormal = Vector3.zero;
+                for (int i = 0, next = 1; i < vertices.Count; i++, next++)
+                {
+                    next = (next == vertices.Count) ? 0 : next;
+                    Vector3 cur = vertices[i].loc;
+                    Vector3 nxt = vertices[next].loc;
+                    newellNormal.x += (cur.y - nxt.y) * (cur.z + nxt.z);
+                    newellNormal.y += (cur.z - nxt.z) * (cur.x + nxt.x);
+                    newellNormal.z += (cur.x - nxt.x) * (cur.y + nxt.y);
+                }
+                if (newellNormal.sqrMagnitude > 1e-12f)
+                {
+                    plane = new Plane(newellNormal.normalized, vertices[0].loc);
+                }
+                else
+                {
+                    // Fully degenerate polygon; fall back to the three-point plane.
+                    plane = new Plane(vertices[0].loc, vertices[1].loc, vertices[2].loc);
+                }
             }
 
             // Calc bounds and baryCenter

@@ -646,7 +646,15 @@ namespace com.google.apps.peltzer.client.tools
             // Then we find the start point of the new subdivision, which is the exit point of
             // the current one. Finally, we adjust the new subdivision according to the
             // loopSubdivideEdgeCutPercentage, get its exit edge and return.
-            edgeKeysToFaceIds.TryGetValue(currentSubdivisionExitEdge, out faceIds);
+            if (!edgeKeysToFaceIds.TryGetValue(currentSubdivisionExitEdge, out faceIds)
+                || faceIds == null)
+            {
+                // The exit edge isn't connected to any known faces (e.g. a boundary edge), so the loop
+                // can't continue.
+                nextSubdivision = null;
+                nextSubdivisionExitEdge = default;
+                return false;
+            }
             foreach (int faceId in faceIds)
             {
                 if (currentSubdivision.face.id != faceId && !visitedFaceIds.Contains(faceId))

@@ -283,27 +283,27 @@ namespace com.google.apps.peltzer.client.model.core
             foreach (int faceId in facesWithVert)
             {
                 Face face = operation.GetCurrentFace(faceId);
-                int idx = face.vertexIds.IndexOf(id);
 
-                // Still not sure how this case comes up, but it's possible to generate it via actions like spamming
-                // the extrude tool.
-                if (idx != -1)
+                // Still not sure how this case comes up (the vertex not appearing in the face at all), but it's
+                // possible to generate it via actions like spamming the extrude tool.
+                // The vertex may also appear more than once in a degenerate face; every occurrence must be replaced
+                // or the face would keep referencing the deleted vertex. Any resulting consecutive duplicates are
+                // cleaned up by RemoveZeroLengthSegments.
+                if (face.vertexIds.Contains(id))
                 {
                     // Replace the vertex id.  Normals should be the same.
+                    List<int> updatedVertexIds = new List<int>(face.vertexIds);
+                    for (int i = 0; i < updatedVertexIds.Count; i++)
+                    {
+                        if (updatedVertexIds[i] == id) updatedVertexIds[i] = replaceId;
+                    }
                     Face updatedFace = new Face(
-                      face.id, ReplaceAt(face.vertexIds, idx, replaceId), face.normal, face.properties);
+                      face.id, updatedVertexIds.AsReadOnly(), face.normal, face.properties);
                     operation.ModifyFace(updatedFace);
                 }
 
             }
             operation.DeleteVertex(id);
-        }
-
-        private static ReadOnlyCollection<T> ReplaceAt<T>(ReadOnlyCollection<T> collection, int idx, T newVal)
-        {
-            List<T> copy = new List<T>(collection);
-            copy[idx] = newVal;
-            return copy.AsReadOnly();
         }
 
         /// <summary>
