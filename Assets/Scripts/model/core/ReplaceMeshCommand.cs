@@ -21,15 +21,15 @@ namespace com.google.apps.peltzer.client.model.core
         public new const string COMMAND_NAME = "replace";
 
         public readonly int meshId;
-        private readonly MMesh mesh;
 
         public ReplaceMeshCommand(int meshId, MMesh mesh) : base(new List<Command>() {
       new DeleteMeshCommand(meshId),
       new AddMeshCommand(mesh)
         })
         {
+            // Note: the mesh itself is deliberately not retained here; the inner AddMeshCommand holds a compact
+            // serialized snapshot of it.
             this.meshId = meshId;
-            this.mesh = mesh;
         }
     }
 }

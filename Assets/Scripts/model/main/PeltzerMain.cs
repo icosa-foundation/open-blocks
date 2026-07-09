@@ -580,9 +580,6 @@ namespace com.google.apps.peltzer.client.model.main
                 PlayerPrefs.Save();
             }
 
-            // Initializes static buffers we're using for optimizing setting of list values.
-            ReMesher.InitBufferCaches();
-
             userPath = GetUserPath();
 
             userPath = Path.Combine(userPath, "Blocks");
@@ -1831,7 +1828,9 @@ namespace com.google.apps.peltzer.client.model.main
                         return;
                     }
                     LoadOptions options = new LoadOptions();
-                    options.cloneBeforeLoad = true;
+                    // The freshly parsed file is unshared, so its meshes can be moved into the model directly
+                    // without a defensive clone (which would transiently double memory for large models).
+                    options.cloneBeforeLoad = false;
                     options.overrideRemixId = assetId;
                     LoadPeltzerFileIntoModel(peltzerFile, options);
                     callback?.Invoke(true);
