@@ -184,13 +184,13 @@ namespace com.google.apps.peltzer.client.tools
             {
                 DeleteFace(selector.hoverFace);
             }
-            else if (selector.hoverVertex != null)
+            else if (selector.hoverVertex.HasValue)
             {
-                DeleteVertex(selector.hoverVertex);
+                DeleteVertex(selector.hoverVertex.Value);
             }
-            else if (selector.hoverEdge != null)
+            else if (selector.hoverEdge.HasValue)
             {
-                DeleteEdge(selector.hoverEdge);
+                DeleteEdge(selector.hoverEdge.Value);
             }
         }
 
@@ -386,11 +386,11 @@ namespace com.google.apps.peltzer.client.tools
             HashSet<int> updatedVertIds = new HashSet<int>(mesh.GetVertexIds());
             MeshFixer.FixMutatedMesh(originalMesh, mesh, updatedVertIds,
                 /* splitNonCoplanarFaces */ true, /* mergeAdjacentCoplanarFaces */ false);
-            // if (MeshValidator.(mesh, updatedVertIds))
-            // {
-            model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
-            return true;
-            // }
+            if (MeshValidator.IsValidMesh(mesh, updatedVertIds))
+            {
+                model.ApplyCommand(new ReplaceMeshCommand(mesh.id, mesh));
+                return true;
+            }
 
             Debug.LogWarning(invalidMessage);
             PlayInvalidDeletionFeedback();

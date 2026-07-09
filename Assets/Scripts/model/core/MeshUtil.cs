@@ -614,14 +614,28 @@ namespace com.google.apps.peltzer.client.model.core
             Vertex mergedVertex = deleteFaceOperation.AddVertexMeshSpace(mergedVertexPositionMeshSpace);
             HashSet<int> deletedVertexIds = new HashSet<int>(faceToDelete.vertexIds);
 
-            foreach (int adjacentFaceId in FindAdjacentFaceIds(mesh, faceToDelete))
+            // Every face referencing any of the deleted vertices must be rewritten - not just faces sharing
+            // an edge with the deleted face. A face touching the deleted ring at only a single vertex would
+            // otherwise keep referencing a deleted vertex, corrupting the mesh.
+            HashSet<int> affectedFaceIds = new HashSet<int>();
+            foreach (int vertexId in faceToDelete.vertexIds)
+            {
+                affectedFaceIds.UnionWith(mesh.reverseTable[vertexId]);
+            }
+            affectedFaceIds.Remove(faceToDelete.id);
+
+            foreach (int adjacentFaceId in affectedFaceIds)
             {
                 Face adjacentFace = mesh.GetFace(adjacentFaceId);
                 List<int> replacementVertexIds = ReplaceDeletedFaceVerticesWithMergedVertex(
                     adjacentFace, deletedVertexIds, mergedVertex.id);
 
                 deleteFaceOperation.DeleteFace(adjacentFaceId);
-                deleteFaceOperation.AddFace(replacementVertexIds, adjacentFace.properties);
+                // A face that collapses below 3 vertices is degenerate; delete it without a replacement.
+                if (replacementVertexIds.Count >= 3)
+                {
+                    deleteFaceOperation.AddFace(replacementVertexIds, adjacentFace.properties);
+                }
             }
 
             foreach (int vertexId in faceToDelete.vertexIds)
@@ -699,7 +713,9 @@ namespace com.google.apps.peltzer.client.model.core
                 else
                 {
                     newFaceVertexIds.AddRange(retainedVerts);
-                    nextFaceId = startVertToFace[retainedVerts[^1]];
+                    AssertOrThrow.True(startVertToFace.TryGetValue(retainedVerts[^1], out nextFaceId),
+                        $"DeleteVertexAndMergeAdjacentFaces failed for vertex {vertexId}: broken face ring at vertex "
+                        + retainedVerts[^1]);
                 }
 
                 failSafeCount++;
@@ -744,38 +760,17 @@ namespace com.google.apps.peltzer.client.model.core
                     incidentFace, deletedVertexIds, mergedVertex.id);
 
                 collapseEdgeOperation.DeleteFace(incidentFaceId);
-                collapseEdgeOperation.AddFace(replacementVertexIds, incidentFace.properties);
+                // A face containing the collapsed edge (e.g. a triangle) degenerates below 3 vertices;
+                // delete it without a replacement.
+                if (replacementVertexIds.Count >= 3)
+                {
+                    collapseEdgeOperation.AddFace(replacementVertexIds, incidentFace.properties);
+                }
             }
 
             collapseEdgeOperation.DeleteVertex(edgeKey.vertexId1);
             collapseEdgeOperation.DeleteVertex(edgeKey.vertexId2);
             collapseEdgeOperation.Commit();
-        }
-
-        private static HashSet<int> FindAdjacentFaceIds(MMesh mesh, Face face)
-        {
-            HashSet<int> adjacentFaceIds = new HashSet<int>();
-            Dictionary<EdgeKey, List<int>> edgeKeysToFaceIds = ComputeEdgeKeysToFaceIdsMap(mesh);
-
-            int previousVertexId = face.vertexIds[face.vertexIds.Count - 1];
-            foreach (int currentVertexId in face.vertexIds)
-            {
-                EdgeKey edgeKey = new EdgeKey(mesh.id, currentVertexId, previousVertexId);
-                List<int> faceIds;
-                if (edgeKeysToFaceIds.TryGetValue(edgeKey, out faceIds))
-                {
-                    foreach (int adjacentFaceId in faceIds)
-                    {
-                        if (adjacentFaceId != face.id)
-                        {
-                            adjacentFaceIds.Add(adjacentFaceId);
-                        }
-                    }
-                }
-                previousVertexId = currentVertexId;
-            }
-
-            return adjacentFaceIds;
         }
 
         private static List<int> ReplaceDeletedFaceVerticesWithMergedVertex(

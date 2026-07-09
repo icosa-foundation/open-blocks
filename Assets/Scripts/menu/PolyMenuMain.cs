@@ -19,6 +19,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
+using com.google.apps.peltzer.client.api_clients.objectstore_client;
 using UnityEngine;
 
 using com.google.apps.peltzer.client.model.controller;
@@ -28,6 +29,7 @@ using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.tools;
 using com.google.apps.peltzer.client.zandria;
 using com.google.apps.peltzer.client.entitlement;
+using com.google.apps.peltzer.client.model.export;
 using TMPro;
 using com.google.apps.peltzer.client.model.util;
 
@@ -100,6 +102,7 @@ namespace com.google.apps.peltzer.client.menu
         private ControllerMain controllerMain;
         public ZandriaCreationsManager creationsManager;
         private ZandriaCreationHandler currentCreationHandler;
+        private bool importInProgress;
 
         // The possible menuModes in the order they can be moved through using the palette touchpad.
         private PolyMenuMode[] menuModes;
@@ -177,6 +180,7 @@ namespace com.google.apps.peltzer.client.menu
         private GameObject creationTitle;
         private GameObject creatorName;
         private GameObject creationDate;
+        private GameObject creationFormat;
 
         // Detail menu buttons.
         // These aren't all the buttons only the ones that need to be changed depending on creationType.
@@ -303,6 +307,9 @@ namespace com.google.apps.peltzer.client.menu
             creationTitle = detailsMenu.transform.Find("Metadata/txt-title").gameObject;
             creatorName = detailsMenu.transform.Find("Metadata/txt-name").gameObject;
             creationDate = detailsMenu.transform.Find("Metadata/txt-time").gameObject;
+            creationFormat = detailsMenu.transform.Find("Metadata/txt-format").gameObject;
+            creationFormat.SetActive(false);
+            creationFormat.GetComponent<TextMeshPro>().text = "";
             detailsFailureReason.SetActive(false);
             detailsFailureReason.GetComponent<TextMeshPro>().text = "";
 
@@ -542,7 +549,7 @@ namespace com.google.apps.peltzer.client.menu
                 }
 
                 currentCreationHandler = null;
-                detailsPreviewHolder.GetComponent<SelectZandriaCreationMenuItem>().meshes = null;
+                importInProgress = false;
             }
 
             activeMenu = menu;
@@ -592,15 +599,7 @@ namespace com.google.apps.peltzer.client.menu
                     }
                     break;
                 case DetailsMenuAction.IMPORT:
-                    // Import is the same action as quick selecting a zandria creation so we can just grab the meshes on the
-                    // quick select script attached to the preview.
-                    SelectCreation(
-                      detailsPreviewHolder.GetComponent<SelectZandriaCreationMenuItem>().meshes,
-                      currentCreationHandler.creationAssetId);
-                    // Clear the detailSizedMeshes from the creation handler when importing, as import grabs a direct mutable
-                    // reference to these to avoid any lag in generating a copy. Instead, the lag of generating a copy will
-                    // happen the next time the user opens the details page for this model again.
-                    currentCreationHandler.detailSizedMeshes.Clear();
+                    StartImportCreation();
                     break;
                 case DetailsMenuAction.DELETE:
                     confirmDeleteDialog.SetActive(true);
@@ -652,6 +651,69 @@ namespace com.google.apps.peltzer.client.menu
             }
         }
 
+        private void StartImportCreation()
+        {
+            if (currentCreationHandler == null || importInProgress)
+            {
+                return;
+            }
+
+            importInProgress = true;
+            ActivateOpenImportButtons(/*active*/ false);
+
+            ZandriaCreationHandler importHandler = currentCreationHandler;
+            importHandler.GetMeshesAsync((List<MMesh> importMeshes) =>
+            {
+                if (currentCreationHandler != importHandler)
+                {
+                    return;
+                }
+
+                importInProgress = false;
+
+                if (importMeshes == null)
+                {
+                    Debug.LogError($"Failed to import creation with asset id {importHandler.creationAssetId}"
+                      + $" and local id {importHandler.creationLocalId}");
+                    ActivateOpenImportButtons(/*active*/ true);
+                    return;
+                }
+
+                importMeshes = PrepareMeshesForImport(importMeshes);
+                SelectCreation(importMeshes, importHandler.creationAssetId);
+                ActivateOpenImportButtons(/*active*/ true);
+            });
+        }
+
+        private static List<MMesh> PrepareMeshesForImport(List<MMesh> meshes)
+        {
+            if (meshes == null || meshes.Count == 0)
+            {
+                return meshes;
+            }
+
+            // Scale the creation down to the import/preview size. We use ScaleMeshes (which always applies the
+            // scale) rather than TryScalingMeshes: the latter refuses - and leaves every mesh at full size - when
+            // any part would drop below the minimum grid size. For a multi-mesh creation with small decorative
+            // parts that caused the whole creation to import at its full saved size, spawning much larger and off
+            // the controller. The minimum-size guard exists to stop user edits shrinking geometry away; it is not
+            // appropriate for import sizing.
+            //
+            // The world-space adjustment is folded into the target size: scaling the largest dimension to
+            // (DETAIL_TILE_SIZE / worldSpace.scale) is equivalent to scaling to DETAIL_TILE_SIZE and then by
+            // 1 / worldSpace.scale, in a single pass that is likewise never rejected.
+            List<MMesh> scaledMeshes =
+              Scaler.ScaleMeshes(meshes, DETAIL_TILE_SIZE / PeltzerMain.Instance.worldSpace.scale);
+
+            Vector3 centroid = Math3d.FindCentroid(scaledMeshes);
+            for (int i = 0; i < scaledMeshes.Count; i++)
+            {
+                scaledMeshes[i].offset -= centroid;
+            }
+
+            return scaledMeshes;
+        }
+
         /// <summary>
         ///   Performs the 'open' request on a creation.
         /// </summary>
@@ -659,10 +721,23 @@ namespace com.google.apps.peltzer.client.menu
         private void OpenCreation(ZandriaCreationHandler creationHandler)
         {
             confirmSaveDialog.SetActive(false);
+
+            // The handler only retains the creation's compact raw file bytes; parse them into a fresh PeltzerFile.
+            // Do this before clearing the current model so a parse failure doesn't wipe the user's scene.
+            PeltzerFile peltzerFile;
+            if (!creationHandler.TryGetPeltzerFile(out peltzerFile))
+            {
+                Debug.LogError("Failed to load creation with asset id " + creationHandler.creationAssetId
+                  + " and local id " + creationHandler.creationLocalId);
+                return;
+            }
+
             PeltzerMain.Instance.CreateNewModel();
 
             PeltzerMain.LoadOptions options = new PeltzerMain.LoadOptions();
-            options.cloneBeforeLoad = true;
+            // The parsed file is a fresh, unshared copy, so its meshes can be moved into the model directly
+            // without the defensive (and, for large models, expensive) clone.
+            options.cloneBeforeLoad = false;
 
             if (CurrentCreationType() == CreationType.YOUR)
             {
@@ -683,7 +758,7 @@ namespace com.google.apps.peltzer.client.menu
                 // the remix ID of all meshes.
                 options.overrideRemixId = creationHandler.creationAssetId;
             }
-            PeltzerMain.Instance.LoadPeltzerFileIntoModel(currentCreationHandler.peltzerFile, options);
+            PeltzerMain.Instance.LoadPeltzerFileIntoModel(peltzerFile, options);
 
             if (Features.adjustWorldSpaceOnOpen)
             {
@@ -963,8 +1038,13 @@ namespace com.google.apps.peltzer.client.menu
 
             if (creation != null)
             {
+                importInProgress = false;
                 currentCreationHandler = creation.handler;
                 StartCoroutine(AttachPreviewToDetailsHolder(creation));
+                string loadFormat = creation.entry.queryEntry?.resolvedLoadFormat;
+                creationFormat.SetActive(!string.IsNullOrEmpty(loadFormat));
+                creationFormat.GetComponent<TextMeshPro>().text =
+                  string.IsNullOrEmpty(loadFormat) ? "" : $"format: {loadFormat}";
 
                 // Activate/Deactivate the correct buttons and UI elements for each creation type.
                 creationTitle.SetActive(
@@ -982,7 +1062,7 @@ namespace com.google.apps.peltzer.client.menu
                     CurrentCreationType() == CreationType.LIKED
                 );
 
-                // Activate or deactivate the Open/Import buttons if the model is loaded.
+                // Open/Import operate from the retained raw file bytes and can run as soon as the model has loaded.
                 ActivateOpenImportButtons(creation.entry.loadStatus == ZandriaCreationsManager.LoadStatus.SUCCESSFUL);
 
                 // TODO also allow deleting cloud creations if they meet certain criteria
@@ -1060,9 +1140,9 @@ namespace com.google.apps.peltzer.client.menu
             detailsThumbnail.GetComponent<SpriteRenderer>().sprite = creation.thumbnailSprite;
             detailsFailureReason.SetActive(false);
             detailsFailureReason.GetComponent<TextMeshPro>().text = "";
+            ActivateOpenImportButtons(creation.entry.loadStatus == ZandriaCreationsManager.LoadStatus.SUCCESSFUL);
 
-            // Wait until the creation is loaded to do anything else. During this time the thumbnail is displayed and the
-            // Open/Import buttons are inactive.
+            // Wait until the creation is loaded to do anything else. During this time the thumbnail is displayed.
             while (creation.entry.loadStatus != ZandriaCreationsManager.LoadStatus.SUCCESSFUL
               && creation.entry.loadStatus != ZandriaCreationsManager.LoadStatus.FAILED)
             {
@@ -1081,23 +1161,42 @@ namespace com.google.apps.peltzer.client.menu
                 yield break;
             }
 
-            // The creation has loaded, scale the meshes for the details menu.
-            List<MMesh> detailSizedMeshes;
+            ActivateOpenImportButtons(/*active*/ true);
 
-            // Check if detailSizedMeshes already exist. We don't want to replicate them again from the originals if the
-            // model has been open in the scene since they will reference the same MMesh instance.
-            if (creation.handler.detailSizedMeshes.Count > 0)
+            // The creation has loaded, parse throwaway meshes for the details preview. Import parses its own fresh
+            // meshes from the handler so preview rendering cannot mutate the import payload.
+            bool detailMeshesReady = false;
+            List<MMesh> detailPreviewMeshes = null;
+            creation.handler.GetMeshesAsync((List<MMesh> meshes) =>
             {
-                detailSizedMeshes = creation.handler.detailSizedMeshes;
+                detailPreviewMeshes = meshes;
+                detailMeshesReady = true;
+            });
+            while (!detailMeshesReady)
+            {
+                yield return null;
             }
-            else
+            if (detailPreviewMeshes == null)
             {
-                detailSizedMeshes = Scaler.ScaleMeshes(creation.handler.originalMeshes, DETAIL_TILE_SIZE);
-                creation.handler.detailSizedMeshes = detailSizedMeshes;
+                Sprite errorSprite = creation.errorThumbnail.GetComponent<SpriteRenderer>().sprite;
+                detailsLoadingSpinner.SetActive(false);
+                detailsThumbnail.GetComponent<SpriteRenderer>().sprite = errorSprite;
+                detailsFailureReason.SetActive(true);
+                detailsFailureReason.GetComponent<TextMeshPro>().text =
+                  creation.loadFailureReason ?? failedToLoadDetailsReason;
+                ActivateOpenImportButtons(/*active*/ false);
+                yield break;
             }
 
             // Get a preview from the MMeshes on a background thread. When it's done it will call back with the preview
             // and attach it to the details menu.
+            //
+            // Scale the geometry down to the detail tile size (rather than applying a transform scale to the raw
+            // meshes). Scaling the meshes - the way the grid tiles are sized too - also re-centers the assembly
+            // about its centroid, which keeps the model framed correctly in the preview; applying a transform
+            // localScale to raw, offset meshes left them mis-framed and reading as much smaller. ScaleMeshes clones
+            // its input, so the retained-free raw meshes are not mutated.
+            List<MMesh> detailSizedMeshes = Scaler.ScaleMeshes(detailPreviewMeshes, DETAIL_TILE_SIZE);
             MeshHelper.GameObjectFromMMeshesForMenu(new WorldSpace(PeltzerMain.DEFAULT_BOUNDS), detailSizedMeshes,
               delegate (GameObject meshPreview)
               {
@@ -1111,8 +1210,6 @@ namespace com.google.apps.peltzer.client.menu
                       meshPreview.transform.localPosition = Vector3.zero;
                       meshPreview.transform.localRotation = Quaternion.Euler(
                   new Vector3(0, creation.handler.recommendedRotation, 0));
-
-                      detailsPreviewHolder.GetComponent<SelectZandriaCreationMenuItem>().meshes = detailSizedMeshes;
 
                       // Deactivate the thumbnail now that the meshes are displaying and activate the Open/Import buttons.
                       detailsThumbnail.SetActive(false);
@@ -1195,9 +1292,6 @@ namespace com.google.apps.peltzer.client.menu
             }
 
             Model model = PeltzerMain.Instance.GetModel();
-
-            // We ignore the 'bool' output of the below: it it fails, we'll continue with the mesh in its current scale.
-            Scaler.TryScalingMeshes(meshes, 1f / PeltzerMain.Instance.worldSpace.scale);
 
             // We give them new IDs at this point so they won't collide with anything already in the scene or
             // (much more likely) with a previous import of this same creation. We need to store a local list of usedIds
@@ -1283,6 +1377,14 @@ namespace com.google.apps.peltzer.client.menu
         public void UpdatePreviousQueryParams()
         {
             previousQueryParams = CurrentQueryParams.Copy();
+        }
+
+        public void RefreshCurrentTab()
+        {
+            var type = CurrentCreationType();
+            AssetsServiceClient.ClearRecentAssetIdsByType(type);
+            creationsManager.ClearLoad(type);
+            creationsManager.StartLoad(type);
         }
 
         public void RefreshResults()
