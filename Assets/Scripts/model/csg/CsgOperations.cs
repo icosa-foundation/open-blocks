@@ -608,11 +608,30 @@ namespace com.google.apps.peltzer.client.model.csg
             CsgPolygon closest = null;
             closestPolyDist = float.MaxValue;
 
+            Vector3[] perturbationDirections = new Vector3[]
+            {
+                Vector3.zero,
+                Vector3.right * 0.1f,
+                Vector3.up * 0.1f,
+                Vector3.forward * 0.1f,
+                -Vector3.right * 0.1f,
+                -Vector3.up * 0.1f,
+                -Vector3.forward * 0.1f,
+                new Vector3(0.1f, 0.1f, 0.1f),
+                new Vector3(-0.1f, 0.1f, 0.1f),
+                new Vector3(0.1f, -0.1f, 0.1f),
+                new Vector3(0.1f, 0.1f, -0.1f)
+            };
+
             bool done;
             int perturbIndex = 0;
             do
             {
                 done = true;  // Done unless we hit a special case.
+                closest = null;
+                closestPolyDist = float.MaxValue;
+                Vector3 perturbedNormal = (rayNormal + perturbationDirections[perturbIndex]).normalized;
+
                 foreach (CsgPolygon otherPoly in wrt.polygons)
                 {
                     float dot = Vector3.Dot(perturbedNormal, otherPoly.plane.normal);
@@ -668,12 +687,12 @@ namespace com.google.apps.peltzer.client.model.csg
 
                 if (!done)
                 {
-                    // Perturb the normal and try again.
-                    rayNormal += new Vector3(
-                      UnityEngine.Random.Range(-0.1f, 0.1f),
-                      UnityEngine.Random.Range(-0.1f, 0.1f),
-                      UnityEngine.Random.Range(-0.1f, 0.1f));
-                    rayNormal = rayNormal.normalized;
+                    perturbIndex++;
+                    if (perturbIndex >= perturbationDirections.Length)
+                    {
+                        Debug.LogWarning($"CSG raycast classification failed after trying {perturbationDirections.Length} perturbations");
+                        break;
+                    }
                 }
             } while (!done);
 
