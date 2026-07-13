@@ -1105,6 +1105,17 @@ namespace com.google.apps.peltzer.client.model.core
                 serializer.FinishReadingChunk(SerializationConsts.CHUNK_FACE_TEXTURES);
             }
 
+            // Accept files written by the initial texture-map implementation, which placed remix IDs after the new
+            // texture extensions. New files use the legacy-first order above for older-reader compatibility.
+            if (remixIds == null
+              && serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS)
+            {
+                serializer.StartReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
+                remixIds = PolySerializationUtils.ReadStringSet(serializer, 0,
+                  SerializationConsts.MAX_REMIX_IDS_PER_MMESH, "remixIds");
+                serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
+            }
+
             RecalcBounds();
             /// bug - orphan vertices from Zandria models were causing reverseTable lookup failures.  Fixing
             /// by cleaning up orphan vertices on import.
