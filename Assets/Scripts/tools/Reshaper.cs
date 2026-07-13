@@ -310,10 +310,6 @@ namespace com.google.apps.peltzer.client.tools
             else
             {
                 // Update the position of the selector.
-                if (selector == null)
-                {
-                    selector.TurnOnSelectIndicator();
-                }
                 selector.SelectAtPosition(peltzerController.LastPositionModel, Selector.FACES_EDGES_AND_VERTICES);
                 selector.UpdateInactive(Selector.FACES_EDGES_AND_VERTICES);
                 // Play the selection animation for newly-hovered or -selected faces.

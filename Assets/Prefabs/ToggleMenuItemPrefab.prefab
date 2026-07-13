@@ -348,8 +348,8 @@ MonoBehaviour:
   isHovered: 0
   action: 16
   enabled: 0
-  featureStringOn: +allowNoncoplanarFaces,+loopSubdivideEnabled
-  featureStringOff: -allowNoncoplanarFaces,-loopSubdivideEnabled
+  featureStringOn: +allowNoncoplanarFaces
+  featureStringOff: -allowNoncoplanarFaces
   enabledText: {fileID: 1280293416381174}
   disabledText: {fileID: 1870402389555572}
   enableDepedentToggles: []

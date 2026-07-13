@@ -66,9 +66,9 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// <param name="currentlyHoveredEdge">Currently hovered edge from Selector</param>
         public void ShowSelectableVertsEdgesNear(Vector3 selectPositionModel,
           HashSet<VertexKey> currentlySelectedVerts,
-          VertexKey currentlyHoveredVert,
+          VertexKey? currentlyHoveredVert,
           HashSet<EdgeKey> currentlySelectedEdges,
-          EdgeKey currentlyHoveredEdge)
+          EdgeKey? currentlyHoveredEdge)
         {
             GetMeshesNear(selectPositionModel, currentlySelectedEdges.Count == 0, currentlySelectedVerts.Count == 0,
               currentlySelectedVerts, currentlySelectedEdges, currentlyHoveredVert, currentlyHoveredEdge);
@@ -112,7 +112,7 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// </summary>
         public void ShowSelectableVertsNear(Vector3 selectPositionModel,
           HashSet<VertexKey> currentlySelectedVerts,
-          VertexKey currentlyHoveredVert)
+          VertexKey? currentlyHoveredVert)
         {
             TurnOffInactiveEdges();
             GetMeshesNear(selectPositionModel, true, false, currentlySelectedVerts, null, currentlyHoveredVert, null);
@@ -123,7 +123,7 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// order to preallocate the hash set.
         private HashSet<int> nearbyMeshes = new HashSet<int>();
         private void GetMeshesNear(Vector3 selectPositionModel, bool showVerts, bool showEdges,
-          HashSet<VertexKey> selectedVerts, HashSet<EdgeKey> selectedEdges, VertexKey hoveredVert, EdgeKey hoveredEdge)
+          HashSet<VertexKey> selectedVerts, HashSet<EdgeKey> selectedEdges, VertexKey? hoveredVert, EdgeKey? hoveredEdge)
         {
             nearbyMeshes.Clear();
             spatialIndex.FindMeshesClosestToDirect(selectPositionModel, INACTIVE_HIGHLIGHT_RADIUS, ref nearbyMeshes);
@@ -135,7 +135,7 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// Given a set of meshids which should render wireframes, manage the rendering of the wireframes.
         /// </summary>
         private void SelectFromMeshes(HashSet<int> selectableMeshIds, bool showVerts, bool showEdges,
-            HashSet<VertexKey> selectedVerts, HashSet<EdgeKey> selectedEdges, VertexKey hoveredVert, EdgeKey hoveredEdge)
+            HashSet<VertexKey> selectedVerts, HashSet<EdgeKey> selectedEdges, VertexKey? hoveredVert, EdgeKey? hoveredEdge)
         {
             highlightUtils.inactiveRenderer.showEdges = showEdges;
             highlightUtils.inactiveRenderer.showPoints = showVerts;
@@ -157,7 +157,7 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// </summary>
         private void ShowSelectableVertsNearInternal(HashSet<VertexKey> currentlySelectedVerts,
           HashSet<VertexKey> selectableVerts,
-          VertexKey currentlyHoveredVert)
+          VertexKey? currentlyHoveredVert)
         {
             // Subtract that set from our old set to find which have transitioned into inactive
             newlyInactiveVerts.Clear();
@@ -170,9 +170,9 @@ namespace com.google.apps.peltzer.client.tools.utils
             // Remove ones that are actually selected
             currentSelectableVerts.ExceptWith(currentlySelectedVerts);
             // And if one is hovered, remove that too.
-            if (currentlyHoveredVert != null)
+            if (currentlyHoveredVert.HasValue)
             {
-                currentSelectableVerts.Remove(currentlyHoveredVert);
+                currentSelectableVerts.Remove(currentlyHoveredVert.Value);
             }
             // Now turn 'em all on.
             foreach (VertexKey key in currentSelectableVerts)
@@ -187,7 +187,7 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// </summary>
         public void ShowSelectableEdgesNear(Vector3 selectPositionModel,
           HashSet<EdgeKey> currentlySelectedEdges,
-          EdgeKey currentlyHoveredEdge)
+          EdgeKey? currentlyHoveredEdge)
         {
             TurnOffInactiveVerts();
             GetMeshesNear(selectPositionModel, false, true, null, currentlySelectedEdges, null, currentlyHoveredEdge);

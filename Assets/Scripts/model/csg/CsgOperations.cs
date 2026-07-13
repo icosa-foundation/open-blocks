@@ -28,6 +28,11 @@ namespace com.google.apps.peltzer.client.model.csg
     {
         private const float COPLANAR_EPS = 0.001f;
 
+        // Safety cap on split iterations per SplitObject call (each iteration performs at most
+        // one polygon split).  Prevents infinite loops when floating point issues cause the same
+        // degenerate split to be attempted repeatedly.
+        private const int MAX_SPLIT_ITERATIONS = 1000;
+
         public enum CsgOperation
         {
             INACTIVE,
@@ -44,8 +49,6 @@ namespace com.google.apps.peltzer.client.model.csg
         /// <returns>true if the brush intersects with meshes in the scene.</returns>
         public static bool CsgMeshFromModel(Model model, SpatialIndex spatialIndex, MMesh brush, CsgOperation csgOp = CsgOperation.SUBTRACT)
         {
-            Bounds bounds = brush.bounds;
-
             List<Command> commands = new List<Command>();
             HashSet<int> intersectingMeshIds;
             if (spatialIndex.FindIntersectingMeshes(brush.bounds, out intersectingMeshIds))
@@ -526,20 +529,40 @@ namespace com.google.apps.peltzer.client.model.csg
                             break;
                         }
                     }
-                    AssertOrThrow.True(poly.status != PolygonStatus.UNKNOWN, "Should have classified polygon.");
+                    if (poly.status == PolygonStatus.UNKNOWN)
+                    {
+                        // Vertex statuses were inconclusive (shouldn't normally happen).  Rather
+                        // than aborting the whole operation, classify by raycast, which is slower
+                        // but always produces an answer.
+                        ClassifyPolygonUsingRaycast(poly, wrt);
+                    }
                 }
             }
         }
 
-        // Fig 8.1: Propagate vertex status.
+        // Fig 8.1: Propagate vertex status.  Iterative to avoid stack overflow on large meshes.
         private static void PropagateVertexStatus(CsgVertex vertex, VertexStatus newStatus)
         {
-            if (vertex.status == VertexStatus.UNKNOWN)
+            if (vertex.status != VertexStatus.UNKNOWN)
             {
-                vertex.status = newStatus;
-                foreach (CsgVertex neighbor in vertex.neighbors)
+                return;
+            }
+            Stack<CsgVertex> pending = new Stack<CsgVertex>();
+            pending.Push(vertex);
+            while (pending.Count > 0)
+            {
+                CsgVertex current = pending.Pop();
+                if (current.status != VertexStatus.UNKNOWN)
                 {
-                    PropagateVertexStatus(neighbor, newStatus);
+                    continue;
+                }
+                current.status = newStatus;
+                foreach (CsgVertex neighbor in current.neighbors)
+                {
+                    if (neighbor.status == VertexStatus.UNKNOWN)
+                    {
+                        pending.Push(neighbor);
+                    }
                 }
             }
         }
@@ -581,11 +604,19 @@ namespace com.google.apps.peltzer.client.model.csg
             CsgPolygon closest = null;
             closestPolyDist = float.MaxValue;
 
+            // Deterministic source of ray perturbations. UnityEngine.Random would make CSG results
+            // differ from run to run (and pollute the global random state).
+            System.Random perturbationRandom = new System.Random(12345);
+
             bool done;
             int count = 0;
             do
             {
                 done = true;  // Done unless we hit a special case.
+                // Discard any partial results from a previous, aborted pass: they were computed
+                // with a different ray direction and must not be mixed with this pass.
+                closest = null;
+                closestPolyDist = float.MaxValue;
                 foreach (CsgPolygon otherPoly in wrt.polygons)
                 {
                     float dot = Vector3.Dot(rayNormal, otherPoly.plane.normal);
@@ -642,9 +673,9 @@ namespace com.google.apps.peltzer.client.model.csg
                 {
                     // Perturb the normal and try again.
                     rayNormal += new Vector3(
-                      UnityEngine.Random.Range(-0.1f, 0.1f),
-                      UnityEngine.Random.Range(-0.1f, 0.1f),
-                      UnityEngine.Random.Range(-0.1f, 0.1f));
+                      (float)(perturbationRandom.NextDouble() * 0.2 - 0.1),
+                      (float)(perturbationRandom.NextDouble() * 0.2 - 0.1),
+                      (float)(perturbationRandom.NextDouble() * 0.2 - 0.1));
                     rayNormal = rayNormal.normalized;
                 }
                 count++;
@@ -686,15 +717,13 @@ namespace com.google.apps.peltzer.client.model.csg
             do
             {
                 splitPoly = false;
-                // Temporary guard to prevent infinite loops while there are bugs.
-                // TODO(bug) figure out why csg creates so many rejected splits.
+                // Guard against infinite loops caused by degenerate splits being retried forever.
+                // Note this is a cap on the total number of successful splits: complex meshes
+                // (e.g. spheres) legitimately need hundreds, so keep it well above typical usage.
                 count++;
-                if (count > 100)
+                if (count > MAX_SPLIT_ITERATIONS)
                 {
-                    // This usually occurs when csg keeps trying to do the same invalid split over and over.
-                    // If the algorithm has reached this point, it usually means that the two meshes are
-                    // split enough to perform a pretty good looking csg subtraction. More investigation
-                    // should be done on bug and we may be able to remove this guard.
+                    Debug.LogWarning($"CSG: SplitObject aborted after {MAX_SPLIT_ITERATIONS} iterations; result may be incomplete.");
                     return;
                 }
                 foreach (CsgPolygon toSplitPoly in toSplit.polygons)

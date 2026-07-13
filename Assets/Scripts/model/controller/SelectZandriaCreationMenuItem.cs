@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
-using com.google.apps.peltzer.client.zandria;
-using System.Collections.Generic;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -25,8 +22,6 @@ namespace com.google.apps.peltzer.client.model.controller
     /// </summary>
     public class SelectZandriaCreationMenuItem : SelectableMenuItem
     {
-        public List<MMesh> meshes;
-
         public override void ApplyMenuOptions(PeltzerMain main)
         {
             // Uncomment to re-enable 'quick grab' if desired.

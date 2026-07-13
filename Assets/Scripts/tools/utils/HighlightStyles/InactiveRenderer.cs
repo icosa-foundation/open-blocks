@@ -92,7 +92,7 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// Turns on edge wireframes for supplied meshes. (Will use cached data if a mesh has been passed to this method
         /// since the most recent clear.)
         /// </summary>
-        public void TurnOnEdgeWireframe(IEnumerable<int> meshIds, HashSet<EdgeKey> selectedEdges, EdgeKey hoveredEdge)
+        public void TurnOnEdgeWireframe(IEnumerable<int> meshIds, HashSet<EdgeKey> selectedEdges, EdgeKey? hoveredEdge)
         {
             edgeSet.Clear();
             foreach (int meshId in meshIds)
@@ -107,7 +107,7 @@ namespace com.google.apps.peltzer.client.tools.utils
                     {
                         var edge = new EdgeKey(meshId, curFace.vertexIds[i], curFace.vertexIds[(i + 1) % curFace.vertexIds.Count]);
 
-                        if (selectedEdges.Contains(edge) || edge.Equals(hoveredEdge)) continue;
+                        if (selectedEdges.Contains(edge) || (hoveredEdge.HasValue && edge.Equals(hoveredEdge.Value))) continue;
 
                         edgeSet.Add(edge);
                     }
@@ -137,9 +137,8 @@ namespace com.google.apps.peltzer.client.tools.utils
         /// Turns on vertex wireframes for supplied meshes. (Will use cached data if a mesh has been passed to this method
         /// since the most recent clear.)
         /// </summary>
-        public void TurnOnPointWireframe(IEnumerable<int> meshIds, HashSet<VertexKey> selectedVerts, VertexKey hoveredVert)
+        public void TurnOnPointWireframe(IEnumerable<int> meshIds, HashSet<VertexKey> selectedVerts, VertexKey? hoveredVert)
         {
-            // Debug.Log(meshIds.ToList().Count + " " + selectedVerts.Count + " " + hoveredVert);
             vertexKeys.Clear();
             foreach (int meshId in meshIds)
             {
@@ -150,7 +149,7 @@ namespace com.google.apps.peltzer.client.tools.utils
                 foreach (int vertId in polyMesh.GetVertexIds())
                 {
                     var vertexKey = new VertexKey(meshId, vertId);
-                    if (selectedVerts.Contains(vertexKey) || vertexKey.Equals(hoveredVert)) continue;
+                    if (selectedVerts.Contains(vertexKey) || (hoveredVert.HasValue && vertexKey.Equals(hoveredVert.Value))) continue;
                     vertexKeys.Add(vertexKey);
                 }
             }

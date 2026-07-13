@@ -112,6 +112,12 @@ namespace com.google.apps.peltzer.client.model.render
               }));
         }
 
+        // Scratch lists for UpdateMeshes: it only needs the updated positions, but AddFaceVertices also emits
+        // colors and normals. These are reused (this method runs every frame while a held mesh is being resized)
+        // to avoid allocating two throwaway lists per face per frame. Main thread only.
+        private static readonly List<Color32> scratchColors = new List<Color32>();
+        private static readonly List<Vector3> scratchNormals = new List<Vector3>();
+
         /// <summary>
         ///   Update the positions and recalculate bounds and normals for a mesh that hasn't changed geometry.
         /// </summary>
@@ -133,8 +139,10 @@ namespace com.google.apps.peltzer.client.model.render
             foreach (Face face in updatedMesh.GetFaces())
             {
                 List<Vector3> newPos;
-                List<Color32> newColors = new List<Color32>();
-                List<Vector3> newNormals = new List<Vector3>();
+                scratchColors.Clear();
+                scratchNormals.Clear();
+                List<Color32> newColors = scratchColors;
+                List<Vector3> newNormals = scratchNormals;
                 MaterialAndColor faceMaterialAndColor = MaterialRegistry.GetMaterialAndColorById(face.properties.materialId);
                 if (!newPositionsPerMaterial.TryGetValue(faceMaterialAndColor, out newPos))
                 {
@@ -161,8 +169,10 @@ namespace com.google.apps.peltzer.client.model.render
             foreach (MeshWithMaterial uMesh in existing)
             {
                 List<Vector3> newPos;
+                // Note: vertexCount, not .vertices - accessing .vertices allocates a copy of the whole vertex
+                // array, and this method runs for every mesh update while a mesh is being manipulated.
                 if (!newPositionsPerMaterial.TryGetValue(uMesh.materialAndColor, out newPos) ||
-                    newPos.Count != uMesh.mesh.vertices.Count())
+                    newPos.Count != uMesh.mesh.vertexCount)
                 {
                     // If materials changed, easiest action is to remesh everything.
                     foreach (var mm in existing)
