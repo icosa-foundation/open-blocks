@@ -267,11 +267,16 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         /// <summary>
-        /// Returns a list of vertex colors for each vertex in the face in clockwise order, used for building a 
-        /// renderable mesh.
+        /// Returns a list of vertex colors for each vertex in the face in clockwise order, used for building a
+        /// renderable mesh. Lazily rebuilt (colors are derived purely from the face's material), so clones don't
+        /// need to carry a copy of the cache.
         /// </summary>
         public List<Color32> GetColors()
         {
+            if (cachedColors.Count != _vertexIds.Count)
+            {
+                RecalcColorCache();
+            }
             return cachedColors;
         }
 
@@ -355,6 +360,9 @@ namespace com.google.apps.peltzer.client.model.core
         {
             // Properties is a value object, so no need to clone.  But we still need to
             // make a new Face, so that the properties aren't shared.
+            // The vertex position/normal/color/UV caches are deliberately not copied: they are all lazily rebuilt
+            // on demand (see GetMeshSpaceVertices, GetRenderNormals, GetColors and GetUVs), and skipping them keeps
+            // retained clones (undo snapshots, spatial index copies, etc) small.
             return new Face(
               _id,
               _vertexIds,
@@ -362,10 +370,10 @@ namespace com.google.apps.peltzer.client.model.core
               _properties,
               _modelTriangulation,
               _renderTriangulation,
-              new List<Vector3>(cachedMeshSpacePositions),
-              new List<Vector3>(cachedRenderNormals),
-              new List<Color32>(cachedColors),
-              new List<Vector2>(cachedUVs));
+              new List<Vector3>(),
+              new List<Vector3>(),
+              new List<Color32>(),
+              new List<Vector2>());
         }
     }
 }

@@ -54,6 +54,14 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         private static readonly System.Random rand = new System.Random();
 
+        /// <summary>
+        /// Random source for offset jitter. Thread-static because meshes are constructed on background threads
+        /// (deserialization, CSG, etc) and System.Random is not thread-safe. Sharing one instance per thread
+        /// avoids allocating (and seeding) a new Random for every mesh construction/clone.
+        /// </summary>
+        [ThreadStatic]
+        private static System.Random jitterRandom;
+
         // Max sizes. TODO(bug): Tune these and enforce them, temp value for now.
         public static readonly int MAX_FACES = 20000;
 
@@ -84,12 +92,32 @@ namespace com.google.apps.peltzer.client.model.core
         public int faceCount { get { return facesById.Count; } }
 
         /// <summary>
+        /// Backing field for the reverse table. Null means "not materialized yet" - it will be lazily rebuilt from
+        /// facesById on first access. Keeping this lazy means clones (undo snapshots, spatial index copies, menu
+        /// previews, etc) don't pay the considerable memory cost (one HashSet per vertex) unless they are actually
+        /// edited.
+        /// </summary>
+        private Dictionary<int, HashSet<int>> _reverseTable;
+
+        /// <summary>
         /// Reverse table which provides vertex id to face id lookup - each vertex maps to the set of faces in which it is
         /// used.
         /// Until all mesh modification is fully converted to use GeometryOperation - http://bug the only safe way to
         /// use this data is by calling RecalcReverseTable
+        /// Lazily rebuilt from face data on first access.
         /// </summary>
-        public Dictionary<int, HashSet<int>> reverseTable;
+        public Dictionary<int, HashSet<int>> reverseTable
+        {
+            get
+            {
+                if (_reverseTable == null)
+                {
+                    RecalcReverseTable();
+                }
+                return _reverseTable;
+            }
+            set { _reverseTable = value; }
+        }
 
         /// <summary>
         /// Bounds of this mesh in model coordinates. NOT in mesh coordinates.
@@ -127,7 +155,7 @@ namespace com.google.apps.peltzer.client.model.core
         {
             Initialize(id, offset, rotation, verticesById, facesById, groupId, remixIds);
             RecalcBounds();
-            RecalcReverseTable();
+            // The reverse table is built lazily on first access.
         }
 
         public MMesh(int id, Vector3 offset, Quaternion rotation,
@@ -140,7 +168,9 @@ namespace com.google.apps.peltzer.client.model.core
                 groupId, remixIds
             );
             this.bounds = bounds;
-            this.reverseTable = reverseTable;
+            this.localBounds = localBounds;
+            // May be null, in which case the reverse table is lazily rebuilt on first access.
+            _reverseTable = reverseTable;
         }
 
         public MMesh(int id, Vector3 offset, Quaternion rotation,
@@ -159,7 +189,7 @@ namespace com.google.apps.peltzer.client.model.core
                     ));
             Initialize(id, offset, rotation, vDict, fDict);
             RecalcBounds();
-            RecalcReverseTable();
+            // The reverse table is built lazily on first access.
         }
 
 
@@ -170,20 +200,22 @@ namespace com.google.apps.peltzer.client.model.core
           HashSet<string> remixIds = null)
         {
             _id = id;
-            System.Random rand = new System.Random();
-
-            this._offsetJitter = new Vector3((float)(rand.NextDouble() - 0.5) / 5000f,
-              (float)(rand.NextDouble() - 0.5) / 5000f,
-              (float)(rand.NextDouble() - 0.5) / 5000f);
+            this._offsetJitter = CreateOffsetJitter();
             this._offset = offset;
             this._rotation = rotation;
             this.verticesById = verticesById;
             this.facesById = facesById;
-            this.bounds = bounds;
-            this.localBounds = localBounds;
-            this.reverseTable = reverseTable;
             this.groupId = groupId;
             this.remixIds = remixIds;
+        }
+
+        private static Vector3 CreateOffsetJitter()
+        {
+            System.Random rand = jitterRandom ?? (jitterRandom = new System.Random());
+
+            return new Vector3((float)(rand.NextDouble() - 0.5) / 5000f,
+              (float)(rand.NextDouble() - 0.5) / 5000f,
+              (float)(rand.NextDouble() - 0.5) / 5000f);
         }
 
         /// <summary>
@@ -198,16 +230,11 @@ namespace com.google.apps.peltzer.client.model.core
                 facesCloned.Add(pair.Key, pair.Value.Clone());
             }
 
-            Dictionary<int, HashSet<int>> reverseTableCloned = new Dictionary<int, HashSet<int>>(reverseTable.Count);
-
-            foreach (KeyValuePair<int, HashSet<int>> pair in reverseTable)
-            {
-                reverseTableCloned[pair.Key] = new HashSet<int>(pair.Value);
-            }
-
             Dictionary<int, Vertex> verticesCloned = new Dictionary<int, Vertex>(verticesById);
             HashSet<string> remixIdsCloned = remixIds == null ? null : new HashSet<string>(remixIds);
 
+            // The reverse table is deliberately not copied: it is derived data (one HashSet per vertex, so it
+            // dominates the memory cost of a clone) and the clone lazily rebuilds it if and when it is edited.
             return new MMesh(id,
               _offset,
               _rotation,
@@ -215,7 +242,7 @@ namespace com.google.apps.peltzer.client.model.core
               facesCloned,
               bounds,
               localBounds,
-              reverseTableCloned,
+              /* reverseTable */ null,
               groupId,
               remixIdsCloned);
         }
@@ -243,6 +270,9 @@ namespace com.google.apps.peltzer.client.model.core
                 facesCloned.Add(pair.Key, pair.Value.Clone());
             }
 
+            // The reverse table is deliberately not copied; see Clone(). (Copying it here used to shallow-copy the
+            // per-vertex HashSets, which aliased them between the clone and the original - editing one would have
+            // corrupted the other.)
             return new MMesh(newId,
               _offset,
               _rotation,
@@ -250,7 +280,7 @@ namespace com.google.apps.peltzer.client.model.core
               facesCloned,
               bounds,
               localBounds,
-              new Dictionary<int, HashSet<int>>(reverseTable),
+              /* reverseTable */ null,
               newGroupId,
               remixIds == null ? null : new HashSet<string>(remixIds));
         }
@@ -565,18 +595,18 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         public void RecalcReverseTable()
         {
-            if (reverseTable == null) reverseTable = new Dictionary<int, HashSet<int>>();
-            else reverseTable.Clear();
+            if (_reverseTable == null) _reverseTable = new Dictionary<int, HashSet<int>>(verticesById.Count);
+            else _reverseTable.Clear();
             foreach (Face face in facesById.Values)
             {
                 for (int i = 0; i < face.vertexIds.Count; i++)
                 {
                     int curVert = face.vertexIds[i];
                     HashSet<int> faceIds;
-                    if (!reverseTable.TryGetValue(curVert, out faceIds))
+                    if (!_reverseTable.TryGetValue(curVert, out faceIds))
                     {
                         faceIds = new HashSet<int>();
-                        reverseTable[curVert] = faceIds;
+                        _reverseTable[curVert] = faceIds;
                     }
                     faceIds.Add(face.id);
                 }
@@ -846,9 +876,13 @@ namespace com.google.apps.peltzer.client.model.core
                 serializer.WriteInt(face.id);
                 serializer.WriteInt(face.properties.materialId);
                 PolySerializationUtils.WriteIntList(serializer, face.vertexIds);
-                // Repeat the face normal for backwards compatability.
-                PolySerializationUtils.WriteVector3List(serializer,
-                  Enumerable.Repeat(face.normal, face.vertexIds.Count).ToList());
+                // Repeat the face normal for backwards compatability. Written inline (same format as
+                // WriteVector3List) to avoid allocating a temporary list per face.
+                serializer.WriteCount(face.vertexIds.Count);
+                for (int i = 0; i < face.vertexIds.Count; i++)
+                {
+                    PolySerializationUtils.WriteVector3(serializer, face.normal);
+                }
 
                 // DEPRECATED: Write holes.
                 serializer.WriteCount(0);
@@ -967,11 +1001,11 @@ namespace com.google.apps.peltzer.client.model.core
             _id = serializer.ReadInt();
             _offset = PolySerializationUtils.ReadVector3(serializer);
             _rotation = PolySerializationUtils.ReadQuaternion(serializer);
+            _offsetJitter = CreateOffsetJitter();
             groupId = serializer.ReadInt();
 
             verticesById = new Dictionary<int, Vertex>();
             facesById = new Dictionary<int, Face>();
-            reverseTable = new Dictionary<int, HashSet<int>>();
 
             // Read vertices.
             int vertexCount = serializer.ReadCount(0, SerializationConsts.MAX_VERTICES_PER_MESH, "vertexCount");
@@ -1073,20 +1107,34 @@ namespace com.google.apps.peltzer.client.model.core
             }
 
             RecalcBounds();
-            RecalcReverseTable();
             /// bug - orphan vertices from Zandria models were causing reverseTable lookup failures.  Fixing
             /// by cleaning up orphan vertices on import.
-            HashSet<int> orphanVerts = new HashSet<int>();
+            /// This is done from face data directly (rather than via the reverse table) so that deserialization
+            /// doesn't have to materialize the reverse table - a considerable memory saving for meshes that are
+            /// only ever displayed (e.g. Poly menu previews). The table is lazily rebuilt if the mesh is edited.
+            HashSet<int> usedVerts = new HashSet<int>();
+            foreach (Face face in facesById.Values)
+            {
+                for (int i = 0; i < face.vertexIds.Count; i++)
+                {
+                    usedVerts.Add(face.vertexIds[i]);
+                }
+            }
+            List<int> orphanVerts = null;
             foreach (Vertex vert in verticesById.Values)
             {
-                if (!reverseTable.ContainsKey(vert.id))
+                if (!usedVerts.Contains(vert.id))
                 {
+                    if (orphanVerts == null) orphanVerts = new List<int>();
                     orphanVerts.Add(vert.id);
                 }
             }
-            foreach (int vertId in orphanVerts)
+            if (orphanVerts != null)
             {
-                verticesById.Remove(vertId);
+                foreach (int vertId in orphanVerts)
+                {
+                    verticesById.Remove(vertId);
+                }
             }
         }
 

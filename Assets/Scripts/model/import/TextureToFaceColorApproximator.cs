@@ -88,6 +88,12 @@ namespace com.google.apps.peltzer.client.model.import
             Vector2[] uvs = mesh.uv;
             Color[] vertexColors = mesh.colors;
             bool hasVertexColors = vertexColors != null && vertexColors.Length > 0;
+            // UnityGLTF importer stores vertex colours via SetColors32; fall back to colors32 if colors is empty.
+            if (!hasVertexColors && mesh.colors32 != null && mesh.colors32.Length > 0)
+            {
+                vertexColors = Array.ConvertAll(mesh.colors32, c => (Color)c);
+                hasVertexColors = true;
+            }
 
             // If we have vertex colors but no UVs and no texture, use vertex colors only
             if (hasVertexColors && (uvs == null || uvs.Length == 0))
@@ -346,22 +352,15 @@ namespace com.google.apps.peltzer.client.model.import
                 return null;
             }
 
-            if (material.HasTexture(BaseMapId))
-            {
-                return material.GetTexture(BaseMapId);
-            }
+            // Use HasProperty + explicit null check: Material.HasTexture(int) is a Unity built-in that only
+            // checks property existence, not whether a texture is actually assigned.
+            Texture tex = material.HasProperty(BaseMapId) ? material.GetTexture(BaseMapId) : null;
+            if (tex != null) return tex;
 
-            if (material.HasTexture(MainTexId))
-            {
-                return material.GetTexture(MainTexId);
-            }
+            tex = material.HasProperty(MainTexId) ? material.GetTexture(MainTexId) : null;
+            if (tex != null) return tex;
 
             return material.mainTexture;
-        }
-
-        private static bool HasTexture(this Material material, int propertyId)
-        {
-            return material != null && material.HasProperty(propertyId) && material.GetTexture(propertyId) != null;
         }
 
         private static Color SampleFaceColor(
@@ -523,9 +522,14 @@ namespace com.google.apps.peltzer.client.model.import
                 return Color.white;
             }
 
+            // UnityGLTF maps baseColorFactor to _Color (legacy property) when using a custom shader name,
+            // leaving _BaseColor at its default white. Check _BaseColor first, but fall through to
+            // _Color if _BaseColor is white and _Color is not.
             if (material.HasProperty(BaseColorId))
             {
-                return material.GetColor(BaseColorId);
+                Color c = material.GetColor(BaseColorId);
+                if (c != Color.white || !material.HasProperty(ColorId))
+                    return c;
             }
 
             if (material.HasProperty(ColorId))
