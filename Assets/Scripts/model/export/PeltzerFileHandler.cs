@@ -21,6 +21,7 @@ using UnityEngine;
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.main;
+using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.serialization;
 
 namespace com.google.apps.peltzer.client.model.export
@@ -62,7 +63,8 @@ namespace com.google.apps.peltzer.client.model.export
                 materials.Add(new PeltzerMaterial(materialId));
             }
 
-            PeltzerFile peltzerFile = new PeltzerFile(metadata, zoomFactor, materials, meshes.ToList());
+            PeltzerFile peltzerFile = new PeltzerFile(metadata, zoomFactor, materials, meshes.ToList(),
+              TextureManager.Instance.GetAllTextures());
 
             if (serializer == null)
             {

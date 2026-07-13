@@ -1862,6 +1862,7 @@ namespace com.google.apps.peltzer.client.model.main
         public void LoadPeltzerFileIntoModel(PeltzerFile file, LoadOptions loadOptions = null)
         {
             loadOptions = loadOptions ?? LoadOptions.DEFAULTS;
+            TextureManager.Instance.LoadTexturesFromFile(file.textures);
 
             foreach (MMesh originalMesh in file.meshes)
             {

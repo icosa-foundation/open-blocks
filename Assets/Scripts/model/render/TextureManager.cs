@@ -34,10 +34,14 @@ namespace com.google.apps.peltzer.client.model.render
         // This is separate from TextureAsset's internal cache for better management
         private Dictionary<int, Texture2D> loadedTextures;
 
+        // Material variants keyed by the complete set of face render properties.
+        private Dictionary<FaceProperties, MaterialAndColor> texturedMaterials;
+
         private TextureManager()
         {
             textureAssets = new Dictionary<int, TextureAsset>();
             loadedTextures = new Dictionary<int, Texture2D>();
+            texturedMaterials = new Dictionary<FaceProperties, MaterialAndColor>();
         }
 
         /// <summary>
@@ -110,6 +114,61 @@ namespace com.google.apps.peltzer.client.model.render
         }
 
         /// <summary>
+        /// Gets a material variant configured for all textures and UV transforms on a face.
+        /// </summary>
+        public MaterialAndColor GetMaterialAndColor(FaceProperties properties)
+        {
+            MaterialAndColor baseMaterial = MaterialRegistry.GetMaterialAndColorById(properties.materialId);
+            if (!properties.HasTextures())
+            {
+                return baseMaterial;
+            }
+
+            if (texturedMaterials.TryGetValue(properties, out MaterialAndColor cachedMaterial))
+            {
+                return cachedMaterial;
+            }
+
+            MaterialAndColor materialVariant = baseMaterial.Clone();
+            ConfigureMaterial(materialVariant.material, properties);
+            if (materialVariant.material2 != null)
+            {
+                ConfigureMaterial(materialVariant.material2, properties);
+            }
+            texturedMaterials[properties] = materialVariant;
+            return materialVariant;
+        }
+
+        private void ConfigureMaterial(Material material, FaceProperties properties)
+        {
+            Texture2D albedoTexture = GetTexture(properties.albedoTextureId);
+            if (albedoTexture != null)
+            {
+                SetTexture(material, "_BaseMap", albedoTexture, properties.textureScale, properties.textureOffset);
+                SetTexture(material, "_MainTex", albedoTexture, properties.textureScale, properties.textureOffset);
+            }
+
+            Texture2D bumpTexture = GetTexture(properties.bumpTextureId);
+            if (bumpTexture != null && material.HasProperty("_BumpMap"))
+            {
+                SetTexture(material, "_BumpMap", bumpTexture, properties.textureScale, properties.textureOffset);
+                material.EnableKeyword("_NORMALMAP");
+            }
+        }
+
+        private static void SetTexture(Material material, string propertyName, Texture texture,
+          Vector2 scale, Vector2 offset)
+        {
+            if (!material.HasProperty(propertyName))
+            {
+                return;
+            }
+            material.SetTexture(propertyName, texture);
+            material.SetTextureScale(propertyName, scale);
+            material.SetTextureOffset(propertyName, offset);
+        }
+
+        /// <summary>
         /// Adds a new texture asset to the manager.
         /// Used during import to register new textures.
         /// </summary>
@@ -176,6 +235,19 @@ namespace com.google.apps.peltzer.client.model.render
         /// </summary>
         public void ClearTextureCache()
         {
+            foreach (MaterialAndColor materialAndColor in texturedMaterials.Values)
+            {
+                if (materialAndColor.material != null)
+                {
+                    Object.Destroy(materialAndColor.material);
+                }
+                if (materialAndColor.material2 != null)
+                {
+                    Object.Destroy(materialAndColor.material2);
+                }
+            }
+            texturedMaterials.Clear();
+
             foreach (var texture in loadedTextures.Values)
             {
                 if (texture != null)

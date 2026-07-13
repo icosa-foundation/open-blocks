@@ -421,7 +421,8 @@ namespace com.google.apps.peltzer.client.model.render
         }
 
         // All MeshInfos that have room for more triangles to be added, by material.
-        private Dictionary<Material, List<MeshInfo>> meshInfosByMaterial = new Dictionary<Material, List<MeshInfo>>();
+        private Dictionary<FaceProperties, List<MeshInfo>> meshInfosByMaterial =
+          new Dictionary<FaceProperties, List<MeshInfo>>();
 
         public void Clear()
         {
@@ -551,7 +552,8 @@ namespace com.google.apps.peltzer.client.model.render
                           "MMesh has too many vertices ( " + pair.Value.verts.Count + " vs a max of " + MAX_VERTS_PER_MMESH);
                     }
                     // Find or create an unfull MeshInfo for the given material
-                    MeshInfo infoForMaterial = GetInfoForMaterialAndVertCount(pair.Key, pair.Value.verts.Count);
+                    MeshInfo infoForMaterial = GetInfoForMaterialAndVertCount(
+                      pair.Value.faceProperties, pair.Value.verts.Count);
 
                     infoForMaterial.AddMesh(meshId, pair.Value);
 
@@ -567,15 +569,15 @@ namespace com.google.apps.peltzer.client.model.render
         /// <summary>
         /// Gets a MeshInfo with sufficient space for the given material, or creates a new one if none currently exists.
         /// </summary>
-        private MeshInfo GetInfoForMaterialAndVertCount(int materialId, int spaceNeeded)
+        private MeshInfo GetInfoForMaterialAndVertCount(FaceProperties faceProperties, int spaceNeeded)
         {
             List<MeshInfo> infosForMaterial;
-            MaterialAndColor materialAndColor = MaterialRegistry.GetMaterialAndColorById(materialId);
-            meshInfosByMaterial.TryGetValue(materialAndColor.material, out infosForMaterial);
+            MaterialAndColor materialAndColor = TextureManager.Instance.GetMaterialAndColor(faceProperties);
+            meshInfosByMaterial.TryGetValue(faceProperties, out infosForMaterial);
             if (infosForMaterial == null)
             {
                 infosForMaterial = new List<MeshInfo>();
-                meshInfosByMaterial.Add(materialAndColor.material, infosForMaterial);
+                meshInfosByMaterial.Add(faceProperties, infosForMaterial);
             }
             // Just return the first info with room.
             for (int i = 0; i < infosForMaterial.Count; i++)
@@ -593,7 +595,7 @@ namespace com.google.apps.peltzer.client.model.render
             // same material will have the wrong transforms.
             newInfoForMaterial.materialAndColor = materialAndColor.Clone();
             allMeshInfos.Add(newInfoForMaterial);
-            meshInfosByMaterial[materialAndColor.material].Add(newInfoForMaterial);
+            meshInfosByMaterial[faceProperties].Add(newInfoForMaterial);
             return newInfoForMaterial;
         }
 

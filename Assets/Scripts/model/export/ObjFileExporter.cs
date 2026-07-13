@@ -367,8 +367,8 @@ namespace com.google.apps.peltzer.client.model.export
             // sub-meshes in turn.
             foreach (KeyValuePair<int, MeshGenContext> pair in meshInfoByMaterial)
             {
-                int materialId = pair.Key;
                 MeshGenContext meshGenContext = pair.Value;
+                int materialId = meshGenContext.faceProperties.materialId;
 
                 List<int> triangles = meshGenContext.triangles;
                 for (int i = 0; i < triangles.Count; i += 3)

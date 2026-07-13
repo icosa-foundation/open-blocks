@@ -31,6 +31,7 @@ namespace com.google.apps.peltzer.client.model.render
         public List<Color32> colors = new List<Color32>();
         public List<Vector3> normals = new List<Vector3>();
         public List<Vector2> uvs = new List<Vector2>();
+        public FaceProperties faceProperties;
     }
 
     /// <summary>
@@ -147,7 +148,7 @@ namespace com.google.apps.peltzer.client.model.render
                 List<Color32> newColors = scratchColors;
                 List<Vector3> newNormals = scratchNormals;
                 List<Vector2> newUvs = scratchUvs;
-                MaterialAndColor faceMaterialAndColor = MaterialRegistry.GetMaterialAndColorById(face.properties.materialId);
+                MaterialAndColor faceMaterialAndColor = TextureManager.Instance.GetMaterialAndColor(face.properties);
                 if (!newPositionsPerMaterial.TryGetValue(faceMaterialAndColor, out newPos))
                 {
                     newPositionsPerMaterial[faceMaterialAndColor] = new List<Vector3>();
@@ -217,30 +218,37 @@ namespace com.google.apps.peltzer.client.model.render
                 // Then, for each material, find an available dictionary for its components.
                 foreach (KeyValuePair<int, MeshGenContext> pair in contextByMaterialId)
                 {
-                    int material = pair.Key;
                     MeshGenContext newContext = pair.Value;
                     bool addedNewContext = false;
 
                     foreach (Dictionary<int, MeshGenContext> contextDict in allMeshContexts)
                     {
-                        if (!contextDict.ContainsKey(material))
+                        MeshGenContext compatibleContext = null;
+                        foreach (KeyValuePair<int, MeshGenContext> existingPair in contextDict)
                         {
-                            // If this dictionary has no entries for this material, add the new context and end the search.
-                            contextDict.Add(material, newContext);
+                            if (existingPair.Value.faceProperties.Equals(newContext.faceProperties))
+                            {
+                                compatibleContext = existingPair.Value;
+                                break;
+                            }
+                        }
+
+                        if (compatibleContext != null
+                          && compatibleContext.verts.Count + newContext.verts.Count <= ReMesher.MAX_VERTS_PER_MESH)
+                        {
+                            CombineContexts(newContext, compatibleContext);
+                            addedNewContext = true;
                             break;
                         }
 
-                        MeshGenContext existingContext = contextDict[material];
-                        if (existingContext.verts.Count + newContext.verts.Count > ReMesher.MAX_VERTS_PER_MESH)
+                        if (compatibleContext == null)
                         {
-                            // If adding the new context to this dictionary would exceed the limits of 
-                            // a Unity mesh, continue searching.
-                            continue;
-                        }
-                        else
-                        {
-                            // Else, if this new context fits into this dictionary, add it and end the search.
-                            CombineContexts(newContext, existingContext);
+                            int contextKey = pair.Key;
+                            while (contextDict.ContainsKey(contextKey))
+                            {
+                                contextKey--;
+                            }
+                            contextDict.Add(contextKey, newContext);
                             addedNewContext = true;
                             break;
                         }
@@ -251,7 +259,7 @@ namespace com.google.apps.peltzer.client.model.render
                         // If no existing dictionary was able to hold this new context, create a new one and populate it with
                         // this entry.
                         Dictionary<int, MeshGenContext> contextDict = new Dictionary<int, MeshGenContext>();
-                        contextDict[material] = newContext;
+                        contextDict[pair.Key] = newContext;
                         allMeshContexts.Add(contextDict);
                     }
                 }
@@ -293,6 +301,7 @@ namespace com.google.apps.peltzer.client.model.render
         private static Dictionary<int, MeshGenContext> InternalMeshComponentsFromMMesh(MMesh mmesh, bool useModelSpace)
         {
             Dictionary<int, MeshGenContext> contextByMaterialId = new Dictionary<int, MeshGenContext>();
+            int nextContextKey = -1;
             Vector3 wiggleVector = RandomWiggleVector();
 
             // If the MMesh has some opaque faces and some transparent faces, we also want to draw
@@ -301,12 +310,24 @@ namespace com.google.apps.peltzer.client.model.render
 
             foreach (Face face in mmesh.GetFaces())
             {
-                int materialId = face.properties.materialId;
-                MeshGenContext context;
-                if (!contextByMaterialId.TryGetValue(face.properties.materialId, out context))
+                MeshGenContext context = null;
+                foreach (MeshGenContext existingContext in contextByMaterialId.Values)
                 {
-                    context = new MeshGenContext();
-                    contextByMaterialId[materialId] = context;
+                    if (existingContext.faceProperties.Equals(face.properties))
+                    {
+                        context = existingContext;
+                        break;
+                    }
+                }
+                if (context == null)
+                {
+                    context = new MeshGenContext { faceProperties = face.properties };
+                    int contextKey = face.properties.materialId;
+                    while (contextByMaterialId.ContainsKey(contextKey))
+                    {
+                        contextKey = nextContextKey--;
+                    }
+                    contextByMaterialId[contextKey] = context;
                 }
 
                 // Should we also draw the inside of the faces:
@@ -551,7 +572,6 @@ namespace com.google.apps.peltzer.client.model.render
             List<MeshWithMaterial> meshes = new List<MeshWithMaterial>(contextByMaterialId.Count);
             foreach (KeyValuePair<int, MeshGenContext> pair in contextByMaterialId)
             {
-                int materialId = pair.Key;
                 MeshGenContext context = pair.Value;
                 Mesh mesh = new Mesh();
 
@@ -576,7 +596,9 @@ namespace com.google.apps.peltzer.client.model.render
                 mesh.RecalculateBounds();
 
                 // Add vertex colors.
-                MaterialAndColor materialAndColor = MaterialRegistry.GetMaterialAndColorById(materialId);
+                MaterialAndColor materialAndColor = materialOverride == null
+                  ? TextureManager.Instance.GetMaterialAndColor(context.faceProperties)
+                  : materialOverride;
                 Color32[] colors = new Color32[context.verts.Count];
                 Color32 color = materialOverride == null ? materialAndColor.color : materialOverride.color;
                 for (int i = 0; i < colors.Length; i++)
@@ -604,7 +626,6 @@ namespace com.google.apps.peltzer.client.model.render
             List<Mesh> meshes = new List<Mesh>(contextByMaterialId.Count);
             foreach (KeyValuePair<int, MeshGenContext> pair in contextByMaterialId)
             {
-                int materialId = pair.Key;
                 MeshGenContext context = pair.Value;
                 Mesh mesh = new Mesh();
                 mesh.SetVertices(context.verts);

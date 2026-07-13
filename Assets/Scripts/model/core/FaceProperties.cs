@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 
 namespace com.google.apps.peltzer.client.model.core
@@ -20,7 +21,7 @@ namespace com.google.apps.peltzer.client.model.core
     /// <summary>
     ///   Properties for Faces.  A value-type.
     /// </summary>
-    public struct FaceProperties
+    public struct FaceProperties : IEquatable<FaceProperties>
     {
         public int materialId { get; private set; }
 
@@ -78,6 +79,33 @@ namespace com.google.apps.peltzer.client.model.core
         public FaceProperties WithTextures(int newAlbedoTextureId, int newBumpTextureId)
         {
             return new FaceProperties(materialId, newAlbedoTextureId, newBumpTextureId, textureScale, textureOffset);
+        }
+
+        public bool Equals(FaceProperties other)
+        {
+            return materialId == other.materialId
+                && albedoTextureId == other.albedoTextureId
+                && bumpTextureId == other.bumpTextureId
+                && textureScale == other.textureScale
+                && textureOffset == other.textureOffset;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is FaceProperties other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hashCode = materialId;
+                hashCode = (hashCode * 397) ^ albedoTextureId;
+                hashCode = (hashCode * 397) ^ bumpTextureId;
+                hashCode = (hashCode * 397) ^ textureScale.GetHashCode();
+                hashCode = (hashCode * 397) ^ textureOffset.GetHashCode();
+                return hashCode;
+            }
         }
     }
 }
