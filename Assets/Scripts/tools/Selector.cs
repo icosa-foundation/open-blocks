@@ -1914,7 +1914,7 @@ namespace com.google.apps.peltzer.client.tools
             if (volumeSelector != null && volumeSelector.IsSelecting())
             {
                 VolumeSelectionResult result = volumeSelector.EndSelection(options);
-                ApplyVolumeSelectionResult(result);
+                ApplyVolumeSelectionResult(result, options);
             }
         }
 
@@ -1963,7 +1963,7 @@ namespace com.google.apps.peltzer.client.tools
         /// <summary>
         /// Apply the results of a volume selection to the current selection.
         /// </summary>
-        private void ApplyVolumeSelectionResult(VolumeSelectionResult result)
+        private void ApplyVolumeSelectionResult(VolumeSelectionResult result, SelectorOptions options)
         {
             int totalSelected = 0;
 
@@ -2009,12 +2009,11 @@ namespace com.google.apps.peltzer.client.tools
             {
                 foreach (int meshId in result.meshes)
                 {
-                    if (!selectedMeshes.Contains(meshId))
-                    {
-                        undoMeshMultiSelect.Push(meshId);
-                        SelectMesh(meshId);
-                        totalSelected++;
-                    }
+                    int previousSelectionCount = selectedMeshes.Count;
+                    bool successfulSelection;
+                    TryHighlightingAMesh(meshId, options.includeMeshGroups, /* forceSelection */ true,
+                      out successfulSelection);
+                    totalSelected += selectedMeshes.Count - previousSelectionCount;
                 }
             }
 
