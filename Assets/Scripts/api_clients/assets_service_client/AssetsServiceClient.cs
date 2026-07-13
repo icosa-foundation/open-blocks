@@ -116,6 +116,44 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         }
     }
 
+    public class ParseCollectionsBackgroundWork : BackgroundWork
+    {
+        private readonly string response;
+        private readonly PolyMenuMain.CreationType creationType;
+        private readonly System.Action<ObjectStoreSearchResult> successCallback;
+        private readonly System.Action failureCallback;
+
+        private bool success;
+        private ObjectStoreSearchResult objectStoreSearchResult;
+
+        public ParseCollectionsBackgroundWork(string response, PolyMenuMain.CreationType creationType,
+          System.Action<ObjectStoreSearchResult> successCallback,
+          System.Action failureCallback)
+        {
+            this.response = response;
+            this.creationType = creationType;
+            this.successCallback = successCallback;
+            this.failureCallback = failureCallback;
+        }
+
+        public void BackgroundWork()
+        {
+            success = AssetsServiceClient.ParseReturnedCollections(response, creationType, out objectStoreSearchResult);
+        }
+
+        public void PostWork()
+        {
+            if (success)
+            {
+                successCallback(objectStoreSearchResult);
+            }
+            else
+            {
+                failureCallback();
+            }
+        }
+    }
+
     public class ParseAssetBackgroundWork : BackgroundWork
     {
         private string response;
@@ -646,6 +684,48 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             }
             objectStoreSearchResult.results = objectStoreEntries.ToArray();
             return true;
+        }
+
+        /// <summary>
+        ///   Parses a paginated collection response and exposes the assets contained by those collections
+        ///   through the existing model-tile presentation.
+        /// </summary>
+        public static bool ParseReturnedCollections(string response, PolyMenuMain.CreationType type,
+          out ObjectStoreSearchResult objectStoreSearchResult)
+        {
+            objectStoreSearchResult = new ObjectStoreSearchResult();
+
+            JObject results = JObject.Parse(response);
+            IJEnumerable<JToken> collections =
+              results["collections"].AsJEnumerable() ?? new JEnumerable<JToken>();
+            List<ObjectStoreEntry> objectStoreEntries = new List<ObjectStoreEntry>();
+            HashSet<string> parsedAssetIds = new HashSet<string>();
+
+            foreach (JToken collection in collections)
+            {
+                IJEnumerable<JToken> assets =
+                  collection["assets"].AsJEnumerable() ?? new JEnumerable<JToken>();
+                foreach (JToken asset in assets)
+                {
+                    string assetId = asset?["assetId"]?.ToString();
+                    if (string.IsNullOrEmpty(assetId) || !parsedAssetIds.Add(assetId))
+                    {
+                        continue;
+                    }
+
+                    if (ParseAsset(asset, out ObjectStoreEntry objectStoreEntry))
+                    {
+                        objectStoreEntries.Add(objectStoreEntry);
+                    }
+                    else
+                    {
+                        LogFilteredTileAssetWarning(asset, type);
+                    }
+                }
+            }
+
+            objectStoreSearchResult.results = objectStoreEntries.ToArray();
+            return objectStoreEntries.Count > 0;
         }
 
         private static void LogFilteredTileAssetWarning(JToken asset, PolyMenuMain.CreationType type)
@@ -1237,7 +1317,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             else
             {
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
-                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseCollectionsBackgroundWork(
                   Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.YOUR, successCallback, failureCallback));
             }
         }
@@ -1276,7 +1356,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             else
             {
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
-                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseCollectionsBackgroundWork(
                   Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.FEATURED, successCallback, failureCallback));
             }
         }
@@ -1315,7 +1395,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             else
             {
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
-                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseAssetsBackgroundWork(
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new ParseCollectionsBackgroundWork(
                   Encoding.UTF8.GetString(responseBytes), PolyMenuMain.CreationType.LIKED, successCallback, failureCallback));
             }
         }
