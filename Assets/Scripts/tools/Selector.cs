@@ -16,7 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 using com.google.apps.peltzer.client.model.controller;
 using com.google.apps.peltzer.client.model.core;
@@ -377,29 +376,6 @@ namespace com.google.apps.peltzer.client.tools
                 }
             }
 
-            // **TEMPORARY TEST CODE - REMOVE AFTER TESTING**
-            // Press 'B' key to start box selection, 'N' to start sphere selection, 'M' to end
-            if (Keyboard.current != null && Keyboard.current.bKey.wasPressedThisFrame)
-            {
-                if (PeltzerController.AcquireIfNecessary(ref peltzerController))
-                {
-                    StartVolumeSelection(peltzerController.LastPositionModel, VolumeSelector.VolumeType.BOX);
-                    Debug.Log("Started BOX volume selection at " + peltzerController.LastPositionModel);
-                }
-            }
-            if (Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame)
-            {
-                if (PeltzerController.AcquireIfNecessary(ref peltzerController))
-                {
-                    StartVolumeSelection(peltzerController.LastPositionModel, VolumeSelector.VolumeType.SPHERE);
-                    Debug.Log("Started SPHERE volume selection at " + peltzerController.LastPositionModel);
-                }
-            }
-            if (Keyboard.current != null && Keyboard.current.mKey.wasPressedThisFrame && IsVolumeSelecting())
-            {
-                EndVolumeSelection(Selector.FACES_EDGES_AND_VERTICES);
-                Debug.Log("Ended volume selection");
-            }
         }
 
         public void TurnOnSelectIndicator()
@@ -1426,7 +1402,20 @@ namespace com.google.apps.peltzer.client.tools
                 return;
             }
 
-            if (IsStartMultiSelecting(args) && !PeltzerMain.Instance.GetMover().IsMoving()
+            if (IsVolumeSelecting() && IsStopMultiSelecting(args))
+            {
+                EndVolumeSelection(FACES_EDGES_AND_VERTICES);
+            }
+            else if (IsStartMultiSelecting(args) && peltzerController.controller.IsPressed(ButtonId.Grip)
+              && !PeltzerMain.Instance.GetMover().IsMoving()
+              && !PeltzerMain.Instance.peltzerController.isPointingAtMenu)
+            {
+                VolumeSelector.VolumeType volumeType =
+                  peltzerController.controller.IsPressed(ButtonId.SecondaryButton) ?
+                  VolumeSelector.VolumeType.SPHERE : VolumeSelector.VolumeType.BOX;
+                StartVolumeSelection(peltzerController.LastPositionModel, volumeType);
+            }
+            else if (IsStartMultiSelecting(args) && !PeltzerMain.Instance.GetMover().IsMoving()
               && !PeltzerMain.Instance.peltzerController.isPointingAtMenu)
             {
                 StartMultiSelection();
