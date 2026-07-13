@@ -112,6 +112,8 @@ namespace com.google.apps.peltzer.client.model.core
             if (!_cachedTexture.LoadImage(_data))
             {
                 Debug.LogError($"Failed to load texture data for {_name}");
+                UnityEngine.Object.Destroy(_cachedTexture);
+                _cachedTexture = null;
                 return null;
             }
 

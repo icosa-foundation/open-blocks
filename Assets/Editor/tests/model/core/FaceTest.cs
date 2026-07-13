@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace com.google.apps.peltzer.client.model.core
 {
@@ -37,6 +38,18 @@ namespace com.google.apps.peltzer.client.model.core
             Assert.AreEqual(original.bumpTextureId, changed.bumpTextureId);
             Assert.AreEqual(original.textureScale, changed.textureScale);
             Assert.AreEqual(original.textureOffset, changed.textureOffset);
+        }
+
+        [Test]
+        public void TestTextureAssetDoesNotCacheFailedDecode()
+        {
+            TextureAsset asset = new TextureAsset(1, "corrupt", TextureType.ALBEDO,
+              new byte[] { 1, 2, 3, 4 }, 1, 1);
+
+            LogAssert.Expect(LogType.Error, "Failed to load texture data for corrupt");
+            Assert.IsNull(asset.GetTexture2D());
+            LogAssert.Expect(LogType.Error, "Failed to load texture data for corrupt");
+            Assert.IsNull(asset.GetTexture2D());
         }
 
 
