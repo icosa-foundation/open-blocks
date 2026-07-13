@@ -76,6 +76,7 @@ namespace com.google.apps.peltzer.client.model.render
             public Vector3[] verts = new Vector3[INITIAL_VERTS_PER_MESH];
             public Color32[] colors = new Color32[INITIAL_VERTS_PER_MESH];
             public Vector3[] normals = new Vector3[INITIAL_VERTS_PER_MESH];
+            public Vector2[] uvs = new Vector2[INITIAL_VERTS_PER_MESH];
             // List here because the number of triangles isn't predictable based on the number of vertices, so we may need
             // to eventually resize.
             public List<int> triangles = new List<int>();
@@ -165,6 +166,11 @@ namespace com.google.apps.peltzer.client.model.render
                 Color32[] copiedColors = new Color32[numVertsInMesh];
                 Array.Copy(meshInfo.colors, indexOfFirstVert, copiedColors, 0, numVertsInMesh);
                 exportableMesh.colors32 = copiedColors;
+
+                // Copy UV0.
+                Vector2[] copiedUvs = new Vector2[numVertsInMesh];
+                Array.Copy(meshInfo.uvs, indexOfFirstVert, copiedUvs, 0, numVertsInMesh);
+                exportableMesh.uv = copiedUvs;
 
                 // Copy Triangles.
                 int[] copiedTriangles = new int[meshInfo.triangles.Count];
@@ -269,6 +275,7 @@ namespace com.google.apps.peltzer.client.model.render
                 Array.Resize(ref verts, newCapacity);
                 Array.Resize(ref colors, newCapacity);
                 Array.Resize(ref normals, newCapacity);
+                Array.Resize(ref uvs, newCapacity);
                 Array.Resize(ref transformIndexBuffer, newCapacity);
             }
 
@@ -289,6 +296,7 @@ namespace com.google.apps.peltzer.client.model.render
                 source.verts.CopyTo(0, verts, numVerts, vertCount);
                 source.normals.CopyTo(0, normals, numVerts, vertCount);
                 source.colors.CopyTo(0, colors, numVerts, vertCount);
+                source.uvs.CopyTo(0, uvs, numVerts, vertCount);
                 Vector2 transformIndexValue = new Vector2(transformIndex, 0f);
                 for (int i = 0; i < vertCount; i++)
                 {
@@ -609,6 +617,7 @@ namespace com.google.apps.peltzer.client.model.render
             mesh.SetTriangles(meshInfo.triangles, /* Submesh */ 0);
             mesh.SetColors(meshInfo.colors, 0, numVerts);
             mesh.SetNormals(meshInfo.normals, 0, numVerts);
+            mesh.SetUVs(/* channel (uv0) */ 0, meshInfo.uvs, 0, numVerts);
             mesh.SetUVs(/* channel (uv2) */ 1, meshInfo.transformIndexBuffer, 0, numVerts);
         }
 

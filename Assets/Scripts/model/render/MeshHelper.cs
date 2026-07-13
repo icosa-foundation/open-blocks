@@ -30,6 +30,7 @@ namespace com.google.apps.peltzer.client.model.render
         public List<int> triangles = new List<int>();
         public List<Color32> colors = new List<Color32>();
         public List<Vector3> normals = new List<Vector3>();
+        public List<Vector2> uvs = new List<Vector2>();
     }
 
     /// <summary>
@@ -117,6 +118,7 @@ namespace com.google.apps.peltzer.client.model.render
         // to avoid allocating two throwaway lists per face per frame. Main thread only.
         private static readonly List<Color32> scratchColors = new List<Color32>();
         private static readonly List<Vector3> scratchNormals = new List<Vector3>();
+        private static readonly List<Vector2> scratchUvs = new List<Vector2>();
 
         /// <summary>
         ///   Update the positions and recalculate bounds and normals for a mesh that hasn't changed geometry.
@@ -141,8 +143,10 @@ namespace com.google.apps.peltzer.client.model.render
                 List<Vector3> newPos;
                 scratchColors.Clear();
                 scratchNormals.Clear();
+                scratchUvs.Clear();
                 List<Color32> newColors = scratchColors;
                 List<Vector3> newNormals = scratchNormals;
+                List<Vector2> newUvs = scratchUvs;
                 MaterialAndColor faceMaterialAndColor = MaterialRegistry.GetMaterialAndColorById(face.properties.materialId);
                 if (!newPositionsPerMaterial.TryGetValue(faceMaterialAndColor, out newPos))
                 {
@@ -153,14 +157,14 @@ namespace com.google.apps.peltzer.client.model.render
                   && !MaterialRegistry.IsMaterialTransparent(face.properties.materialId);
                 // This method is used to update a GameObject, and as such we do not want the vert positions in world space,
                 // it is the gameObject that will be placed and rotated in the world.
-                AddFaceVertices(updatedMesh, wiggleVector, face, ref newPos, ref newColors, ref newNormals,
+                AddFaceVertices(updatedMesh, wiggleVector, face, ref newPos, ref newColors, ref newNormals, ref newUvs,
                   /* useWorldSpace */ false);
 
                 if (drawTriangleBackside)
                 {
                     // This method is used to update a GameObject, and as such we do not want the vert positions in world space,
                     // it is the gameObject that will be placed and rotated in the world.
-                    AddFaceVertices(updatedMesh, wiggleVector, face, ref newPos, ref newColors, ref newNormals,
+                    AddFaceVertices(updatedMesh, wiggleVector, face, ref newPos, ref newColors, ref newNormals, ref newUvs,
                       /* useWorldSpace */ false);
                 }
             }
@@ -265,6 +269,7 @@ namespace com.google.apps.peltzer.client.model.render
             target.verts.AddRange(source.verts);
             target.normals.AddRange(source.normals);
             target.colors.AddRange(source.colors);
+            target.uvs.AddRange(source.uvs);
             for (int i = 0; i < source.triangles.Count; i++)
             {
                 target.triangles.Add(source.triangles[i] + curSize);
@@ -312,6 +317,7 @@ namespace com.google.apps.peltzer.client.model.render
                 int backOffset = -1;
 
                 AddFaceVertices(mmesh, wiggleVector, face, ref context.verts, ref context.colors, ref context.normals,
+                  ref context.uvs,
                   useModelSpace);
 
                 if (drawTriangleBackside)
@@ -320,6 +326,7 @@ namespace com.google.apps.peltzer.client.model.render
                     // so we need to make new vertices for those triangles:
                     backOffset = context.verts.Count;
                     AddFaceVertices(mmesh, wiggleVector, face, ref context.verts, ref context.colors, ref context.normals,
+                      ref context.uvs,
                       useModelSpace);
                 }
 
@@ -381,6 +388,7 @@ namespace com.google.apps.peltzer.client.model.render
           ref List<Vector3> vertList,
           ref List<Color32> colorList,
           ref List<Vector3> normalList,
+          ref List<Vector2> uvList,
           bool useModelSpace)
         {
 
@@ -398,6 +406,7 @@ namespace com.google.apps.peltzer.client.model.render
             }
             colorList.AddRange(face.GetColors());
             normalList.AddRange(face.GetRenderNormals(mmesh));
+            uvList.AddRange(face.GetUVs(mmesh));
         }
 
         /// <summary>
@@ -562,6 +571,7 @@ namespace com.google.apps.peltzer.client.model.render
                     mesh.SetVertices(context.verts);
                 }
                 mesh.SetNormals(context.normals);
+                mesh.SetUVs(0, context.uvs);
                 mesh.SetTriangles(context.triangles, /* Submesh */ 0);
                 mesh.RecalculateBounds();
 
@@ -601,6 +611,7 @@ namespace com.google.apps.peltzer.client.model.render
                 mesh.SetTriangles(context.triangles, /* Submesh */ 0);
                 mesh.SetNormals(context.normals);
                 mesh.SetColors(context.colors);
+                mesh.SetUVs(0, context.uvs);
                 mesh.RecalculateBounds();
 
 
