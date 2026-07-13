@@ -1287,14 +1287,15 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         ///   Fetch a list of collections from the authenticated user, together with their metadata, from the assets service.
         /// </summary>
         /// <param name="callback">A callback to which to pass the results.</param>
-        public void GetCollections(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback)
+        public void GetCollections(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
+          bool isRecursion = false)
         {
             UnityWebRequest request = GetRequest(CollectionsSearchUrl(), "text/text", true);
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
                 ProcessGetCollectionsResponse(
-                  success, responseCode, responseBytes, request, successCallback, failureCallback)),
+                  success, responseCode, responseBytes, request, successCallback, failureCallback, isRecursion)),
               maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
@@ -1303,16 +1304,23 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           UnityWebRequest request, System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
           bool isRecursion = false)
         {
-            if (!success || responseCode == 401)
+            if (responseCode == 401)
             {
                 if (isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get collections"));
+                    failureCallback();
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
-                GetCollections(successCallback, failureCallback);
+                GetCollections(successCallback, failureCallback, /* isRecursion */ true);
+            }
+            else if (!success)
+            {
+                Debug.LogError(GetDebugString(request, "Failed to get collections"));
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                failureCallback();
             }
             else
             {
@@ -1326,14 +1334,15 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         ///   Fetch a list of featured/public collections, together with their metadata, from the assets service.
         /// </summary>
         /// <param name="callback">A callback to which to pass the results.</param>
-        public void GetFeaturedCollections(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback)
+        public void GetFeaturedCollections(System.Action<ObjectStoreSearchResult> successCallback,
+          System.Action failureCallback, bool isRecursion = false)
         {
             UnityWebRequest request = GetRequest(FeaturedCollectionsSearchUrl(), "text/text", false);
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
                 ProcessGetFeaturedCollectionsResponse(
-                  success, responseCode, responseBytes, request, successCallback, failureCallback)),
+                  success, responseCode, responseBytes, request, successCallback, failureCallback, isRecursion)),
               maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
@@ -1342,16 +1351,23 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           UnityWebRequest request, System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
           bool isRecursion = false)
         {
-            if (!success || responseCode == 401)
+            if (responseCode == 401)
             {
                 if (isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get featured collections"));
+                    failureCallback();
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
-                GetFeaturedCollections(successCallback, failureCallback);
+                GetFeaturedCollections(successCallback, failureCallback, /* isRecursion */ true);
+            }
+            else if (!success)
+            {
+                Debug.LogError(GetDebugString(request, "Failed to get featured collections"));
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                failureCallback();
             }
             else
             {
@@ -1365,14 +1381,15 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         ///   Fetch a list of liked collections from the authenticated user, together with their metadata, from the assets service.
         /// </summary>
         /// <param name="callback">A callback to which to pass the results.</param>
-        public void GetLikedCollections(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback)
+        public void GetLikedCollections(System.Action<ObjectStoreSearchResult> successCallback,
+          System.Action failureCallback, bool isRecursion = false)
         {
             UnityWebRequest request = GetRequest(LikedCollectionsSearchUrl(), "text/text", true);
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
                 ProcessGetLikedCollectionsResponse(
-                  success, responseCode, responseBytes, request, successCallback, failureCallback)),
+                  success, responseCode, responseBytes, request, successCallback, failureCallback, isRecursion)),
               maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
@@ -1381,16 +1398,23 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
           UnityWebRequest request, System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
           bool isRecursion = false)
         {
-            if (!success || responseCode == 401)
+            if (responseCode == 401)
             {
                 if (isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get liked collections"));
+                    failureCallback();
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
-                GetLikedCollections(successCallback, failureCallback);
+                GetLikedCollections(successCallback, failureCallback, /* isRecursion */ true);
+            }
+            else if (!success)
+            {
+                Debug.LogError(GetDebugString(request, "Failed to get liked collections"));
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                failureCallback();
             }
             else
             {
