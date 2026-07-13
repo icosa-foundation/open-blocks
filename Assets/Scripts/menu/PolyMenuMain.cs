@@ -840,17 +840,19 @@ namespace com.google.apps.peltzer.client.menu
                 return;
             }
 
-            // Hide toggle for LOCAL (no collections support)
-            bool isLocal = CurrentCreationType() == CreationType.LOCAL;
+            CreationType creationType = CurrentCreationType();
+            bool supportsCollections = creationType == CreationType.YOUR
+              || creationType == CreationType.FEATURED
+              || creationType == CreationType.LIKED;
             bool isCreationSection = CurrentMenuSection() == PolyMenuSection.CREATION;
 
-            if (isLocal || !isCreationSection)
+            if (!supportsCollections || !isCreationSection)
             {
                 contentTypeToggleButton.SetActive(false);
                 return;
             }
 
-            // Show and update the toggle for other creation types
+            // Show and update the toggle for creation types backed by collection endpoints.
             contentTypeToggleButton.SetActive(true);
 
             // Update the text to show current mode
