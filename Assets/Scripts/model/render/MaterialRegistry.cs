@@ -58,6 +58,7 @@ namespace com.google.apps.peltzer.client.model.render
 
         // Unity Materials with albedo set.
         private static Material[] materialsWithAlbedo = null;
+        private static System.Collections.Generic.Dictionary<int, Material> customMaterialsWithAlbedo = null;
 
         // Our custom MaterialAndColor, with albedo unset, as we use vertex colours.
         private static MaterialAndColor[] materials = null;
@@ -156,6 +157,7 @@ namespace com.google.apps.peltzer.client.model.render
             // Initialize custom color storage
             customColors = new System.Collections.Generic.Dictionary<int, Color32>();
             colorToIdCache = new System.Collections.Generic.Dictionary<Color32, int>();
+            customMaterialsWithAlbedo = new System.Collections.Generic.Dictionary<int, Material>();
             nextCustomId = CUSTOM_COLOR_START;
         }
 
@@ -304,7 +306,29 @@ namespace com.google.apps.peltzer.client.model.render
         /// <returns>A Material with .color set.</returns>
         public static Material GetMaterialWithAlbedoById(int materialId)
         {
-            return materialsWithAlbedo[materialId];
+            if (materialId >= 0 && materialId < materialsWithAlbedo.Length)
+            {
+                return materialsWithAlbedo[materialId];
+            }
+
+            if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
+            {
+                if (customMaterialsWithAlbedo == null)
+                {
+                    customMaterialsWithAlbedo = new System.Collections.Generic.Dictionary<int, Material>();
+                }
+
+                if (!customMaterialsWithAlbedo.TryGetValue(materialId, out Material material))
+                {
+                    material = new Material(materialsWithAlbedo[0]);
+                    material.color = color;
+                    customMaterialsWithAlbedo[materialId] = material;
+                }
+                return material;
+            }
+
+            Debug.LogWarning($"Unknown material ID: {materialId}, returning default albedo material");
+            return materialsWithAlbedo[0];
         }
 
         /// <summary>
@@ -531,6 +555,10 @@ namespace com.google.apps.peltzer.client.model.render
             if (colorToIdCache != null)
             {
                 colorToIdCache.Clear();
+            }
+            if (customMaterialsWithAlbedo != null)
+            {
+                customMaterialsWithAlbedo.Clear();
             }
             nextCustomId = CUSTOM_COLOR_START;
         }
