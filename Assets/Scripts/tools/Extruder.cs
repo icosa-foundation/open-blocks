@@ -376,8 +376,8 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     newFaceProperties.Add(faceKey.meshId, new Dictionary<int, FaceProperties>());
                 }
-                newFaceProperties[faceKey.meshId].Add(faceKey.faceId, new FaceProperties(
-                   MaterialRegistry.GLASS_ID));
+                newFaceProperties[faceKey.meshId].Add(faceKey.faceId,
+                  selectedFace.properties.WithMaterialId(MaterialRegistry.GLASS_ID));
             }
             foreach (KeyValuePair<int, Dictionary<int, FaceProperties>> newFacePropertySet in newFaceProperties)
             {

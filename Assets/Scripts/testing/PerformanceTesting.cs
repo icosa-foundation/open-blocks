@@ -168,7 +168,7 @@ namespace com.google.apps.peltzer.client.testing
                         materialId++;
                         foreach (Face face in mesh.GetFaces())
                         {
-                            face.SetProperties(new FaceProperties(materialId));
+                            face.SetProperties(face.properties.WithMaterialId(materialId));
                         }
                     }
                     yChanges++;

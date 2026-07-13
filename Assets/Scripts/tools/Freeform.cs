@@ -1448,7 +1448,7 @@ namespace com.google.apps.peltzer.client.tools
             MMesh.GeometryOperation matChangeOp = currentVolume.StartOperation();
             foreach (Face face in currentVolume.GetFaces())
             {
-                matChangeOp.ModifyFace(face.id, face.vertexIds, new FaceProperties(newMaterialId));
+                matChangeOp.ModifyFace(face.id, face.vertexIds, face.properties.WithMaterialId(newMaterialId));
             }
             // Material change only - don't recalc normals.
             matChangeOp.CommitWithoutRecalculation();

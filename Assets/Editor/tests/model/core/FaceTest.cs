@@ -24,6 +24,21 @@ namespace com.google.apps.peltzer.client.model.core
     // Tests for Face.
     public class FaceTest
     {
+        [Test]
+        public void TestWithMaterialIdPreservesTextureProperties()
+        {
+            FaceProperties original = new FaceProperties(1, 2, 3,
+              new Vector2(4f, 5f), new Vector2(6f, 7f));
+
+            FaceProperties changed = original.WithMaterialId(8);
+
+            Assert.AreEqual(8, changed.materialId);
+            Assert.AreEqual(original.albedoTextureId, changed.albedoTextureId);
+            Assert.AreEqual(original.bumpTextureId, changed.bumpTextureId);
+            Assert.AreEqual(original.textureScale, changed.textureScale);
+            Assert.AreEqual(original.textureOffset, changed.textureOffset);
+        }
+
 
         [Test]
         public void TestClone()

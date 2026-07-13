@@ -363,7 +363,14 @@ namespace com.google.apps.peltzer.client.tools
                 // Never paint the same mesh the same colour twice in one operation.
                 if (seenMeshes.Add(meshId))
                 {
-                    paintCommands.Add(new ChangeFacePropertiesCommand(meshId, paintedFaceProperties));
+                    MMesh mesh = model.GetMesh(meshId);
+                    Dictionary<int, FaceProperties> propertiesByFaceId = new Dictionary<int, FaceProperties>();
+                    foreach (Face face in mesh.GetFaces())
+                    {
+                        propertiesByFaceId[face.id] =
+                          face.properties.WithMaterialId(paintedFaceProperties.materialId);
+                    }
+                    paintCommands.Add(new ChangeFacePropertiesCommand(meshId, propertiesByFaceId));
                 }
             }
 
@@ -391,8 +398,10 @@ namespace com.google.apps.peltzer.client.tools
             // Never paint the same face the same colour twice in the same operation.
             if (seenFaces.Add(faceId))
             {
+                FaceProperties newProperties = model.GetMesh(meshId).GetFace(faceId).properties
+                  .WithMaterialId(paintedFaceProperties.materialId);
                 model.ApplyCommand(new ChangeFacePropertiesCommand(meshId,
-                  new Dictionary<int, FaceProperties>() { { faceId, paintedFaceProperties } }));
+                  new Dictionary<int, FaceProperties>() { { faceId, newProperties } }));
                 PlayFeedback();
 
             }

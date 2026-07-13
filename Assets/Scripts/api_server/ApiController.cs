@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -137,8 +138,10 @@ public class ApiController
         if (mesh == null)
             return MeshNotFound(meshId);
 
-        var props = new FaceProperties(materialId);
-        PeltzerMain.Instance.model.ApplyCommand(new ChangeFacePropertiesCommand(meshId, props));
+        var propertiesByFaceId = new Dictionary<int, FaceProperties>();
+        foreach (Face face in mesh.GetFaces())
+            propertiesByFaceId[face.id] = face.properties.WithMaterialId(materialId);
+        PeltzerMain.Instance.model.ApplyCommand(new ChangeFacePropertiesCommand(meshId, propertiesByFaceId));
         return Ok($"Painted mesh {meshId} with material {materialId}.");
     }
 

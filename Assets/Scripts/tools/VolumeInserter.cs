@@ -470,7 +470,6 @@ namespace com.google.apps.peltzer.client.tools
 
         private MMesh BuildCustomShape(Vector3 scale, int generateMeshId, int materialId)
         {
-            FaceProperties faceProperties = new FaceProperties(materialId);
             var customShapes = peltzerController.shapesMenu.GetShapesMenuCustomShapes();
             if (customShapes == null)
             {
@@ -486,7 +485,8 @@ namespace com.google.apps.peltzer.client.tools
             mesh = mesh.CloneWithNewId(generateMeshId);
             foreach (int faceId in mesh.GetFaceIds())
             {
-                mesh.GetFace(faceId).SetProperties(faceProperties);
+                Face face = mesh.GetFace(faceId);
+                face.SetProperties(face.properties.WithMaterialId(materialId));
             }
             Scaler.TryScalingMeshes(new List<MMesh> { mesh }, scale.x);
             return mesh;
@@ -1025,12 +1025,11 @@ namespace com.google.apps.peltzer.client.tools
 
         private void MaterialChangeHandler(int newMaterialId)
         {
-            FaceProperties newFaceProperties = new FaceProperties(newMaterialId);
             foreach (HeldMeshes.HeldMesh heldMesh in heldMeshes.heldMeshes)
             {
                 foreach (Face face in heldMesh.Mesh.GetFaces())
                 {
-                    face.SetProperties(newFaceProperties);
+                    face.SetProperties(face.properties.WithMaterialId(newMaterialId));
                 }
                 heldMesh.Preview.GetComponent<MeshWithMaterialRenderer>().OverrideWithNewMaterial(newMaterialId);
             }
