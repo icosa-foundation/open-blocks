@@ -140,6 +140,10 @@ namespace com.google.apps.peltzer.client.model.export
             // Only write chunk if custom colors exist
             if (customIds.Count == 0) return;
 
+            AssertOrThrow.True(customIds.Count <= SerializationConsts.MAX_CUSTOM_COLORS_PER_FILE,
+              $"Custom color count {customIds.Count} exceeds the supported maximum of " +
+              $"{SerializationConsts.MAX_CUSTOM_COLORS_PER_FILE}");
+
             serializer.StartWritingChunk(SerializationConsts.CHUNK_CUSTOM_PALETTE);
 
             // Write color count
@@ -259,7 +263,8 @@ namespace com.google.apps.peltzer.client.model.export
             serializer.StartReadingChunk(SerializationConsts.CHUNK_CUSTOM_PALETTE);
 
             // Read color count
-            int count = serializer.ReadCount(0, 10000, "customColorCount");
+            int count = serializer.ReadCount(
+              0, SerializationConsts.MAX_CUSTOM_COLORS_PER_FILE, "customColorCount");
 
             Dictionary<int, int> remappedMaterialIds = new Dictionary<int, int>();
 
