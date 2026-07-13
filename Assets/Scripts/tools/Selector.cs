@@ -2011,6 +2011,7 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     if (!selectedMeshes.Contains(meshId))
                     {
+                        undoMeshMultiSelect.Push(meshId);
                         SelectMesh(meshId);
                         totalSelected++;
                     }
