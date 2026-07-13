@@ -280,6 +280,17 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             License = LicenseChoices.REMIXABLE,
             OrderBy = OrderByChoices.BEST,
             Formats = new[] { FormatChoices.BLOCKS },
+            Curated = CuratedChoices.TRUE,
+            Category = CategoryChoices.ANY
+        };
+
+        public static ApiQueryParameters QueryParamsAll = new()
+        {
+            SearchText = "",
+            TriangleCountMax = defaultMaxPolyModelTriangles,
+            License = LicenseChoices.REMIXABLE,
+            OrderBy = OrderByChoices.NEWEST,
+            Formats = new[] { FormatChoices.BLOCKS },
             Curated = CuratedChoices.ANY,
             Category = CategoryChoices.ANY
         };
@@ -335,33 +346,26 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
             }
         }
-        // Key names for player prefs
-        public static string WEB_BASE_URL_KEY = "WEB_BASE_URL";
-        public static string API_BASE_URL_KEY = "API_BASE_URL";
+        // Legacy PlayerPrefs keys. URL overrides now come from OpenBlocks.cfg only.
+        public const string WEB_BASE_URL_KEY = "WEB_BASE_URL";
+        public const string API_BASE_URL_KEY = "API_BASE_URL";
 
-        public static string WebBaseUrl
-        {
-            get => GetPlayerPrefOrDefault(WEB_BASE_URL_KEY, DEFAULT_WEB_BASE_URL);
-            set => PlayerPrefs.SetString(WEB_BASE_URL_KEY, value);
-        }
-        public static string ApiBaseUrl
-        {
-            get => GetPlayerPrefOrDefault(API_BASE_URL_KEY, DEFAULT_API_BASE_URL);
-            set => PlayerPrefs.SetString(API_BASE_URL_KEY, value);
-        }
+        public static string WebBaseUrl { get; set; } = DEFAULT_WEB_BASE_URL;
+        public static string ApiBaseUrl { get; set; } = DEFAULT_API_BASE_URL;
 
-        public static string GetPlayerPrefOrDefault(string key, string defaultValue)
+        public static void ResetBaseUrls()
         {
-            return PlayerPrefs.HasKey(key) ? PlayerPrefs.GetString(key) : defaultValue;
+            WebBaseUrl = DEFAULT_WEB_BASE_URL;
+            ApiBaseUrl = DEFAULT_API_BASE_URL;
         }
 
         // The base for the URL to be opened in a user's browser if they wish to publish.
-        public static string DEFAULT_PUBLISH_URL_BASE = WebBaseUrl + "/publish/";
+        public static string DEFAULT_PUBLISH_URL_BASE => WebBaseUrl + "/publish/";
 
         public static string PublishUrl => DEFAULT_PUBLISH_URL_BASE;
         // The base for the URL to be opened in a user's browser if they have saved.
         // Also used as the target for the "Your models" desktop menu
-        public static string DEFAULT_SAVE_URL = WebBaseUrl + "/uploads";
+        public static string DEFAULT_SAVE_URL => WebBaseUrl + "/uploads";
 
         private static string CommonQueryParams(ApiQueryParameters q)
         {
@@ -370,7 +374,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             string url = string.Join("", q.Formats.Select(format => $"format={format}&"));
             url += $"pageSize={pageSize}&";
             url += $"orderBy={q.OrderBy}&";
-            if (q.TriangleCountMax > 0) url += $"triangleCountMax={q.TriangleCountMax}&";
+            if (q.TriangleCountMax > 0)
+            {
+                url += $"triangleCountMin=1&";
+                url += $"triangleCountMax={q.TriangleCountMax}&";
+            }
             if (!string.IsNullOrEmpty(q.SearchText)) url += $"name={q.SearchText}&";
             if (!string.IsNullOrEmpty(q.License)) url += $"license={q.License}&";
             if (!string.IsNullOrEmpty(q.Curated)) url += $"curated={q.Curated}&";
@@ -411,6 +419,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             return $"{ApiBaseUrl}/users/me/assets?{CommonQueryParams(QueryParamsUser)}";
         }
 
+        private static string AllModelsSearchUrl()
+        {
+            return $"{ApiBaseUrl}/assets?{CommonQueryParams(QueryParamsAll)}";
+        }
+
         // Boundary for multipart form data
         private const string BOUNDARY = "!&!Peltzer12!&!Peltzer34!&!Peltzer56!&!";
 
@@ -418,6 +431,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         // Used for polling economically (so we know which part of the results is new and which part isn't).
         public static string mostRecentFeaturedAssetId;
         public static string mostRecentLikedAssetId;
+        public static string mostRecentAllAssetId;
 
         // Some state around an upload.
         private string assetId;
@@ -436,6 +450,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         private static List<string> mostRecentLikedCollectionsAssetIds = new();
         private static List<string> mostRecentYourAssetIds = new();
         private static List<string> mostRecentLocalAssetIds = new();
+        private static List<string> mostRecentAllAssetIds = new();
 
         /// <summary>
         /// Clears all list of most recent asset ids. We use this list to check if assets have changed
@@ -451,6 +466,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             mostRecentFeaturedCollectionsAssetIds.Clear();
             mostRecentLikedCollectionsAssetIds.Clear();
             mostRecentYourAssetIds.Clear();
+            mostRecentAllAssetIds.Clear();
         }
 
         public static void ClearRecentAssetIdsByType(PolyMenuMain.CreationType type)
@@ -471,6 +487,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                     break;
                 case PolyMenuMain.CreationType.LOCAL:
                     mostRecentLocalAssetIds.Clear();
+                    break;
+                case PolyMenuMain.CreationType.ALL:
+                    mostRecentAllAssetIds.Clear();
                     break;
             }
         }
@@ -501,6 +520,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                         case PolyMenuMain.CreationType.LOCAL:
                             mostRecentLocalAssetIds.Add(assetId);
                             break;
+                        case PolyMenuMain.CreationType.ALL:
+                            mostRecentAllAssetIds.Add(assetId);
+                            break;
                     }
                 }
             }
@@ -514,6 +536,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.IndexOf(asset["url"]?.ToString()) != index,
+                PolyMenuMain.CreationType.ALL => mostRecentAllAssetIds.IndexOf(asset["url"]?.ToString()) != index,
                 _ => false
             };
         }
@@ -526,6 +549,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PolyMenuMain.CreationType.LIKED => mostRecentLikedAssetIds.Count == 0,
                 PolyMenuMain.CreationType.YOUR => mostRecentYourAssetIds.Count == 0,
                 PolyMenuMain.CreationType.LOCAL => mostRecentLocalAssetIds.Count == 0,
+                PolyMenuMain.CreationType.ALL => mostRecentAllAssetIds.Count == 0,
                 _ => false
             };
         }
@@ -546,7 +570,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             // Then parse the assets.
             List<ObjectStoreEntry> objectStoreEntries = new List<ObjectStoreEntry>();
 
-            // If anything has changed in LIKED or FEATURED we update the all object store entries
+            // If anything has changed in LIKED, FEATURED or ALL we update the all object store entries
             var i = 0;
             foreach (JToken asset in assets)
             {
@@ -557,7 +581,6 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 }
                 i++;
             }
-            var polyMenu = PeltzerMain.Instance.polyMenuMain;
 
             // edge case where someone might change category and not get any assets and then try to change
             // OrderBy, in that case previous and current assets would be empty, which means nothing changed,
@@ -588,7 +611,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 ObjectStoreEntry objectStoreEntry;
 
-                if (type == PolyMenuMain.CreationType.FEATURED || type == PolyMenuMain.CreationType.LIKED)
+                if (type is PolyMenuMain.CreationType.FEATURED or PolyMenuMain.CreationType.LIKED or PolyMenuMain.CreationType.ALL)
                 {
                     string assetId = asset["url"]?.ToString();
                     if (firstAssetId == null)
@@ -600,6 +623,10 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 if (ParseAsset(asset, out objectStoreEntry))
                 {
                     objectStoreEntries.Add(objectStoreEntry);
+                }
+                else
+                {
+                    LogFilteredTileAssetWarning(asset, type);
                 }
             }
 
@@ -613,8 +640,20 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             {
                 mostRecentLikedAssetId = firstAssetId;
             }
+            else if (type == PolyMenuMain.CreationType.ALL)
+            {
+                mostRecentAllAssetId = firstAssetId;
+            }
             objectStoreSearchResult.results = objectStoreEntries.ToArray();
             return true;
+        }
+
+        private static void LogFilteredTileAssetWarning(JToken asset, PolyMenuMain.CreationType type)
+        {
+            string assetId = asset?["assetId"]?.ToString() ?? "<missing assetId>";
+            string displayName = asset?["displayName"]?.ToString() ?? "<missing displayName>";
+            Debug.LogWarning(
+              $"Remote API asset was filtered out before tile display. type={type}, assetId={assetId}, displayName={displayName}");
         }
 
         public static bool ParseFinalize(JToken asset, out ObjectStoreEntry objectStoreEntry)
@@ -650,18 +689,21 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
 
             if (resourcesToken.Type == JTokenType.Array)
             {
+                // Prefer the resource URL over relativePath: the URL contains the actual server path
+                // (including subdirectories like "new/"), while relativePath may omit them.
+                // The download code will strip rootDir to recover the correct relative storage path.
                 supportingFiles = resourcesToken
-                  .Select(res => res?["relativePath"]?.ToString()
-                    ?? res?["relative_path"]?.ToString()
-                    ?? res?["url"]?.ToString())
+                  .Select(res => res?["url"]?.ToString()
+                    ?? res?["relativePath"]?.ToString()
+                    ?? res?["relative_path"]?.ToString())
                   .Where(path => !string.IsNullOrEmpty(path))
                   .ToArray();
             }
             else if (resourcesToken.Type == JTokenType.Object)
             {
-                string path = resourcesToken?["relativePath"]?.ToString()
-                  ?? resourcesToken?["relative_path"]?.ToString()
-                  ?? resourcesToken?["url"]?.ToString();
+                string path = resourcesToken?["url"]?.ToString()
+                  ?? resourcesToken?["relativePath"]?.ToString()
+                  ?? resourcesToken?["relative_path"]?.ToString();
                 if (!string.IsNullOrEmpty(path))
                 {
                     supportingFiles = new[] { path };
@@ -678,6 +720,78 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
               ?? formatRoot?["zip"]?["url"]?.ToString();
         }
 
+        private static bool IsLoadableGltfFormat(string formatType)
+        {
+            return formatType == "GLTF2" || formatType == "GLB";
+        }
+
+        private static bool ShouldReplaceGltfAsset(ObjectStoreGltfPackageAssets existing, ObjectStoreGltfPackageAssets candidate)
+        {
+            if (candidate == null)
+            {
+                return false;
+            }
+
+            if (existing == null)
+            {
+                return true;
+            }
+
+            return GetGltfAssetPriority(candidate) > GetGltfAssetPriority(existing);
+        }
+
+        private static int GetGltfAssetPriority(ObjectStoreGltfPackageAssets gltfAssets)
+        {
+            if (gltfAssets == null)
+            {
+                return int.MinValue;
+            }
+
+            int priority = 0;
+            if (!string.IsNullOrEmpty(gltfAssets.rootUrl))
+            {
+                priority += 1;
+            }
+
+            if (IsLoadableGltfFormat(gltfAssets.version))
+            {
+                priority += 100;
+            }
+
+            if (gltfAssets.isPreferredForDownload)
+            {
+                priority += 10;
+            }
+
+            return priority;
+        }
+
+        private static string BuildApiFormatsSummary(JToken asset)
+        {
+            var formats = asset["formats"].AsJEnumerable();
+            if (formats == null)
+            {
+                return "formats=<null>";
+            }
+
+            List<string> summaries = new List<string>();
+            foreach (JToken format in formats)
+            {
+                string formatType = format?["formatType"]?.ToString() ?? "<null>";
+                string role = format?["role"]?.ToString() ?? "<null>";
+                string rootUrl = format?["root"]?["url"]?.ToString();
+                bool isPreferredForDownload = format?["isPreferredForDownload"]?.ToObject<bool>() ?? false;
+                summaries.Add($"{formatType}(role={role}, rootUrl={DescribeNullableValue(rootUrl)}, preferred={isPreferredForDownload})");
+            }
+
+            return summaries.Count == 0 ? "formats=[]" : string.Join("; ", summaries);
+        }
+
+        private static string DescribeNullableValue(string value)
+        {
+            return string.IsNullOrEmpty(value) ? "<null>" : value;
+        }
+
         /// <summary>
         ///   Parses a single asset as defined in vr/assets/asset.proto
         /// </summary>
@@ -685,6 +799,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         public static bool ParseAsset(JToken asset, out ObjectStoreEntry objectStoreEntry)
         {
             objectStoreEntry = new ObjectStoreEntry();
+            objectStoreEntry.apiFormatsSummary = BuildApiFormatsSummary(asset);
 
             if (asset["visibility"] == null)
             {
@@ -808,6 +923,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                         case "GLTF":
                         case "GLTF1":
                         case "GLTF2":
+                        case "GLB":
                             ParseFormatPaths(format, out string gltfRootUrl, out string gltfBaseFile,
                               out string[] gltfSupportingFiles);
                             if (!string.IsNullOrEmpty(gltfRootUrl))
@@ -821,19 +937,26 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                                     isPreferredForDownload = format?["isPreferredForDownload"]?.ToObject<bool>() ?? false
                                 };
 
-                                bool looksLikeGlb = (!string.IsNullOrEmpty(gltfBaseFile) && gltfBaseFile.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
+                                bool looksLikeGlb = formatType == "GLB"
+                                  || (!string.IsNullOrEmpty(gltfBaseFile) && gltfBaseFile.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
                                   || gltfRootUrl.EndsWith(".glb", StringComparison.OrdinalIgnoreCase);
 
                                 if (looksLikeGlb)
                                 {
-                                    entryAssets.gltf_package = entryAssets.gltf_package ?? gltfAssets;
+                                    if (ShouldReplaceGltfAsset(entryAssets.gltf_package, gltfAssets))
+                                    {
+                                        entryAssets.gltf_package = gltfAssets;
+                                    }
                                 }
                                 else
                                 {
-                                    entryAssets.gltf = entryAssets.gltf ?? gltfAssets;
+                                    if (ShouldReplaceGltfAsset(entryAssets.gltf, gltfAssets))
+                                    {
+                                        entryAssets.gltf = gltfAssets;
+                                    }
                                 }
 
-                                if (formatType == "GLTF2")
+                                if (IsLoadableGltfFormat(formatType))
                                 {
                                     hasSupportedFormat = true;
                                 }
@@ -927,6 +1050,26 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
+        /// <summary>
+        ///   Fetch a list of all models, together with their metadata, from the assets service.
+        ///   Only searches for models with CC-BY licensing to avoid any complicated questions around non-remixable models.
+        ///   Requests a create-time-descending ordering.
+        /// </summary>
+        /// <param name="callback">A callback to which to pass the results.</param>
+        /// <param name="isRecursion">Whether this is not the first call to this function.</param>
+        public void GetAllModels(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
+                                      bool isRecursion = false)
+        {
+            // We wrap in a for loop so we can re-authorise if access tokens have become stale.
+            UnityWebRequest request = GetRequest(AllModelsSearchUrl(), "text/text", false);
+            PeltzerMain.Instance.webRequestManager.EnqueueRequest(
+                () => { return request; },
+                (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
+                    ProcessGetAllModelsResponse(
+                        success, responseCode, responseBytes, request, successCallback, failureCallback)),
+                maxAgeMillis: WebRequestManager.CACHE_NONE);
+        }
+
         // Deals with the response of a GetFeaturedModels request, retrying it if an auth token was stale.
         private IEnumerator ProcessGetFeaturedModelsResponse(bool success, int responseCode, byte[] responseBytes,
           UnityWebRequest request, System.Action<ObjectStoreSearchResult> successCallback,
@@ -949,6 +1092,31 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 PeltzerMain.Instance.DoPolyMenuBackgroundWork(
                   new ParseAssetsBackgroundWork(Encoding.UTF8.GetString(responseBytes),
                   PolyMenuMain.CreationType.FEATURED, successCallback, failureCallback));
+            }
+        }
+
+        // Deals with the response of a GetAllModels request, retrying it if an auth token was stale.
+        private IEnumerator ProcessGetAllModelsResponse(bool success, int responseCode, byte[] responseBytes,
+                                                             UnityWebRequest request, System.Action<ObjectStoreSearchResult> successCallback,
+                                                             System.Action failureCallback, bool isRecursion = false)
+        {
+            if (!success || responseCode == 401)
+            {
+                if (isRecursion)
+                {
+                    Debug.LogError(GetDebugString(request, "Failed to get all models"));
+                    yield break;
+                }
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                yield return OAuth2Identity.Instance.Reauthorize();
+                GetAllModels(successCallback, failureCallback, /* isRecursion */ true);
+            }
+            else
+            {
+                PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.NONE);
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                    new ParseAssetsBackgroundWork(Encoding.UTF8.GetString(responseBytes),
+                        PolyMenuMain.CreationType.ALL, successCallback, failureCallback));
             }
         }
 
