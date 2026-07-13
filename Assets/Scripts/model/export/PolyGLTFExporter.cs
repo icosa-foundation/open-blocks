@@ -89,7 +89,6 @@ namespace com.google.apps.peltzer.client.model.export
               "{\"gvrss\" : \"https://vr.google.com/shaders/w/gvrss/gem.json\"}";
 
             // Set shaders for all materials.
-            Material[] exportableMaterialList = MaterialRegistry.GetExportableMaterialList();
             for (int i = 0; i < MaterialRegistry.rawColors.Length; i++)
             {
                 matPresets.SetShaders("mat" + i, opaqueVSPath, opaqueFSPath);
@@ -99,6 +98,19 @@ namespace com.google.apps.peltzer.client.model.export
             }
             matPresets.SetShaders("mat" + MaterialRegistry.GLASS_ID, glassVSPath, glassFSPath);
             matPresets.SetShaders("mat" + MaterialRegistry.GEM_ID, gemVSPath, gemFSPath);
+
+            foreach (ReMesher.MeshInfo meshInfo in remesher.GetAllMeshInfos())
+            {
+                int materialId = meshInfo.materialAndColor.matId;
+                if (MaterialRegistry.IsCustomMaterialId(materialId))
+                {
+                    string materialName = $"mat{materialId}";
+                    matPresets.SetShaders(materialName, opaqueVSPath, opaqueFSPath);
+                    matPresets.techniqueStates[materialName] = baseState;
+                    matPresets.techniqueExtras[materialName] =
+                      "{\"gvrss\" : \"https://vr.google.com/shaders/w/gvrss/paper.json\"}";
+                }
+            }
 
             GlTFScriptableExporter.TransformFilter filter = (Transform tr) => Matrix4x4.identity;
 
