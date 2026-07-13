@@ -889,6 +889,15 @@ namespace com.google.apps.peltzer.client.model.core
             }
             serializer.FinishWritingChunk(SerializationConsts.CHUNK_MMESH);
 
+            // Keep previously supported extensions immediately after the base mesh chunk. Older readers only inspect
+            // this position for remix metadata before advancing to the next mesh.
+            if (remixIds != null)
+            {
+                serializer.StartWritingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
+                PolySerializationUtils.WriteStringSet(serializer, remixIds);
+                serializer.FinishWritingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
+            }
+
             // Write UV coordinates if any vertices have UVs set (optional chunk).
             // Check if any vertex has a non-zero UV coordinate.
             bool hasUVs = verticesById.Values.Any(v => v.uv != Vector2.zero);
@@ -927,15 +936,6 @@ namespace com.google.apps.peltzer.client.model.core
                 serializer.FinishWritingChunk(SerializationConsts.CHUNK_FACE_TEXTURES);
             }
 
-            // If we have any remix IDs, also write a remix info chunk.
-            // As per the design of the file format, this chunk will be automatically skipped by older versions
-            // that don't expect remix IDs in the file.
-            if (remixIds != null)
-            {
-                serializer.StartWritingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
-                PolySerializationUtils.WriteStringSet(serializer, remixIds);
-                serializer.FinishWritingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
-            }
         }
 
         public int GetSerializedSizeEstimate()
@@ -1044,6 +1044,19 @@ namespace com.google.apps.peltzer.client.model.core
 
             serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH);
 
+            // Read legacy extensions before newer ones to match their forward-compatible serialization order.
+            if (serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS)
+            {
+                serializer.StartReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
+                remixIds = PolySerializationUtils.ReadStringSet(serializer, 0, SerializationConsts.MAX_REMIX_IDS_PER_MMESH,
+                  "remixIds");
+                serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
+            }
+            else
+            {
+                remixIds = null;
+            }
+
             // If UV coordinates chunk is present (it's optional), read it and update vertices.
             if (serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_MMESH_EXT_UVS)
             {
@@ -1090,20 +1103,6 @@ namespace com.google.apps.peltzer.client.model.core
                     }
                 }
                 serializer.FinishReadingChunk(SerializationConsts.CHUNK_FACE_TEXTURES);
-            }
-
-            // If the remix IDs chunk is present (it's optional), read it.
-            if (serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS)
-            {
-                serializer.StartReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
-                remixIds = PolySerializationUtils.ReadStringSet(serializer, 0, SerializationConsts.MAX_REMIX_IDS_PER_MMESH,
-                  "remixIds");
-                serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
-            }
-            else
-            {
-                // No remix IDs present in file.
-                remixIds = null;
             }
 
             RecalcBounds();

@@ -91,6 +91,38 @@ namespace com.google.apps.peltzer.client.serialization
             AssertMeshesEqual(sphere, meshDict[3000]);
         }
 
+        [Test]
+        public void TestLegacyMeshExtensionsPrecedeTextureExtensions()
+        {
+            Dictionary<int, Vertex> vertices = new Dictionary<int, Vertex>
+            {
+                { 1, new Vertex(1, Vector3.zero, new Vector2(0.25f, 0.5f)) },
+                { 2, new Vertex(2, Vector3.right, Vector2.right) },
+                { 3, new Vertex(3, Vector3.up, Vector2.up) }
+            };
+            FaceProperties properties = new FaceProperties(1, 7, 0, Vector2.one, Vector2.zero);
+            Face face = new Face(1, new List<int> { 1, 2, 3 }.AsReadOnly(), vertices, properties);
+            MMesh mesh = new MMesh(10, Vector3.zero, Quaternion.identity, vertices,
+              new Dictionary<int, Face> { { face.id, face } }, remixIds: new HashSet<string> { "source-id" });
+
+            PolySerializer serializer = new PolySerializer();
+            serializer.SetupForWriting();
+            mesh.Serialize(serializer);
+            serializer.FinishWriting();
+            byte[] bytes = serializer.ToByteArray();
+
+            serializer.SetupForReading(bytes, 0, bytes.Length);
+            serializer.StartReadingChunk(SerializationConsts.CHUNK_MMESH);
+            serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH);
+            Assert.AreEqual(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS, serializer.GetNextChunkLabel());
+
+            serializer.SetupForReading(bytes, 0, bytes.Length);
+            MMesh loadedMesh = new MMesh(serializer);
+            CollectionAssert.Contains(loadedMesh.remixIds, "source-id");
+            Assert.AreEqual(new Vector2(0.25f, 0.5f), loadedMesh.GetVertex(1).uv);
+            Assert.AreEqual(7, loadedMesh.GetFace(1).properties.albedoTextureId);
+        }
+
         private static void AssertMeshesEqual(MMesh a, MMesh b)
         {
             Assert.AreEqual(a.id, b.id);
