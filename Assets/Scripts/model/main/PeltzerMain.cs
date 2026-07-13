@@ -454,7 +454,7 @@ namespace com.google.apps.peltzer.client.model.main
         /// We try it from Start() and retry it from Update() until we succeed.
         /// </summary>
         private bool setupDone;
-        // private DesktopMain desktopMain;
+        private DesktopMain desktopMain;
 
         public PolyMenuMain polyMenuMain;
 
@@ -579,9 +579,6 @@ namespace com.google.apps.peltzer.client.model.main
                 PlayerPrefs.SetString(FIRST_TIME_KEY, "true");
                 PlayerPrefs.Save();
             }
-
-            // Initializes static buffers we're using for optimizing setting of list values.
-            ReMesher.InitBufferCaches();
 
             userPath = GetUserPath();
 
@@ -763,8 +760,11 @@ namespace com.google.apps.peltzer.client.model.main
             // The previewController handles opening the image dialog and loading a reference.
             previewController = FindObjectOfType<PreviewController>();
 
-            // Get the desktop UI Main
-            // desktopMain = FindObjectOfType<DesktopMain>();
+            // Get the desktop UI Main (not used on mobile VR platforms like Quest)
+            if (!Application.isMobilePlatform || Config.Instance.sdkMode == SdkMode.Unset)
+            {
+                desktopMain = FindObjectOfType<DesktopMain>();
+            }
 
             // Get the ZandriaCreationsManager.
             zandriaCreationsManager = FindObjectOfType<ZandriaCreationsManager>();
@@ -811,34 +811,73 @@ namespace com.google.apps.peltzer.client.model.main
         {
             string configPath = Path.Combine(userPath, "OpenBlocks.cfg");
 
-            if (!File.Exists(configPath))
+            try
+            {
+                if (!File.Exists(configPath))
+                {
+                    userConfig = new UserConfig();
+                    // create file
+
+                    using StreamWriter sw = File.CreateText(configPath);
+                    sw.WriteLine(JsonUtility.ToJson(userConfig, true));
+                }
+                else
+                {
+                    userConfig = JsonUtility.FromJson<UserConfig>(File.ReadAllText(configPath));
+                }
+            }
+            catch (Exception e)
             {
                 userConfig = new UserConfig();
-                // create file
-                using StreamWriter sw = File.CreateText(configPath);
-                sw.WriteLine(JsonUtility.ToJson(userConfig, true));
+                Debug.LogWarning("Could not read OpenBlocks.cfg, using default user config. " + e.Message);
             }
-            else
-            {
-                userConfig = JsonUtility.FromJson<UserConfig>(File.ReadAllText(configPath));
-                if (userConfig.GalleryUrl == "")
-                {
-                    PlayerPrefs.DeleteKey(AssetsServiceClient.WEB_BASE_URL_KEY);
-                }
-                else
-                {
-                    AssetsServiceClient.WebBaseUrl = userConfig.GalleryUrl;
-                }
 
-                if (userConfig.ApiUrl == "")
-                {
-                    PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
-                }
-                else
-                {
-                    AssetsServiceClient.ApiBaseUrl = userConfig.ApiUrl;
-                }
+            userConfig ??= new UserConfig();
+            AssetsServiceClient.ResetBaseUrls();
+            var removedLegacyBaseUrlPrefs = false;
+            if (PlayerPrefs.HasKey(AssetsServiceClient.WEB_BASE_URL_KEY))
+            {
+                PlayerPrefs.DeleteKey(AssetsServiceClient.WEB_BASE_URL_KEY);
+                removedLegacyBaseUrlPrefs = true;
             }
+
+            if (PlayerPrefs.HasKey(AssetsServiceClient.API_BASE_URL_KEY))
+            {
+                PlayerPrefs.DeleteKey(AssetsServiceClient.API_BASE_URL_KEY);
+                removedLegacyBaseUrlPrefs = true;
+            }
+
+            if (removedLegacyBaseUrlPrefs)
+            {
+                PlayerPrefs.Save();
+            }
+
+            ApplyConfiguredBaseUrl(
+                "GalleryUrl",
+                userConfig.GalleryUrl,
+                value => AssetsServiceClient.WebBaseUrl = value);
+            ApplyConfiguredBaseUrl(
+                "ApiUrl",
+                userConfig.ApiUrl,
+                value => AssetsServiceClient.ApiBaseUrl = value);
+        }
+
+        private static void ApplyConfiguredBaseUrl(string fieldName, string configuredUrl, Action<string> apply)
+        {
+            if (string.IsNullOrWhiteSpace(configuredUrl))
+            {
+                return;
+            }
+
+            var trimmedUrl = configuredUrl.Trim().TrimEnd('/');
+            if (!Uri.TryCreate(trimmedUrl, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                Debug.LogWarning($"[OBCFG_20260615] Ignoring invalid {fieldName}: {configuredUrl}");
+                return;
+            }
+
+            apply(trimmedUrl);
         }
 
         /// <summary>
@@ -915,7 +954,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Register cross controller handlers.
             paletteController.RegisterCrossControllerHandlers(peltzerController);
 
-            // desktopMain.Setup();
+            desktopMain?.Setup();
 
             // Model.
             exporter = gameObject.AddComponent<Exporter>();
@@ -942,6 +981,11 @@ namespace com.google.apps.peltzer.client.model.main
             }
 
             referenceImageManager = gameObject.AddComponent<ReferenceImageManager>();
+            // Reference image insertion requires a file picker, which is only supported on Windows.
+            if (Application.platform != RuntimePlatform.WindowsPlayer && Application.platform != RuntimePlatform.WindowsEditor)
+            {
+                ObjectFinder.ObjectById("ID_add_ref_image").SetActive(false);
+            }
 
             // If the user logged in previously, then load their logged-in state, but don't prompt them to login otherwise.
             if (OAuth2Identity.Instance.HasAccessToken)
@@ -1422,7 +1466,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
             // They logged in, change the "Sign In" button to sign out.
-            // GetDesktopMain().SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
+            desktopMain?.SignIn(OAuth2Identity.Instance.Profile.icon, OAuth2Identity.Instance.Profile.name);
 
             paletteController.publishSignInPrompt.SetActive(false);
         }
@@ -1438,7 +1482,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignOut();
             // Update the desktop menu.
-            // desktopMain.SignOut();
+            desktopMain?.SignOut();
         }
 
         public void SignOut()
@@ -1456,7 +1500,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Change the PolyMenu buttons.
             polyMenuMain.SignOut();
             // Update the desktop menu.
-            // desktopMain.SignOut();
+            desktopMain?.SignOut();
         }
 
         /// <summary>
@@ -1753,6 +1797,45 @@ namespace com.google.apps.peltzer.client.model.main
                 polyMenuMain.SwitchToLocalModelsSection();
                 HasShownMenuTooltipThisSession = true;
             }
+        }
+
+        /// <summary>
+        ///   Fetches an Icosa model by its remote asset ID and loads it directly into the current scene.
+        /// </summary>
+        public void ImportIcosaModelById(string assetId, System.Action<bool> callback = null)
+        {
+            zandriaCreationsManager.GetAssetFromAssetsService(assetId, delegate (ObjectStoreEntry objectStoreResult)
+            {
+                if (objectStoreResult == null)
+                {
+                    Debug.LogWarning($"[ImportIcosa] No asset found for id: {assetId}");
+                    callback?.Invoke(false);
+                    return;
+                }
+                ObjectStoreClient.GetRawFileData(objectStoreResult, delegate (byte[] rawFileData)
+                {
+                    if (rawFileData == null || rawFileData.Length == 0)
+                    {
+                        Debug.LogWarning($"[ImportIcosa] Failed to download file data for id: {assetId}");
+                        callback?.Invoke(false);
+                        return;
+                    }
+                    PeltzerFile peltzerFile;
+                    if (!PeltzerFileHandler.PeltzerFileFromBytes(rawFileData, out peltzerFile))
+                    {
+                        Debug.LogWarning($"[ImportIcosa] Failed to parse file for id: {assetId}");
+                        callback?.Invoke(false);
+                        return;
+                    }
+                    LoadOptions options = new LoadOptions();
+                    // The freshly parsed file is unshared, so its meshes can be moved into the model directly
+                    // without a defensive clone (which would transiently double memory for large models).
+                    options.cloneBeforeLoad = false;
+                    options.overrideRemixId = assetId;
+                    LoadPeltzerFileIntoModel(peltzerFile, options);
+                    callback?.Invoke(true);
+                });
+            }, /* isSave */ false);
         }
 
         /// <summary>

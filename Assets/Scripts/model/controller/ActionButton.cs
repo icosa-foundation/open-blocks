@@ -56,5 +56,10 @@ namespace com.google.apps.peltzer.client.model.controller
             var icon = transform.GetChild(0).GetComponent<SpriteRenderer>();
             icon.color = enable ? Color.white : Color.gray;
         }
+
+        public override void SetHovered(bool isHovered)
+        {
+            base.SetHovered(isHovered);
+        }
     }
 }
