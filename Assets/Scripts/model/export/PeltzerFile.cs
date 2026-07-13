@@ -241,6 +241,8 @@ namespace com.google.apps.peltzer.client.model.export
             // Read color count
             int count = serializer.ReadCount(0, 10000, "customColorCount");
 
+            Dictionary<int, int> remappedMaterialIds = new Dictionary<int, int>();
+
             // Read and register each custom color
             for (int i = 0; i < count; i++)
             {
@@ -252,10 +254,51 @@ namespace com.google.apps.peltzer.client.model.export
                     serializer.ReadByte()   // A
                 );
 
-                render.MaterialRegistry.RegisterCustomMaterial(id, color);
+                int registeredId = render.MaterialRegistry.RegisterCustomMaterial(id, color);
+                if (registeredId != id)
+                {
+                    remappedMaterialIds[id] = registeredId;
+                }
             }
 
             serializer.FinishReadingChunk(SerializationConsts.CHUNK_CUSTOM_PALETTE);
+
+            if (remappedMaterialIds.Count > 0)
+            {
+                RemapCustomMaterialIds(remappedMaterialIds);
+            }
+        }
+
+        private void RemapCustomMaterialIds(Dictionary<int, int> remappedMaterialIds)
+        {
+            foreach (MMesh mesh in meshes)
+            {
+                MMesh.GeometryOperation operation = null;
+                foreach (Face face in mesh.GetFaces())
+                {
+                    if (remappedMaterialIds.TryGetValue(face.properties.materialId, out int remappedId))
+                    {
+                        if (operation == null)
+                        {
+                            operation = mesh.StartOperation();
+                        }
+                        operation.ModifyFace(face.id, face.vertexIds, new FaceProperties(remappedId));
+                    }
+                }
+
+                if (operation != null)
+                {
+                    operation.CommitWithoutRecalculation();
+                }
+            }
+
+            for (int i = 0; i < materials.Count; i++)
+            {
+                if (remappedMaterialIds.TryGetValue(materials[i].materialId, out int remappedId))
+                {
+                    materials[i].materialId = remappedId;
+                }
+            }
         }
     }
 

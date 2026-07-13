@@ -516,12 +516,12 @@ namespace com.google.apps.peltzer.client.model.render
         /// </summary>
         /// <param name="materialId">The material ID to register.</param>
         /// <param name="color">The color to associate with this ID.</param>
-        public static void RegisterCustomMaterial(int materialId, Color32 color)
+        public static int RegisterCustomMaterial(int materialId, Color32 color)
         {
             if (materialId < CUSTOM_COLOR_START)
             {
                 Debug.LogError($"Attempted to register custom material with invalid ID: {materialId}");
-                return;
+                return materialId;
             }
 
             // Ensure storage is initialized
@@ -532,7 +532,21 @@ namespace com.google.apps.peltzer.client.model.render
                 nextCustomId = CUSTOM_COLOR_START;
             }
 
-            // Add to registry
+            if (colorToIdCache.TryGetValue(color, out int existingColorId))
+            {
+                return existingColorId;
+            }
+
+            if (customColors.ContainsKey(materialId))
+            {
+                while (customColors.ContainsKey(nextCustomId))
+                {
+                    nextCustomId++;
+                }
+                materialId = nextCustomId++;
+            }
+
+            // Add to registry without overwriting a color loaded from another file.
             customColors[materialId] = color;
             colorToIdCache[color] = materialId;
 
@@ -541,6 +555,8 @@ namespace com.google.apps.peltzer.client.model.render
             {
                 nextCustomId = materialId + 1;
             }
+
+            return materialId;
         }
 
         /// <summary>
