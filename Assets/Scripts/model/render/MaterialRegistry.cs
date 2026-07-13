@@ -441,7 +441,7 @@ namespace com.google.apps.peltzer.client.model.render
             // Check legacy palette (exact match)
             if (color32s != null)
             {
-                for (int i = 0; i < color32s.Length; i++)
+                for (int i = 0; i < rawColors.Length; i++)
                 {
                     if (ColorsEqual(color32s[i], color))
                     {
