@@ -63638,7 +63638,7 @@ GameObject:
   - component: {fileID: 3873293536753146316}
   - component: {fileID: 8813950892065225069}
   m_Layer: 10
-  m_Name: 'ContentTypeToggle '
+  m_Name: ContentTypeToggle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
