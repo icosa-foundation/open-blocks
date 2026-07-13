@@ -179,7 +179,7 @@ namespace com.google.apps.peltzer.client.tools
             // Convert from model space to world space
             volumeVisual.transform.position = worldSpace.ModelToWorld(centerModel);
             volumeVisual.transform.localScale = Vector3.one;
-            volumeVisual.transform.rotation = Quaternion.identity;
+            volumeVisual.transform.rotation = worldSpace.ModelOrientationToWorld(Quaternion.identity);
 
             // Scale size from model space to world space for visual mesh
             Vector3 sizeWorld = sizeModel * worldSpace.scale;
