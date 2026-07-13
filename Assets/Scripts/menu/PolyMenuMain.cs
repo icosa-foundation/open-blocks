@@ -1316,7 +1316,8 @@ namespace com.google.apps.peltzer.client.menu
 
         public void ToggleContentType()
         {
-            switch (CurrentCreationType())
+            CreationType creationType = CurrentCreationType();
+            switch (creationType)
             {
                 case CreationType.YOUR:
                     yourContentType = yourContentType == ContentType.MODELS ? ContentType.COLLECTIONS : ContentType.MODELS;
@@ -1330,9 +1331,15 @@ namespace com.google.apps.peltzer.client.menu
                 case CreationType.LOCAL:
                     // No toggle for local
                     return;
+                default:
+                    return;
             }
-            // Reload the menu with the new content type
-            RefreshPolyMenu();
+
+            // Loads are keyed by creation type, so discard the load for the previous content type
+            // before requesting the newly selected models or collections.
+            AssetsServiceClient.ClearRecentAssetIdsByType(creationType);
+            creationsManager.ClearLoad(creationType);
+            creationsManager.StartLoad(creationType);
         }
 
         private int CurrentPage()
