@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -35,6 +36,33 @@ namespace com.google.apps.peltzer.client.model.core
 
             Face currentFace;
             Assert.False(operation.TryGetCurrentFace(1, out currentFace));
+        }
+
+        [Test]
+        public void TestMovingVertexPreservesUv()
+        {
+            MMesh mesh = Primitives.AxisAlignedBox(1, Vector3.zero, Vector3.one, 2);
+            int vertexId = new List<int>(mesh.GetVertexIds())[0];
+            Vertex originalVertex = mesh.GetVertex(vertexId);
+            Vector2 expectedUv = new Vector2(0.25f, 0.75f);
+
+            Dictionary<int, Vertex> vertices = new Dictionary<int, Vertex>();
+            foreach (Vertex vertex in mesh.GetVertices())
+            {
+                vertices[vertex.id] = vertex.id == vertexId
+                  ? new Vertex(vertex.id, vertex.loc, expectedUv)
+                  : vertex;
+            }
+            MMesh texturedMesh = new MMesh(mesh.id, mesh.offset, mesh.rotation, vertices,
+              new Dictionary<int, Face>(mesh.GetFaces().ToDictionary(face => face.id, face => face)));
+
+            MMesh.GeometryOperation operation = texturedMesh.StartOperation();
+            operation.ModifyVertexMeshSpace(vertexId, originalVertex.loc + Vector3.right);
+            operation.ModifyVertexModelSpace(vertexId,
+              texturedMesh.MeshCoordsToModelCoords(originalVertex.loc + Vector3.up));
+            operation.Commit();
+
+            Assert.AreEqual(expectedUv, texturedMesh.GetVertex(vertexId).uv);
         }
     }
 }

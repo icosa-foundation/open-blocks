@@ -1050,7 +1050,8 @@ namespace com.google.apps.peltzer.client.desktop_app
                     PrintLn("Selected vertices must belong to same mesh.");
                     return;
                 }
-                updatedVerts.Add(new Vertex(vkey.vertexId, original.VertexPositionInMeshCoords(vkey.vertexId) + delta));
+                Vertex originalVertex = original.GetVertex(vkey.vertexId);
+                updatedVerts.Add(new Vertex(vkey.vertexId, originalVertex.loc + delta, originalVertex.uv));
             }
             if (meshId < 0)
             {

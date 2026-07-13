@@ -825,7 +825,9 @@ namespace com.google.apps.peltzer.client.tools
                     // Move and rotate each vert by the positional and rotational delta.
                     MoveAndRotateVertexFreely(vertexKey, delta, rotationPivotModel, rotDelta, out newLocInMeshSpace);
                 }
-                movesByMesh[vertexKey.meshId][vertexKey.vertexId] = (new Vertex(vertexKey.vertexId, newLocInMeshSpace));
+                Vertex originalVertex = mesh.GetVertex(vertexKey.vertexId);
+                movesByMesh[vertexKey.meshId][vertexKey.vertexId] =
+                  new Vertex(vertexKey.vertexId, newLocInMeshSpace, originalVertex.uv);
             }
 
             // Update the vertex positions in naivelyMutatedMeshes. It's a "naive" operation because we just move

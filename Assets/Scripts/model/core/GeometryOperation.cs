@@ -235,7 +235,7 @@ namespace com.google.apps.peltzer.client.model.core
 #if UNITY_EDITOR
         CheckVertexIsModifiable(id);
 #endif
-                Vertex vertex = new Vertex(id, targetMesh.ModelCoordsToMeshCoords(pos));
+                Vertex vertex = new Vertex(id, targetMesh.ModelCoordsToMeshCoords(pos), GetCurrentVertex(id).uv);
                 modifiedVertices[id] = vertex;
                 return vertex;
             }
@@ -250,7 +250,7 @@ namespace com.google.apps.peltzer.client.model.core
 #if UNITY_EDITOR
         CheckVertexIsModifiable(id);
 #endif
-                Vertex vertex = new Vertex(id, pos);
+                Vertex vertex = new Vertex(id, pos, GetCurrentVertex(id).uv);
                 modifiedVertices[id] = vertex;
                 return vertex;
             }

@@ -872,7 +872,7 @@ namespace com.google.apps.peltzer.client.tools
             {
                 Vector3 meshSpaceLocation = center + Quaternion.AngleAxis(i * angle, normal) * radialArm;
                 int vertexId = currentFrontFace.vertexIds[i];
-                scaleFrontfaceOperation.ModifyVertex(new Vertex(vertexId, meshSpaceLocation));
+                scaleFrontfaceOperation.ModifyVertexMeshSpace(vertexId, meshSpaceLocation);
             }
             scaleFrontfaceOperation.Commit();
             UpdateOriginalPositions();

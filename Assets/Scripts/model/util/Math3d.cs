@@ -40,7 +40,7 @@ namespace com.google.apps.peltzer.client.model.util
         /// <returns>An IEnumerable to enumerate through the scaled vertex collection.</returns>
         public static IEnumerable<Vertex> ScaleVertices(IEnumerable<Vertex> vertices, Vector3 scale)
         {
-            return vertices.Select(v => new Vertex(v.id, Vector3.Scale(v.loc, scale)));
+            return vertices.Select(v => new Vertex(v.id, Vector3.Scale(v.loc, scale), v.uv));
         }
 
         /// <summary>

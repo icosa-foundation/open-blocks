@@ -101,7 +101,8 @@ namespace com.google.apps.peltzer.client.tools
                             break;
                     }
                     Vector3 newLocMeshSpace = originalMesh.ModelCoordsToMeshCoords(newLocModelSpace);
-                    newVerticesById.Add(vertexId, new Vertex(vertexId, newLocMeshSpace));
+                    newVerticesById.Add(vertexId,
+                      new Vertex(vertexId, newLocMeshSpace, originalMesh.GetVertex(vertexId).uv));
                 }
                 // Flip the normals on each face around the axis of symmetry, and reverse the winding of its vertices.
                 Dictionary<int, Face> newFacesById = new Dictionary<int, Face>();
