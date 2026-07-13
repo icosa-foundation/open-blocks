@@ -183,8 +183,7 @@ namespace com.google.apps.peltzer.client.tools
 
             // Scale size from model space to world space for visual mesh
             Vector3 sizeWorld = sizeModel * worldSpace.scale;
-            Mesh boxMesh = CreateWireframeCube(sizeWorld);
-            meshFilter.mesh = boxMesh;
+            ReplacePreviewMesh(CreateWireframeCube(sizeWorld));
         }
 
         /// <summary>
@@ -201,8 +200,25 @@ namespace com.google.apps.peltzer.client.tools
 
             // Scale radius from model space to world space for visual mesh
             float radiusWorld = radiusModel * worldSpace.scale;
-            Mesh sphereMesh = CreateWireframeSphere(radiusWorld, 16, 16);
-            meshFilter.mesh = sphereMesh;
+            ReplacePreviewMesh(CreateWireframeSphere(radiusWorld, 16, 16));
+        }
+
+        private void ReplacePreviewMesh(Mesh previewMesh)
+        {
+            Mesh previousMesh = meshFilter.sharedMesh;
+            meshFilter.sharedMesh = previewMesh;
+            if (previousMesh != null)
+            {
+                Destroy(previousMesh);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (meshFilter != null && meshFilter.sharedMesh != null)
+            {
+                Destroy(meshFilter.sharedMesh);
+            }
         }
 
         /// <summary>
