@@ -219,6 +219,7 @@ jobs:
             targetPlatform: Android
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
+            androidTargetSdkVersion: 34
             versionSuffix: 0
             packages_to_remove: com.meta.xr.sdk.core
 
@@ -226,6 +227,7 @@ jobs:
             targetPlatform: Android
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
+            androidTargetSdkVersion: 35
             versionSuffix: 0
             androidExportType: androidAppBundle
             packages_to_remove: com.meta.xr.sdk.core
@@ -234,6 +236,7 @@ jobs:
             targetPlatform: Android
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
+            androidTargetSdkVersion: 34
             versionSuffix: 1
             extra_defines: XR_DISABLED
             packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
@@ -391,6 +394,15 @@ jobs:
         run: |
           sed -e "s/m_VersionNumber:.*$/m_VersionNumber: $VERSION/" -i Assets/Scenes/MainScene.unity
           sed -e "s/bundleVersion:.*$/bundleVersion: $VERSION/" -i ProjectSettings/ProjectSettings.asset
+
+      - name: Set Android target SDK
+        if: matrix.targetPlatform == 'Android'
+        env:
+          TARGET_SDK_VERSION: ${{ matrix.androidTargetSdkVersion }}
+        run: |
+          grep -q '^  AndroidTargetSdkVersion:' ProjectSettings/ProjectSettings.asset
+          sed -e "s/^  AndroidTargetSdkVersion:.*$/  AndroidTargetSdkVersion: $TARGET_SDK_VERSION/" -i ProjectSettings/ProjectSettings.asset
+          grep -q "^  AndroidTargetSdkVersion: $TARGET_SDK_VERSION$" ProjectSettings/ProjectSettings.asset
 
       - name: Add secure secrets file
         env:
