@@ -65,6 +65,9 @@ jobs:
       - name: Calculate version and stamp
         id: version
         env:
+          # Default tagged-release uploads to the internal track until production publishing is enabled.
+          GOOGLE_PLAY_RELEASE_TRACK: ${{ vars.GOOGLE_PLAY_RELEASE_TRACK || 'internal' }}
+          GOOGLE_PLAY_RELEASE_STATUS: ${{ vars.GOOGLE_PLAY_RELEASE_STATUS || 'completed' }}
           # Switch GOOGLE_PLAY_PRERELEASE_TRACK to "beta" once external testing is approved.
           # Default prerelease uploads to completed internal-track releases so testers receive them.
           GOOGLE_PLAY_PRERELEASE_TRACK: ${{ vars.GOOGLE_PLAY_PRERELEASE_TRACK || 'internal' }}
@@ -101,8 +104,8 @@ jobs:
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
-            echo "googleplaytrack=production" >> $GITHUB_OUTPUT
-            echo "googleplaystatus=completed" >> $GITHUB_OUTPUT
+            echo "googleplaytrack=$GOOGLE_PLAY_RELEASE_TRACK" >> $GITHUB_OUTPUT
+            echo "googleplaystatus=$GOOGLE_PLAY_RELEASE_STATUS" >> $GITHUB_OUTPUT
 
           else
             # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
