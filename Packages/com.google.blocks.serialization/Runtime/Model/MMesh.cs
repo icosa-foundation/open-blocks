@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace com.google.blocks.serialization
@@ -137,9 +136,13 @@ namespace com.google.blocks.serialization
                 serializer.WriteInt(face.id);
                 serializer.WriteInt(face.properties.materialId);
                 PolySerializationUtils.WriteIntList(serializer, face.vertexIds);
-                // Repeat the face normal for backwards compatability.
-                PolySerializationUtils.WriteVector3List(serializer,
-                  Enumerable.Repeat(face.normal, face.vertexIds.Count).ToList());
+                // Repeat the face normal for backwards compatibility. Written inline (same format as
+                // WriteVector3List) to avoid allocating a temporary list per face.
+                serializer.WriteCount(face.vertexIds.Count);
+                for (int i = 0; i < face.vertexIds.Count; i++)
+                {
+                    PolySerializationUtils.WriteVector3(serializer, face.normal);
+                }
 
                 // DEPRECATED: Write holes.
                 serializer.WriteCount(0);
@@ -230,6 +233,38 @@ namespace com.google.blocks.serialization
             }
 
             serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH);
+
+            // Orphan vertices in some legacy files are not referenced by any face. Remove them directly from
+            // face data so callers see the same mesh contents as Open Blocks without constructing a reverse table.
+            HashSet<int> usedVerts = new HashSet<int>();
+            foreach (Face face in facesById.Values)
+            {
+                for (int i = 0; i < face.vertexIds.Count; i++)
+                {
+                    usedVerts.Add(face.vertexIds[i]);
+                }
+            }
+
+            List<int> orphanVerts = null;
+            foreach (Vertex vert in verticesById.Values)
+            {
+                if (!usedVerts.Contains(vert.id))
+                {
+                    if (orphanVerts == null)
+                    {
+                        orphanVerts = new List<int>();
+                    }
+                    orphanVerts.Add(vert.id);
+                }
+            }
+
+            if (orphanVerts != null)
+            {
+                foreach (int vertId in orphanVerts)
+                {
+                    verticesById.Remove(vertId);
+                }
+            }
 
             // If the remix IDs chunk is present (it's optional), read it.
             if (serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS)
