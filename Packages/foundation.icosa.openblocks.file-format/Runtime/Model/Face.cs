@@ -16,7 +16,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using UnityEngine;
 
-namespace com.google.blocks.serialization
+namespace Icosa.OpenBlocks.FileFormat
 {
     /// <summary>
     ///   A polygonal face of a MMesh (simplified for serialization package).

@@ -16,20 +16,20 @@ A standalone Unity Package Manager (UPM) package for saving and loading .blocks/
 
 1. Open Unity Package Manager (Window > Package Manager)
 2. Click the + button and select "Add package from git URL"
-3. Enter: `https://github.com/icosa-foundation/open-blocks.git?path=/Packages/com.google.blocks.serialization`
+3. Enter: `https://github.com/icosa-foundation/open-blocks.git?path=/Packages/foundation.icosa.openblocks.file-format#packages/foundation.icosa.openblocks.file-format`
 
 ### Install via Local Package
 
 1. Clone this repository
 2. In Unity Package Manager, click + and select "Add package from disk"
-3. Navigate to `Packages/com.google.blocks.serialization` and select `package.json`
+3. Navigate to `Packages/foundation.icosa.openblocks.file-format` and select `package.json`
 
 ## Quick Start
 
 ### Saving a File
 
 ```csharp
-using com.google.blocks.serialization;
+using Icosa.OpenBlocks.FileFormat;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -61,7 +61,7 @@ bool success = BlocksFileFormat.SaveToFile("mymodel.blocks", meshes, "YourName",
 ### Loading a File
 
 ```csharp
-using com.google.blocks.serialization;
+using Icosa.OpenBlocks.FileFormat;
 using UnityEngine;
 
 // Load from file

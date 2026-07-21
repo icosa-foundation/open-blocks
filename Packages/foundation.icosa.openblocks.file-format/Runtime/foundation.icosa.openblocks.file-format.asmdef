@@ -1,6 +1,6 @@
 {
-    "name": "com.google.blocks.serialization",
-    "rootNamespace": "com.google.blocks.serialization",
+    "name": "foundation.icosa.openblocks.file-format",
+    "rootNamespace": "Icosa.OpenBlocks.FileFormat",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

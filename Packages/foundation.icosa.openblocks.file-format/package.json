@@ -1,7 +1,7 @@
 {
-  "name": "com.google.blocks.serialization",
+  "name": "foundation.icosa.openblocks.file-format",
   "version": "1.0.0",
-  "displayName": "Blocks File Format",
+  "displayName": "Open Blocks File Format",
   "description": "Native file format serialization and deserialization for .blocks/.poly/.peltzer files. This package provides a standalone library for saving and loading 3D mesh data in the Blocks file format.",
   "unity": "2019.4",
   "keywords": [
@@ -14,7 +14,7 @@
     "peltzer"
   ],
   "author": {
-    "name": "Google",
+    "name": "Icosa Foundation",
     "url": "https://github.com/icosa-foundation/open-blocks"
   },
   "license": "Apache-2.0"

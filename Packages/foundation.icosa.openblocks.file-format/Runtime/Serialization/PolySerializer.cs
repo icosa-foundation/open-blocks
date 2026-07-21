@@ -15,7 +15,7 @@
 using System;
 using System.Text;
 
-namespace com.google.blocks.serialization
+namespace Icosa.OpenBlocks.FileFormat
 {
     /// <summary>
     /// Handles serialization to and from the Poly file format.

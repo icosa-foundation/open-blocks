@@ -14,7 +14,7 @@
 
 using UnityEngine;
 
-namespace com.google.blocks.serialization
+namespace Icosa.OpenBlocks.FileFormat
 {
     /// <summary>
     /// Math utilities for 3D operations (simplified version for serialization package).

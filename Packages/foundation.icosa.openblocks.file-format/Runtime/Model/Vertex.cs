@@ -14,7 +14,7 @@
 
 using UnityEngine;
 
-namespace com.google.blocks.serialization
+namespace Icosa.OpenBlocks.FileFormat
 {
 
     /// <summary>

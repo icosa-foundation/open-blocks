@@ -7,7 +7,7 @@ The Blocks File Format package provides a standalone library for serializing and
 ## Package Structure
 
 ```
-com.google.blocks.serialization/
+foundation.icosa.openblocks.file-format/
 ├── Runtime/
 │   ├── Serialization/        # Core binary serialization
 │   │   ├── PolySerializer.cs
@@ -222,7 +222,7 @@ if (BlocksFileFormat.LoadFromBytes(data, out file))
 
 If migrating from the original Blocks codebase:
 
-1. **Namespace change**: `com.google.apps.peltzer.client.*` → `com.google.blocks.serialization`
+1. **Namespace change**: `com.google.apps.peltzer.client.*` → `Icosa.OpenBlocks.FileFormat`
 2. **Simplified API**: Use `BlocksFileFormat` instead of direct `PeltzerFileHandler`
 3. **No PeltzerMain dependency**: Pass rotation explicitly if needed
 4. **No Config dependency**: Pass version string explicitly
@@ -239,7 +239,7 @@ var bytes = PeltzerFileHandler.PeltzerFileFromMeshes(meshes, includeDisplayRotat
 
 **After:**
 ```csharp
-using com.google.blocks.serialization;
+using Icosa.OpenBlocks.FileFormat;
 
 var bytes = BlocksFileFormat.SaveToBytes(meshes, "Creator", "1.0");
 ```

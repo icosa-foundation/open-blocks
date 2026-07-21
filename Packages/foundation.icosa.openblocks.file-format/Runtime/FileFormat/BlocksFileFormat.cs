@@ -16,7 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace com.google.blocks.serialization
+namespace Icosa.OpenBlocks.FileFormat
 {
     /// <summary>
     /// High-level API for working with Blocks file format (.blocks/.poly/.peltzer files).

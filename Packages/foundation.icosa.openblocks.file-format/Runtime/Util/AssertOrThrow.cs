@@ -14,7 +14,7 @@
 
 using System;
 
-namespace com.google.blocks.serialization
+namespace Icosa.OpenBlocks.FileFormat
 {
     /// <summary>
     ///   Runtime assertions.

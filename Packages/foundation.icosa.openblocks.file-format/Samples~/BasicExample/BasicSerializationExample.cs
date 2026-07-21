@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using com.google.blocks.serialization;
+using Icosa.OpenBlocks.FileFormat;
 using System.Collections.Generic;
 using UnityEngine;
 
