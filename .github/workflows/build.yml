@@ -1010,6 +1010,60 @@ jobs:
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_OpenXR_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
           fi
 
+  publish_arborxr:
+    name: Publish ArborXR
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-blocks' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli --with 'setuptools<82.0.0'
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_openxr
+
+      - name: Publish Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          ARBORXR_ACCESS_TOKEN: ${{ secrets.ARBORXR_ACCESS_TOKEN }}
+          ARBORXR_ORG_ID: ${{ vars.ARBORXR_ORG_ID }}
+          ARBORXR_APP_ID: ${{ vars.ARBORXR_APP_ID }}
+          ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_LIVE_CHANNEL }}
+          ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_BETA_CHANNEL }}
+        run: |
+          set -x
+          mkdir releases
+          mv build_android_openxr/*/OpenBlocks*apk releases/OpenBlocks_OpenXR_$VERSION.apk
+
+          cd releases
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
+          fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBlocks_OpenXR_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 600 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
+
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
