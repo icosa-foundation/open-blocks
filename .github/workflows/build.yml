@@ -220,7 +220,7 @@ jobs:
 
           - name: Android OpenXR
             targetPlatform: Android
-            cache: Android_Vulkan
+            cache: Android
             extraoptions: -btb-il2cpp
             androidTargetSdkVersion: 34
             versionSuffix: 0
@@ -228,7 +228,7 @@ jobs:
 
           - name: Android OpenXR Google Play
             targetPlatform: Android
-            cache: Android_Vulkan
+            cache: Android
             extraoptions: -btb-il2cpp
             androidTargetSdkVersion: 35
             versionSuffix: 0
@@ -237,7 +237,7 @@ jobs:
 
           - name: Android 2D
             targetPlatform: Android
-            cache: Android_Vulkan
+            cache: Android_2D
             extraoptions: -btb-il2cpp
             androidTargetSdkVersion: 34
             versionSuffix: 1
