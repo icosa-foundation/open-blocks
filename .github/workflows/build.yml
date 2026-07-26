@@ -507,7 +507,7 @@ jobs:
           # chown all files, since some are owned by root after the docker run
           docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
           # Print the files to be deleted
-          find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so' -or -name 'launcher-release.apk' | tee todelete.txt
+          find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so*' -or -name 'launcher-release.apk' | tee todelete.txt
           cat todelete.txt | xargs -r rm
           # The package cache is stored in a separate, shared, cache
           rm -rf Library/PackageCache
