@@ -489,7 +489,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v6
-        if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove
+        if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove && false
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
