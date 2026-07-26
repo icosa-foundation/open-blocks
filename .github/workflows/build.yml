@@ -220,7 +220,7 @@ jobs:
 
           - name: Android OpenXR
             targetPlatform: Android
-            cache: Android_Vulkan
+            cache: Android
             extraoptions: -btb-il2cpp
             androidTargetSdkVersion: 34
             versionSuffix: 0
@@ -228,7 +228,7 @@ jobs:
 
           - name: Android OpenXR Google Play
             targetPlatform: Android
-            cache: Android_Vulkan
+            cache: Android
             extraoptions: -btb-il2cpp
             androidTargetSdkVersion: 35
             versionSuffix: 0
@@ -237,7 +237,7 @@ jobs:
 
           - name: Android 2D
             targetPlatform: Android
-            cache: Android_Vulkan
+            cache: Android_2D
             extraoptions: -btb-il2cpp
             androidTargetSdkVersion: 34
             versionSuffix: 1
@@ -489,7 +489,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v6
-        if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove
+        if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove && false
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
