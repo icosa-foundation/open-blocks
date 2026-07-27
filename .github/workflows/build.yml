@@ -230,6 +230,7 @@ jobs:
             targetPlatform: Android
             cache: Android
             extraoptions: -btb-il2cpp
+            extra_defines: OPEN_BLOCKS_GOOGLE_PLAY
             androidTargetSdkVersion: 35
             versionSuffix: 0
             androidExportType: androidAppBundle
