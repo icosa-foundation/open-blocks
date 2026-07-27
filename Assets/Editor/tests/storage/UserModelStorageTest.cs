@@ -8,10 +8,12 @@
 
 using com.google.apps.peltzer.client.model.export;
 using com.google.apps.peltzer.client.model.storage;
+using com.google.apps.peltzer.client.zandria;
 using NUnit.Framework;
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace com.google.apps.peltzer.client.model.storage.tests
 {
@@ -97,6 +99,22 @@ namespace com.google.apps.peltzer.client.model.storage.tests
             Assert.That(
               storage.ListModels().Select(model => model.Id),
               Is.EqualTo(new[] { "valid-model" }));
+        }
+
+        [Test]
+        public void DeletedModelIdentityIsClearedOnlyForCurrentModel()
+        {
+            MethodInfo method = typeof(ZandriaCreationsManager).GetMethod(
+              "GetLocalIdAfterDelete",
+              BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.That(method, Is.Not.Null);
+            Assert.That(
+              method.Invoke(null, new object[] { "current-model", "current-model" }),
+              Is.Null);
+            Assert.That(
+              method.Invoke(null, new object[] { "current-model", "other-model" }),
+              Is.EqualTo("current-model"));
         }
 
         private static SaveData CreateSaveData(byte marker)

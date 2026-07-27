@@ -727,6 +727,9 @@ namespace com.google.apps.peltzer.client.zandria
                 return;
             }
 
+            PeltzerMain.Instance.LocalId =
+              GetLocalIdAfterDelete(PeltzerMain.Instance.LocalId, modelId);
+
             lock (mutex)
             {
                 if (lastStoredModelSnapshot != null)
@@ -737,6 +740,11 @@ namespace com.google.apps.peltzer.client.zandria
                 }
             }
             RemoveSingleCreationAndRefreshMenu(PolyMenuMain.CreationType.LOCAL, modelId);
+        }
+
+        internal static string GetLocalIdAfterDelete(string currentModelId, string deletedModelId)
+        {
+            return currentModelId == deletedModelId ? null : currentModelId;
         }
 
         public ObjectStoreEntry GetObjectStoreEntryFromStoredModel(StoredModel model)
