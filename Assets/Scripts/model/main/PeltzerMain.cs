@@ -1709,7 +1709,7 @@ namespace com.google.apps.peltzer.client.model.main
 
             if (!storage.IsReady)
             {
-                HandleSaveComplete(false, "Choose a storage folder to save locally");
+                HandleSaveComplete(false, "Select the Blocks or Open Blocks folder to save locally");
                 yield break;
             }
 

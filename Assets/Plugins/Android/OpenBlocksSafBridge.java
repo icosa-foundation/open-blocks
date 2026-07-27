@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -343,15 +344,17 @@ public final class OpenBlocksSafBridge {
                 if ("WritingTemporary".equals(state) || "TemporaryComplete".equals(state)) {
                     recovered = deleteDocument(activity, temporaryId);
                 } else if ("BackingUpOriginal".equals(state)) {
-                    if (installedId != null && documentExists(activity, Uri.parse(installedId))) {
+                    Uri reservedBackup = findChild(
+                        activity,
+                        requireModelsDirectory(activity),
+                        BACKUP_PREFIX + transactionId);
+                    if (reservedBackup == null) {
+                        // The namespace mutation had not started. The original remains canonical.
                         recovered = deleteDocument(activity, temporaryId);
                     } else {
-                        Uri reservedBackup = findChild(
-                            activity,
-                            requireModelsDirectory(activity),
-                            BACKUP_PREFIX + transactionId);
-                        recovered = reservedBackup == null ||
-                            restoreBackup(activity, reservedBackup.toString(), displayName);
+                        // The old document may retain the same opaque ID across rename, so its URI
+                        // is not evidence that it still has the canonical display name.
+                        recovered = restoreBackup(activity, reservedBackup.toString(), displayName);
                         recovered = recovered && deleteDocument(activity, temporaryId);
                     }
                 } else if ("OriginalBackedUp".equals(state)) {
@@ -446,11 +449,31 @@ public final class OpenBlocksSafBridge {
     }
 
     private static File getJournalDirectory(Activity activity) {
-        File directory = new File(activity.getFilesDir(), "OpenBlocksSafRecovery/journals");
+        Uri treeUri = getPersistedTreeUri(activity);
+        if (treeUri == null) {
+            throw new IllegalStateException("Cannot resolve recovery storage without a selected SAF root.");
+        }
+        File directory = new File(
+            activity.getFilesDir(),
+            "OpenBlocksSafRecovery/" + getRootIdentity(treeUri) + "/journals");
         if (!directory.exists() && !directory.mkdirs()) {
             throw new IllegalStateException("Could not create the SAF recovery journal directory.");
         }
         return directory;
+    }
+
+    private static String getRootIdentity(Uri treeUri) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                .digest(treeUri.toString().getBytes(StandardCharsets.UTF_8));
+            StringBuilder builder = new StringBuilder();
+            for (int index = 0; index < 12; index++) {
+                builder.append(String.format("%02x", digest[index]));
+            }
+            return builder.toString();
+        } catch (Exception exception) {
+            throw new IllegalStateException("Could not derive the SAF root identity.", exception);
+        }
     }
 
     private static File getJournalFile(Activity activity, String transactionId) {
@@ -487,6 +510,25 @@ public final class OpenBlocksSafBridge {
         } catch (Exception exception) {
             android.util.Log.w(LOG_PREFIX, "Could not resolve the models directory", exception);
             return null;
+        }
+    }
+
+    private static boolean isValidSelectedRoot(Activity activity, Uri treeUri) {
+        try (Cursor cursor = activity.getContentResolver().query(
+            treeUri,
+            new String[] { DocumentsContract.Document.COLUMN_DISPLAY_NAME },
+            null,
+            null,
+            null)) {
+            if (cursor == null || !cursor.moveToFirst()) {
+                return false;
+            }
+            String displayName = cursor.getString(0);
+            return "Blocks".equalsIgnoreCase(displayName) ||
+                "Open Blocks".equalsIgnoreCase(displayName);
+        } catch (Exception exception) {
+            android.util.Log.w(LOG_PREFIX, "Selected-root validation failed", exception);
+            return false;
         }
     }
 
@@ -624,6 +666,12 @@ public final class OpenBlocksSafBridge {
                 int flags = data.getFlags() &
                     (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 activity.getContentResolver().takePersistableUriPermission(treeUri, flags);
+                if (!isValidSelectedRoot(activity, treeUri)) {
+                    activity.getContentResolver().releasePersistableUriPermission(treeUri, flags);
+                    accessRequestState = ACCESS_FAILED;
+                    removeSelf(activity);
+                    return;
+                }
                 SharedPreferences preferences =
                     activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
                 preferences.edit().putString(PREF_TREE_URI, treeUri.toString()).commit();
