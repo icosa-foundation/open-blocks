@@ -239,6 +239,16 @@ public final class OpenBlocksSafBridge {
         }
     }
 
+    public static boolean recordBackingUpOriginal(
+        Activity activity,
+        String transactionId,
+        String temporaryId,
+        String destinationId,
+        String displayName) {
+        return writeJournal(activity, transactionId, "BackingUpOriginal",
+            temporaryId, destinationId, null, displayName);
+    }
+
     public static boolean recordOriginalBackedUp(
         Activity activity,
         String transactionId,
@@ -261,6 +271,16 @@ public final class OpenBlocksSafBridge {
             android.util.Log.w(LOG_PREFIX, "Replacement installation failed", exception);
             return null;
         }
+    }
+
+    public static boolean recordInstallingReplacement(
+        Activity activity,
+        String transactionId,
+        String temporaryId,
+        String backupId,
+        String displayName) {
+        return writeJournal(activity, transactionId, "InstallingReplacement",
+            temporaryId, null, backupId, displayName);
     }
 
     public static boolean recordReplacementInstalled(
@@ -317,10 +337,23 @@ public final class OpenBlocksSafBridge {
                 String installedId = nullableString(record, "destinationId");
                 String backupId = nullableString(record, "backupId");
                 String displayName = nullableString(record, "displayName");
+                String transactionId = record.optString("transactionId");
 
                 boolean recovered;
                 if ("WritingTemporary".equals(state) || "TemporaryComplete".equals(state)) {
                     recovered = deleteDocument(activity, temporaryId);
+                } else if ("BackingUpOriginal".equals(state)) {
+                    if (installedId != null && documentExists(activity, Uri.parse(installedId))) {
+                        recovered = deleteDocument(activity, temporaryId);
+                    } else {
+                        Uri reservedBackup = findChild(
+                            activity,
+                            requireModelsDirectory(activity),
+                            BACKUP_PREFIX + transactionId);
+                        recovered = reservedBackup == null ||
+                            restoreBackup(activity, reservedBackup.toString(), displayName);
+                        recovered = recovered && deleteDocument(activity, temporaryId);
+                    }
                 } else if ("OriginalBackedUp".equals(state)) {
                     String replacement = temporaryId == null
                         ? null
@@ -329,6 +362,19 @@ public final class OpenBlocksSafBridge {
                         recovered = deleteDocument(activity, backupId);
                     } else {
                         recovered = restoreBackup(activity, backupId, displayName);
+                    }
+                } else if ("InstallingReplacement".equals(state)) {
+                    Uri canonical = findChild(
+                        activity, requireModelsDirectory(activity), displayName);
+                    if (canonical != null) {
+                        recovered = deleteDocument(activity, backupId);
+                    } else {
+                        String replacement = temporaryId == null
+                            ? null
+                            : installReplacement(activity, temporaryId, displayName);
+                        recovered = replacement != null
+                            ? deleteDocument(activity, backupId)
+                            : restoreBackup(activity, backupId, displayName);
                     }
                 } else if ("ReplacementInstalled".equals(state)) {
                     recovered = documentExists(activity, Uri.parse(installedId)) &&

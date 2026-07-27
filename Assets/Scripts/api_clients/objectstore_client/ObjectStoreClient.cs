@@ -25,6 +25,7 @@ using com.google.apps.peltzer.client.model.export;
 using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.render;
+using com.google.apps.peltzer.client.model.storage;
 using System.Text;
 using com.google.apps.peltzer.client.entitlement;
 using ICSharpCode.SharpZipLib.Zip;
@@ -99,6 +100,14 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         /// <param name="callback">The callback to call when loading is complete.</param>
         public static void GetRawFileData(ObjectStoreEntry entry, System.Action<byte[]> callback)
         {
+            if (entry != null && entry.isLocalStorage)
+            {
+                entry.loadAttemptFormats = new[] { "blocks" };
+                entry.resolvedLoadFormat = "blocks";
+                callback(UserModelStorage.Instance.ReadModelFile(entry.localId, ExportUtils.BLOCKS_FILENAME));
+                return;
+            }
+
             if (entry.localPeltzerFile != null)
             {
                 entry.loadAttemptFormats = new[] { "blocks" };
@@ -116,6 +125,14 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             if (entry == null)
             {
                 callback(null);
+                return;
+            }
+
+            if (entry.isLocalStorage)
+            {
+                entry.loadAttemptFormats = new[] { "blocks" };
+                entry.resolvedLoadFormat = "blocks";
+                callback(UserModelStorage.Instance.ReadModelFile(entry.localId, ExportUtils.BLOCKS_FILENAME));
                 return;
             }
 

@@ -13,8 +13,10 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,6 +37,7 @@ using com.google.apps.peltzer.client.api_clients.objectstore_client;
 using com.google.apps.peltzer.client.serialization;
 using com.google.apps.peltzer.client.entitlement;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
+using com.google.apps.peltzer.client.model.storage;
 
 namespace com.google.apps.peltzer.client.model.main
 {
@@ -143,6 +146,40 @@ namespace com.google.apps.peltzer.client.model.main
                     PeltzerMain.Instance.HandleSaveComplete(false, "Save failed");
                 }
             }
+        }
+    }
+
+    internal class SaveToUserStorageWork : BackgroundWork
+    {
+        private readonly SaveData saveData;
+        private readonly string destinationId;
+        private readonly string displayName;
+        private readonly bool isOverwrite;
+        private readonly bool saveSelected;
+        private ModelStorageSaveResult result;
+
+        public SaveToUserStorageWork(
+            SaveData saveData,
+            string destinationId,
+            string displayName,
+            bool isOverwrite,
+            bool saveSelected)
+        {
+            this.saveData = saveData;
+            this.destinationId = destinationId;
+            this.displayName = displayName;
+            this.isOverwrite = isOverwrite;
+            this.saveSelected = saveSelected;
+        }
+
+        public void BackgroundWork()
+        {
+            result = UserModelStorage.Instance.SaveModel(destinationId, displayName, saveData);
+        }
+
+        public void PostWork()
+        {
+            PeltzerMain.Instance.HandleUserModelSaveComplete(result, isOverwrite, saveSelected);
         }
     }
 
@@ -728,6 +765,7 @@ namespace com.google.apps.peltzer.client.model.main
             // Set up auto-saving.
             modelsPath = Path.Combine(userPath, "Models");
             offlineModelsPath = Path.Combine(userPath, "OfflineModels");
+            UserModelStorage.Configure(offlineModelsPath);
             // TODO(bug): Actually do something incremental with these commands instead of persisting the
             // whole state after every command.
             autoSave = new AutoSave(model, modelsPath);
@@ -785,7 +823,9 @@ namespace com.google.apps.peltzer.client.model.main
         /// <returns>user path used for auto-saving</returns>
         private string GetUserPath()
         {
-#if UNITY_ANDROID && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR && OPEN_BLOCKS_GOOGLE_PLAY
+            return Path.Combine(Application.persistentDataPath, "OpenBlocksLocalOnly");
+#elif UNITY_ANDROID && !UNITY_EDITOR
             return "/sdcard/"; // We can't use persistentDataPath as it doesn't survive app uninstall
 
 #else
@@ -1603,10 +1643,11 @@ namespace com.google.apps.peltzer.client.model.main
             // only saving the selected content, otherwise we are just overwriting existing save data and
             // can use the existing LocalId.
             bool isOverwrite = (LocalId != null && !saveSelected);
-            string modelIdForSaving = isOverwrite ? LocalId : ObjFileExporter.RandomOpaqueId();
+            string modelDisplayName = isOverwrite ? null : ObjFileExporter.RandomOpaqueId();
 
             // Save locally to a regular directory.
-            string directory = Path.Combine(modelsPath, modelIdForSaving);
+            string workingModelName = modelDisplayName ?? ObjFileExporter.RandomOpaqueId();
+            string directory = Path.Combine(modelsPath, workingModelName);
             DoPolyMenuBackgroundWork(
               new SaveToDiskWork(saveData, directory, /* isOfflineModelsFolder */ false, isOverwrite));
             if (cloudSave && OAuth2Identity.Instance.LoggedIn)
@@ -1624,17 +1665,89 @@ namespace com.google.apps.peltzer.client.model.main
                 StartCoroutine(autoThumbnailCamera.TakeScreenShot((byte[] pngBytes) =>
                 {
                     saveData.thumbnailBytes = pngBytes;
-                    directory = Path.Combine(offlineModelsPath, modelIdForSaving);
-
-                    DoPolyMenuBackgroundWork(new SaveToDiskWork(saveData, directory, /* isOfflineModelsFolder */ true,
-                      isOverwrite));
-                    // If we are only saving the selected content, we don't want to overwrite the LocalId
-                    // as the current id for the model we saved is only for the temporary selected content.
-                    if (!saveSelected)
-                    {
-                        LocalId = modelIdForSaving;
-                    }
+                    StartCoroutine(SaveToUserStorageWhenReady(
+                      saveData,
+                      isOverwrite ? LocalId : null,
+                      modelDisplayName,
+                      isOverwrite,
+                      saveSelected));
                 }));
+            }
+        }
+
+        private string GetStoredModelDisplayName(string modelId)
+        {
+            try
+            {
+                StoredModel model = UserModelStorage.Instance.ListModels()
+                  .FirstOrDefault(candidate => candidate.Id == modelId);
+                return model?.DisplayName ?? ObjFileExporter.RandomOpaqueId();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[OB_MODEL_CATALOG] Could not resolve model name: {exception.Message}");
+                return ObjFileExporter.RandomOpaqueId();
+            }
+        }
+
+        private IEnumerator SaveToUserStorageWhenReady(
+            SaveData saveData,
+            string destinationId,
+            string displayName,
+            bool isOverwrite,
+            bool saveSelected)
+        {
+            IUserModelStorageBackend storage = UserModelStorage.Instance;
+            if (!storage.IsReady)
+            {
+                storage.RequestAccess();
+                while (storage.AccessRequestState == StorageAccessRequestState.Pending)
+                {
+                    yield return null;
+                }
+            }
+
+            if (!storage.IsReady)
+            {
+                HandleSaveComplete(false, "Choose a storage folder to save locally");
+                yield break;
+            }
+
+            if (string.IsNullOrEmpty(displayName))
+            {
+                displayName = GetStoredModelDisplayName(destinationId);
+            }
+
+            DoPolyMenuBackgroundWork(new SaveToUserStorageWork(
+              saveData, destinationId, displayName, isOverwrite, saveSelected));
+        }
+
+        public void HandleUserModelSaveComplete(
+            ModelStorageSaveResult result,
+            bool isOverwrite,
+            bool saveSelected)
+        {
+            if (result == null || !result.Success)
+            {
+                string error = result?.Error;
+                Debug.LogWarning($"[OB_MODEL_SAVE] Save failed: {error ?? "Unknown storage error"}");
+                HandleSaveComplete(false, "Save failed");
+                return;
+            }
+
+            HandleSaveComplete(true, "Saved locally");
+            if (!saveSelected)
+            {
+                LocalId = result.Model.Id;
+            }
+
+            if (isOverwrite)
+            {
+                UpdateLocalModelOntoPolyMenu(result.Model);
+            }
+            else
+            {
+                LoadLocallySavedModelOntoPolyMenu(result.Model);
             }
         }
 
@@ -1782,20 +1895,34 @@ namespace com.google.apps.peltzer.client.model.main
         /// <summary>
         ///   Takes in the directory for a locally-saved creation and then calls the creationsManager to load the creation.
         /// </summary>
-        public void LoadLocallySavedModelOntoPolyMenu(DirectoryInfo directory)
+        public void LoadLocallySavedModelOntoPolyMenu(StoredModel model)
         {
-            ObjectStoreEntry objectStoreEntry;
-            if (zandriaCreationsManager.GetObjectStoreEntryFromLocalDirectory(directory, out objectStoreEntry))
-            {
-                zandriaCreationsManager.StartSingleCreationLoad(PolyMenuMain.CreationType.LOCAL, objectStoreEntry,
-                  isLocal: true, isSave: true);
-            }
+            ObjectStoreEntry objectStoreEntry =
+              zandriaCreationsManager.GetObjectStoreEntryFromStoredModel(model);
+            zandriaCreationsManager.StartSingleCreationLoad(
+              PolyMenuMain.CreationType.LOCAL,
+              objectStoreEntry,
+              isLocal: true,
+              isSave: true);
 
             if (!HasShownMenuTooltipThisSession)
             {
                 applicationButtonToolTips.TurnOn("ViewSaved");
                 polyMenuMain.SwitchToLocalModelsSection();
                 HasShownMenuTooltipThisSession = true;
+            }
+        }
+
+        public void LoadLocallySavedModelOntoPolyMenu(DirectoryInfo directory)
+        {
+            ObjectStoreEntry objectStoreEntry;
+            if (zandriaCreationsManager.GetObjectStoreEntryFromLocalDirectory(directory, out objectStoreEntry))
+            {
+                zandriaCreationsManager.StartSingleCreationLoad(
+                  PolyMenuMain.CreationType.LOCAL,
+                  objectStoreEntry,
+                  isLocal: true,
+                  isSave: true);
             }
         }
 
@@ -1852,6 +1979,11 @@ namespace com.google.apps.peltzer.client.model.main
         public void UpdateLocalModelOntoPolyMenu(DirectoryInfo directoryInfo)
         {
             zandriaCreationsManager.UpdateSingleLocalCreationOnYourModels(directoryInfo);
+        }
+
+        public void UpdateLocalModelOntoPolyMenu(StoredModel model)
+        {
+            zandriaCreationsManager.UpdateSingleLocalCreationOnYourModels(model);
         }
 
         /// <summary>

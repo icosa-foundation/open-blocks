@@ -113,7 +113,7 @@ namespace com.google.apps.peltzer.client.model.storage
         }
     }
 
-    internal sealed class LocalUserModelStorageBackend : IUserModelStorageBackend
+    public sealed class LocalUserModelStorageBackend : IUserModelStorageBackend
     {
         private readonly string rootPath;
 
@@ -324,24 +324,57 @@ namespace com.google.apps.peltzer.client.model.storage
                     return ModelStorageSaveResult.Failed("One or more model documents could not be written.");
                 }
 
-                CallBridge<bool>("recordTemporaryComplete", transactionId, temporaryId, destinationId, displayName);
+                if (!CallBridge<bool>(
+                  "recordTemporaryComplete", transactionId, temporaryId, destinationId, displayName))
+                {
+                    CallBridge<bool>("abandonModelWrite", temporaryId);
+                    return ModelStorageSaveResult.Failed("Could not persist the completed-write transaction state.");
+                }
 
                 if (!string.IsNullOrEmpty(destinationId))
                 {
+                    if (!CallBridge<bool>(
+                      "recordBackingUpOriginal",
+                      transactionId,
+                      temporaryId,
+                      destinationId,
+                      displayName))
+                    {
+                        return ModelStorageSaveResult.Failed("Could not journal the replacement operation.");
+                    }
                     backupId = CallBridge<string>("backupDestination", transactionId, destinationId);
                     if (string.IsNullOrEmpty(backupId))
                     {
                         return ModelStorageSaveResult.Failed("Could not preserve the previous model before replacement.");
                     }
-                    CallBridge<bool>("recordOriginalBackedUp", transactionId, temporaryId, backupId, displayName);
+                    if (!CallBridge<bool>(
+                      "recordOriginalBackedUp", transactionId, temporaryId, backupId, displayName))
+                    {
+                        return ModelStorageSaveResult.Failed(
+                          "The previous model was preserved, but recovery is required before replacement.");
+                    }
                 }
 
+                if (!CallBridge<bool>(
+                  "recordInstallingReplacement",
+                  transactionId,
+                  temporaryId,
+                  backupId,
+                  displayName))
+                {
+                    return ModelStorageSaveResult.Failed("Could not journal replacement installation.");
+                }
                 string committedId = CallBridge<string>("installReplacement", temporaryId, displayName);
                 if (string.IsNullOrEmpty(committedId))
                 {
                     return ModelStorageSaveResult.Failed("Could not install the completed model directory.");
                 }
-                CallBridge<bool>("recordReplacementInstalled", transactionId, committedId, backupId, displayName);
+                if (!CallBridge<bool>(
+                  "recordReplacementInstalled", transactionId, committedId, backupId, displayName))
+                {
+                    return ModelStorageSaveResult.Failed(
+                      "The model was installed, but recovery must verify the replacement.");
+                }
 
                 if (!string.IsNullOrEmpty(backupId) && !CallBridge<bool>("deleteDocument", backupId))
                 {

@@ -28,6 +28,7 @@ using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
 using com.google.apps.peltzer.client.model.export;
+using com.google.apps.peltzer.client.model.storage;
 using System.IO;
 using com.google.apps.peltzer.client.entitlement;
 
@@ -506,30 +507,21 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         public void LoadOfflineModels()
         {
-            // Most recent first.
             try
             {
-                DirectoryInfo offlineModelsDirectory = new DirectoryInfo(PeltzerMain.Instance.offlineModelsPath);
-                if (!offlineModelsDirectory.Exists) return;
-                List<DirectoryInfo> directories = offlineModelsDirectory.GetDirectories().ToList();
-
-                // Parse them in reverse order such that we add the newest entries to the start of the menu
-                // after we add older entries to the start of the menu.
-                for (int i = directories.Count() - 1; i >= 0; i--)
+                IReadOnlyList<StoredModel> models = UserModelStorage.Instance.ListModels();
+                for (int i = models.Count - 1; i >= 0; i--)
                 {
-                    DirectoryInfo directory = directories[i];
-                    ObjectStoreEntry entry;
-
-                    if (GetObjectStoreEntryFromLocalDirectory(directory, out entry))
-                    {
-                        StartSingleCreationLoad(PolyMenuMain.CreationType.LOCAL, entry, isLocal: true, isSave: false);
-                    }
+                    StartSingleCreationLoad(
+                      PolyMenuMain.CreationType.LOCAL,
+                      GetObjectStoreEntryFromStoredModel(models[i]),
+                      isLocal: true,
+                      isSave: false);
                 }
             }
             catch (Exception e)
             {
-                // We failed to get offline models, the app can continue, but we'll log the issue.
-                Debug.Log("Failed to get offline models: " + e);
+                Debug.LogWarning($"[OB_MODEL_CATALOG] Failed to list locally saved models: {e.Message}");
             }
         }
 
@@ -538,17 +530,20 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         public void DeleteOfflineModel(string directoryName)
         {
-            try
+            if (!UserModelStorage.Instance.DeleteModel(directoryName))
             {
-                DirectoryInfo directory = new DirectoryInfo(
-                  Path.Combine(PeltzerMain.Instance.offlineModelsPath, directoryName));
-                if (!directory.Exists) return;
-                directory.Delete(/* recursive */ true);
+                Debug.LogWarning("[OB_MODEL_CATALOG] Failed to delete locally saved model.");
             }
-            catch (Exception)
+        }
+
+        public ObjectStoreEntry GetObjectStoreEntryFromStoredModel(StoredModel model)
+        {
+            return new ObjectStoreEntry
             {
-                // No big harm in a failure.
-            }
+                localId = model.Id,
+                title = model.DisplayName,
+                isLocalStorage = true
+            };
         }
 
         public bool GetObjectStoreEntryFromLocalDirectory(DirectoryInfo directory, out ObjectStoreEntry objectStoreEntry)
@@ -663,6 +658,14 @@ namespace com.google.apps.peltzer.client.zandria
             {
                 UpdateSingleCreationOnYourModels(objectStoreEntry, /* isLocal */ true, /* isSave */ true);
             }
+        }
+
+        public void UpdateSingleLocalCreationOnYourModels(StoredModel model)
+        {
+            UpdateSingleCreationOnYourModels(
+              GetObjectStoreEntryFromStoredModel(model),
+              isLocal: true,
+              isSave: true);
         }
 
         /// <summary>
@@ -870,7 +873,7 @@ namespace com.google.apps.peltzer.client.zandria
                 yield break;
             }
             // No thumbnail, just go ahead and load the model.
-            if (entry.thumbnail == null && entry.localThumbnailFile == null)
+            if (entry.thumbnail == null && entry.localThumbnailFile == null && !entry.isLocalStorage)
             {
                 load.pendingModelLoadRequestIndices.Add(indexInCreations);
                 yield break;
@@ -891,7 +894,22 @@ namespace com.google.apps.peltzer.client.zandria
         private void GetThumbnailTexture(ObjectStoreEntry entry,
           System.Action<Texture2D> thumbnailTextureCallback, bool isRecursion = false)
         {
-            if (entry.localThumbnailFile != null)
+            if (entry.isLocalStorage)
+            {
+                byte[] thumbnailBytes =
+                  UserModelStorage.Instance.ReadModelFile(entry.localId, ExportUtils.THUMBNAIL_FILENAME);
+                Texture2D tex = new Texture2D(192, 192);
+                if (thumbnailBytes != null && tex.LoadImage(thumbnailBytes))
+                {
+                    thumbnailTextureCallback(tex);
+                }
+                else
+                {
+                    UnityEngine.Object.Destroy(tex);
+                    thumbnailTextureCallback(null);
+                }
+            }
+            else if (entry.localThumbnailFile != null)
             {
                 Texture2D tex = new Texture2D(192, 192);
                 if (tex.LoadImage(File.ReadAllBytes(entry.localThumbnailFile)))
@@ -923,7 +941,7 @@ namespace com.google.apps.peltzer.client.zandria
                 return false;
             }
 
-            if (entry.localPeltzerFile != null)
+            if (entry.isLocalStorage || entry.localPeltzerFile != null)
             {
                 return true;
             }
