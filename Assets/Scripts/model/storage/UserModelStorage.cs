@@ -141,6 +141,8 @@ namespace com.google.apps.peltzer.client.model.storage
 
             return new DirectoryInfo(rootPath)
               .GetDirectories()
+              .Where(directory => File.Exists(
+                Path.Combine(directory.FullName, ExportUtils.BLOCKS_FILENAME)))
               .OrderBy(directory => directory.LastWriteTimeUtc)
               .Select(directory => new StoredModel(
                 directory.Name,

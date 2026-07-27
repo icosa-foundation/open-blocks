@@ -78,6 +78,27 @@ namespace com.google.apps.peltzer.client.model.storage.tests
               storage.ReadModelFile("model-id", "../outside.blocks"));
         }
 
+        [Test]
+        public void ListModelsExcludesDirectoriesWithoutRequiredModelFile()
+        {
+            string validDirectory = Directory.CreateDirectory(
+              Path.Combine(rootPath, "valid-model")).FullName;
+            File.WriteAllBytes(
+              Path.Combine(validDirectory, "model.blocks"),
+              new byte[] { 1 });
+
+            Directory.CreateDirectory(Path.Combine(rootPath, "incomplete-model"));
+            string unrelatedDirectory = Directory.CreateDirectory(
+              Path.Combine(rootPath, "unrelated-directory")).FullName;
+            File.WriteAllBytes(
+              Path.Combine(unrelatedDirectory, "unrelated.blocks"),
+              new byte[] { 2 });
+
+            Assert.That(
+              storage.ListModels().Select(model => model.Id),
+              Is.EqualTo(new[] { "valid-model" }));
+        }
+
         private static SaveData CreateSaveData(byte marker)
         {
             return new SaveData

@@ -39,6 +39,7 @@ public final class OpenBlocksSafBridge {
     private static final String PREFS_NAME = "open_blocks_saf";
     private static final String PREF_TREE_URI = "tree_uri";
     private static final String MODELS_DIRECTORY = "OfflineModels";
+    private static final String MODEL_FILE_NAME = "model.blocks";
     private static final String PICKER_FRAGMENT_TAG = "OpenBlocksSafPicker";
     private static final int PICK_TREE_REQUEST = 17241;
     private static final String TEMP_PREFIX = ".__openblocks_tx_";
@@ -117,6 +118,9 @@ public final class OpenBlocksSafBridge {
             JSONArray models = new JSONArray();
             for (DocumentRecord child : queryChildren(activity, modelsUri)) {
                 if (!child.isDirectory || isReservedName(child.displayName)) {
+                    continue;
+                }
+                if (!hasModelFile(activity, child.uri)) {
                     continue;
                 }
                 JSONObject model = new JSONObject();
@@ -685,6 +689,15 @@ public final class OpenBlocksSafBridge {
             }
         }
         return null;
+    }
+
+    private static boolean hasModelFile(Activity activity, Uri modelUri) throws Exception {
+        for (DocumentRecord child : queryChildren(activity, modelUri)) {
+            if (!child.isDirectory && MODEL_FILE_NAME.equals(child.displayName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static List<DocumentRecord> queryChildren(Activity activity, Uri parentUri) throws Exception {
