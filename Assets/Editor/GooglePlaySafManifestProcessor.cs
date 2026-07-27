@@ -26,16 +26,19 @@ public sealed class GooglePlaySafManifestProcessor : IPostGenerateGradleAndroidP
     private const string LOG_PREFIX = "[OB_SAF_MANIFEST]";
     private const string MANAGE_EXTERNAL_STORAGE = "android.permission.MANAGE_EXTERNAL_STORAGE";
 
+#if OPEN_BLOCKS_GOOGLE_PLAY
+    private const bool COMPILED_FOR_GOOGLE_PLAY = true;
+#else
+    private const bool COMPILED_FOR_GOOGLE_PLAY = false;
+#endif
+
     public int callbackOrder => 1000;
 
     public void OnPostGenerateGradleAndroidProject(string path)
     {
         string defines = PlayerSettings.GetScriptingDefineSymbols(
           NamedBuildTarget.FromBuildTargetGroup(BuildTargetGroup.Android));
-        bool isGooglePlayBuild = defines
-          .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
-          .Contains(GOOGLE_PLAY_DEFINE);
-        if (!isGooglePlayBuild)
+        if (!IsGooglePlayBuild(defines, COMPILED_FOR_GOOGLE_PLAY))
         {
             return;
         }
@@ -58,6 +61,14 @@ public sealed class GooglePlaySafManifestProcessor : IPostGenerateGradleAndroidP
         }
 
         Debug.Log($"{LOG_PREFIX} Removed broad external-storage access from the Google Play manifest.");
+    }
+
+    internal static bool IsGooglePlayBuild(string playerSettingsDefines, bool compiledForGooglePlay)
+    {
+        return compiledForGooglePlay ||
+          (playerSettingsDefines ?? string.Empty)
+          .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+          .Contains(GOOGLE_PLAY_DEFINE);
     }
 
     internal static void RemoveBroadStorageAccess(string manifestPath)

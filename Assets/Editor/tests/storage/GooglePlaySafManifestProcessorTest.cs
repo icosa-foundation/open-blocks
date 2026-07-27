@@ -51,6 +51,22 @@ public class GooglePlaySafManifestProcessorTest
     }
 
     [Test]
+    public void DetectsGooglePlayBuildFromCompileOrPlayerSettingsDefines()
+    {
+        Assert.That(
+          GooglePlaySafManifestProcessor.IsGooglePlayBuild(string.Empty, true),
+          Is.True);
+        Assert.That(
+          GooglePlaySafManifestProcessor.IsGooglePlayBuild(
+            "OTHER_DEFINE;OPEN_BLOCKS_GOOGLE_PLAY",
+            false),
+          Is.True);
+        Assert.That(
+          GooglePlaySafManifestProcessor.IsGooglePlayBuild("OTHER_DEFINE", false),
+          Is.False);
+    }
+
+    [Test]
     public void RemovesBroadStorageAccessButPreservesOtherPermissions()
     {
         GooglePlaySafManifestProcessor.RemoveBroadStorageAccess(manifestPath);
