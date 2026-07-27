@@ -1648,8 +1648,11 @@ namespace com.google.apps.peltzer.client.model.main
             // Save locally to a regular directory.
             string workingModelName = modelDisplayName ?? ObjFileExporter.RandomOpaqueId();
             string directory = Path.Combine(modelsPath, workingModelName);
-            DoPolyMenuBackgroundWork(
-              new SaveToDiskWork(saveData, directory, /* isOfflineModelsFolder */ false, isOverwrite));
+            if (UserModelStorage.Instance.WritesPrivateManualSaveCopy)
+            {
+                DoPolyMenuBackgroundWork(
+                  new SaveToDiskWork(saveData, directory, /* isOfflineModelsFolder */ false, isOverwrite));
+            }
             if (cloudSave && OAuth2Identity.Instance.LoggedIn)
             {
                 // If the user is authenticated, save to the assets service.
@@ -1727,23 +1730,34 @@ namespace com.google.apps.peltzer.client.model.main
             bool isOverwrite,
             bool saveSelected)
         {
+            string replacedModelId = isOverwrite ? LocalId : null;
+
+            // An SAF transaction can install the new canonical directory but still fail
+            // while journaling or cleaning up its backup. Retain the new opaque identity
+            // even though the save is not reported as successful.
+            if (result?.Model != null && !saveSelected)
+            {
+                LocalId = result.Model.Id;
+            }
+
             if (result == null || !result.Success)
             {
                 string error = result?.Error;
                 Debug.LogWarning($"[OB_MODEL_SAVE] Save failed: {error ?? "Unknown storage error"}");
+                if (result?.Model != null)
+                {
+                    zandriaCreationsManager.LoadOfflineModels();
+                }
                 HandleSaveComplete(false, "Save failed");
                 return;
             }
 
             HandleSaveComplete(true, "Saved locally");
-            if (!saveSelected)
-            {
-                LocalId = result.Model.Id;
-            }
+            zandriaCreationsManager.RecordStoredModelSave(result.Model, replacedModelId);
 
             if (isOverwrite)
             {
-                UpdateLocalModelOntoPolyMenu(result.Model);
+                UpdateLocalModelOntoPolyMenu(result.Model, replacedModelId);
             }
             else
             {
@@ -1981,9 +1995,9 @@ namespace com.google.apps.peltzer.client.model.main
             zandriaCreationsManager.UpdateSingleLocalCreationOnYourModels(directoryInfo);
         }
 
-        public void UpdateLocalModelOntoPolyMenu(StoredModel model)
+        public void UpdateLocalModelOntoPolyMenu(StoredModel model, string replacedModelId = null)
         {
-            zandriaCreationsManager.UpdateSingleLocalCreationOnYourModels(model);
+            zandriaCreationsManager.UpdateSingleLocalCreationOnYourModels(model, replacedModelId);
         }
 
         /// <summary>

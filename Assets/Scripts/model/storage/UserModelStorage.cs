@@ -58,9 +58,9 @@ namespace com.google.apps.peltzer.client.model.storage
             return new ModelStorageSaveResult(true, model, null);
         }
 
-        public static ModelStorageSaveResult Failed(string error)
+        public static ModelStorageSaveResult Failed(string error, StoredModel model = null)
         {
-            return new ModelStorageSaveResult(false, null, error);
+            return new ModelStorageSaveResult(false, model, error);
         }
     }
 
@@ -78,6 +78,7 @@ namespace com.google.apps.peltzer.client.model.storage
     {
         bool IsReady { get; }
         bool RequiresAccessRequest { get; }
+        bool WritesPrivateManualSaveCopy { get; }
         StorageAccessRequestState AccessRequestState { get; }
 
         void RequestAccess();
@@ -119,6 +120,7 @@ namespace com.google.apps.peltzer.client.model.storage
 
         public bool IsReady => true;
         public bool RequiresAccessRequest => false;
+        public bool WritesPrivateManualSaveCopy => true;
         public StorageAccessRequestState AccessRequestState => StorageAccessRequestState.NotRequired;
 
         public LocalUserModelStorageBackend(string rootPath)
@@ -221,7 +223,7 @@ namespace com.google.apps.peltzer.client.model.storage
         }
     }
 
-#if UNITY_ANDROID && !UNITY_EDITOR && OPEN_BLOCKS_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BLOCKS_GOOGLE_PLAY && (!UNITY_EDITOR || OPEN_BLOCKS_SAF_COMPILE_CHECK)
     internal sealed class SafUserModelStorageBackend : IUserModelStorageBackend
     {
         private const string LOG_PREFIX = "[OB_SAF_STORAGE]";
@@ -243,9 +245,14 @@ namespace com.google.apps.peltzer.client.model.storage
 
         private readonly AndroidJavaClass bridge;
         private readonly AndroidJavaObject activity;
+        private readonly object recoveryLock = new object();
+        private bool recoveryAttempted;
+        private bool recoverySucceeded;
+        private string recoveredRootIdentity;
 
         public bool IsReady => CallBridge<bool>("isReady");
         public bool RequiresAccessRequest => !IsReady;
+        public bool WritesPrivateManualSaveCopy => false;
 
         public StorageAccessRequestState AccessRequestState
         {
@@ -263,7 +270,6 @@ namespace com.google.apps.peltzer.client.model.storage
             bridge = new AndroidJavaClass(BRIDGE_CLASS);
             using AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
             activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-            CallBridge<bool>("recoverIncompleteTransactions");
         }
 
         public void RequestAccess()
@@ -275,9 +281,13 @@ namespace com.google.apps.peltzer.client.model.storage
         {
             if (!IsReady)
             {
-                return Array.Empty<StoredModel>();
+                throw new IOException("Shared storage permission is unavailable.");
             }
 
+            // Listing remains available when recovery needs user intervention. Reserved
+            // transaction documents are filtered by the bridge, and retaining a prior
+            // catalog snapshot is the caller's responsibility.
+            EnsureRecovery();
             string json = CallBridge<string>("listModels");
             if (string.IsNullOrEmpty(json))
             {
@@ -305,6 +315,12 @@ namespace com.google.apps.peltzer.client.model.storage
             if (!IsReady)
             {
                 return ModelStorageSaveResult.Failed("Shared storage permission is unavailable.");
+            }
+
+            if (!EnsureRecovery())
+            {
+                return ModelStorageSaveResult.Failed(
+                  "An earlier shared-storage transaction requires recovery before another save.");
             }
 
             string transactionId = Guid.NewGuid().ToString("N");
@@ -369,22 +385,25 @@ namespace com.google.apps.peltzer.client.model.storage
                 {
                     return ModelStorageSaveResult.Failed("Could not install the completed model directory.");
                 }
+                StoredModel committedModel = new StoredModel(
+                  committedId, displayName, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
                 if (!CallBridge<bool>(
                   "recordReplacementInstalled", transactionId, committedId, backupId, displayName))
                 {
                     return ModelStorageSaveResult.Failed(
-                      "The model was installed, but recovery must verify the replacement.");
+                      "The model was installed, but recovery must verify the replacement.",
+                      committedModel);
                 }
 
                 if (!string.IsNullOrEmpty(backupId) && !CallBridge<bool>("deleteDocument", backupId))
                 {
                     return ModelStorageSaveResult.Failed(
-                      "The model was saved, but cleanup is pending and will be retried at startup.");
+                      "The model was saved, but cleanup is pending and will be retried at startup.",
+                      committedModel);
                 }
 
                 CallBridge<bool>("completeTransaction", transactionId);
-                return ModelStorageSaveResult.Succeeded(
-                  new StoredModel(committedId, displayName, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+                return ModelStorageSaveResult.Succeeded(committedModel);
             }
             catch (Exception exception)
             {
@@ -459,6 +478,33 @@ namespace com.google.apps.peltzer.client.model.storage
             {
                 Debug.LogWarning($"{LOG_PREFIX} {methodName} failed: {exception.Message}");
                 return default;
+            }
+        }
+
+        private bool EnsureRecovery()
+        {
+            string currentRootIdentity = CallBridge<string>("getRootIdentity");
+            if (string.IsNullOrEmpty(currentRootIdentity))
+            {
+                return false;
+            }
+
+            lock (recoveryLock)
+            {
+                if (!recoveryAttempted ||
+                    !recoverySucceeded ||
+                    recoveredRootIdentity != currentRootIdentity)
+                {
+                    recoverySucceeded = CallBridge<bool>("recoverIncompleteTransactions");
+                    recoveryAttempted = true;
+                    recoveredRootIdentity = currentRootIdentity;
+                    if (!recoverySucceeded)
+                    {
+                        Debug.LogWarning(
+                          $"{LOG_PREFIX} One or more incomplete transactions could not be recovered.");
+                    }
+                }
+                return recoverySucceeded;
             }
         }
     }

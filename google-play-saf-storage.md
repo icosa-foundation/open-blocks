@@ -52,8 +52,9 @@ For Google Play builds:
   contains incomplete SAF transaction state.
 
 App-private working files are not enumerated as saved models and are not
-reconciled with SAF. Autosaves remain app-private and are not deleted when a
-shared save fails.
+reconciled with SAF. Google Play builds do not create the legacy app-private
+manual-save copy in addition to the SAF model. Autosaves remain app-private
+and are not deleted when a shared save fails.
 
 ## Catalog and Reads
 
@@ -65,6 +66,13 @@ records contain:
 - provider last-modified metadata.
 
 Reserved transaction and backup directories are excluded.
+
+Provider catalog queries, model reads, thumbnail reads, saves, and deletions
+run on the existing serialized Poly Menu background-work queue rather than the
+Unity main thread. A failed catalog query retains the last successful
+snapshot; failure is not interpreted as an empty folder. The catalog is
+refreshed when the app resumes so external document changes can be observed,
+and identical snapshots do not rebuild menu entries.
 
 The menu reads only `thumbnail.png` when it needs a thumbnail and only
 `model.blocks` when it needs model geometry. No model directory is mirrored or
@@ -142,6 +150,9 @@ Automated local-backend tests cover:
 - save, list, read, overwrite, and delete;
 - opaque identity preservation;
 - path traversal rejection.
+
+An editor test verifies that Google Play manifest processing removes broad
+storage access while preserving unrelated permissions.
 
 The Java bridge is compiled against Android API 34 as a source check.
 

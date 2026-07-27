@@ -59,14 +59,18 @@ public final class OpenBlocksSafBridge {
     public static boolean isReady(Activity activity) {
         try {
             Uri treeUri = getPersistedTreeUri(activity);
-            if (treeUri == null || !hasPersistedPermission(activity, treeUri)) {
-                return false;
-            }
-            return getOrCreateModelsDirectory(activity, treeUri) != null;
+            return treeUri != null && hasPersistedPermission(activity, treeUri);
         } catch (Exception exception) {
             android.util.Log.w(LOG_PREFIX, "Readiness check failed", exception);
             return false;
         }
+    }
+
+    public static String getRootIdentity(Activity activity) {
+        Uri treeUri = getPersistedTreeUri(activity);
+        return treeUri != null && hasPersistedPermission(activity, treeUri)
+            ? treeUri.toString()
+            : null;
     }
 
     public static int getAccessRequestState(Activity activity) {
@@ -504,7 +508,7 @@ public final class OpenBlocksSafBridge {
             }
             return DocumentsContract.createDocument(
                 activity.getContentResolver(),
-                treeUri,
+                asDocumentUri(treeUri),
                 DocumentsContract.Document.MIME_TYPE_DIR,
                 MODELS_DIRECTORY);
         } catch (Exception exception) {
@@ -514,8 +518,10 @@ public final class OpenBlocksSafBridge {
     }
 
     private static boolean isValidSelectedRoot(Activity activity, Uri treeUri) {
+        Uri rootDocumentUri = DocumentsContract.buildDocumentUriUsingTree(
+            treeUri, DocumentsContract.getTreeDocumentId(treeUri));
         try (Cursor cursor = activity.getContentResolver().query(
-            treeUri,
+            rootDocumentUri,
             new String[] { DocumentsContract.Document.COLUMN_DISPLAY_NAME },
             null,
             null,
@@ -542,7 +548,7 @@ public final class OpenBlocksSafBridge {
     }
 
     private static List<DocumentRecord> queryChildren(Activity activity, Uri parentUri) throws Exception {
-        String parentDocumentId = DocumentsContract.getDocumentId(parentUri);
+        String parentDocumentId = getDocumentId(parentUri);
         Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(parentUri, parentDocumentId);
         String[] projection = new String[] {
             DocumentsContract.Document.COLUMN_DOCUMENT_ID,
@@ -569,6 +575,20 @@ public final class OpenBlocksSafBridge {
         }
         result.sort(Comparator.comparingLong(record -> record.lastModified));
         return result;
+    }
+
+    private static String getDocumentId(Uri uri) {
+        List<String> segments = uri.getPathSegments();
+        if (segments.contains("document")) {
+            return DocumentsContract.getDocumentId(uri);
+        }
+        return DocumentsContract.getTreeDocumentId(uri);
+    }
+
+    private static Uri asDocumentUri(Uri uri) {
+        return uri.getPathSegments().contains("document")
+            ? uri
+            : DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri));
     }
 
     private static boolean documentExists(Activity activity, Uri uri) {

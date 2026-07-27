@@ -33,6 +33,38 @@ using System.Linq;
 
 namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 {
+    internal sealed class ReadStoredModelFileWork : BackgroundWork
+    {
+        private readonly string modelId;
+        private readonly string fileName;
+        private readonly Action<byte[]> callback;
+        private byte[] bytes;
+
+        public ReadStoredModelFileWork(string modelId, string fileName, Action<byte[]> callback)
+        {
+            this.modelId = modelId;
+            this.fileName = fileName;
+            this.callback = callback;
+        }
+
+        public void BackgroundWork()
+        {
+            try
+            {
+                bytes = UserModelStorage.Instance.ReadModelFile(modelId, fileName);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[OB_MODEL_READ] Failed to read {fileName}: {exception.Message}");
+                bytes = null;
+            }
+        }
+
+        public void PostWork()
+        {
+            callback(bytes);
+        }
+    }
 
     public class ObjectStoreClient
     {
@@ -104,7 +136,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             {
                 entry.loadAttemptFormats = new[] { "blocks" };
                 entry.resolvedLoadFormat = "blocks";
-                callback(UserModelStorage.Instance.ReadModelFile(entry.localId, ExportUtils.BLOCKS_FILENAME));
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                  new ReadStoredModelFileWork(entry.localId, ExportUtils.BLOCKS_FILENAME, callback));
                 return;
             }
 
@@ -132,7 +165,8 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             {
                 entry.loadAttemptFormats = new[] { "blocks" };
                 entry.resolvedLoadFormat = "blocks";
-                callback(UserModelStorage.Instance.ReadModelFile(entry.localId, ExportUtils.BLOCKS_FILENAME));
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                  new ReadStoredModelFileWork(entry.localId, ExportUtils.BLOCKS_FILENAME, callback));
                 return;
             }
 

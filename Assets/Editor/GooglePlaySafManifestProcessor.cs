@@ -6,8 +6,8 @@
 //
 //      http://www.apache.org/licenses/LICENSE-2.0
 
-#if UNITY_ANDROID
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -40,13 +40,28 @@ public sealed class GooglePlaySafManifestProcessor : IPostGenerateGradleAndroidP
             return;
         }
 
-        string manifestPath = Path.Combine(path, "src", "main", "AndroidManifest.xml");
-        if (!File.Exists(manifestPath))
+        string[] manifestCandidates =
+        {
+            Path.Combine(path, "src", "main", "AndroidManifest.xml"),
+            Path.Combine(path, "unityLibrary", "src", "main", "AndroidManifest.xml")
+        };
+        List<string> manifestPaths = manifestCandidates.Where(File.Exists).Distinct().ToList();
+        if (manifestPaths.Count == 0)
         {
             throw new BuildFailedException(
-              $"{LOG_PREFIX} Generated manifest was not found at {manifestPath}");
+              $"{LOG_PREFIX} Generated library manifest was not found below {path}");
         }
 
+        foreach (string manifestPath in manifestPaths)
+        {
+            RemoveBroadStorageAccess(manifestPath);
+        }
+
+        Debug.Log($"{LOG_PREFIX} Removed broad external-storage access from the Google Play manifest.");
+    }
+
+    internal static void RemoveBroadStorageAccess(string manifestPath)
+    {
         XNamespace android = "http://schemas.android.com/apk/res/android";
         XDocument manifest = XDocument.Load(manifestPath, LoadOptions.PreserveWhitespace);
         XElement root = manifest.Root ??
@@ -59,10 +74,9 @@ public sealed class GooglePlaySafManifestProcessor : IPostGenerateGradleAndroidP
             permission.Remove();
         }
 
-        XElement application = root.Element("application");
-        application?.Attribute(android + "requestLegacyExternalStorage")?.Remove();
+        root.Element("application")
+          ?.Attribute(android + "requestLegacyExternalStorage")
+          ?.Remove();
         manifest.Save(manifestPath, SaveOptions.DisableFormatting);
-        Debug.Log($"{LOG_PREFIX} Removed broad external-storage access from the Google Play manifest.");
     }
 }
-#endif
