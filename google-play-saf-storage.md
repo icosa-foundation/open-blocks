@@ -109,16 +109,21 @@ Overwrites:
 
 The existing canonical model is never opened in truncating mode. Provider
 renames may return different identities, so each returned URI replaces the
-previous identity.
+previous identity. The current model retains both that opaque identity and its
+display name; an overwrite does not re-enumerate the provider on the Unity main
+thread to recover the name.
 
 Transactions affecting saved models are serialized by the existing Poly Menu
 background-work queue.
 
 ## Recovery
 
-Journal updates use a same-filesystem, flushed temporary file followed by an
-atomic replacement. Journals are namespaced by a hash of the selected SAF
-root, so recovery from one selected tree cannot be applied to another.
+Journal records are versioned, identify their transaction kind and selected
+root, and retain their original creation time. Updates use a same-filesystem,
+flushed temporary file followed by an atomic replacement. Journals are
+namespaced by a hash of the selected SAF root, and root identity is validated
+again while reading them, so recovery from one selected tree cannot be applied
+to another.
 
 Startup recovery handles interruption:
 
@@ -127,10 +132,13 @@ Startup recovery handles interruption:
 - before or after installing the replacement;
 - while deleting the backup.
 
-Recovery restores the previous model or completes the replacement based on the
-last durable state. It does not delete the only known canonical copy.
-Malformed or unrecognized journal records are retained and reported as
-recovery failures.
+Recovery writes the same pre-mutation and post-mutation states as a live save,
+including explicit installation and rollback states. This keeps another
+process interruption during recovery deterministic. Recovery restores the
+previous model or completes the replacement based on the last durable state.
+It does not delete the only known canonical copy. Malformed, wrong-root, and
+unknown-version journal records are retained and reported as recovery
+failures.
 
 ## Folder Selection
 

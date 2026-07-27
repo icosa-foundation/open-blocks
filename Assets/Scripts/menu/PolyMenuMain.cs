@@ -747,8 +747,16 @@ namespace com.google.apps.peltzer.client.menu
                 }
                 else if (currentCreationHandler.creationLocalId != null)
                 {
-                    PeltzerMain.Instance.LocalId = currentCreationHandler.creationLocalId;
+                    PeltzerMain.Instance.SetLocalModelIdentity(
+                      currentCreationHandler.creationLocalId,
+                      currentCreationHandler.creationTitle);
                 }
+            }
+            else if (CurrentCreationType() == CreationType.LOCAL)
+            {
+                PeltzerMain.Instance.SetLocalModelIdentity(
+                  currentCreationHandler.creationLocalId,
+                  currentCreationHandler.creationTitle);
             }
             else
             {

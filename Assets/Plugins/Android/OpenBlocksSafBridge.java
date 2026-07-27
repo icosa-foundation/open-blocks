@@ -173,11 +173,15 @@ public final class OpenBlocksSafBridge {
                 modelsUri,
                 DocumentsContract.Document.MIME_TYPE_DIR,
                 TEMP_PREFIX + transactionId);
-            if (temporaryUri != null) {
-                writeJournal(activity, transactionId, "WritingTemporary",
-                    temporaryUri.toString(), null, null, null);
+            if (temporaryUri == null) {
+                return null;
             }
-            return temporaryUri == null ? null : temporaryUri.toString();
+            if (!writeJournal(activity, transactionId, "WritingTemporary",
+                temporaryUri.toString(), null, null, null)) {
+                deleteDocument(activity, temporaryUri.toString());
+                return null;
+            }
+            return temporaryUri.toString();
         } catch (Exception exception) {
             android.util.Log.w(LOG_PREFIX, "Temporary model directory creation failed", exception);
             return null;
@@ -303,8 +307,12 @@ public final class OpenBlocksSafBridge {
         return !journal.exists() || journal.delete();
     }
 
-    public static boolean abandonModelWrite(Activity activity, String temporaryId) {
-        return deleteDocument(activity, temporaryId);
+    public static boolean abandonModelWrite(
+        Activity activity,
+        String transactionId,
+        String temporaryId) {
+        return deleteDocument(activity, temporaryId) &&
+            completeTransaction(activity, transactionId);
     }
 
     public static boolean deleteDocument(Activity activity, String documentId) {
@@ -326,6 +334,8 @@ public final class OpenBlocksSafBridge {
             return false;
         }
 
+        Uri treeUri = getPersistedTreeUri(activity);
+        String expectedRootId = treeUri == null ? null : getRootIdentity(treeUri);
         File[] journals = getJournalDirectory(activity).listFiles(
             (directory, name) -> name.endsWith(".json"));
         if (journals == null) {
@@ -337,12 +347,24 @@ public final class OpenBlocksSafBridge {
             try {
                 JSONObject record = new JSONObject(
                     new String(Files.readAllBytes(journal.toPath()), StandardCharsets.UTF_8));
+                String transactionId = record.optString("transactionId");
+                if (record.optInt("version", -1) != 1 ||
+                    !"model-directory-replacement".equals(record.optString("kind")) ||
+                    !expectedRootId.equals(record.optString("rootId")) ||
+                    transactionId.isEmpty() ||
+                    !journal.getName().equals(transactionId + ".json")) {
+                    allRecovered = false;
+                    android.util.Log.w(
+                        LOG_PREFIX,
+                        "Retaining unrecognized transaction journal " + journal.getName());
+                    continue;
+                }
+
                 String state = record.optString("state");
                 String temporaryId = nullableString(record, "temporaryId");
                 String installedId = nullableString(record, "destinationId");
                 String backupId = nullableString(record, "backupId");
                 String displayName = nullableString(record, "displayName");
-                String transactionId = record.optString("transactionId");
 
                 boolean recovered;
                 if ("WritingTemporary".equals(state) || "TemporaryComplete".equals(state)) {
@@ -358,34 +380,63 @@ public final class OpenBlocksSafBridge {
                     } else {
                         // The old document may retain the same opaque ID across rename, so its URI
                         // is not evidence that it still has the canonical display name.
-                        recovered = restoreBackup(activity, reservedBackup.toString(), displayName);
-                        recovered = recovered && deleteDocument(activity, temporaryId);
+                        recovered = writeJournal(
+                            activity,
+                            transactionId,
+                            "RollbackRequired",
+                            temporaryId,
+                            null,
+                            reservedBackup.toString(),
+                            displayName) &&
+                            rollbackReplacement(
+                                activity, temporaryId, reservedBackup.toString(), displayName);
                     }
                 } else if ("OriginalBackedUp".equals(state)) {
-                    String replacement = temporaryId == null
-                        ? null
-                        : installReplacement(activity, temporaryId, displayName);
-                    if (replacement != null) {
-                        recovered = deleteDocument(activity, backupId);
+                    if (!writeJournal(
+                        activity,
+                        transactionId,
+                        "InstallingReplacement",
+                        temporaryId,
+                        null,
+                        backupId,
+                        displayName)) {
+                        recovered = false;
                     } else {
-                        recovered = restoreBackup(activity, backupId, displayName);
+                        recovered = installOrRollbackReplacement(
+                            activity, transactionId, temporaryId, backupId, displayName);
                     }
                 } else if ("InstallingReplacement".equals(state)) {
                     Uri canonical = findChild(
                         activity, requireModelsDirectory(activity), displayName);
                     if (canonical != null) {
-                        recovered = deleteDocument(activity, backupId);
+                        recovered = recordInstalledAndCleanup(
+                            activity,
+                            transactionId,
+                            canonical.toString(),
+                            backupId,
+                            displayName);
                     } else {
-                        String replacement = temporaryId == null
-                            ? null
-                            : installReplacement(activity, temporaryId, displayName);
-                        recovered = replacement != null
-                            ? deleteDocument(activity, backupId)
-                            : restoreBackup(activity, backupId, displayName);
+                        recovered = installOrRollbackReplacement(
+                            activity, transactionId, temporaryId, backupId, displayName);
                     }
                 } else if ("ReplacementInstalled".equals(state)) {
-                    recovered = documentExists(activity, Uri.parse(installedId)) &&
-                        deleteDocument(activity, backupId);
+                    Uri installed = installedId == null ? null : Uri.parse(installedId);
+                    if (installed != null && documentExists(activity, installed)) {
+                        recovered = deleteDocument(activity, backupId);
+                    } else {
+                        Uri canonical = findChild(
+                            activity, requireModelsDirectory(activity), displayName);
+                        recovered = canonical != null &&
+                            recordInstalledAndCleanup(
+                                activity,
+                                transactionId,
+                                canonical.toString(),
+                                backupId,
+                                displayName);
+                    }
+                } else if ("RollbackRequired".equals(state)) {
+                    recovered = rollbackReplacement(
+                        activity, temporaryId, backupId, displayName);
                 } else {
                     recovered = false;
                 }
@@ -401,6 +452,72 @@ public final class OpenBlocksSafBridge {
             }
         }
         return allRecovered;
+    }
+
+    private static boolean installOrRollbackReplacement(
+        Activity activity,
+        String transactionId,
+        String temporaryId,
+        String backupId,
+        String displayName) throws Exception {
+        String replacement = temporaryId == null
+            ? null
+            : installReplacement(activity, temporaryId, displayName);
+        if (replacement != null) {
+            return recordInstalledAndCleanup(
+                activity, transactionId, replacement, backupId, displayName);
+        }
+
+        return writeJournal(
+            activity,
+            transactionId,
+            "RollbackRequired",
+            temporaryId,
+            null,
+            backupId,
+            displayName) &&
+            rollbackReplacement(activity, temporaryId, backupId, displayName);
+    }
+
+    private static boolean recordInstalledAndCleanup(
+        Activity activity,
+        String transactionId,
+        String installedId,
+        String backupId,
+        String displayName) throws Exception {
+        return writeJournal(
+            activity,
+            transactionId,
+            "ReplacementInstalled",
+            null,
+            installedId,
+            backupId,
+            displayName) &&
+            deleteDocument(activity, backupId);
+    }
+
+    private static boolean rollbackReplacement(
+        Activity activity,
+        String temporaryId,
+        String backupId,
+        String displayName) throws Exception {
+        if (backupId == null) {
+            return deleteDocument(activity, temporaryId);
+        }
+
+        Uri canonical = findChild(activity, requireModelsDirectory(activity), displayName);
+        boolean canonicalAvailable = canonical != null;
+        boolean backupAvailable = documentExists(activity, Uri.parse(backupId));
+
+        if (backupAvailable && !canonicalAvailable) {
+            canonicalAvailable = restoreBackup(activity, backupId, displayName);
+        } else if (backupAvailable && canonicalAvailable &&
+            !canonical.toString().equals(backupId)) {
+            // Both copies still exist with different identities. Keep the journal and
+            // both documents for a later deterministic recovery attempt.
+            return false;
+        }
+        return canonicalAvailable && deleteDocument(activity, temporaryId);
     }
 
     private static boolean restoreBackup(Activity activity, String backupId, String displayName) {
@@ -426,17 +543,40 @@ public final class OpenBlocksSafBridge {
         String backupId,
         String displayName) {
         try {
+            Uri treeUri = getPersistedTreeUri(activity);
+            if (treeUri == null) {
+                return false;
+            }
+            String rootId = getRootIdentity(treeUri);
+            File journal = getJournalFile(activity, transactionId);
+            long now = System.currentTimeMillis();
+            long createdUtcMillis = now;
+            if (journal.exists()) {
+                JSONObject previous = new JSONObject(
+                    new String(Files.readAllBytes(journal.toPath()), StandardCharsets.UTF_8));
+                if (previous.optInt("version", -1) != 1 ||
+                    !"model-directory-replacement".equals(previous.optString("kind")) ||
+                    !rootId.equals(previous.optString("rootId")) ||
+                    !transactionId.equals(previous.optString("transactionId"))) {
+                    throw new IllegalStateException(
+                        "Refusing to overwrite an unrecognized transaction journal.");
+                }
+                createdUtcMillis = previous.optLong("createdUtcMillis", now);
+            }
+
             JSONObject record = new JSONObject();
             record.put("version", 1);
+            record.put("kind", "model-directory-replacement");
             record.put("transactionId", transactionId);
+            record.put("rootId", rootId);
             record.put("state", state);
             record.put("temporaryId", temporaryId == null ? JSONObject.NULL : temporaryId);
             record.put("destinationId", destinationId == null ? JSONObject.NULL : destinationId);
             record.put("backupId", backupId == null ? JSONObject.NULL : backupId);
             record.put("displayName", displayName == null ? JSONObject.NULL : displayName);
-            record.put("updatedUtcMillis", System.currentTimeMillis());
+            record.put("createdUtcMillis", createdUtcMillis);
+            record.put("updatedUtcMillis", now);
 
-            File journal = getJournalFile(activity, transactionId);
             File temporary = new File(journal.getParentFile(), journal.getName() + ".tmp");
             try (FileOutputStream output = new FileOutputStream(temporary)) {
                 output.write(record.toString().getBytes(StandardCharsets.UTF_8));

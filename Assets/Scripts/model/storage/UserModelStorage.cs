@@ -331,20 +331,21 @@ namespace com.google.apps.peltzer.client.model.storage
                 temporaryId = CallBridge<string>("beginModelWrite", transactionId);
                 if (string.IsNullOrEmpty(temporaryId))
                 {
-                    return ModelStorageSaveResult.Failed("Could not create a temporary SAF model directory.");
+                    return TransactionFailed("Could not create a temporary SAF model directory.");
                 }
 
                 if (!WriteSaveData(temporaryId, saveData))
                 {
-                    CallBridge<bool>("abandonModelWrite", temporaryId);
-                    return ModelStorageSaveResult.Failed("One or more model documents could not be written.");
+                    CallBridge<bool>("abandonModelWrite", transactionId, temporaryId);
+                    return TransactionFailed("One or more model documents could not be written.");
                 }
 
                 if (!CallBridge<bool>(
                   "recordTemporaryComplete", transactionId, temporaryId, destinationId, displayName))
                 {
-                    CallBridge<bool>("abandonModelWrite", temporaryId);
-                    return ModelStorageSaveResult.Failed("Could not persist the completed-write transaction state.");
+                    CallBridge<bool>("abandonModelWrite", transactionId, temporaryId);
+                    return TransactionFailed(
+                      "Could not persist the completed-write transaction state.");
                 }
 
                 if (!string.IsNullOrEmpty(destinationId))
@@ -356,17 +357,18 @@ namespace com.google.apps.peltzer.client.model.storage
                       destinationId,
                       displayName))
                     {
-                        return ModelStorageSaveResult.Failed("Could not journal the replacement operation.");
+                        return TransactionFailed("Could not journal the replacement operation.");
                     }
                     backupId = CallBridge<string>("backupDestination", transactionId, destinationId);
                     if (string.IsNullOrEmpty(backupId))
                     {
-                        return ModelStorageSaveResult.Failed("Could not preserve the previous model before replacement.");
+                        return TransactionFailed(
+                          "Could not preserve the previous model before replacement.");
                     }
                     if (!CallBridge<bool>(
                       "recordOriginalBackedUp", transactionId, temporaryId, backupId, displayName))
                     {
-                        return ModelStorageSaveResult.Failed(
+                        return TransactionFailed(
                           "The previous model was preserved, but recovery is required before replacement.");
                     }
                 }
@@ -378,37 +380,40 @@ namespace com.google.apps.peltzer.client.model.storage
                   backupId,
                   displayName))
                 {
-                    return ModelStorageSaveResult.Failed("Could not journal replacement installation.");
+                    return TransactionFailed("Could not journal replacement installation.");
                 }
                 string committedId = CallBridge<string>("installReplacement", temporaryId, displayName);
                 if (string.IsNullOrEmpty(committedId))
                 {
-                    return ModelStorageSaveResult.Failed("Could not install the completed model directory.");
+                    return TransactionFailed("Could not install the completed model directory.");
                 }
                 StoredModel committedModel = new StoredModel(
                   committedId, displayName, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
                 if (!CallBridge<bool>(
                   "recordReplacementInstalled", transactionId, committedId, backupId, displayName))
                 {
-                    return ModelStorageSaveResult.Failed(
+                    return TransactionFailed(
                       "The model was installed, but recovery must verify the replacement.",
                       committedModel);
                 }
 
                 if (!string.IsNullOrEmpty(backupId) && !CallBridge<bool>("deleteDocument", backupId))
                 {
-                    return ModelStorageSaveResult.Failed(
+                    return TransactionFailed(
                       "The model was saved, but cleanup is pending and will be retried at startup.",
                       committedModel);
                 }
 
-                CallBridge<bool>("completeTransaction", transactionId);
+                if (!CallBridge<bool>("completeTransaction", transactionId))
+                {
+                    MarkRecoveryRequired();
+                }
                 return ModelStorageSaveResult.Succeeded(committedModel);
             }
             catch (Exception exception)
             {
                 Debug.LogWarning($"{LOG_PREFIX} Transaction {transactionId} failed: {exception.Message}");
-                return ModelStorageSaveResult.Failed(exception.Message);
+                return TransactionFailed(exception.Message);
             }
         }
 
@@ -505,6 +510,22 @@ namespace com.google.apps.peltzer.client.model.storage
                     }
                 }
                 return recoverySucceeded;
+            }
+        }
+
+        private ModelStorageSaveResult TransactionFailed(
+            string error,
+            StoredModel model = null)
+        {
+            MarkRecoveryRequired();
+            return ModelStorageSaveResult.Failed(error, model);
+        }
+
+        private void MarkRecoveryRequired()
+        {
+            lock (recoveryLock)
+            {
+                recoverySucceeded = false;
             }
         }
     }
