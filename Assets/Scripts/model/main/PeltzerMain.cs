@@ -289,8 +289,44 @@ namespace com.google.apps.peltzer.client.model.main
         /// This must be reasonably big in order to avoid reallocation when saving models.
         /// </summary>
         private const int SERIALIZER_BUFFER_INITIAL_SIZE = 64 * 1024 * 1024;  // 128 MB
-        // TODO Wire this up to something
-        public bool DeviceCanOpenSystemBrowser => false;
+
+        /// <summary>
+        /// Whether the current device has an application that can handle web URLs.
+        /// </summary>
+        public bool DeviceCanOpenSystemBrowser
+        {
+            get
+            {
+#if UNITY_ANDROID && !UNITY_EDITOR
+                try
+                {
+                    using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                    using (AndroidJavaObject activity =
+                      unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                    using (AndroidJavaObject packageManager =
+                      activity.Call<AndroidJavaObject>("getPackageManager"))
+                    using (AndroidJavaClass uriClass = new AndroidJavaClass("android.net.Uri"))
+                    using (AndroidJavaObject uri =
+                      uriClass.CallStatic<AndroidJavaObject>("parse", "https://example.com"))
+                    using (AndroidJavaObject intent =
+                      new AndroidJavaObject("android.content.Intent", "android.intent.action.VIEW", uri))
+                    using (AndroidJavaObject browserComponent =
+                      intent.Call<AndroidJavaObject>("resolveActivity", packageManager))
+                    {
+                        return browserComponent != null;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning(
+                      $"[SystemBrowserCapability] Unable to detect a system browser: {exception.Message}");
+                    return false;
+                }
+#else
+                return true;
+#endif
+            }
+        }
 
         /// <summary>
         /// The (singleton) instance. Lazily cached when the Instance property is read for the first time.

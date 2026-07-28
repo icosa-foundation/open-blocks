@@ -3,6 +3,13 @@
     android:installLocation="auto"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-feature android:name="android.hardware.vr.headtracking" android:required="true" android:version="1"/>
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+    </queries>
     <application
         android:allowBackup="false"
         tools:replace="android:allowBackup"
