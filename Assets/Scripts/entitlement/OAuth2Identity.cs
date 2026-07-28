@@ -28,6 +28,27 @@ using com.google.apps.peltzer.client.api_clients.assets_service_client;
 
 namespace com.google.apps.peltzer.client.entitlement
 {
+    public static class OAuthRequestSecurity
+    {
+        public static bool IsSameOrigin(string requestUrl, string trustedBaseUrl)
+        {
+            if (!Uri.TryCreate(requestUrl, UriKind.Absolute, out var requestUri) ||
+                !Uri.TryCreate(trustedBaseUrl, UriKind.Absolute, out var trustedUri))
+            {
+                return false;
+            }
+
+            if ((requestUri.Scheme != Uri.UriSchemeHttp && requestUri.Scheme != Uri.UriSchemeHttps) ||
+                (trustedUri.Scheme != Uri.UriSchemeHttp && trustedUri.Scheme != Uri.UriSchemeHttps))
+            {
+                return false;
+            }
+
+            return string.Equals(requestUri.Scheme, trustedUri.Scheme, StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(requestUri.IdnHost, trustedUri.IdnHost, StringComparison.OrdinalIgnoreCase) &&
+                   requestUri.Port == trustedUri.Port;
+        }
+    }
 
     /// Handle accessing OAuth2 based web services. There are known issues with non-square avatars.
 
@@ -168,7 +189,10 @@ namespace com.google.apps.peltzer.client.entitlement
         /// Sign an outgoing request.
         public void Authenticate(UnityWebRequest www)
         {
-            www.SetRequestHeader("Authorization", String.Format("Bearer {0}", m_AccessToken));
+            if (OAuthRequestSecurity.IsSameOrigin(www.url, AssetsServiceClient.ApiBaseUrl))
+            {
+                www.SetRequestHeader("Authorization", $"Bearer {m_AccessToken}");
+            }
         }
 
         private static string UserInfoRequestUri()
@@ -736,9 +760,7 @@ namespace com.google.apps.peltzer.client.entitlement
         /// Sign an outgoing request.
         public void Authenticate(UnityWebRequest www)
         {
-            // NEVER add the access token to a URL that isn't our API base url
-            // It will leak the token.
-            if (www.url.StartsWith(AssetsServiceClient.ApiBaseUrl))
+            if (OAuthRequestSecurity.IsSameOrigin(www.url, AssetsServiceClient.ApiBaseUrl))
             {
                 www.SetRequestHeader("Authorization", $"Bearer {m_AccessToken}");
             }
