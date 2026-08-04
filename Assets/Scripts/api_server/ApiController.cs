@@ -61,14 +61,12 @@ public class ApiController
     }
 
     [ApiGet("scene/save")]
-    [ApiSummary("Save the current scene to a local .blocks file.")]
+    [ApiSummary("Save the current scene locally using the standard Open Blocks save structure.")]
     [ApiResponse(200, typeof(ApiOperationResponse))]
     [ApiResponse(400, typeof(ApiErrorResponse))]
-    [ApiResponse(404, typeof(ApiErrorResponse))]
-    [ApiResponse(500, typeof(ApiErrorResponse))]
-    public ApiResult SaveScene([ApiDoc("Absolute output path for the .blocks file.", Example = "C:\\temp\\scene.blocks")][ApiQuery(required: true)] string filePath)
+    public ApiResult SaveScene()
     {
-        return FromOperationResult(ApiCommandService.SaveScene(filePath));
+        return FromOperationResult(ApiCommandService.SaveScene());
     }
 
     [ApiGet("meshes")]
@@ -374,14 +372,16 @@ public class ApiController
         return FromOperationResult(ApiCommandService.ImportIcosa(assetId));
     }
 
+#if UNITY_EDITOR
     [ApiGet("scene/save-to-icosa")]
-    [ApiSummary("Save the current scene to Icosa.")]
+    [ApiSummary("Save the current scene to Icosa. This endpoint is available only in the Unity Editor.")]
     [ApiResponse(200, typeof(ApiOperationResponse))]
     [ApiResponse(400, typeof(ApiErrorResponse))]
     public ApiResult SaveSceneToIcosa([ApiQuery] bool? publish)
     {
         return FromOperationResult(ApiCommandService.SaveSceneToIcosa(publish ?? false));
     }
+#endif
 
     [ApiGet("video-viewer")]
     [ApiSummary("Show or hide the video viewer.")]
