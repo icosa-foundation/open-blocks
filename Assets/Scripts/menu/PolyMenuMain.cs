@@ -621,8 +621,6 @@ namespace com.google.apps.peltzer.client.menu
                     // }
                     if (currentCreationHandler.creationLocalId != null)
                     {
-                        creationsManager.RemoveSingleCreationAndRefreshMenu(
-                            CurrentCreationType(), currentCreationHandler.creationLocalId);
                         creationsManager.DeleteOfflineModel(currentCreationHandler.creationLocalId);
                     }
                     SetActiveMenu(Menu.POLY_MENU);
@@ -749,8 +747,16 @@ namespace com.google.apps.peltzer.client.menu
                 }
                 else if (currentCreationHandler.creationLocalId != null)
                 {
-                    PeltzerMain.Instance.LocalId = currentCreationHandler.creationLocalId;
+                    PeltzerMain.Instance.SetLocalModelIdentity(
+                      currentCreationHandler.creationLocalId,
+                      currentCreationHandler.creationTitle);
                 }
+            }
+            else if (CurrentCreationType() == CreationType.LOCAL)
+            {
+                PeltzerMain.Instance.SetLocalModelIdentity(
+                  currentCreationHandler.creationLocalId,
+                  currentCreationHandler.creationTitle);
             }
             else
             {
@@ -1382,6 +1388,12 @@ namespace com.google.apps.peltzer.client.menu
         public void RefreshCurrentTab()
         {
             var type = CurrentCreationType();
+            if (type == CreationType.LOCAL)
+            {
+                creationsManager.LoadOfflineModels();
+                return;
+            }
+
             AssetsServiceClient.ClearRecentAssetIdsByType(type);
             creationsManager.ClearLoad(type);
             creationsManager.StartLoad(type);
@@ -1390,6 +1402,15 @@ namespace com.google.apps.peltzer.client.menu
         public void RefreshResults()
         {
             var type = CurrentCreationType();
+            if (type == CreationType.LOCAL)
+            {
+                creationsManager.LoadOfflineModels();
+                ApplyMenuChange(menuIndex, true);
+                offlineModelsMenu.SetActive(false);
+                modelsMenu.SetActive(true);
+                UpdatePreviousQueryParams();
+                return;
+            }
 
             // we don't want to clear the load when we refresh the result and the query hasn't changed
             // because then the list of object store results that is returned by ParseReturnedAssets
@@ -1401,7 +1422,6 @@ namespace com.google.apps.peltzer.client.menu
                 AssetsServiceClient.ClearRecentAssetIdsByType(type);
                 creationsManager.ClearLoad(type);
             }
-            creationsManager.LoadOfflineModels();
             creationsManager.StartLoad(type);
 
             ApplyMenuChange(menuIndex, true);

@@ -28,6 +28,7 @@ using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.model.util;
 using com.google.apps.peltzer.client.api_clients.assets_service_client;
 using com.google.apps.peltzer.client.model.export;
+using com.google.apps.peltzer.client.model.storage;
 using System.IO;
 using com.google.apps.peltzer.client.entitlement;
 
@@ -310,6 +311,105 @@ namespace com.google.apps.peltzer.client.zandria
         }
     }
 
+    internal sealed class RefreshStoredModelsWork : BackgroundWork
+    {
+        private readonly ZandriaCreationsManager manager;
+        private IReadOnlyList<StoredModel> models;
+        private Exception failure;
+
+        public RefreshStoredModelsWork(ZandriaCreationsManager manager)
+        {
+            this.manager = manager;
+        }
+
+        public void BackgroundWork()
+        {
+            try
+            {
+                models = UserModelStorage.Instance.ListModels();
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+        }
+
+        public void PostWork()
+        {
+            manager.CompleteStoredModelRefresh(models, failure);
+        }
+    }
+
+    internal sealed class ReadStoredThumbnailWork : BackgroundWork
+    {
+        private readonly string modelId;
+        private readonly Action<Texture2D> callback;
+        private byte[] bytes;
+
+        public ReadStoredThumbnailWork(string modelId, Action<Texture2D> callback)
+        {
+            this.modelId = modelId;
+            this.callback = callback;
+        }
+
+        public void BackgroundWork()
+        {
+            try
+            {
+                bytes = UserModelStorage.Instance.ReadModelFile(modelId, ExportUtils.THUMBNAIL_FILENAME);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[OB_MODEL_THUMBNAIL] Read failed: {exception.Message}");
+                bytes = null;
+            }
+        }
+
+        public void PostWork()
+        {
+            Texture2D texture = new Texture2D(192, 192);
+            if (bytes != null && texture.LoadImage(bytes))
+            {
+                callback(texture);
+                return;
+            }
+
+            UnityEngine.Object.Destroy(texture);
+            callback(null);
+        }
+    }
+
+    internal sealed class DeleteStoredModelWork : BackgroundWork
+    {
+        private readonly ZandriaCreationsManager manager;
+        private readonly string modelId;
+        private bool succeeded;
+
+        public DeleteStoredModelWork(ZandriaCreationsManager manager, string modelId)
+        {
+            this.manager = manager;
+            this.modelId = modelId;
+        }
+
+        public void BackgroundWork()
+        {
+            try
+            {
+                succeeded = UserModelStorage.Instance.DeleteModel(modelId);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[OB_MODEL_DELETE] Delete failed: {exception.Message}");
+                succeeded = false;
+            }
+        }
+
+        public void PostWork()
+        {
+            manager.CompleteStoredModelDelete(modelId, succeeded);
+        }
+    }
+
     /// <summary>
     ///   Loads and holds references to all the Zandria creations on the in VR Zandria Menu.
     /// </summary>
@@ -350,6 +450,8 @@ namespace com.google.apps.peltzer.client.zandria
 
         private float timeLastPolledSavedModels;
         private bool hasNewSave;
+        private bool localCatalogRefreshPending;
+        private IReadOnlyList<StoredModel> lastStoredModelSnapshot;
 
         public AssetsServiceClient assetsServiceClient;
 
@@ -506,30 +608,105 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         public void LoadOfflineModels()
         {
-            // Most recent first.
-            try
+            lock (mutex)
             {
-                DirectoryInfo offlineModelsDirectory = new DirectoryInfo(PeltzerMain.Instance.offlineModelsPath);
-                if (!offlineModelsDirectory.Exists) return;
-                List<DirectoryInfo> directories = offlineModelsDirectory.GetDirectories().ToList();
-
-                // Parse them in reverse order such that we add the newest entries to the start of the menu
-                // after we add older entries to the start of the menu.
-                for (int i = directories.Count() - 1; i >= 0; i--)
+                if (localCatalogRefreshPending || UserModelStorage.Instance == null)
                 {
-                    DirectoryInfo directory = directories[i];
-                    ObjectStoreEntry entry;
+                    return;
+                }
+                localCatalogRefreshPending = true;
+            }
 
-                    if (GetObjectStoreEntryFromLocalDirectory(directory, out entry))
+            PeltzerMain.Instance.DoPolyMenuBackgroundWork(new RefreshStoredModelsWork(this));
+        }
+
+        internal void CompleteStoredModelRefresh(IReadOnlyList<StoredModel> models, Exception failure)
+        {
+            lock (mutex)
+            {
+                localCatalogRefreshPending = false;
+                if (failure != null || models == null)
+                {
+                    Debug.LogWarning(
+                      $"[OB_MODEL_CATALOG] Refresh failed; retaining the prior catalog: {failure?.Message}");
+                    return;
+                }
+
+                List<StoredModel> orderedModels = models
+                  .OrderByDescending(model => model.LastModifiedUtcMillis)
+                  .ToList();
+                if (StoredCatalogsMatch(lastStoredModelSnapshot, orderedModels))
+                {
+                    return;
+                }
+
+                if (loadsByType.TryGetValue(PolyMenuMain.CreationType.LOCAL, out Load oldLoad))
+                {
+                    foreach (Creation creation in oldLoad.creations)
                     {
-                        StartSingleCreationLoad(PolyMenuMain.CreationType.LOCAL, entry, isLocal: true, isSave: false);
+                        creation.preview.SetActive(false);
+                        creation.handler.isActiveOnMenu = false;
                     }
                 }
+
+                List<Entry> entries = orderedModels
+                  .Select(model => new Entry(GetObjectStoreEntryFromStoredModel(model)))
+                  .ToList();
+                Load replacement = new Load(creationPrefab);
+                replacement.AddEntriesToEndOfMenu(entries, isLocal: true, isSave: false);
+                loadsByType[PolyMenuMain.CreationType.LOCAL] = replacement;
+                lastStoredModelSnapshot = orderedModels;
+                pendingLoadsByType.Remove(PolyMenuMain.CreationType.LOCAL);
+                PeltzerMain.Instance.GetPolyMenuMain().RefreshPolyMenu();
             }
-            catch (Exception e)
+        }
+
+        private static bool StoredCatalogsMatch(
+            IReadOnlyList<StoredModel> left,
+            IReadOnlyList<StoredModel> right)
+        {
+            if (left == null || right == null || left.Count != right.Count)
             {
-                // We failed to get offline models, the app can continue, but we'll log the issue.
-                Debug.Log("Failed to get offline models: " + e);
+                return false;
+            }
+
+            for (int i = 0; i < left.Count; i++)
+            {
+                if (left[i].Id != right[i].Id ||
+                    left[i].DisplayName != right[i].DisplayName ||
+                    left[i].LastModifiedUtcMillis != right[i].LastModifiedUtcMillis)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        internal void RecordStoredModelSave(StoredModel model, string replacedModelId)
+        {
+            if (model == null)
+            {
+                return;
+            }
+
+            lock (mutex)
+            {
+                IEnumerable<StoredModel> retainedModels =
+                  lastStoredModelSnapshot ?? Array.Empty<StoredModel>();
+                lastStoredModelSnapshot = retainedModels
+                  .Where(existing =>
+                    existing.Id != model.Id && existing.Id != replacedModelId)
+                  .Append(model)
+                  .OrderByDescending(existing => existing.LastModifiedUtcMillis)
+                  .ToList();
+            }
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (!paused)
+            {
+                LoadOfflineModels();
             }
         }
 
@@ -538,17 +715,46 @@ namespace com.google.apps.peltzer.client.zandria
         /// </summary>
         public void DeleteOfflineModel(string directoryName)
         {
-            try
+            PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+              new DeleteStoredModelWork(this, directoryName));
+        }
+
+        internal void CompleteStoredModelDelete(string modelId, bool succeeded)
+        {
+            if (!succeeded)
             {
-                DirectoryInfo directory = new DirectoryInfo(
-                  Path.Combine(PeltzerMain.Instance.offlineModelsPath, directoryName));
-                if (!directory.Exists) return;
-                directory.Delete(/* recursive */ true);
+                Debug.LogWarning("[OB_MODEL_CATALOG] Failed to delete locally saved model.");
+                return;
             }
-            catch (Exception)
+
+            PeltzerMain.Instance.LocalId =
+              GetLocalIdAfterDelete(PeltzerMain.Instance.LocalId, modelId);
+
+            lock (mutex)
             {
-                // No big harm in a failure.
+                if (lastStoredModelSnapshot != null)
+                {
+                    lastStoredModelSnapshot = lastStoredModelSnapshot
+                      .Where(model => model.Id != modelId)
+                      .ToList();
+                }
             }
+            RemoveSingleCreationAndRefreshMenu(PolyMenuMain.CreationType.LOCAL, modelId);
+        }
+
+        internal static string GetLocalIdAfterDelete(string currentModelId, string deletedModelId)
+        {
+            return currentModelId == deletedModelId ? null : currentModelId;
+        }
+
+        public ObjectStoreEntry GetObjectStoreEntryFromStoredModel(StoredModel model)
+        {
+            return new ObjectStoreEntry
+            {
+                localId = model.Id,
+                title = model.DisplayName,
+                isLocalStorage = true
+            };
         }
 
         public bool GetObjectStoreEntryFromLocalDirectory(DirectoryInfo directory, out ObjectStoreEntry objectStoreEntry)
@@ -665,10 +871,25 @@ namespace com.google.apps.peltzer.client.zandria
             }
         }
 
+        public void UpdateSingleLocalCreationOnYourModels(
+            StoredModel model,
+            string replacedModelId = null)
+        {
+            UpdateSingleCreationOnYourModels(
+              GetObjectStoreEntryFromStoredModel(model),
+              isLocal: true,
+              isSave: true,
+              replacedLocalId: replacedModelId);
+        }
+
         /// <summary>
         ///   Updates a single creation on the 'your models' section.
         /// </summary>
-        private void UpdateSingleCreationOnYourModels(ObjectStoreEntry objectStoreEntry, bool isLocal, bool isSave)
+        private void UpdateSingleCreationOnYourModels(
+            ObjectStoreEntry objectStoreEntry,
+            bool isLocal,
+            bool isSave,
+            string replacedLocalId = null)
         {
             // We've successfully called back with results from the query. Parse them into an actual entry.
             Entry entry = new Entry(objectStoreEntry);
@@ -683,7 +904,9 @@ namespace com.google.apps.peltzer.client.zandria
                 {
                     Creation creation = creations[i];
                     if ((!creation.isLocal && creations[i].entry.queryEntry.id == entry.queryEntry.id) ||
-                      (creation.isLocal && creations[i].entry.queryEntry.localId == entry.queryEntry.localId))
+                      (creation.isLocal &&
+                       creations[i].entry.queryEntry.localId ==
+                         (replacedLocalId ?? entry.queryEntry.localId)))
                     {
                         creations.RemoveAt(i);
                         break;
@@ -870,7 +1093,7 @@ namespace com.google.apps.peltzer.client.zandria
                 yield break;
             }
             // No thumbnail, just go ahead and load the model.
-            if (entry.thumbnail == null && entry.localThumbnailFile == null)
+            if (entry.thumbnail == null && entry.localThumbnailFile == null && !entry.isLocalStorage)
             {
                 load.pendingModelLoadRequestIndices.Add(indexInCreations);
                 yield break;
@@ -891,7 +1114,12 @@ namespace com.google.apps.peltzer.client.zandria
         private void GetThumbnailTexture(ObjectStoreEntry entry,
           System.Action<Texture2D> thumbnailTextureCallback, bool isRecursion = false)
         {
-            if (entry.localThumbnailFile != null)
+            if (entry.isLocalStorage)
+            {
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                  new ReadStoredThumbnailWork(entry.localId, thumbnailTextureCallback));
+            }
+            else if (entry.localThumbnailFile != null)
             {
                 Texture2D tex = new Texture2D(192, 192);
                 if (tex.LoadImage(File.ReadAllBytes(entry.localThumbnailFile)))
@@ -923,7 +1151,7 @@ namespace com.google.apps.peltzer.client.zandria
                 return false;
             }
 
-            if (entry.localPeltzerFile != null)
+            if (entry.isLocalStorage || entry.localPeltzerFile != null)
             {
                 return true;
             }
