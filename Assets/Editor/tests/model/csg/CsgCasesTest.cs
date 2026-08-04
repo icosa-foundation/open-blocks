@@ -45,7 +45,7 @@ namespace com.google.apps.peltzer.client.model.csg
             MMesh shape1 = Primitives.AxisAlignedBox(0, Vector3.zero, scale1, 1);
             shape1.offset = offset1;
             shape1.rotation = rot1;
-            MMesh shape2 = Primitives.AxisAlignedCylinder(1, Vector3.zero, scale2, null, 2);
+            MMesh shape2 = Primitives.AxisAlignedCylinder(1, Vector3.zero, scale2, 2);
             shape2.offset = offset2;
             shape2.rotation = rot2;
 
@@ -72,7 +72,7 @@ namespace com.google.apps.peltzer.client.model.csg
             MMesh shape1 = Primitives.AxisAlignedBox(0, Vector3.zero, scale1, 1);
             shape1.offset = offset1;
             shape1.rotation = rot1;
-            MMesh shape2 = Primitives.AxisAlignedCylinder(1, Vector3.zero, scale2, null, 2);
+            MMesh shape2 = Primitives.AxisAlignedCylinder(1, Vector3.zero, scale2, 2);
             shape2.offset = offset2;
             shape2.rotation = rot2;
 
@@ -180,7 +180,7 @@ namespace com.google.apps.peltzer.client.model.csg
             MMesh shape1 = Primitives.AxisAlignedIcosphere(0, Vector3.zero, scale1, 1);
             shape1.offset = offset1;
             shape1.rotation = rot1;
-            MMesh shape2 = Primitives.AxisAlignedCylinder(1, Vector3.zero, scale2, null, 2);
+            MMesh shape2 = Primitives.AxisAlignedCylinder(1, Vector3.zero, scale2, 2);
             shape2.offset = offset2;
             shape2.rotation = rot2;
 
