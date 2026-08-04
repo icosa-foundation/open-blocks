@@ -56,32 +56,17 @@ public static class ApiCommandService
         }
     }
 
-    public static ApiCommandResult SaveScene(string filePath)
+    public static ApiCommandResult SaveScene()
     {
-        if (PeltzerMain.Instance.model.GetNumberOfMeshes() == 0)
+        var peltzerMain = PeltzerMain.Instance;
+        if (peltzerMain.model.GetNumberOfMeshes() == 0)
             return ApiCommandResult.BadRequest("Cannot save an empty scene.");
 
-        var directoryPath = Path.GetDirectoryName(filePath);
-        if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
-            return ApiCommandResult.NotFound($"Directory does not exist: {directoryPath}");
+        if (!peltzerMain.model.writeable)
+            return ApiCommandResult.BadRequest("A save is already in progress.");
 
-        try
-        {
-            File.WriteAllBytes(filePath, PeltzerFileHandler.PeltzerFileFromMeshes(PeltzerMain.Instance.model.GetAllMeshes()));
-            return ApiCommandResult.Ok($"Saved scene to {filePath}.");
-        }
-        catch (UnauthorizedAccessException e)
-        {
-            return ApiCommandResult.BadRequest($"Failed to save file: {e.Message}");
-        }
-        catch (IOException e)
-        {
-            return ApiCommandResult.BadRequest($"Failed to save file: {e.Message}");
-        }
-        catch (Exception e)
-        {
-            return ApiCommandResult.InternalServerError($"Save failed: {e.Message}");
-        }
+        peltzerMain.SaveCurrentModel(publish: false, saveSelected: false, cloudSave: false);
+        return ApiCommandResult.Ok("Started local scene save.");
     }
 
     public static ApiCommandResult CreateMesh(string shape, Vector3 scale, Vector3 offset)

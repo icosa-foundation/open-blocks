@@ -220,7 +220,7 @@ jobs:
 
           - name: Android OpenXR
             targetPlatform: Android
-            cache: Android_Vulkan
+            cache: Android
             extraoptions: -btb-il2cpp
             androidTargetSdkVersion: 34
             versionSuffix: 0
@@ -228,7 +228,7 @@ jobs:
 
           - name: Android OpenXR Google Play
             targetPlatform: Android
-            cache: Android_Vulkan
+            cache: Android
             extraoptions: -btb-il2cpp
             androidTargetSdkVersion: 35
             versionSuffix: 0
@@ -237,7 +237,7 @@ jobs:
 
           - name: Android 2D
             targetPlatform: Android
-            cache: Android_Vulkan
+            cache: Android_2D
             extraoptions: -btb-il2cpp
             androidTargetSdkVersion: 34
             versionSuffix: 1
@@ -489,7 +489,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v6
-        if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove
+        if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove && false
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -507,7 +507,7 @@ jobs:
           # chown all files, since some are owned by root after the docker run
           docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
           # Print the files to be deleted
-          find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so' -or -name 'launcher-release.apk' | tee todelete.txt
+          find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so*' -or -name 'launcher-release.apk' | tee todelete.txt
           cat todelete.txt | xargs -r rm
           # The package cache is stored in a separate, shared, cache
           rm -rf Library/PackageCache
@@ -1009,6 +1009,100 @@ jobs:
             CHANGELOG="${RAW_CHANGELOG}"
             ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_OpenXR_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
           fi
+
+  publish_arborxr:
+    name: Publish ArborXR
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-blocks' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli --with 'setuptools<82.0.0'
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_openxr
+
+      - name: Publish Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          ARBORXR_ACCESS_TOKEN: ${{ secrets.ARBORXR_ACCESS_TOKEN }}
+          ARBORXR_ORG_ID: ${{ vars.ARBORXR_ORG_ID }}
+          ARBORXR_APP_ID: ${{ vars.ARBORXR_APP_ID }}
+          ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_LIVE_CHANNEL }}
+          ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_BETA_CHANNEL }}
+        run: |
+          set -x
+          mkdir releases
+          mv build_android_openxr/*/OpenBlocks*apk releases/OpenBlocks_OpenXR_$VERSION.apk
+
+          cd releases
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
+          fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBlocks_OpenXR_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 600 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
+
+  publish_oculus_rift:
+    name: Publish Oculus Rift Release
+    needs: [configuration, build]
+    runs-on: macos-26  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-blocks' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      # Reuse the Windows OpenXR artifact published to Steam rather than building
+      # a separate Rift-specific binary.
+      - name: Download Build Artifacts (Windows OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Windows OpenXR
+          path: build_windows_openxr
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          OCULUS_RIFT_APP_ID: ${{ vars.OCULUS_RIFT_APP_ID }}
+          OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
+        run: |
+          mkdir releases
+          mv build_windows_openxr/StandaloneWindows64/ releases/OpenBlocks_Rift_$VERSION/
+          cd releases
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          chmod 755 ovr-platform-util
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBlocks_Rift_$VERSION --launch-file OpenBlocks.exe --channel LIVE --version $VERSION --firewall_exceptions false --redistributables 2657209094360789
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBlocks_Rift_$VERSION --launch-file OpenBlocks.exe --channel BETA --version $VERSION --firewall_exceptions false --redistributables 2657209094360789 --notes "${CHANGELOG}"
+          fi
+
   publish_pico:
     name: Publish Pico Releases
     needs: [configuration, build]
@@ -1042,10 +1136,10 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBlocks_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBlocks_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
             # Disable Mainland China build for now
-            # ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBlocks_Pico_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            # ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBlocks_Pico_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
           else
             # For Pico, Beta channels can only get one build, not a separate China / non-China build
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBlocks_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBlocks_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
           fi
