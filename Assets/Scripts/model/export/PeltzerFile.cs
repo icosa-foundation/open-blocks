@@ -149,6 +149,9 @@ namespace com.google.apps.peltzer.client.model.export
             // Only write chunk if custom colors exist
             if (customIds.Count == 0) return;
 
+            // Unreachable in practice - see MAX_CUSTOM_COLORS_PER_FILE. Asserted rather than degraded because
+            // the mesh chunks are already written by this point, so the face IDs referencing these colours can
+            // no longer be rewritten; writing a palette the reader would reject is the worse outcome.
             AssertOrThrow.True(customIds.Count <= SerializationConsts.MAX_CUSTOM_COLORS_PER_FILE,
               $"Custom color count {customIds.Count} exceeds the supported maximum of " +
               $"{SerializationConsts.MAX_CUSTOM_COLORS_PER_FILE}");

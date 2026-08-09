@@ -39,7 +39,10 @@ namespace com.google.apps.peltzer.client.serialization
         public const int MAX_MATERIALS_PER_FILE = 1024;
         public const int MAX_VERTICES_PER_MESH = 500000;
         public const int MAX_FACES_PER_MESH = 100000;
-        public const int MAX_CUSTOM_COLORS_PER_FILE = MAX_FACES_PER_MESH;
+        // Distinct custom colours in a file are bounded by its total face count, which is far larger than this.
+        // This bound exists to stop a corrupt header making the reader allocate wildly; at 8 bytes per entry a
+        // palette this size is already an 8MB chunk, so no real model comes close.
+        public const int MAX_CUSTOM_COLORS_PER_FILE = 1 << 20;
         public const int MAX_VERTICES_PER_FACE = 256;
         public const int MAX_HOLES_PER_FACE = 256;
         public const int MAX_VERTICES_PER_HOLE = 256;
