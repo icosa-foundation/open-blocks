@@ -791,6 +791,15 @@ namespace com.google.apps.peltzer.client.model.main
 #else
             userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
 
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+            // Mono maps both Personal and MyDocuments to the home directory on macOS. Open Blocks files
+            // belong under ~/Documents, matching the effective location returned by MyDocuments on Windows.
+            if (!string.IsNullOrEmpty(userPath))
+            {
+                userPath = Path.Combine(userPath, "Documents");
+            }
+#endif
+
             // GetFolderPath() can fail, returning an empty string.
             if (userPath == "")
             {
