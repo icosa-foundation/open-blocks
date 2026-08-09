@@ -110,6 +110,29 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         [Test]
+        public void CreationSmoothingMapsZeroToFlatAndPositiveValuesToAuto()
+        {
+            float previousAngle = PrimitiveParams.AutoSmoothAngle;
+            try
+            {
+                MMesh mesh = CreateRightAngleWedge();
+
+                PrimitiveParams.AutoSmoothAngle = 45f;
+                PrimitiveParams.ApplySmoothing(mesh);
+                Assert.AreEqual(MMesh.SmoothingMode.Auto, mesh.smoothingMode);
+                Assert.AreEqual(45f, mesh.autoSmoothAngle);
+
+                PrimitiveParams.AutoSmoothAngle = 0f;
+                PrimitiveParams.ApplySmoothing(mesh);
+                Assert.AreEqual(MMesh.SmoothingMode.Flat, mesh.smoothingMode);
+            }
+            finally
+            {
+                PrimitiveParams.AutoSmoothAngle = previousAngle;
+            }
+        }
+
+        [Test]
         public void GeometryChangesInvalidateAutoSmoothNormals()
         {
             MMesh mesh = CreateRightAngleWedge();

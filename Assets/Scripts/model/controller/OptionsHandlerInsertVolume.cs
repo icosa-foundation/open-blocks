@@ -62,6 +62,28 @@ public class OptionsHandlerInsertVolume : OptionsHandlerBase
         Debug.Log(btn.name);
     }
 
+    public void HandleAutoSmoothSliderLabel(Slider slider)
+    {
+        slider.SetLabelText(FormatAutoSmoothLabel(slider.Value));
+    }
+
+    public void HandleAutoSmoothSlider(Slider slider)
+    {
+        HandleAutoSmoothSliderLabel(slider);
+        if (Mathf.Approximately(PrimitiveParams.AutoSmoothAngle, slider.Value))
+        {
+            return;
+        }
+
+        PrimitiveParams.AutoSmoothAngle = slider.Value;
+        m_VolumeInserter?.CreateNewVolumeMesh();
+    }
+
+    internal static string FormatAutoSmoothLabel(float angle)
+    {
+        return angle <= 0f ? "Auto smooth: Flat" : $"Auto smooth: {angle:0}°";
+    }
+
     public void HandleSubdivSliderRelease(Slider slider)
     {
         //// TODO var op = m_CurrentRecipe.Operators.First(o => o.opType == PolyOpType.Ortho);

@@ -424,6 +424,7 @@ namespace com.google.apps.peltzer.client.tools
                 return;
             }
 
+            PrimitiveParams.ApplySmoothing(newMesh);
             newMesh.RecalcBounds();
             Vector3 baseBounds = newMesh.bounds.size;
 

@@ -2247,6 +2247,7 @@ Transform:
   - {fileID: 249354495609009286}
   - {fileID: 1996469888731383998}
   - {fileID: 6313183822163787911}
+  - {fileID: 910000000000000002}
   m_Father: {fileID: 354840846558161287}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &458126838485701755
@@ -2340,7 +2341,7 @@ PrefabInstance:
     - target: {fileID: 6307248632482345416, guid: 67e185c2436d008428bcab0059b842c9,
         type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: 54778d321694b64459066ed2b96c97b6,
         type: 3}
     m_RemovedComponents: []
@@ -2445,7 +2446,7 @@ PrefabInstance:
     - target: {fileID: 6307248632482345416, guid: 67e185c2436d008428bcab0059b842c9,
         type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: 9408aa9809f7abe44986ac9314afa0b1,
         type: 3}
     m_RemovedComponents: []
@@ -2555,7 +2556,7 @@ PrefabInstance:
     - target: {fileID: 6307248632482345416, guid: 67e185c2436d008428bcab0059b842c9,
         type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: f064948e2ce78af4fbbb06a5c0f2ef9e,
         type: 3}
     m_RemovedComponents: []
@@ -2615,7 +2616,7 @@ PrefabInstance:
     - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
+      value:
       objectReference: {fileID: 6427186587585324810}
     - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
@@ -2752,8 +2753,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c402a14db634bef9f6e6f22869be133, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!4 &9085312994514353359 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
@@ -2821,7 +2822,7 @@ PrefabInstance:
     - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
       propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
+      value:
       objectReference: {fileID: 6427186587585324810}
     - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
         type: 3}
@@ -8090,3 +8091,169 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 8914783028845634618}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &910000000000000001
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7271149048484185985}
+    m_Modifications:
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Minimum
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Maximum
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Step
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_InitialValue
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_UpdateInterval
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_UpdateOnlyOnRelease
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value:
+      objectReference: {fileID: 6427186587585324810}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: OptionsHandlerInsertVolume, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: HandleAutoSmoothSliderLabel
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgument
+      value:
+      objectReference: {fileID: 910000000000000003}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: com.google.apps.peltzer.client.model.controller.Slider, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionEveryUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value:
+      objectReference: {fileID: 6427186587585324810}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: OptionsHandlerInsertVolume, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: HandleAutoSmoothSlider
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgument
+      value:
+      objectReference: {fileID: 910000000000000003}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: com.google.apps.peltzer.client.model.controller.Slider, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1102641234472584921, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Name
+      value: Auto Smooth Slider
+      objectReference: {fileID: 0}
+    - target: {fileID: 5501061831439391173, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_text
+      value: 'Auto smooth: 60°'
+      objectReference: {fileID: 0}
+    - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.145
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: da0b519cb21425a48b46ae7057256fb1, type: 3}
+--- !u!4 &910000000000000002 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
+    type: 3}
+  m_PrefabInstance: {fileID: 910000000000000001}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &910000000000000003 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+    type: 3}
+  m_PrefabInstance: {fileID: 910000000000000001}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c402a14db634bef9f6e6f22869be133, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:

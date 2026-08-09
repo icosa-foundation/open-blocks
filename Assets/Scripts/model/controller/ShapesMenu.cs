@@ -740,6 +740,7 @@ namespace com.google.apps.peltzer.client.model.controller
             int id = PeltzerMain.Instance.model.GenerateMeshId();
             int matId = MaterialRegistry.WHITE_ID;
             var mmesh = MMesh.PolyHydraToMMesh(poly, id, Vector3.zero, Vector3.one, Quaternion.identity, matId, true);
+            PrimitiveParams.ApplySmoothing(mmesh);
             mmesh.groupId = MMesh.GROUP_NONE;
             mmesh.offset = Vector3.zero;
             var meshes = new List<MMesh> { mmesh };

@@ -689,6 +689,7 @@ namespace com.google.apps.peltzer.client.model.core
 
     public struct PrimitiveParams
     {
+        public static float AutoSmoothAngle = MMesh.DEFAULT_AUTO_SMOOTH_ANGLE;
         public static float CylinderHoleRadius = 0;
         public static float TorusInnerRadius = 0.5f;
         public static float TorusOuterRadius = 1f;
@@ -702,5 +703,17 @@ namespace com.google.apps.peltzer.client.model.core
         public static int CubeXSegments = 1;
         public static int CubeYSegments = 1;
         public static int CubeZSegments = 1;
+
+        public static void ApplySmoothing(MMesh mesh)
+        {
+            if (AutoSmoothAngle <= 0f)
+            {
+                mesh.SetFlatShading();
+            }
+            else
+            {
+                mesh.SetAutoSmooth(AutoSmoothAngle);
+            }
+        }
     }
 }
