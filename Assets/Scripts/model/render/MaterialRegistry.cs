@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace com.google.apps.peltzer.client.model.render
@@ -58,7 +59,7 @@ namespace com.google.apps.peltzer.client.model.render
 
         // Unity Materials with albedo set.
         private static Material[] materialsWithAlbedo = null;
-        private static System.Collections.Generic.Dictionary<int, Material> customMaterialsWithAlbedo = null;
+        private static Dictionary<int, Material> customMaterialsWithAlbedo = null;
 
         // Our custom MaterialAndColor, with albedo unset, as we use vertex colours.
         private static MaterialAndColor[] materials = null;
@@ -69,12 +70,12 @@ namespace com.google.apps.peltzer.client.model.render
         private static MaterialAndColor highlightSilhouetteMaterial;
 
         // Custom color support (arbitrary RGB colors beyond the fixed palette)
-        private static System.Collections.Generic.Dictionary<int, Color32> customColors = null;
-        private static System.Collections.Generic.Dictionary<Color32, int> colorToIdCache = null;
-        private static System.Collections.Generic.Dictionary<int, MaterialAndColor> customPreviewMaterials =
-          new System.Collections.Generic.Dictionary<int, MaterialAndColor>();
-        private static System.Collections.Generic.Dictionary<int, MaterialAndColor> customHighlightMaterials =
-          new System.Collections.Generic.Dictionary<int, MaterialAndColor>();
+        private static Dictionary<int, Color32> customColors = null;
+        private static Dictionary<Color32, int> colorToIdCache = null;
+        private static Dictionary<int, MaterialAndColor> customPreviewMaterials =
+          new Dictionary<int, MaterialAndColor>();
+        private static Dictionary<int, MaterialAndColor> customHighlightMaterials =
+          new Dictionary<int, MaterialAndColor>();
         private static int nextCustomId = CUSTOM_COLOR_START;
 
         // The material ID space, which the .blocks file format depends on:
@@ -161,9 +162,9 @@ namespace com.google.apps.peltzer.client.model.render
               new Color32(255, 255, 255, 255), HIGHLIGHT_SILHOUETTE_ID);
 
             // Initialize custom color storage
-            customColors = new System.Collections.Generic.Dictionary<int, Color32>();
-            colorToIdCache = new System.Collections.Generic.Dictionary<Color32, int>();
-            customMaterialsWithAlbedo = new System.Collections.Generic.Dictionary<int, Material>();
+            customColors = new Dictionary<int, Color32>();
+            colorToIdCache = new Dictionary<Color32, int>();
+            customMaterialsWithAlbedo = new Dictionary<int, Material>();
             customPreviewMaterials.Clear();
             customHighlightMaterials.Clear();
             nextCustomId = CUSTOM_COLOR_START;
@@ -261,13 +262,13 @@ namespace com.google.apps.peltzer.client.model.render
         public static Color GetMaterialColorById(int materialId)
         {
             // Legacy palette colors
-            if (materialId < rawColors.Length)
+            if (materialId >= 0 && materialId < rawColors.Length)
             {
                 return new Color(r(rawColors[materialId]), g(rawColors[materialId]), b(rawColors[materialId]));
             }
 
             // Special materials (glass, gem, etc.)
-            if (materialId < color32s.Length)
+            if (materialId >= 0 && materialId < color32s.Length)
             {
                 Color32 c = color32s[materialId];
                 return new Color(c.r / 255f, c.g / 255f, c.b / 255f, c.a / 255f);
@@ -323,7 +324,7 @@ namespace com.google.apps.peltzer.client.model.render
             {
                 if (customMaterialsWithAlbedo == null)
                 {
-                    customMaterialsWithAlbedo = new System.Collections.Generic.Dictionary<int, Material>();
+                    customMaterialsWithAlbedo = new Dictionary<int, Material>();
                 }
 
                 if (!customMaterialsWithAlbedo.TryGetValue(materialId, out Material material))
@@ -499,8 +500,8 @@ namespace com.google.apps.peltzer.client.model.render
             if (customColors == null || colorToIdCache == null)
             {
                 Debug.LogWarning("Custom color storage not initialized, initializing now");
-                customColors = new System.Collections.Generic.Dictionary<int, Color32>();
-                colorToIdCache = new System.Collections.Generic.Dictionary<Color32, int>();
+                customColors = new Dictionary<int, Color32>();
+                colorToIdCache = new Dictionary<Color32, int>();
                 nextCustomId = CUSTOM_COLOR_START;
             }
 
@@ -562,8 +563,8 @@ namespace com.google.apps.peltzer.client.model.render
             // Ensure storage is initialized
             if (customColors == null || colorToIdCache == null)
             {
-                customColors = new System.Collections.Generic.Dictionary<int, Color32>();
-                colorToIdCache = new System.Collections.Generic.Dictionary<Color32, int>();
+                customColors = new Dictionary<int, Color32>();
+                colorToIdCache = new Dictionary<Color32, int>();
                 nextCustomId = CUSTOM_COLOR_START;
             }
 
