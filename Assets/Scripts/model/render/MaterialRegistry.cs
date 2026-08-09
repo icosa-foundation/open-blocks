@@ -292,8 +292,9 @@ namespace com.google.apps.peltzer.client.model.render
         /// <returns>A Color32.</returns>
         public static Color32 GetMaterialColor32ById(int materialId)
         {
-            // Fast path: legacy palette (includes special materials)
-            if (materialId >= 0 && materialId < color32s.Length)
+            // Fast path: legacy palette (includes special materials). color32s is null until init() runs, which
+            // needs a MaterialLibrary; custom colours don't, so fall through rather than throwing.
+            if (color32s != null && materialId >= 0 && materialId < color32s.Length)
             {
                 return color32s[materialId];
             }
