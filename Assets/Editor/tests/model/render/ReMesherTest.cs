@@ -93,6 +93,31 @@ namespace com.google.apps.peltzer.client.model.render
         }
 
         [Test]
+        public void MixedMaterialMeshUsesOppositeNormalsForOpaqueBacksides()
+        {
+            MMesh mesh = Primitives.AxisAlignedBox(1, Vector3.zero, Vector3.one, /* materialId */ 2);
+            mesh.GetFace(0).SetProperties(new FaceProperties(MaterialRegistry.GLASS_ID));
+
+            Dictionary<int, MeshGenContext> components = MeshHelper.MeshComponentsFromMMesh(
+              mesh, useModelSpace: false);
+            MeshGenContext opaque = components[2];
+
+            const int verticesPerFace = 4;
+            const int verticesPerDoubleSidedFace = verticesPerFace * 2;
+            Assert.AreEqual(5 * verticesPerDoubleSidedFace, opaque.normals.Count);
+            for (int faceOffset = 0; faceOffset < opaque.normals.Count;
+              faceOffset += verticesPerDoubleSidedFace)
+            {
+                for (int vertex = 0; vertex < verticesPerFace; vertex++)
+                {
+                    Assert.Less(Vector3.Distance(
+                      opaque.normals[faceOffset + vertex],
+                      -opaque.normals[faceOffset + verticesPerFace + vertex]), 0.001f);
+                }
+            }
+        }
+
+        [Test]
         public void TestCoalescing()
         {
             ReMesher remesher = new ReMesher();

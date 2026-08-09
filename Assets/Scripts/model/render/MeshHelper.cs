@@ -158,14 +158,14 @@ namespace com.google.apps.peltzer.client.model.render
                 // This method is used to update a GameObject, and as such we do not want the vert positions in world space,
                 // it is the gameObject that will be placed and rotated in the world.
                 AddFaceVertices(updatedMesh, wiggleVector, face, ref newPos, ref newColors, ref newNormals,
-                  /* useWorldSpace */ false);
+                  /* useWorldSpace */ false, /* reverseNormals */ false);
 
                 if (drawTriangleBackside)
                 {
                     // This method is used to update a GameObject, and as such we do not want the vert positions in world space,
                     // it is the gameObject that will be placed and rotated in the world.
                     AddFaceVertices(updatedMesh, wiggleVector, face, ref newPos, ref newColors, ref newNormals,
-                      /* useWorldSpace */ false);
+                      /* useWorldSpace */ false, /* reverseNormals */ true);
                 }
                 materialNormals.AddRange(newNormals);
             }
@@ -317,7 +317,7 @@ namespace com.google.apps.peltzer.client.model.render
                 int backOffset = -1;
 
                 AddFaceVertices(mmesh, wiggleVector, face, ref context.verts, ref context.colors, ref context.normals,
-                  useModelSpace);
+                  useModelSpace, reverseNormals: false);
 
                 if (drawTriangleBackside)
                 {
@@ -325,7 +325,7 @@ namespace com.google.apps.peltzer.client.model.render
                     // so we need to make new vertices for those triangles:
                     backOffset = context.verts.Count;
                     AddFaceVertices(mmesh, wiggleVector, face, ref context.verts, ref context.colors, ref context.normals,
-                      useModelSpace);
+                      useModelSpace, reverseNormals: true);
                 }
 
                 List<Triangle> tris = face.GetRenderTriangulation(mmesh);
@@ -380,13 +380,15 @@ namespace com.google.apps.peltzer.client.model.render
         /// <param name="useModelSpace">
         ///   If true, the added vertex locations will be in model space, else they'll be in mesh space.
         /// </param>
+        /// <param name="reverseNormals">If true, normals will point toward the back of the face.</param>
         private static void AddFaceVertices(MMesh mmesh,
           Vector3 wiggleVector,
           Face face,
           ref List<Vector3> vertList,
           ref List<Color32> colorList,
           ref List<Vector3> normalList,
-          bool useModelSpace)
+          bool useModelSpace,
+          bool reverseNormals)
         {
 
             if (useModelSpace)
@@ -407,12 +409,16 @@ namespace com.google.apps.peltzer.client.model.render
             {
                 for (int i = 0; i < renderNormals.Count; i++)
                 {
-                    normalList.Add((mmesh.rotation * renderNormals[i]).normalized);
+                    Vector3 normal = (mmesh.rotation * renderNormals[i]).normalized;
+                    normalList.Add(reverseNormals ? -normal : normal);
                 }
             }
             else
             {
-                normalList.AddRange(renderNormals);
+                for (int i = 0; i < renderNormals.Count; i++)
+                {
+                    normalList.Add(reverseNormals ? -renderNormals[i] : renderNormals[i]);
+                }
             }
         }
 
