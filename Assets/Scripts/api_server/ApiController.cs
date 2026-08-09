@@ -593,16 +593,40 @@ public class ApiController
     [ApiResponse(200, typeof(ApiIdResponse))]
     [ApiResponse(400, typeof(ApiErrorResponse))]
     [ApiResponse(500, typeof(ApiErrorResponse))]
-    public ApiResult CreatePolyhydraMesh([ApiBody] Dictionary<string, object> kwargs)
+    public ApiResult CreatePolyhydraMesh(
+        [ApiDoc(Example = "{\n  \"generator\": \"Radial\",\n  \"RadialPolyType\": \"Prism\",\n  \"SegmentsU\": 24,\n  \"Height\": 1.0,\n  \"smoothingAngle\": 60.0\n}")]
+        [ApiBody] ApiPolyhydraMeshRequest request)
     {
-        var recipe = BuildPolyRecipe(kwargs);
-        var poly = PolyBuilder.BuildPolyMesh(recipe);
+        if (request == null)
+            return BadRequest("A Polyhydra recipe is required.");
+        if (!request.TryBuildRecipe(out var recipe, out var recipeError))
+            return BadRequest(recipeError);
+
+        PolyMesh poly;
+        try
+        {
+            poly = PolyBuilder.BuildPolyMesh(recipe);
+        }
+        catch (Exception exception)
+        {
+            return BadRequest($"Invalid Polyhydra recipe: {exception.Message}");
+        }
+        if (poly == null)
+            return BadRequest("The Polyhydra recipe did not produce a mesh.");
+
         int meshId = PeltzerMain.Instance.model.GenerateMeshId();
-        var mesh = MMesh.PolyHydraToMMesh(poly, meshId, Vector3.zero, Vector3.one, Quaternion.identity, 0);
+        var mesh = MMesh.PolyHydraToMMesh(
+            poly, meshId, Vector3.zero, Vector3.one, Quaternion.identity, 0,
+            autoSmooth: true, autoSmoothAngle: request.smoothingAngle);
         if (mesh == null)
             return ApiResult.InternalServerError(new ApiErrorResponse { error = "Failed to create polyhydra mesh." });
         PeltzerMain.Instance.model.AddMesh(mesh);
-        return ApiResult.Ok(new ApiIdResponse { ok = true, id = meshId, message = $"Created polyhydra mesh {meshId}." });
+        return ApiResult.Ok(new ApiIdResponse
+        {
+            ok = true,
+            id = meshId,
+            message = $"Created polyhydra mesh {meshId} with a {request.smoothingAngle:g} degree smoothing angle."
+        });
     }
 
     [ApiGet("meshes/{meshId}/apply-op")]
@@ -625,41 +649,6 @@ public class ApiController
         return Ok($"Applied operation {op} to mesh {meshId}.");
     }
 
-    private static PolyRecipe BuildPolyRecipe(Dictionary<string, object> kwargs)
-    {
-        var recipe = new PolyRecipe();
-
-        T ParseEnum<T>(string key) where T : Enum =>
-            (T)Enum.Parse(typeof(T), kwargs[key].ToString());
-
-        recipe.GeneratorType = ParseEnum<GeneratorTypes>("generator");
-        recipe.generatorParams = kwargs;
-
-        switch (recipe.GeneratorType)
-        {
-            case GeneratorTypes.RegularGrids:
-            case GeneratorTypes.CatalanGrids:
-            case GeneratorTypes.OneUniformGrids:
-            case GeneratorTypes.TwoUniformGrids:
-            case GeneratorTypes.DurerGrids:
-                recipe.GridType = ParseEnum<GridEnums.GridTypes>("gridType");
-                recipe.GridShape = ParseEnum<GridEnums.GridShapes>("gridShape");
-                break;
-            case GeneratorTypes.Shapes:
-                recipe.ShapeType = ParseEnum<ShapeTypes>("shapeName");
-                break;
-            case GeneratorTypes.Radial:
-                recipe.RadialPolyType = ParseEnum<RadialSolids.RadialPolyType>("RadialPolyType");
-                break;
-            case GeneratorTypes.Uniform:
-                recipe.UniformPolyType = ParseEnum<UniformTypes>("shapeName");
-                break;
-            case GeneratorTypes.Various:
-                recipe.VariousSolidsType = ParseEnum<VariousSolidTypes>("shapeName");
-                break;
-        }
-        return recipe;
-    }
 }
 
 [Serializable]
@@ -724,6 +713,8 @@ public class ApiMeshResponse
     public ApiBoundsDto localBounds;
     public int groupId;
     public string[] remixIds;
+    public string smoothingMode;
+    public float autoSmoothAngle;
     public int id;
 
     public ApiMeshResponse(MMesh mesh)
@@ -737,7 +728,115 @@ public class ApiMeshResponse
         localBounds = ApiBoundsDto.FromBounds(mesh.localBounds);
         groupId = mesh.groupId;
         remixIds = mesh.remixIds?.ToArray() ?? Array.Empty<string>();
+        smoothingMode = mesh.smoothingMode.ToString();
+        autoSmoothAngle = mesh.autoSmoothAngle;
         id = mesh.id;
+    }
+}
+
+[Serializable]
+public class ApiPolyhydraMeshRequest
+{
+    public string generator;
+    public string shapeName;
+    public string gridType;
+    public string gridShape;
+    public string RadialPolyType;
+
+    public int JohnsonSolidType;
+    public int WatermanSolidType;
+    public int WatermanRoot;
+    public int WatermanC;
+    public int RepeatU = 1;
+    public int RepeatV = 1;
+    public int SegmentsU = 3;
+    public int SegmentsV = 3;
+    public int SegmentsW = 3;
+
+    public float Width = 1f;
+    public float Height = 1f;
+    public float Depth = 1f;
+    public float CapHeight = 1f;
+    public float RadiusInner = 0.5f;
+    public float Angle = 360f;
+    public float smoothingAngle = MMesh.DEFAULT_AUTO_SMOOTH_ANGLE;
+
+    public bool TryBuildRecipe(out PolyRecipe recipe, out string error)
+    {
+        recipe = new PolyRecipe();
+        error = null;
+
+        if (float.IsNaN(smoothingAngle) || float.IsInfinity(smoothingAngle) ||
+            smoothingAngle < 0f || smoothingAngle > 180f)
+        {
+            error = "smoothingAngle must be between 0 and 180 degrees.";
+            return false;
+        }
+
+        if (!TryParseRequiredEnum(generator, "generator", out GeneratorTypes generatorType, out error))
+            return false;
+
+        recipe.GeneratorType = generatorType;
+        recipe.generatorParams = new Dictionary<string, object>
+        {
+            { nameof(JohnsonSolidType), JohnsonSolidType },
+            { nameof(WatermanSolidType), WatermanSolidType },
+            { nameof(WatermanRoot), WatermanRoot },
+            { nameof(WatermanC), WatermanC },
+            { nameof(RepeatU), RepeatU },
+            { nameof(RepeatV), RepeatV },
+            { nameof(SegmentsU), SegmentsU },
+            { nameof(SegmentsV), SegmentsV },
+            { nameof(SegmentsW), SegmentsW },
+            { nameof(Width), Width },
+            { nameof(Height), Height },
+            { nameof(Depth), Depth },
+            { nameof(CapHeight), CapHeight },
+            { nameof(RadiusInner), RadiusInner },
+            { nameof(Angle), Angle },
+        };
+
+        switch (generatorType)
+        {
+            case GeneratorTypes.RegularGrids:
+            case GeneratorTypes.CatalanGrids:
+            case GeneratorTypes.OneUniformGrids:
+            case GeneratorTypes.TwoUniformGrids:
+            case GeneratorTypes.DurerGrids:
+                return TryParseRequiredEnum(gridType, nameof(gridType), out recipe.GridType, out error) &&
+                    TryParseRequiredEnum(gridShape, nameof(gridShape), out recipe.GridShape, out error);
+            case GeneratorTypes.Shapes:
+                return TryParseRequiredEnum(shapeName, nameof(shapeName), out recipe.ShapeType, out error);
+            case GeneratorTypes.Radial:
+                return TryParseRequiredEnum(
+                    RadialPolyType, nameof(RadialPolyType), out recipe.RadialPolyType, out error);
+            case GeneratorTypes.Uniform:
+                return TryParseRequiredEnum(shapeName, nameof(shapeName), out recipe.UniformPolyType, out error);
+            case GeneratorTypes.Various:
+                return TryParseRequiredEnum(shapeName, nameof(shapeName), out recipe.VariousSolidsType, out error);
+            default:
+                return true;
+        }
+    }
+
+    private static bool TryParseRequiredEnum<T>(
+        string value, string fieldName, out T parsed, out string error) where T : struct
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            parsed = default;
+            error = $"{fieldName} is required.";
+            return false;
+        }
+
+        if (!Enum.TryParse(value, true, out parsed) || !Enum.IsDefined(typeof(T), parsed))
+        {
+            error = $"Unknown {fieldName}: {value}.";
+            return false;
+        }
+
+        error = null;
+        return true;
     }
 }
 

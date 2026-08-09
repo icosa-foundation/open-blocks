@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
+using TiltBrush;
 
 namespace com.google.apps.peltzer.client.model.core
 {
@@ -123,6 +124,43 @@ namespace com.google.apps.peltzer.client.model.core
             Assert.Greater(Vector3.Angle(normalBeforeEdit, normalAfterEdit), 1f);
             Vector3 expected = (mesh.GetFace(0).normal + mesh.GetFace(1).normal).normalized;
             AssertClose(normalAfterEdit, expected);
+        }
+
+        [Test]
+        public void PolyhydraPrismRequestSupportsSubNinetyDegreeSmoothing()
+        {
+            const string requestBody =
+              "{\"generator\":\"Radial\",\"RadialPolyType\":\"Prism\",\"SegmentsU\":24," +
+              "\"Height\":1.0,\"smoothingAngle\":45.0}";
+            ApiPolyhydraMeshRequest request = JsonUtility.FromJson<ApiPolyhydraMeshRequest>(requestBody);
+
+            Assert.IsTrue(request.TryBuildRecipe(out PolyRecipe recipe, out string error), error);
+            var poly = PolyBuilder.BuildPolyMesh(recipe);
+            MMesh mesh = MMesh.PolyHydraToMMesh(
+              poly, 11, Vector3.zero, Vector3.one, Quaternion.identity, 1,
+              autoSmooth: true, autoSmoothAngle: request.smoothingAngle);
+
+            Assert.AreEqual(MMesh.SmoothingMode.Auto, mesh.smoothingMode);
+            Assert.AreEqual(45f, mesh.autoSmoothAngle);
+
+            Face cap = null;
+            Face side = null;
+            foreach (Face face in mesh.GetFaces())
+            {
+                if (face.vertexIds.Count == request.SegmentsU)
+                    cap = face;
+                else if (face.vertexIds.Count == 4)
+                    side = face;
+            }
+            Assert.NotNull(cap);
+            Assert.NotNull(side);
+
+            foreach (Vector3 normal in cap.GetRenderNormals(mesh))
+            {
+                AssertClose(normal, cap.normal);
+            }
+            Assert.Greater(Vector3.Angle(side.GetRenderNormals(mesh)[0], side.normal), 1f,
+              "Prism sides should blend across their shallow vertical edges while the 90-degree cap edges stay hard.");
         }
 
         [Test]
