@@ -608,7 +608,10 @@ namespace com.google.apps.peltzer.client.model.render
         }
 
         /// <summary>
-        ///   Clears all custom colors. Used for testing or optimization.
+        ///   Clears all custom colors, destroying the Unity objects created for them.
+        ///
+        ///   Only safe to call when nothing still references a custom material ID: any surviving mesh would
+        ///   fall back to the default material. Callers are responsible for that ordering.
         /// </summary>
         public static void ClearCustomColors()
         {
@@ -620,11 +623,41 @@ namespace com.google.apps.peltzer.client.model.render
             {
                 colorToIdCache.Clear();
             }
+            // The lazily built Unity materials below are owned by this registry, so they have to be destroyed
+            // rather than just dropped - Unity objects are not reclaimed by the garbage collector.
             if (customMaterialsWithAlbedo != null)
             {
+                foreach (Material material in customMaterialsWithAlbedo.Values)
+                {
+                    DestroyMaterial(material);
+                }
                 customMaterialsWithAlbedo.Clear();
             }
+            foreach (MaterialAndColor preview in customPreviewMaterials.Values)
+            {
+                DestroyMaterial(preview.material);
+            }
+            customPreviewMaterials.Clear();
+            // Highlight entries share the palette's template material, so there is nothing of ours to destroy.
+            customHighlightMaterials.Clear();
             nextCustomId = CUSTOM_COLOR_START;
+        }
+
+        /// <summary>
+        ///   Destroys a material we created, using the immediate variant outside of play mode so that editor
+        ///   tests do not leak it.
+        /// </summary>
+        private static void DestroyMaterial(Material material)
+        {
+            if (material == null) return;
+            if (Application.isPlaying)
+            {
+                Object.Destroy(material);
+            }
+            else
+            {
+                Object.DestroyImmediate(material);
+            }
         }
     }
 }
