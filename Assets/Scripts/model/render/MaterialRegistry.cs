@@ -77,10 +77,12 @@ namespace com.google.apps.peltzer.client.model.render
           new System.Collections.Generic.Dictionary<int, MaterialAndColor>();
         private static int nextCustomId = CUSTOM_COLOR_START;
 
-        // Constants for material ID ranges
-        public const int LEGACY_PALETTE_END = 27;          // IDs 0-27 are legacy palette + special materials
-        public const int RESERVED_RANGE_END = 999;         // IDs 28-999 reserved for future use
-        public const int CUSTOM_COLOR_START = 1000;        // IDs 1000+ are custom colors
+        // The material ID space, which the .blocks file format depends on:
+        //   0-23    the legacy palette (rawColors)
+        //   24-27   the special materials (glass, gem, and the two wireframes)
+        //   28-999  unused, reserved for future fixed materials
+        //   1000+   custom colors, allocated at runtime and stored per-file
+        public const int CUSTOM_COLOR_START = 1000;
 
         public static int GLASS_ID = rawColors.Length;
         public static int GEM_ID = rawColors.Length + 1;
@@ -434,11 +436,6 @@ namespace com.google.apps.peltzer.client.model.render
             return highlightMaterials[0];
         }
 
-        public static Material[] GetExportableMaterialList()
-        {
-            return materialsWithAlbedo;
-        }
-
         public static MaterialAndColor GetHighlightSilhouetteMaterial()
         {
             return highlightSilhouetteMaterial;
@@ -527,16 +524,6 @@ namespace com.google.apps.peltzer.client.model.render
         private static bool ColorsEqual(Color32 a, Color32 b)
         {
             return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
-        }
-
-        /// <summary>
-        ///   Checks if a material ID is a legacy palette color (0-27).
-        /// </summary>
-        /// <param name="materialId">The material ID to check.</param>
-        /// <returns>True if the ID is in the legacy palette range.</returns>
-        public static bool IsLegacyMaterialId(int materialId)
-        {
-            return materialId >= 0 && materialId <= LEGACY_PALETTE_END;
         }
 
         /// <summary>
