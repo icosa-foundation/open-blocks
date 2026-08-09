@@ -65,7 +65,10 @@ public static class ApiCommandService
         if (!peltzerMain.model.writeable)
             return ApiCommandResult.BadRequest("A save is already in progress.");
 
-        peltzerMain.SaveCurrentModel(publish: false, saveSelected: false, cloudSave: false);
+        // API saves may run without a usable Game View or headset camera. Thumbnail capture waits for
+        // WaitForEndOfFrame and can otherwise leave the model permanently read-only in that environment.
+        peltzerMain.SaveCurrentModel(
+            publish: false, saveSelected: false, cloudSave: false, captureThumbnail: false);
         return ApiCommandResult.Ok("Started local scene save.");
     }
 

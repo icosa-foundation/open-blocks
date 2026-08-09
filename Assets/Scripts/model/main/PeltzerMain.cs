@@ -1511,7 +1511,7 @@ namespace com.google.apps.peltzer.client.model.main
         /// <param name="publish">If true, also opens the url to publish the content.</param>
         /// <param name="saveSelected">If true, only saves the current selected content rather than
         /// the whole model.</param>
-        public void SaveCurrentModel(bool publish, bool saveSelected, bool cloudSave)
+        public void SaveCurrentModel(bool publish, bool saveSelected, bool cloudSave, bool captureThumbnail = true)
         {
             // Don't save empty scenes (the button will already be disabled).
             if (model.GetNumberOfMeshes() == 0)
@@ -1537,8 +1537,7 @@ namespace com.google.apps.peltzer.client.model.main
 
             progressIndicator.StartOperation(SAVE_MESSAGE);
             ICollection<MMesh> meshes = saveSelected ? model.GetMatchingMeshes(selector.selectedMeshes) : model.GetAllMeshes();
-            // Take a screenshot at the end of the next frame.
-            StartCoroutine(PeltzerMain.Instance.autoThumbnailCamera.TakeScreenShot((byte[] pngBytes) =>
+            Action<byte[]> serializeAndSave = (byte[] pngBytes) =>
             {
 
                 // put it here instead of in BackgroundWork to avoid GetComponent() calls in background thread
@@ -1558,12 +1557,22 @@ namespace com.google.apps.peltzer.client.model.main
                     model.writeable = true;
                     saveData.remixIds = model.GetAllRemixIds(meshes);
                     // Now let's save the serialized data. This will be done asynchronously.
-                    SaveSerializedData(saveData, publish, saveSelected, cloudSave);
+                    SaveSerializedData(saveData, publish, saveSelected, cloudSave, captureThumbnail);
                 }, serializerForManualSave, saveSelected));
 
                 // serWork.BackgroundWork();
                 // serWork.PostWork();
-            }));
+            };
+
+            if (captureThumbnail)
+            {
+                // Take a screenshot at the end of the next frame.
+                StartCoroutine(PeltzerMain.Instance.autoThumbnailCamera.TakeScreenShot(serializeAndSave));
+            }
+            else
+            {
+                serializeAndSave(null);
+            }
         }
 
         /// <summary>
@@ -1597,7 +1606,8 @@ namespace com.google.apps.peltzer.client.model.main
         /// <summary>
         /// Called (on UI thread) when the model data has been serialized and is ready to save.
         /// </summary>
-        public void SaveSerializedData(SaveData saveData, bool publish, bool saveSelected, bool cloudSave)
+        public void SaveSerializedData(
+            SaveData saveData, bool publish, bool saveSelected, bool cloudSave, bool captureThumbnail = true)
         {
             // Generate an ID if needed. A new id will be needed if the LocalId is null or we are currently
             // only saving the selected content, otherwise we are just overwriting existing save data and
@@ -1618,15 +1628,13 @@ namespace com.google.apps.peltzer.client.model.main
             }
             else
             {
-                // Take a screenshot at the end of the next frame, then save to a special 'offline' directory locally
-                // so the user doesn't lose their work just because they weren't authenticated/online.
-                // TODO(bug): Ensure thumbnail only contains selected content when saveSelected is true.
-                StartCoroutine(autoThumbnailCamera.TakeScreenShot((byte[] pngBytes) =>
+                Action<byte[]> saveOffline = (byte[] pngBytes) =>
                 {
                     saveData.thumbnailBytes = pngBytes;
-                    directory = Path.Combine(offlineModelsPath, modelIdForSaving);
+                    string offlineDirectory = Path.Combine(offlineModelsPath, modelIdForSaving);
 
-                    DoPolyMenuBackgroundWork(new SaveToDiskWork(saveData, directory, /* isOfflineModelsFolder */ true,
+                    DoPolyMenuBackgroundWork(new SaveToDiskWork(saveData, offlineDirectory,
+                      /* isOfflineModelsFolder */ true,
                       isOverwrite));
                     // If we are only saving the selected content, we don't want to overwrite the LocalId
                     // as the current id for the model we saved is only for the temporary selected content.
@@ -1634,7 +1642,19 @@ namespace com.google.apps.peltzer.client.model.main
                     {
                         LocalId = modelIdForSaving;
                     }
-                }));
+                };
+
+                if (captureThumbnail)
+                {
+                    // Take a screenshot at the end of the next frame, then save to a special 'offline' directory locally
+                    // so the user doesn't lose their work just because they weren't authenticated/online.
+                    // TODO(bug): Ensure thumbnail only contains selected content when saveSelected is true.
+                    StartCoroutine(autoThumbnailCamera.TakeScreenShot(saveOffline));
+                }
+                else
+                {
+                    saveOffline(null);
+                }
             }
         }
 
