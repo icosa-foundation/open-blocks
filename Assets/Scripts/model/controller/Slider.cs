@@ -54,6 +54,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public float m_InitialValue = 0;
 
         private bool m_IsDragging;
+        public bool IsDragging => m_IsDragging;
         private Material m_SliderMaterial;
         private float m_LastUpdateFrame;
 
@@ -155,4 +156,3 @@ namespace com.google.apps.peltzer.client.model.controller
         }
     }
 }
-

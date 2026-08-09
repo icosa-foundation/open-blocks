@@ -819,6 +819,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7680942041768589400}
   - component: {fileID: 7005424805501201104}
+  - component: {fileID: 920000000000000004}
   m_Layer: 10
   m_Name: Options_Reshape
   m_TagString: Untagged
@@ -844,6 +845,7 @@ Transform:
   - {fileID: 6514859149006793312}
   - {fileID: 4172720247726395736}
   - {fileID: 6218344721333213132}
+  - {fileID: 920000000000000002}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7005424805501201104
@@ -861,6 +863,19 @@ MonoBehaviour:
   m_Modes: 02000000
   m_PopupAnchor: {fileID: 6218344721333213132}
   m_Allowed: 1
+--- !u!114 &920000000000000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8587569859637899534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e37050d01f5e4ef58b3421eef82a9ef6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  m_AutoSmoothSlider: {fileID: 920000000000000003}
 --- !u!1 &8811049649756296992
 GameObject:
   m_ObjectHideFlags: 0
@@ -1313,3 +1328,124 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 8242178037115573284}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &920000000000000001
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7680942041768589400}
+    m_Modifications:
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Minimum
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Maximum
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Step
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_InitialValue
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_UpdateOnlyOnRelease
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value:
+      objectReference: {fileID: 920000000000000004}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: OptionsHandlerReshape, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: HandleAutoSmoothSlider
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgument
+      value:
+      objectReference: {fileID: 920000000000000003}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: com.google.apps.peltzer.client.model.controller.Slider, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_ActionOnFullUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1102641234472584921, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_Name
+      value: Auto Smooth Slider
+      objectReference: {fileID: 0}
+    - target: {fileID: 5501061831439391173, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_text
+      value: 'Auto smooth: Select geometry'
+      objectReference: {fileID: 0}
+    - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.105
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: da0b519cb21425a48b46ae7057256fb1, type: 3}
+--- !u!4 &920000000000000002 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8386300346263520932, guid: da0b519cb21425a48b46ae7057256fb1,
+    type: 3}
+  m_PrefabInstance: {fileID: 920000000000000001}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &920000000000000003 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1066218673489108619, guid: da0b519cb21425a48b46ae7057256fb1,
+    type: 3}
+  m_PrefabInstance: {fileID: 920000000000000001}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c402a14db634bef9f6e6f22869be133, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:

@@ -169,5 +169,22 @@ namespace com.google.apps.peltzer.client.model.core
             NUnit.Framework.Assert.AreEqual(model.GetMesh(1).GetFace(1).properties.materialId, newMaterial1);
             NUnit.Framework.Assert.AreEqual(model.GetMesh(1).GetFace(2).properties.materialId, newMaterial2);
         }
+
+        [Test]
+        public void SetMeshSmoothingCommandRestoresThePreviousPolicy()
+        {
+            Model model = new Model(new Bounds(Vector3.zero, Vector3.one * 10));
+            model.AddMesh(Primitives.AxisAlignedBox(1, Vector3.zero, Vector3.one, 2));
+
+            SetMeshSmoothingCommand command = SetMeshSmoothingCommand.FromSliderValue(1, 45f);
+            Command undo = command.GetUndoCommand(model);
+
+            command.ApplyToModel(model);
+            Assert.AreEqual(MMesh.SmoothingMode.Auto, model.GetMesh(1).smoothingMode);
+            Assert.AreEqual(45f, model.GetMesh(1).autoSmoothAngle);
+
+            undo.ApplyToModel(model);
+            Assert.AreEqual(MMesh.SmoothingMode.Flat, model.GetMesh(1).smoothingMode);
+        }
     }
 }

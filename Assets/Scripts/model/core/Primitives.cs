@@ -706,13 +706,18 @@ namespace com.google.apps.peltzer.client.model.core
 
         public static void ApplySmoothing(MMesh mesh)
         {
-            if (AutoSmoothAngle <= 0f)
+            ApplySmoothing(mesh, AutoSmoothAngle);
+        }
+
+        public static void ApplySmoothing(MMesh mesh, float angle)
+        {
+            if (angle <= 0f)
             {
                 mesh.SetFlatShading();
             }
             else
             {
-                mesh.SetAutoSmooth(AutoSmoothAngle);
+                mesh.SetAutoSmooth(angle);
             }
         }
     }
