@@ -439,13 +439,13 @@ namespace com.google.apps.peltzer.client.model.render
 
             lock (customColorLock)
             {
-                if (customColors != null && customColors.ContainsKey(materialId))
+                if (customColors != null && customColors.TryGetValue(materialId, out Color32 customColor))
                 {
                     if (!customHighlightMaterials.TryGetValue(materialId, out MaterialAndColor highlight))
                     {
                         // Built exactly as init() builds the palette's highlight materials, so custom colours and
                         // palette colours behave identically here.
-                        highlight = new MaterialAndColor(materials[0].material, materialId);
+                        highlight = new MaterialAndColor(materials[0].material, customColor, materialId);
                         Color32 highlightColor = highlight.color;
                         Color originalColor = new Color(
                           highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
