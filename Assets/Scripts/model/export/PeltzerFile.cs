@@ -70,8 +70,12 @@ namespace com.google.apps.peltzer.client.model.export
         /// in save.</param>
         public void Serialize(PolySerializer serializer, bool includeDisplayRotation = false)
         {
+            // Collected once up front: the format version depends on whether the model uses any custom colours,
+            // and the palette chunk written at the end needs the same set.
+            HashSet<int> customIds = CollectCustomMaterialIds();
+
             serializer.StartWritingChunk(SerializationConsts.CHUNK_PELTZER);
-            serializer.WriteInt(UsesCustomMaterialIds()
+            serializer.WriteInt(customIds.Count > 0
               ? CUSTOM_COLORS_FILE_FORMAT_VERSION
               : LEGACY_FILE_FORMAT_VERSION);
             serializer.WriteString(metadata.creatorName);
@@ -107,33 +111,15 @@ namespace com.google.apps.peltzer.client.model.export
             }
 
             // Write custom color palette (if any custom colors are used).
-            WriteCustomPaletteChunk(serializer);
-        }
-
-        private bool UsesCustomMaterialIds()
-        {
-            foreach (MMesh mesh in meshes)
-            {
-                foreach (Face face in mesh.GetFaces())
-                {
-                    if (render.MaterialRegistry.IsCustomMaterialId(face.properties.materialId))
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
+            WriteCustomPaletteChunk(serializer, customIds);
         }
 
         /// <summary>
-        /// Writes the custom color palette chunk if the model uses any custom colors.
-        /// This is an optional chunk that will be skipped by older versions.
+        /// Returns the distinct custom material IDs referenced by this file's faces.
         /// </summary>
-        private void WriteCustomPaletteChunk(PolySerializer serializer)
+        private HashSet<int> CollectCustomMaterialIds()
         {
-            // Collect all custom material IDs used in the model
             HashSet<int> customIds = new HashSet<int>();
-
             foreach (MMesh mesh in meshes)
             {
                 foreach (Face face in mesh.GetFaces())
@@ -145,7 +131,15 @@ namespace com.google.apps.peltzer.client.model.export
                     }
                 }
             }
+            return customIds;
+        }
 
+        /// <summary>
+        /// Writes the custom color palette chunk if the model uses any custom colors.
+        /// This is an optional chunk that will be skipped by older versions.
+        /// </summary>
+        private void WriteCustomPaletteChunk(PolySerializer serializer, HashSet<int> customIds)
+        {
             // Only write chunk if custom colors exist
             if (customIds.Count == 0) return;
 
