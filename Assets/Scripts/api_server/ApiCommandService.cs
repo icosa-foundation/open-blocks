@@ -296,7 +296,8 @@ public static class ApiCommandService
             return false;
         }
 
-        materialId = MaterialRegistry.GetMaterialIdClosestToColor(color);
+        // Use the exact colour the caller asked for instead of mapping to the closest palette colour.
+        materialId = MaterialRegistry.GetOrCreateMaterialId((Color32)color);
         return true;
     }
 
