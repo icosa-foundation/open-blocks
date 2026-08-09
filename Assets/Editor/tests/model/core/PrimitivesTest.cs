@@ -121,6 +121,39 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         [Test]
+        public void HollowCylinderFaceIdsSupportAutoSmoothing()
+        {
+            const int SLICES = 12;
+            float previousHoleRadius = PrimitiveParams.CylinderHoleRadius;
+            int previousSlices = PrimitiveParams.CylinderSlices;
+            try
+            {
+                PrimitiveParams.CylinderHoleRadius = 0.5f;
+                PrimitiveParams.CylinderSlices = SLICES;
+                MMesh mesh = Primitives.AxisAlignedCylinder(
+                  1, Vector3.zero, Vector3.one, /* materialId */ 2);
+
+                Assert.AreEqual(SLICES * 4, mesh.faceCount);
+                foreach (int faceId in mesh.GetFaceIds())
+                {
+                    Assert.AreEqual(faceId, mesh.GetFace(faceId).id,
+                      "Face dictionary keys must match the stored face IDs.");
+                }
+
+                mesh.SetAutoSmooth(45f);
+                foreach (Face face in mesh.GetFaces())
+                {
+                    Assert.AreEqual(face.vertexIds.Count, face.GetRenderNormals(mesh).Count);
+                }
+            }
+            finally
+            {
+                PrimitiveParams.CylinderHoleRadius = previousHoleRadius;
+                PrimitiveParams.CylinderSlices = previousSlices;
+            }
+        }
+
+        [Test]
         public void TestAxisAlignedCone()
         {
             const int SLICES = 12; // Same as in code.

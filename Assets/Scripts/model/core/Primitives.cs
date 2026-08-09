@@ -251,7 +251,8 @@ namespace com.google.apps.peltzer.client.model.core
                         (i + 1) % slices + INNER_END_OFFSET,
                         (i + 1) % slices + INNER_START_OFFSET
                     };
-                    faces[faceIdOff++] = new Face(faceIdOff, faceVerts.AsReadOnly(), vertices, faceProperties);
+                    faces[faceIdOff] = new Face(faceIdOff, faceVerts.AsReadOnly(), vertices, faceProperties);
+                    faceIdOff++;
                 }
 
                 // Top cap with hole - PRESERVE ORIGINAL WINDING
@@ -263,7 +264,8 @@ namespace com.google.apps.peltzer.client.model.core
                         (i + 1) % slices + INNER_START_OFFSET,
                         (i + 1) % slices + START_OFFSET
                     };
-                    faces[faceIdOff++] = new Face(faceIdOff, capVerts.AsReadOnly(), vertices, faceProperties);
+                    faces[faceIdOff] = new Face(faceIdOff, capVerts.AsReadOnly(), vertices, faceProperties);
+                    faceIdOff++;
                 }
 
                 // Bottom cap with hole - PRESERVE ORIGINAL WINDING
@@ -275,7 +277,8 @@ namespace com.google.apps.peltzer.client.model.core
                         (i + 1) % slices + INNER_END_OFFSET,
                         i + INNER_END_OFFSET
                     };
-                    faces[faceIdOff++] = new Face(faceIdOff, capVerts.AsReadOnly(), vertices, faceProperties);
+                    faces[faceIdOff] = new Face(faceIdOff, capVerts.AsReadOnly(), vertices, faceProperties);
+                    faceIdOff++;
                 }
             }
             else
