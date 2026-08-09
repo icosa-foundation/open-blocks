@@ -16,6 +16,7 @@ using com.google.apps.peltzer.client.model.core;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using UnityEngine;
@@ -53,6 +54,42 @@ namespace com.google.apps.peltzer.client.model.export
             {
                 Thread.CurrentThread.CurrentCulture = originalCulture;
                 Thread.CurrentThread.CurrentUICulture = originalUiCulture;
+            }
+        }
+
+        [Test]
+        public void ObjFileFromMeshesPreservesPerCornerAutoSmoothNormals()
+        {
+            List<Vector3> vertices = new List<Vector3>
+            {
+                Vector3.zero, Vector3.right, Vector3.up, Vector3.forward,
+            };
+            List<List<int>> faces = new List<List<int>>
+            {
+                new List<int> { 0, 1, 2 },
+                new List<int> { 1, 0, 3 },
+            };
+            List<FaceProperties> properties = new List<FaceProperties>
+            {
+                new FaceProperties(2), new FaceProperties(2),
+            };
+            MMesh mesh = new MMesh(1, Vector3.zero, Quaternion.identity, vertices, faces, properties);
+            mesh.SetAutoSmooth(90f);
+            HashSet<int> materials = new HashSet<int>();
+
+            ObjFileExporter.ObjFileFromMeshes(
+              new[] { mesh }, "model.mtl", /* meshRepresentationCache */ null, ref materials,
+              /* triangulated */ false, out byte[] bytes, out int _);
+
+            string[] faceLines = Encoding.UTF8.GetString(bytes).Split('\n')
+              .Where(line => line.StartsWith("f ")).ToArray();
+            Assert.AreEqual(2, faceLines.Length);
+            foreach (string faceLine in faceLines)
+            {
+                string[] normalIndices = faceLine.Trim().Split(' ').Skip(1)
+                  .Select(vertex => vertex.Substring(vertex.LastIndexOf('/') + 1)).ToArray();
+                Assert.AreEqual(2, normalIndices.Distinct().Count(),
+                  "Each wedge face should contain blended normals at the shared edge and a flat normal at its boundary corner.");
             }
         }
     }

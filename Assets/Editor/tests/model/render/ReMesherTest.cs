@@ -75,6 +75,24 @@ namespace com.google.apps.peltzer.client.model.render
         }
 
         [Test]
+        public void BuildExportableMeshPreservesAndTransformsStoredNormals()
+        {
+            ReMesher.MeshInfo meshInfo = new ReMesher.MeshInfo();
+            meshInfo.numVerts = 3;
+            meshInfo.verts[2] = Vector3.right;
+            meshInfo.normals[2] = Vector3.forward;
+            meshInfo.transformIndexBuffer[2] = Vector2.zero;
+            meshInfo.xformMats[0] = Matrix4x4.TRS(
+              new Vector3(2f, 3f, 4f), Quaternion.Euler(0f, 90f, 0f), Vector3.one);
+
+            Mesh exportableMesh = ReMesher.MeshInfo.BuildExportableMeshFromMeshInfo(meshInfo);
+
+            Assert.AreEqual(1, exportableMesh.vertexCount);
+            Assert.Less(Vector3.Distance(new Vector3(2f, 3f, 3f), exportableMesh.vertices[0]), 0.001f);
+            Assert.Less(Vector3.Distance(Vector3.right, exportableMesh.normals[0]), 0.001f);
+        }
+
+        [Test]
         public void TestCoalescing()
         {
             ReMesher remesher = new ReMesher();

@@ -43,6 +43,8 @@ namespace com.google.apps.peltzer.client.serialization
               Primitives.AxisAlignedBox(1000, new Vector3(1.0f, 2.0f, 3.0f), new Vector3(1.0f, 20.0f, 5.0f), 100);
             MMesh cylinder =
               Primitives.AxisAlignedCylinder(2000, new Vector3(1.0f, 2.0f, 3.0f), new Vector3(1.0f, 20.0f, 5.0f), 200);
+            cylinder.SetAutoSmooth(37f);
+            cylinder.ChangeRemixId("auto-smooth-serialization-test");
             MMesh sphere =
               Primitives.AxisAlignedIcosphere(3000, new Vector3(2000.0f, -4000.0f, 6000.0f), Vector3.one, 300);
             meshes.Add(box);
@@ -96,6 +98,9 @@ namespace com.google.apps.peltzer.client.serialization
             Assert.IsTrue((a.offset - b.offset).magnitude < EPSILON);
             Assert.IsTrue((Quaternion.Angle(a.rotation, b.rotation) < EPSILON));
             Assert.AreEqual(a.groupId, b.groupId);
+            Assert.AreEqual(a.smoothingMode, b.smoothingMode);
+            Assert.AreEqual(a.autoSmoothAngle, b.autoSmoothAngle, EPSILON);
+            CollectionAssert.AreEquivalent(a.remixIds ?? new HashSet<string>(), b.remixIds ?? new HashSet<string>());
             foreach (Vertex vertexInA in a.GetVertices())
             {
                 Assert.IsTrue(b.HasVertex(vertexInA.id));
@@ -120,6 +125,14 @@ namespace com.google.apps.peltzer.client.serialization
                 }
 
                 Assert.IsTrue((faceInA.normal - faceInB.normal).magnitude < EPSILON);
+
+                List<Vector3> normalsInA = faceInA.GetRenderNormals(a);
+                List<Vector3> normalsInB = faceInB.GetRenderNormals(b);
+                Assert.AreEqual(normalsInA.Count, normalsInB.Count);
+                for (int i = 0; i < normalsInA.Count; i++)
+                {
+                    Assert.IsTrue((normalsInA[i] - normalsInB[i]).magnitude < EPSILON);
+                }
 
             }
             foreach (Face faceInB in b.GetFaces())
