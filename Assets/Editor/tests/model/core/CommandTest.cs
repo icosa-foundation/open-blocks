@@ -175,6 +175,9 @@ namespace com.google.apps.peltzer.client.model.core
         {
             Model model = new Model(new Bounds(Vector3.zero, Vector3.one * 10));
             model.AddMesh(Primitives.AxisAlignedBox(1, Vector3.zero, Vector3.one, 2));
+            bool vertsOrFacesChanged = false;
+            model.OnMeshChanged += (mesh, materialsChanged, geometryChanged, changed) =>
+              vertsOrFacesChanged = changed;
 
             SetMeshSmoothingCommand command = SetMeshSmoothingCommand.FromSliderValue(1, 45f);
             Command undo = command.GetUndoCommand(model);
@@ -182,9 +185,14 @@ namespace com.google.apps.peltzer.client.model.core
             command.ApplyToModel(model);
             Assert.AreEqual(MMesh.SmoothingMode.Auto, model.GetMesh(1).smoothingMode);
             Assert.AreEqual(45f, model.GetMesh(1).autoSmoothAngle);
+            Assert.IsTrue(vertsOrFacesChanged,
+              "Smoothing changes must invalidate cached mesh-space normals.");
 
+            vertsOrFacesChanged = false;
             undo.ApplyToModel(model);
             Assert.AreEqual(MMesh.SmoothingMode.Flat, model.GetMesh(1).smoothingMode);
+            Assert.IsTrue(vertsOrFacesChanged,
+              "Undoing smoothing must invalidate cached mesh-space normals.");
         }
     }
 }

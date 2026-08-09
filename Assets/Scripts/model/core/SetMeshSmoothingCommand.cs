@@ -50,7 +50,7 @@ namespace com.google.apps.peltzer.client.model.core
             {
                 mesh.SetFlatShading();
             }
-            model.MeshUpdated(meshId, materialsChanged: false, geometryChanged: false, vertsOrFacesChanged: false);
+            model.MeshUpdated(meshId, materialsChanged: false, geometryChanged: false, vertsOrFacesChanged: true);
         }
 
         public Command GetUndoCommand(Model model)
