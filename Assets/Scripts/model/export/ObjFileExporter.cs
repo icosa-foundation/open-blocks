@@ -106,7 +106,7 @@ namespace com.google.apps.peltzer.client.model.export
             public int meshId;
             public List<int> meshFaceColors;
             public List<int[]> meshFaceVerts;
-            public List<int> meshNormals;
+            public List<int[]> meshNormals;
             public List<int[]> meshFaceUvs;
 
             public MeshExportInfo(int id)
@@ -115,7 +115,7 @@ namespace com.google.apps.peltzer.client.model.export
                 meshFaceColors = new List<int>();
                 meshFaceVerts = new List<int[]>();
                 meshFaceUvs = new List<int[]>();
-                meshNormals = new List<int>();
+                meshNormals = new List<int[]>();
             }
         }
 
@@ -240,7 +240,7 @@ namespace com.google.apps.peltzer.client.model.export
             {
                 List<int> faceColors = exportInfos[mmesh.id].meshFaceColors;
                 List<int[]> polys = exportInfos[mmesh.id].meshFaceVerts;
-                List<int> normals = exportInfos[mmesh.id].meshNormals;
+                List<int[]> normals = exportInfos[mmesh.id].meshNormals;
                 List<int[]> uvs = exportInfos[mmesh.id].meshFaceUvs;
 
                 for (int i = 0; i < polys.Count; i++)
@@ -254,7 +254,7 @@ namespace com.google.apps.peltzer.client.model.export
                         int idx = verts.Length - j - 1;
                         faceSB.Append(" ").Append(verts[idx]);
                         // Append the poly normal to each vertex reference. Note that .obj is 1-indexed.
-                        faceSB.Append("/").Append(rawUvs[idx]).Append("/").Append(normals[i] + 1);
+                        faceSB.Append("/").Append(rawUvs[idx]).Append("/").Append(normals[i][idx] + 1);
                     }
 
                     string usemtl = "usemtl mat" + faceColors[i];
@@ -385,8 +385,8 @@ namespace com.google.apps.peltzer.client.model.export
                     meshExportInfo.meshFaceColors.Add(materialId);
                     materials.Add(materialId);
 
-                    // TODO (bug) This normal calculation is duplicate work (calculating the normal for
-                    // every triangle in a triangulated face) and should be made more efficient.
+                    // Use the geometric normal for the generated UV basis, but preserve each corner's
+                    // render normal in the exported OBJ.
                     Vector3 normal = MeshMath.CalculateNormal(
                       meshGenContext.verts[triangles[i]],
                       meshGenContext.verts[triangles[i + 1]],
@@ -401,8 +401,13 @@ namespace com.google.apps.peltzer.client.model.export
 
                     int[] uvsIdsForFace = new int[] { uvs.Count - 2, uvs.Count - 1, uvs.Count };
                     meshExportInfo.meshFaceUvs.Add(uvsIdsForFace);
-                    meshExportInfo.meshNormals.Add(meshNormals.Count);
-                    meshNormals.Add(normal);
+                    int[] normalIdsForFace = new int[3];
+                    for (int corner = 0; corner < 3; corner++)
+                    {
+                        normalIdsForFace[corner] = meshNormals.Count;
+                        meshNormals.Add(meshGenContext.normals[triangles[i + corner]]);
+                    }
+                    meshExportInfo.meshNormals.Add(normalIdsForFace);
                 }
             }
         }
@@ -440,6 +445,7 @@ namespace com.google.apps.peltzer.client.model.export
                 // We cannot use poly vertex ids, we need the position of the vertex in 'vertices' as the identifier.
                 int[] vertexIdsForFace = new int[face.vertexIds.Count];
                 int[] uvsIdsForFace = new int[face.vertexIds.Count];
+                int[] normalIdsForFace = new int[face.vertexIds.Count];
 
                 // TODO(64715939): Calculate the normal for each face - once we're more confident in the normals stored in each 
                 // face, we can switch to using them directly.
@@ -449,6 +455,7 @@ namespace com.google.apps.peltzer.client.model.export
                     faceVertexPositions.Add(mesh.VertexPositionInMeshCoords(face.vertexIds[i]));
                 }
                 Vector3 curNormal = (mesh.rotation * MeshMath.CalculateNormal(faceVertexPositions)).normalized;
+                List<Vector3> renderNormals = face.GetRenderNormals(mesh);
 
                 Vector3 tangent;
                 Vector3 binormal;
@@ -469,12 +476,13 @@ namespace com.google.apps.peltzer.client.model.export
                     uvs.Add(new Vector2(Vector3.Dot(tangent, modelCoords) / 10f, Vector3.Dot(binormal, modelCoords) / 10f));
                     vertexIdsForFace[i] = vertexIndex;
                     uvsIdsForFace[i] = uvs.Count;
+                    normalIdsForFace[i] = meshNormals.Count;
+                    meshNormals.Add((mesh.rotation * renderNormals[i]).normalized);
                 }
 
                 meshExportInfo.meshFaceVerts.Add(vertexIdsForFace);
                 meshExportInfo.meshFaceUvs.Add(uvsIdsForFace);
-                meshExportInfo.meshNormals.Add(meshNormals.Count);
-                meshNormals.Add(curNormal);
+                meshExportInfo.meshNormals.Add(normalIdsForFace);
             }
         }
     }

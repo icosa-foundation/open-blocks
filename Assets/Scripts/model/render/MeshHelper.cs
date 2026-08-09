@@ -136,9 +136,11 @@ namespace com.google.apps.peltzer.client.model.render
 
             // Simpler version that replicates adding vertices in the same order so indices match up.
             Dictionary<MaterialAndColor, List<Vector3>> newPositionsPerMaterial = new Dictionary<MaterialAndColor, List<Vector3>>();
+            Dictionary<MaterialAndColor, List<Vector3>> newNormalsPerMaterial = new Dictionary<MaterialAndColor, List<Vector3>>();
             foreach (Face face in updatedMesh.GetFaces())
             {
                 List<Vector3> newPos;
+                List<Vector3> materialNormals;
                 scratchColors.Clear();
                 scratchNormals.Clear();
                 List<Color32> newColors = scratchColors;
@@ -148,7 +150,9 @@ namespace com.google.apps.peltzer.client.model.render
                 {
                     newPositionsPerMaterial[faceMaterialAndColor] = new List<Vector3>();
                     newPos = newPositionsPerMaterial[faceMaterialAndColor];
+                    newNormalsPerMaterial[faceMaterialAndColor] = new List<Vector3>();
                 }
+                materialNormals = newNormalsPerMaterial[faceMaterialAndColor];
                 bool drawTriangleBackside = hasMixedFaces
                   && !MaterialRegistry.IsMaterialTransparent(face.properties.materialId);
                 // This method is used to update a GameObject, and as such we do not want the vert positions in world space,
@@ -163,6 +167,7 @@ namespace com.google.apps.peltzer.client.model.render
                     AddFaceVertices(updatedMesh, wiggleVector, face, ref newPos, ref newColors, ref newNormals,
                       /* useWorldSpace */ false);
                 }
+                materialNormals.AddRange(newNormals);
             }
 
             // Go through the existing meshes and update positions.
@@ -190,8 +195,8 @@ namespace com.google.apps.peltzer.client.model.render
                     return;
                 }
                 uMesh.mesh.SetVertices(newPos);
+                uMesh.mesh.SetNormals(newNormalsPerMaterial[uMesh.materialAndColor]);
                 uMesh.mesh.RecalculateBounds();
-                uMesh.mesh.RecalculateNormals();
             }
         }
 
@@ -397,7 +402,18 @@ namespace com.google.apps.peltzer.client.model.render
                 vertList.AddRange(face.GetMeshSpaceVertices(mmesh));
             }
             colorList.AddRange(face.GetColors());
-            normalList.AddRange(face.GetRenderNormals(mmesh));
+            List<Vector3> renderNormals = face.GetRenderNormals(mmesh);
+            if (useModelSpace)
+            {
+                for (int i = 0; i < renderNormals.Count; i++)
+                {
+                    normalList.Add((mmesh.rotation * renderNormals[i]).normalized);
+                }
+            }
+            else
+            {
+                normalList.AddRange(renderNormals);
+            }
         }
 
         /// <summary>

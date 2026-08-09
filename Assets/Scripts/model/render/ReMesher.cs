@@ -174,12 +174,17 @@ namespace com.google.apps.peltzer.client.model.render
                 }
                 exportableMesh.triangles = copiedTriangles;
 
-                // Copy Normals
-                // TODO(bug): Get rid of this recalculation and just rely on the normals when they are fixed.
-                exportableMesh.RecalculateNormals();
-                // Vector3[] copiedNormals = new Vector3[numVertsInMesh];
-                // Array.Copy(meshInfo.normals, indexOfFirstVert, copiedNormals, 0, numVertsInMesh);
-                // exportableMesh.normals = copiedNormals;
+                // Transform the stored corner normals along with their vertices. Using the inverse transpose
+                // keeps this correct if a transform ever includes non-uniform scale.
+                Vector3[] copiedNormals = new Vector3[numVertsInMesh];
+                for (int i = 0; i < numVertsInMesh; i++)
+                {
+                    int transformIndex = (int)meshInfo.transformIndexBuffer[i + indexOfFirstVert].x;
+                    Matrix4x4 normalTransform = meshInfo.xformMats[transformIndex].inverse.transpose;
+                    copiedNormals[i] = normalTransform.MultiplyVector(
+                      meshInfo.normals[i + indexOfFirstVert]).normalized;
+                }
+                exportableMesh.normals = copiedNormals;
 
                 return exportableMesh;
             }
