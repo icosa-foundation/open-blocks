@@ -71,7 +71,7 @@ namespace com.google.apps.peltzer.client.model.render
 
         // Custom color support (arbitrary RGB colors beyond the fixed palette)
         private static Dictionary<int, Color32> customColors = null;
-        private static Dictionary<Color32, int> colorToIdCache = null;
+        private static Dictionary<int, int> colorToIdCache = null;
         private static Dictionary<int, MaterialAndColor> customPreviewMaterials =
           new Dictionary<int, MaterialAndColor>();
         private static Dictionary<int, MaterialAndColor> customHighlightMaterials =
@@ -163,7 +163,7 @@ namespace com.google.apps.peltzer.client.model.render
 
             // Initialize custom color storage
             customColors = new Dictionary<int, Color32>();
-            colorToIdCache = new Dictionary<Color32, int>();
+            colorToIdCache = new Dictionary<int, int>();
             customMaterialsWithAlbedo = new Dictionary<int, Material>();
             customPreviewMaterials.Clear();
             customHighlightMaterials.Clear();
@@ -502,12 +502,12 @@ namespace com.google.apps.peltzer.client.model.render
             {
                 Debug.LogWarning("Custom color storage not initialized, initializing now");
                 customColors = new Dictionary<int, Color32>();
-                colorToIdCache = new Dictionary<Color32, int>();
+                colorToIdCache = new Dictionary<int, int>();
                 nextCustomId = CUSTOM_COLOR_START;
             }
 
             // Check existing custom colors
-            if (colorToIdCache.TryGetValue(color, out int existingId))
+            if (colorToIdCache.TryGetValue(PackColor(color), out int existingId))
             {
                 return existingId;
             }
@@ -515,9 +515,21 @@ namespace com.google.apps.peltzer.client.model.render
             // Create new custom color
             int newId = nextCustomId++;
             customColors[newId] = color;
-            colorToIdCache[color] = newId;
+            colorToIdCache[PackColor(color)] = newId;
 
             return newId;
+        }
+
+        /// <summary>
+        ///   Packs a Color32 into the int used to key the colour lookup.
+        ///
+        ///   Color32 does not implement IEquatable, so keying a Dictionary on it directly falls back to the
+        ///   object-based default comparer - which boxes on every lookup, once per imported face. Packing to an
+        ///   int keeps the mapping exact (all four channels are preserved) and the lookup allocation-free.
+        /// </summary>
+        private static int PackColor(Color32 color)
+        {
+            return (color.r << 24) | (color.g << 16) | (color.b << 8) | color.a;
         }
 
         /// <summary>
@@ -565,11 +577,11 @@ namespace com.google.apps.peltzer.client.model.render
             if (customColors == null || colorToIdCache == null)
             {
                 customColors = new Dictionary<int, Color32>();
-                colorToIdCache = new Dictionary<Color32, int>();
+                colorToIdCache = new Dictionary<int, int>();
                 nextCustomId = CUSTOM_COLOR_START;
             }
 
-            if (colorToIdCache.TryGetValue(color, out int existingColorId))
+            if (colorToIdCache.TryGetValue(PackColor(color), out int existingColorId))
             {
                 return existingColorId;
             }
@@ -585,7 +597,7 @@ namespace com.google.apps.peltzer.client.model.render
 
             // Add to registry without overwriting a color loaded from another file.
             customColors[materialId] = color;
-            colorToIdCache[color] = materialId;
+            colorToIdCache[PackColor(color)] = materialId;
 
             // Update next ID if necessary
             if (materialId >= nextCustomId)
