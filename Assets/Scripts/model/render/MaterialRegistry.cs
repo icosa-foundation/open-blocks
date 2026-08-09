@@ -161,12 +161,12 @@ namespace com.google.apps.peltzer.client.model.render
             highlightSilhouetteMaterial = new MaterialAndColor(materialLibrary.meshSelectMaterial,
               new Color32(255, 255, 255, 255), HIGHLIGHT_SILHOUETTE_ID);
 
-            // Initialize custom color storage
+            // Initialize custom color storage. Cleared first so that re-initialising (which the lazy
+            // self-init paths below can do) destroys anything a previous init left behind.
+            ClearCustomColors();
             customColors = new Dictionary<int, Color32>();
             colorToIdCache = new Dictionary<int, int>();
             customMaterialsWithAlbedo = new Dictionary<int, Material>();
-            customPreviewMaterials.Clear();
-            customHighlightMaterials.Clear();
             nextCustomId = CUSTOM_COLOR_START;
         }
 
