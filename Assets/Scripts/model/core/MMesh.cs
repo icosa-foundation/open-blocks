@@ -50,6 +50,14 @@ namespace com.google.apps.peltzer.client.model.core
     /// </summary>
     public partial class MMesh
     {
+        public enum SmoothingMode
+        {
+            Flat = 0,
+            Auto = 1,
+        }
+
+        public const float DEFAULT_AUTO_SMOOTH_ANGLE = 60f;
+
         /// <summary>
         /// For generating unique ids.
         /// </summary>
@@ -89,8 +97,15 @@ namespace com.google.apps.peltzer.client.model.core
         private Dictionary<int, Vertex> verticesById;
         private Dictionary<int, Face> facesById;
 
+        private SmoothingMode _smoothingMode = SmoothingMode.Flat;
+        private float _autoSmoothAngle = DEFAULT_AUTO_SMOOTH_ANGLE;
+        private Dictionary<int, List<Vector3>> _cachedRenderNormalsByFaceId;
+        private readonly object _renderNormalsCacheLock = new object();
+
         public int vertexCount { get { return verticesById.Count; } }
         public int faceCount { get { return facesById.Count; } }
+        public SmoothingMode smoothingMode { get { return _smoothingMode; } }
+        public float autoSmoothAngle { get { return _autoSmoothAngle; } }
 
         /// <summary>
         /// Backing field for the reverse table. Null means "not materialized yet" - it will be lazily rebuilt from
@@ -210,6 +225,218 @@ namespace com.google.apps.peltzer.client.model.core
             this.remixIds = remixIds;
         }
 
+        /// <summary>
+        /// Enables automatic normal blending across manifold edges whose adjacent face normals
+        /// differ by no more than <paramref name="maxAngleDegrees"/>.
+        /// </summary>
+        public void SetAutoSmooth(float maxAngleDegrees = DEFAULT_AUTO_SMOOTH_ANGLE)
+        {
+            if (float.IsNaN(maxAngleDegrees) || float.IsInfinity(maxAngleDegrees))
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxAngleDegrees));
+            }
+
+            float clampedAngle = Mathf.Clamp(maxAngleDegrees, 0f, 180f);
+            if (_smoothingMode == SmoothingMode.Auto && Mathf.Approximately(_autoSmoothAngle, clampedAngle))
+            {
+                return;
+            }
+
+            _smoothingMode = SmoothingMode.Auto;
+            _autoSmoothAngle = clampedAngle;
+            InvalidateRenderNormals();
+        }
+
+        /// <summary>
+        /// Disables normal blending. Each rendered face corner uses its geometric face normal.
+        /// </summary>
+        public void SetFlatShading()
+        {
+            if (_smoothingMode == SmoothingMode.Flat)
+            {
+                return;
+            }
+
+            _smoothingMode = SmoothingMode.Flat;
+            InvalidateRenderNormals();
+        }
+
+        private void InvalidateRenderNormals()
+        {
+            lock (_renderNormalsCacheLock)
+            {
+                _cachedRenderNormalsByFaceId = null;
+            }
+        }
+
+        internal List<Vector3> GetRenderNormals(Face face)
+        {
+            if (_smoothingMode == SmoothingMode.Flat)
+            {
+                return face.GetFlatRenderNormals(this);
+            }
+
+            lock (_renderNormalsCacheLock)
+            {
+                if (_cachedRenderNormalsByFaceId == null)
+                {
+                    _cachedRenderNormalsByFaceId = BuildAutoSmoothRenderNormals();
+                }
+
+                List<Vector3> normals;
+                return _cachedRenderNormalsByFaceId.TryGetValue(face.id, out normals)
+                    ? normals
+                    : face.GetFlatRenderNormals(this);
+            }
+        }
+
+        private struct FaceCorner
+        {
+            public readonly int faceId;
+            public readonly int cornerIndex;
+
+            public FaceCorner(int faceId, int cornerIndex)
+            {
+                this.faceId = faceId;
+                this.cornerIndex = cornerIndex;
+            }
+        }
+
+        private Dictionary<int, List<Vector3>> BuildAutoSmoothRenderNormals()
+        {
+            Dictionary<int, List<Vector3>> result = new Dictionary<int, List<Vector3>>(facesById.Count);
+            Dictionary<int, List<FaceCorner>> cornersByVertexId = new Dictionary<int, List<FaceCorner>>();
+
+            foreach (Face face in facesById.Values)
+            {
+                List<Vector3> normals = new List<Vector3>(face.vertexIds.Count);
+                for (int cornerIndex = 0; cornerIndex < face.vertexIds.Count; cornerIndex++)
+                {
+                    normals.Add(face.normal);
+
+                    int vertexId = face.vertexIds[cornerIndex];
+                    List<FaceCorner> corners;
+                    if (!cornersByVertexId.TryGetValue(vertexId, out corners))
+                    {
+                        corners = new List<FaceCorner>();
+                        cornersByVertexId.Add(vertexId, corners);
+                    }
+                    corners.Add(new FaceCorner(face.id, cornerIndex));
+                }
+                result.Add(face.id, normals);
+            }
+
+            Dictionary<EdgeKey, List<int>> facesByEdge = MeshUtil.ComputeEdgeKeysToFaceIdsMap(this);
+            Dictionary<int, Dictionary<int, List<int>>> smoothNeighborsByVertex =
+                new Dictionary<int, Dictionary<int, List<int>>>();
+
+            foreach (KeyValuePair<EdgeKey, List<int>> pair in facesByEdge)
+            {
+                // Boundary and non-manifold edges are always hard.
+                if (pair.Value.Count != 2)
+                {
+                    continue;
+                }
+
+                Face faceA;
+                Face faceB;
+                if (!facesById.TryGetValue(pair.Value[0], out faceA) ||
+                    !facesById.TryGetValue(pair.Value[1], out faceB) ||
+                    Vector3.Angle(faceA.normal, faceB.normal) > _autoSmoothAngle)
+                {
+                    continue;
+                }
+
+                AddSmoothFaceNeighbors(smoothNeighborsByVertex, pair.Key.vertexId1, faceA.id, faceB.id);
+                AddSmoothFaceNeighbors(smoothNeighborsByVertex, pair.Key.vertexId2, faceA.id, faceB.id);
+            }
+
+            foreach (KeyValuePair<int, List<FaceCorner>> vertexCorners in cornersByVertexId)
+            {
+                Dictionary<int, List<int>> neighborsByFace;
+                smoothNeighborsByVertex.TryGetValue(vertexCorners.Key, out neighborsByFace);
+
+                HashSet<int> visitedFaces = new HashSet<int>();
+                foreach (FaceCorner seedCorner in vertexCorners.Value)
+                {
+                    if (!visitedFaces.Add(seedCorner.faceId))
+                    {
+                        continue;
+                    }
+
+                    List<int> componentFaces = new List<int>();
+                    Stack<int> pendingFaces = new Stack<int>();
+                    pendingFaces.Push(seedCorner.faceId);
+                    Vector3 blendedNormal = Vector3.zero;
+
+                    while (pendingFaces.Count > 0)
+                    {
+                        int faceId = pendingFaces.Pop();
+                        componentFaces.Add(faceId);
+                        blendedNormal += facesById[faceId].normal;
+
+                        List<int> neighbors;
+                        if (neighborsByFace == null || !neighborsByFace.TryGetValue(faceId, out neighbors))
+                        {
+                            continue;
+                        }
+
+                        foreach (int neighborFaceId in neighbors)
+                        {
+                            if (visitedFaces.Add(neighborFaceId))
+                            {
+                                pendingFaces.Push(neighborFaceId);
+                            }
+                        }
+                    }
+
+                    if (blendedNormal.sqrMagnitude <= Mathf.Epsilon)
+                    {
+                        continue;
+                    }
+                    blendedNormal.Normalize();
+
+                    HashSet<int> componentFaceSet = new HashSet<int>(componentFaces);
+                    foreach (FaceCorner corner in vertexCorners.Value)
+                    {
+                        if (componentFaceSet.Contains(corner.faceId))
+                        {
+                            result[corner.faceId][corner.cornerIndex] = blendedNormal;
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static void AddSmoothFaceNeighbors(
+            Dictionary<int, Dictionary<int, List<int>>> smoothNeighborsByVertex,
+            int vertexId, int faceAId, int faceBId)
+        {
+            Dictionary<int, List<int>> neighborsByFace;
+            if (!smoothNeighborsByVertex.TryGetValue(vertexId, out neighborsByFace))
+            {
+                neighborsByFace = new Dictionary<int, List<int>>();
+                smoothNeighborsByVertex.Add(vertexId, neighborsByFace);
+            }
+
+            AddSmoothFaceNeighbor(neighborsByFace, faceAId, faceBId);
+            AddSmoothFaceNeighbor(neighborsByFace, faceBId, faceAId);
+        }
+
+        private static void AddSmoothFaceNeighbor(
+            Dictionary<int, List<int>> neighborsByFace, int faceId, int neighborFaceId)
+        {
+            List<int> neighbors;
+            if (!neighborsByFace.TryGetValue(faceId, out neighbors))
+            {
+                neighbors = new List<int>();
+                neighborsByFace.Add(faceId, neighbors);
+            }
+            neighbors.Add(neighborFaceId);
+        }
+
         private static Vector3 CreateOffsetJitter()
         {
             System.Random rand = jitterRandom ?? (jitterRandom = new System.Random());
@@ -245,7 +472,7 @@ namespace com.google.apps.peltzer.client.model.core
               localBounds,
               /* reverseTable */ null,
               groupId,
-              remixIdsCloned);
+              remixIdsCloned).WithSmoothing(_smoothingMode, _autoSmoothAngle);
         }
 
         /// <summary>
@@ -283,7 +510,15 @@ namespace com.google.apps.peltzer.client.model.core
               localBounds,
               /* reverseTable */ null,
               newGroupId,
-              remixIds == null ? null : new HashSet<string>(remixIds));
+              remixIds == null ? null : new HashSet<string>(remixIds))
+              .WithSmoothing(_smoothingMode, _autoSmoothAngle);
+        }
+
+        private MMesh WithSmoothing(SmoothingMode mode, float angle)
+        {
+            _smoothingMode = mode;
+            _autoSmoothAngle = angle;
+            return this;
         }
 
         /// <summary>
@@ -353,6 +588,7 @@ namespace com.google.apps.peltzer.client.model.core
         private void FinishOperation()
         {
             operationInProgress = false;
+            InvalidateRenderNormals();
 #if MMESH_PARANOID_INTEGRITY_CHECK
         CheckReverseTableIntegrity();
 #endif
@@ -877,12 +1113,13 @@ namespace com.google.apps.peltzer.client.model.core
                 serializer.WriteInt(face.id);
                 serializer.WriteInt(face.properties.materialId);
                 PolySerializationUtils.WriteIntList(serializer, face.vertexIds);
-                // Repeat the face normal for backwards compatability. Written inline (same format as
-                // WriteVector3List) to avoid allocating a temporary list per face.
-                serializer.WriteCount(face.vertexIds.Count);
-                for (int i = 0; i < face.vertexIds.Count; i++)
+                // The legacy face record already reserves one normal per corner. Flat meshes repeat
+                // the face normal; auto-smoothed meshes write their derived corner normals.
+                List<Vector3> renderNormals = face.GetRenderNormals(this);
+                serializer.WriteCount(renderNormals.Count);
+                for (int i = 0; i < renderNormals.Count; i++)
                 {
-                    PolySerializationUtils.WriteVector3(serializer, face.normal);
+                    PolySerializationUtils.WriteVector3(serializer, renderNormals[i]);
                 }
 
                 // DEPRECATED: Write holes.
@@ -898,6 +1135,14 @@ namespace com.google.apps.peltzer.client.model.core
                 serializer.StartWritingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
                 PolySerializationUtils.WriteStringSet(serializer, remixIds);
                 serializer.FinishWritingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
+            }
+
+            if (_smoothingMode == SmoothingMode.Auto)
+            {
+                serializer.StartWritingChunk(SerializationConsts.CHUNK_MMESH_EXT_SMOOTHING);
+                serializer.WriteInt((int)_smoothingMode);
+                serializer.WriteFloat(_autoSmoothAngle);
+                serializer.FinishWritingChunk(SerializationConsts.CHUNK_MMESH_EXT_SMOOTHING);
             }
         }
 
@@ -918,6 +1163,10 @@ namespace com.google.apps.peltzer.client.model.core
                 {
                     estimate += 4 + remixId.Length;
                 }
+            }
+            if (_smoothingMode == SmoothingMode.Auto)
+            {
+                estimate += 32; // Chunk header, smoothing mode, angle, and overhead.
             }
             return estimate;
         }
@@ -966,6 +1215,8 @@ namespace com.google.apps.peltzer.client.model.core
             _rotation = PolySerializationUtils.ReadQuaternion(serializer);
             _offsetJitter = CreateOffsetJitter();
             groupId = serializer.ReadInt();
+            _smoothingMode = SmoothingMode.Flat;
+            _autoSmoothAngle = DEFAULT_AUTO_SMOOTH_ANGLE;
 
             verticesById = new Dictionary<int, Vertex>();
             facesById = new Dictionary<int, Face>();
@@ -1001,24 +1252,43 @@ namespace com.google.apps.peltzer.client.model.core
                       SerializationConsts.MAX_VERTICES_PER_HOLE, "hole normals");
                 }
 
-                // Once normal fixes are backfilled after http://bug we can use the deserialized normals directly.
+                // Render normals are derived from smoothing settings. Read the legacy payload for
+                // compatibility, but do not make it authoritative.
                 facesById[faceId] = new Face(faceId, vertexIds.AsReadOnly(), verticesById, new FaceProperties(materialId));
             }
 
             serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH);
 
-            // If the remix IDs chunk is present (it's optional), read it.
-            if (serializer.GetNextChunkLabel() == SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS)
+            remixIds = null;
+            bool readingMeshExtensions = true;
+            while (readingMeshExtensions)
             {
-                serializer.StartReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
-                remixIds = PolySerializationUtils.ReadStringSet(serializer, 0, SerializationConsts.MAX_REMIX_IDS_PER_MMESH,
-                  "remixIds");
-                serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
-            }
-            else
-            {
-                // No remix IDs present in file.
-                remixIds = null;
+                switch (serializer.GetNextChunkLabel())
+                {
+                    case SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS:
+                        serializer.StartReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
+                        remixIds = PolySerializationUtils.ReadStringSet(serializer, 0,
+                          SerializationConsts.MAX_REMIX_IDS_PER_MMESH, "remixIds");
+                        serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_REMIX_IDS);
+                        break;
+                    case SerializationConsts.CHUNK_MMESH_EXT_SMOOTHING:
+                        serializer.StartReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_SMOOTHING);
+                        int serializedSmoothingMode = serializer.ReadInt();
+                        float serializedAutoSmoothAngle = serializer.ReadFloat();
+                        serializer.FinishReadingChunk(SerializationConsts.CHUNK_MMESH_EXT_SMOOTHING);
+
+                        if (serializedSmoothingMode == (int)SmoothingMode.Auto &&
+                            !float.IsNaN(serializedAutoSmoothAngle) &&
+                            !float.IsInfinity(serializedAutoSmoothAngle))
+                        {
+                            _smoothingMode = SmoothingMode.Auto;
+                            _autoSmoothAngle = Mathf.Clamp(serializedAutoSmoothAngle, 0f, 180f);
+                        }
+                        break;
+                    default:
+                        readingMeshExtensions = false;
+                        break;
+                }
             }
 
             RecalcBounds();
@@ -1062,7 +1332,8 @@ namespace com.google.apps.peltzer.client.model.core
         public static MMesh PolyHydraToMMesh(
                 PolyMesh poly, int id,
                 Vector3 center, Vector3 scale, Quaternion rotation,
-                int materialId, bool fitWithinUnitBox = false)
+                int materialId, bool fitWithinUnitBox = false,
+                bool autoSmooth = true, float autoSmoothAngle = DEFAULT_AUTO_SMOOTH_ANGLE)
         {
             var faceProperties = new FaceProperties(materialId);
 
@@ -1098,7 +1369,12 @@ namespace com.google.apps.peltzer.client.model.core
                 List<int> verts = faceIndices[i];
                 faces.Add(new Face(i, verts.AsReadOnly(), vertices, faceProperties));
             }
-            return new MMesh(id, Vector3.zero, Quaternion.identity, vertices, faces.ToDictionary(f => f.id));
+            MMesh mesh = new MMesh(id, Vector3.zero, Quaternion.identity, vertices, faces.ToDictionary(f => f.id));
+            if (autoSmooth)
+            {
+                mesh.SetAutoSmooth(autoSmoothAngle);
+            }
+            return mesh;
         }
 
         public static PolyMesh MMeshToPolyHydra(MMesh mmesh)

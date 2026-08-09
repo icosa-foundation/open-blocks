@@ -301,6 +301,11 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         public List<Vector3> GetRenderNormals(MMesh mesh)
         {
+            return mesh.GetRenderNormals(this);
+        }
+
+        internal List<Vector3> GetFlatRenderNormals(MMesh mesh)
+        {
             if (cachedRenderNormals.Count == 0)
             {
                 _normal = MeshMath.CalculateMeshSpaceNormal(this, mesh);

@@ -48,7 +48,10 @@ namespace com.google.apps.peltzer.client.model.core
             OpParams opParams = new OpParams(paramA, paramB, filter: opFilter);
             polyMesh = polyMesh.AppyOperation(op, opParams);
             int matId = 0; // TODO
-            var newMMesh = MMesh.PolyHydraToMMesh(polyMesh, meshId, prevMesh.offset, Vector3.one, prevMesh.rotation, matId);
+            var newMMesh = MMesh.PolyHydraToMMesh(
+                polyMesh, meshId, prevMesh.offset, Vector3.one, prevMesh.rotation, matId,
+                autoSmooth: prevMesh.smoothingMode == MMesh.SmoothingMode.Auto,
+                autoSmoothAngle: prevMesh.autoSmoothAngle);
             model.DeleteMesh(meshId);
             model.AddMesh(newMMesh);
         }
