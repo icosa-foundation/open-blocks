@@ -77,6 +77,7 @@ namespace com.google.apps.peltzer.client.model.render
         private static Dictionary<int, MaterialAndColor> customHighlightMaterials =
           new Dictionary<int, MaterialAndColor>();
         private static int nextCustomId = CUSTOM_COLOR_START;
+        private static readonly object customColorLock = new object();
 
         // The material ID space, which the .blocks file format depends on:
         //   0-23    the legacy palette (rawColors)
@@ -163,11 +164,14 @@ namespace com.google.apps.peltzer.client.model.render
 
             // Initialize custom color storage. Cleared first so that re-initialising (which the lazy
             // self-init paths below can do) destroys anything a previous init left behind.
-            ClearCustomColors();
-            customColors = new Dictionary<int, Color32>();
-            colorToIdCache = new Dictionary<int, int>();
-            customMaterialsWithAlbedo = new Dictionary<int, Material>();
-            nextCustomId = CUSTOM_COLOR_START;
+            lock (customColorLock)
+            {
+                ClearCustomColorsLocked();
+                customColors = new Dictionary<int, Color32>();
+                colorToIdCache = new Dictionary<int, int>();
+                customMaterialsWithAlbedo = new Dictionary<int, Material>();
+                nextCustomId = CUSTOM_COLOR_START;
+            }
         }
 
         private static float r(int raw)
@@ -214,9 +218,12 @@ namespace com.google.apps.peltzer.client.model.render
             }
 
             // Custom color: use base material with custom color
-            if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
+            lock (customColorLock)
             {
-                return new MaterialAndColor(materials[0].material, color, materialId);
+                if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
+                {
+                    return new MaterialAndColor(materials[0].material, color, materialId);
+                }
             }
 
             // Fallback: return first material (for backwards compatibility with old files)
@@ -275,9 +282,12 @@ namespace com.google.apps.peltzer.client.model.render
             }
 
             // Custom colors
-            if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
+            lock (customColorLock)
             {
-                return new Color(color.r / 255f, color.g / 255f, color.b / 255f, color.a / 255f);
+                if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
+                {
+                    return new Color(color.r / 255f, color.g / 255f, color.b / 255f, color.a / 255f);
+                }
             }
 
             // Fallback: white
@@ -300,9 +310,12 @@ namespace com.google.apps.peltzer.client.model.render
             }
 
             // Custom colors
-            if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
+            lock (customColorLock)
             {
-                return color;
+                if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
+                {
+                    return color;
+                }
             }
 
             // Fallback: white
@@ -321,20 +334,23 @@ namespace com.google.apps.peltzer.client.model.render
                 return materialsWithAlbedo[materialId];
             }
 
-            if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
+            lock (customColorLock)
             {
-                if (customMaterialsWithAlbedo == null)
+                if (customColors != null && customColors.TryGetValue(materialId, out Color32 color))
                 {
-                    customMaterialsWithAlbedo = new Dictionary<int, Material>();
-                }
+                    if (customMaterialsWithAlbedo == null)
+                    {
+                        customMaterialsWithAlbedo = new Dictionary<int, Material>();
+                    }
 
-                if (!customMaterialsWithAlbedo.TryGetValue(materialId, out Material material))
-                {
-                    material = new Material(materialsWithAlbedo[0]);
-                    material.color = color;
-                    customMaterialsWithAlbedo[materialId] = material;
+                    if (!customMaterialsWithAlbedo.TryGetValue(materialId, out Material material))
+                    {
+                        material = new Material(materialsWithAlbedo[0]);
+                        material.color = color;
+                        customMaterialsWithAlbedo[materialId] = material;
+                    }
+                    return material;
                 }
-                return material;
             }
 
             Debug.LogWarning($"Unknown material ID: {materialId}, returning default albedo material");
@@ -366,18 +382,21 @@ namespace com.google.apps.peltzer.client.model.render
                 return previewMaterials[materialId];
             }
 
-            if (customColors != null && customColors.TryGetValue(materialId, out Color32 customColor))
+            lock (customColorLock)
             {
-                if (!customPreviewMaterials.TryGetValue(materialId, out MaterialAndColor preview))
+                if (customColors != null && customColors.TryGetValue(materialId, out Color32 customColor))
                 {
-                    // Mirrors the palette setup in init(): a dedicated clone of the transparent material, since
-                    // callers mutate the returned material's alpha, plus the colour carried on the wrapper.
-                    preview = new MaterialAndColor(
-                      new Material(previewMaterials[0].material), customColor, materialId);
-                    preview.material.SetFloat(MultiplicitiveAlpha, 0.3f);
-                    customPreviewMaterials[materialId] = preview;
+                    if (!customPreviewMaterials.TryGetValue(materialId, out MaterialAndColor preview))
+                    {
+                        // Mirrors the palette setup in init(): a dedicated clone of the transparent material, since
+                        // callers mutate the returned material's alpha, plus the colour carried on the wrapper.
+                        preview = new MaterialAndColor(
+                          new Material(previewMaterials[0].material), customColor, materialId);
+                        preview.material.SetFloat(MultiplicitiveAlpha, 0.3f);
+                        customPreviewMaterials[materialId] = preview;
+                    }
+                    return preview;
                 }
-                return preview;
             }
 
             Debug.LogWarning($"Unknown material ID: {materialId}, returning default preview material");
@@ -418,20 +437,23 @@ namespace com.google.apps.peltzer.client.model.render
                 return highlightMaterials[materialId];
             }
 
-            if (customColors != null && customColors.ContainsKey(materialId))
+            lock (customColorLock)
             {
-                if (!customHighlightMaterials.TryGetValue(materialId, out MaterialAndColor highlight))
+                if (customColors != null && customColors.ContainsKey(materialId))
                 {
-                    // Built exactly as init() builds the palette's highlight materials, so custom colours and
-                    // palette colours behave identically here.
-                    highlight = new MaterialAndColor(materials[0].material, materialId);
-                    Color32 highlightColor = highlight.color;
-                    Color originalColor = new Color(
-                      highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
-                    highlight.color = originalColor * (4.5f - originalColor.maxColorComponent * 3);
-                    customHighlightMaterials[materialId] = highlight;
+                    if (!customHighlightMaterials.TryGetValue(materialId, out MaterialAndColor highlight))
+                    {
+                        // Built exactly as init() builds the palette's highlight materials, so custom colours and
+                        // palette colours behave identically here.
+                        highlight = new MaterialAndColor(materials[0].material, materialId);
+                        Color32 highlightColor = highlight.color;
+                        Color originalColor = new Color(
+                          highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
+                        highlight.color = originalColor * (4.5f - originalColor.maxColorComponent * 3);
+                        customHighlightMaterials[materialId] = highlight;
+                    }
+                    return highlight;
                 }
-                return highlight;
             }
 
             Debug.LogWarning($"Unknown material ID: {materialId}, returning default highlight material");
@@ -497,27 +519,30 @@ namespace com.google.apps.peltzer.client.model.render
                 }
             }
 
-            // Ensure custom color storage is initialized
-            if (customColors == null || colorToIdCache == null)
+            lock (customColorLock)
             {
-                Debug.LogWarning("Custom color storage not initialized, initializing now");
-                customColors = new Dictionary<int, Color32>();
-                colorToIdCache = new Dictionary<int, int>();
-                nextCustomId = CUSTOM_COLOR_START;
+                // Ensure custom color storage is initialized
+                if (customColors == null || colorToIdCache == null)
+                {
+                    Debug.LogWarning("Custom color storage not initialized, initializing now");
+                    customColors = new Dictionary<int, Color32>();
+                    colorToIdCache = new Dictionary<int, int>();
+                    nextCustomId = CUSTOM_COLOR_START;
+                }
+
+                // Check existing custom colors
+                if (colorToIdCache.TryGetValue(PackColor(color), out int existingId))
+                {
+                    return existingId;
+                }
+
+                // Create new custom color
+                int newId = nextCustomId++;
+                customColors[newId] = color;
+                colorToIdCache[PackColor(color)] = newId;
+
+                return newId;
             }
-
-            // Check existing custom colors
-            if (colorToIdCache.TryGetValue(PackColor(color), out int existingId))
-            {
-                return existingId;
-            }
-
-            // Create new custom color
-            int newId = nextCustomId++;
-            customColors[newId] = color;
-            colorToIdCache[PackColor(color)] = newId;
-
-            return newId;
         }
 
         /// <summary>
@@ -556,7 +581,10 @@ namespace com.google.apps.peltzer.client.model.render
         /// <returns>The count of custom colors.</returns>
         public static int GetCustomColorCount()
         {
-            return customColors != null ? customColors.Count : 0;
+            lock (customColorLock)
+            {
+                return customColors != null ? customColors.Count : 0;
+            }
         }
 
         /// <summary>
@@ -573,39 +601,42 @@ namespace com.google.apps.peltzer.client.model.render
                 return materialId;
             }
 
-            // Ensure storage is initialized
-            if (customColors == null || colorToIdCache == null)
+            lock (customColorLock)
             {
-                customColors = new Dictionary<int, Color32>();
-                colorToIdCache = new Dictionary<int, int>();
-                nextCustomId = CUSTOM_COLOR_START;
-            }
-
-            if (colorToIdCache.TryGetValue(PackColor(color), out int existingColorId))
-            {
-                return existingColorId;
-            }
-
-            if (customColors.ContainsKey(materialId))
-            {
-                while (customColors.ContainsKey(nextCustomId))
+                // Ensure storage is initialized
+                if (customColors == null || colorToIdCache == null)
                 {
-                    nextCustomId++;
+                    customColors = new Dictionary<int, Color32>();
+                    colorToIdCache = new Dictionary<int, int>();
+                    nextCustomId = CUSTOM_COLOR_START;
                 }
-                materialId = nextCustomId++;
+
+                if (colorToIdCache.TryGetValue(PackColor(color), out int existingColorId))
+                {
+                    return existingColorId;
+                }
+
+                if (customColors.ContainsKey(materialId))
+                {
+                    while (customColors.ContainsKey(nextCustomId))
+                    {
+                        nextCustomId++;
+                    }
+                    materialId = nextCustomId++;
+                }
+
+                // Add to registry without overwriting a color loaded from another file.
+                customColors[materialId] = color;
+                colorToIdCache[PackColor(color)] = materialId;
+
+                // Update next ID if necessary
+                if (materialId >= nextCustomId)
+                {
+                    nextCustomId = materialId + 1;
+                }
+
+                return materialId;
             }
-
-            // Add to registry without overwriting a color loaded from another file.
-            customColors[materialId] = color;
-            colorToIdCache[PackColor(color)] = materialId;
-
-            // Update next ID if necessary
-            if (materialId >= nextCustomId)
-            {
-                nextCustomId = materialId + 1;
-            }
-
-            return materialId;
         }
 
         /// <summary>
@@ -615,6 +646,14 @@ namespace com.google.apps.peltzer.client.model.render
         ///   fall back to the default material. Callers are responsible for that ordering.
         /// </summary>
         public static void ClearCustomColors()
+        {
+            lock (customColorLock)
+            {
+                ClearCustomColorsLocked();
+            }
+        }
+
+        private static void ClearCustomColorsLocked()
         {
             if (customColors != null)
             {
