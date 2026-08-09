@@ -71,6 +71,10 @@ namespace com.google.apps.peltzer.client.model.render
         // Custom color support (arbitrary RGB colors beyond the fixed palette)
         private static System.Collections.Generic.Dictionary<int, Color32> customColors = null;
         private static System.Collections.Generic.Dictionary<Color32, int> colorToIdCache = null;
+        private static System.Collections.Generic.Dictionary<int, MaterialAndColor> customPreviewMaterials =
+          new System.Collections.Generic.Dictionary<int, MaterialAndColor>();
+        private static System.Collections.Generic.Dictionary<int, MaterialAndColor> customHighlightMaterials =
+          new System.Collections.Generic.Dictionary<int, MaterialAndColor>();
         private static int nextCustomId = CUSTOM_COLOR_START;
 
         // Constants for material ID ranges
@@ -158,6 +162,8 @@ namespace com.google.apps.peltzer.client.model.render
             customColors = new System.Collections.Generic.Dictionary<int, Color32>();
             colorToIdCache = new System.Collections.Generic.Dictionary<Color32, int>();
             customMaterialsWithAlbedo = new System.Collections.Generic.Dictionary<int, Material>();
+            customPreviewMaterials.Clear();
+            customHighlightMaterials.Clear();
             nextCustomId = CUSTOM_COLOR_START;
         }
 
@@ -351,7 +357,27 @@ namespace com.google.apps.peltzer.client.model.render
                 Debug.Log("initializing mats in wrong place - this is an error if a test isn't running.");
                 init(matLib);
             }
-            return previewMaterials[materialId % materials.Length];
+            if (materialId >= 0 && materialId < previewMaterials.Length)
+            {
+                return previewMaterials[materialId];
+            }
+
+            if (customColors != null && customColors.TryGetValue(materialId, out Color32 customColor))
+            {
+                if (!customPreviewMaterials.TryGetValue(materialId, out MaterialAndColor preview))
+                {
+                    // Mirrors the palette setup in init(): a dedicated clone of the transparent material, since
+                    // callers mutate the returned material's alpha, plus the colour carried on the wrapper.
+                    preview = new MaterialAndColor(
+                      new Material(previewMaterials[0].material), customColor, materialId);
+                    preview.material.SetFloat(MultiplicitiveAlpha, 0.3f);
+                    customPreviewMaterials[materialId] = preview;
+                }
+                return preview;
+            }
+
+            Debug.LogWarning($"Unknown material ID: {materialId}, returning default preview material");
+            return previewMaterials[0];
         }
 
         /// <summary>
@@ -383,7 +409,29 @@ namespace com.google.apps.peltzer.client.model.render
                 Debug.Log("initializing mats in wrong place - this is an error if a test isn't running.");
                 init(matLib);
             }
-            return highlightMaterials[materialId % highlightMaterials.Length];
+            if (materialId >= 0 && materialId < highlightMaterials.Length)
+            {
+                return highlightMaterials[materialId];
+            }
+
+            if (customColors != null && customColors.ContainsKey(materialId))
+            {
+                if (!customHighlightMaterials.TryGetValue(materialId, out MaterialAndColor highlight))
+                {
+                    // Built exactly as init() builds the palette's highlight materials, so custom colours and
+                    // palette colours behave identically here.
+                    highlight = new MaterialAndColor(materials[0].material, materialId);
+                    Color32 highlightColor = highlight.color;
+                    Color originalColor = new Color(
+                      highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
+                    highlight.color = originalColor * (4.5f - originalColor.maxColorComponent * 3);
+                    customHighlightMaterials[materialId] = highlight;
+                }
+                return highlight;
+            }
+
+            Debug.LogWarning($"Unknown material ID: {materialId}, returning default highlight material");
+            return highlightMaterials[0];
         }
 
         public static Material[] GetExportableMaterialList()
