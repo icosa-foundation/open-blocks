@@ -45,6 +45,15 @@ namespace com.google.apps.peltzer.client.model.export
         public List<PeltzerMaterial> materials;
         public List<MMesh> meshes;
 
+        /// <summary>
+        /// The custom colours this file uses, keyed by the material ID its meshes actually reference (that is,
+        /// after any load-time remapping). Empty for files that only use palette colours.
+        ///
+        /// Retained so the colours can be re-registered if the registry is reset between parsing this file and
+        /// loading it into the model, which is what the load paths do (parse, then clear, then load).
+        /// </summary>
+        public Dictionary<int, Color32> customColorPalette = new Dictionary<int, Color32>();
+
         public PeltzerFile(Metadata metadata, float zoomFactor, List<PeltzerMaterial> materials,
           List<MMesh> meshes)
         {
@@ -284,6 +293,7 @@ namespace com.google.apps.peltzer.client.model.export
                 {
                     remappedMaterialIds[id] = registeredId;
                 }
+                customColorPalette[registeredId] = color;
             }
 
             serializer.FinishReadingChunk(SerializationConsts.CHUNK_CUSTOM_PALETTE);
@@ -291,6 +301,28 @@ namespace com.google.apps.peltzer.client.model.export
             if (remappedMaterialIds.Count > 0)
             {
                 RemapCustomMaterialIds(remappedMaterialIds);
+            }
+        }
+
+        /// <summary>
+        /// Re-registers this file's custom colours against their existing IDs.
+        ///
+        /// Loading clears the registry (see PeltzerMain.CreateNewModel) after this file has been parsed, so this
+        /// has to run again before the meshes are handed to the model. It is a no-op when the colours are still
+        /// registered, which is the case when a file is imported into the current model rather than replacing it.
+        /// </summary>
+        public void RegisterCustomMaterials()
+        {
+            foreach (KeyValuePair<int, Color32> entry in customColorPalette)
+            {
+                int registeredId = render.MaterialRegistry.RegisterCustomMaterial(entry.Key, entry.Value);
+                if (registeredId != entry.Key)
+                {
+                    // The meshes reference entry.Key, so a different ID here means they would render with the
+                    // wrong colour. Only reachable if something registered a conflicting colour in between.
+                    Debug.LogError($"Could not restore custom material ID {entry.Key}; got {registeredId} instead. "
+                      + "Meshes using this colour will render incorrectly.");
+                }
             }
         }
 

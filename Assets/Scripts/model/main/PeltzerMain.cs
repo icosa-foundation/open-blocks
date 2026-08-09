@@ -1684,6 +1684,11 @@ namespace com.google.apps.peltzer.client.model.main
             worldSpace.SetToDefault();
             zoomer.ClearState();
             model.Clear(worldSpace);
+            // Custom colours are registered globally and only ever grow, so drop them along with the meshes that
+            // referenced them. Model.Clear has also emptied the undo and redo stacks, so nothing survives holding a
+            // custom material ID. Loading re-registers the incoming file's colours (see LoadPeltzerFileIntoModel),
+            // because the load paths parse the file before getting here.
+            MaterialRegistry.ClearCustomColors();
             volumeInserter.ClearState();
             MeshCycler.DestroyMeshes();
 
@@ -1862,6 +1867,10 @@ namespace com.google.apps.peltzer.client.model.main
         public void LoadPeltzerFileIntoModel(PeltzerFile file, LoadOptions loadOptions = null)
         {
             loadOptions = loadOptions ?? LoadOptions.DEFAULTS;
+
+            // The file's custom colours were registered when it was parsed, but callers typically clear the model
+            // (and with it the registry) in between, so restore them before the meshes go in.
+            file.RegisterCustomMaterials();
 
             foreach (MMesh originalMesh in file.meshes)
             {
