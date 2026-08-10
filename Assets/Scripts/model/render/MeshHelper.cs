@@ -196,16 +196,10 @@ namespace com.google.apps.peltzer.client.model.render
                 }
                 uMesh.mesh.SetVertices(newPos);
                 List<Vector3> newNormals = newNormalsPerMaterial[uMesh.materialAndColor];
-                if (newNormals.Count == newPos.Count)
-                {
-                    uMesh.mesh.SetNormals(newNormals);
-                }
-                else
-                {
-                    // Cached or concurrently generated components may predate authored normals. Keep the mesh
-                    // renderable rather than passing an invalid channel size to Unity.
-                    uMesh.mesh.RecalculateNormals();
-                }
+                AssertOrThrow.True(newNormals.Count == newPos.Count,
+                  $"[OB_NORMAL_COUNT_MISMATCH] Live mesh update for material " +
+                  $"{uMesh.materialAndColor.matId}: vertices {newPos.Count}, normals {newNormals.Count}.");
+                uMesh.mesh.SetNormals(newNormals);
                 uMesh.mesh.RecalculateBounds();
             }
         }
@@ -400,6 +394,8 @@ namespace com.google.apps.peltzer.client.model.render
           bool useModelSpace,
           bool reverseNormals)
         {
+            int initialVertCount = vertList.Count;
+            int initialNormalCount = normalList.Count;
 
             if (useModelSpace)
             {
@@ -430,6 +426,12 @@ namespace com.google.apps.peltzer.client.model.render
                     normalList.Add(reverseNormals ? -renderNormals[i] : renderNormals[i]);
                 }
             }
+            int addedVertCount = vertList.Count - initialVertCount;
+            int addedNormalCount = normalList.Count - initialNormalCount;
+            AssertOrThrow.True(addedVertCount == addedNormalCount,
+              $"[OB_NORMAL_COUNT_MISMATCH] Mesh {mmesh.id}, face {face.id}, smoothing {mmesh.smoothingMode}, " +
+              $"vertices added {addedVertCount}, normals added {addedNormalCount}, " +
+              $"face vertices {face.vertexIds.Count}.");
         }
 
         /// <summary>
@@ -593,18 +595,12 @@ namespace com.google.apps.peltzer.client.model.render
                 {
                     mesh.SetVertices(context.verts);
                 }
-                bool hasCompleteNormals = context.normals.Count == context.verts.Count;
-                if (hasCompleteNormals)
-                {
-                    mesh.SetNormals(context.normals);
-                }
+                AssertOrThrow.True(context.normals.Count == context.verts.Count,
+                  $"[OB_NORMAL_COUNT_MISMATCH] Mesh context for material {materialId}: " +
+                  $"vertices {context.verts.Count}, normals {context.normals.Count}, " +
+                  $"triangle indices {context.triangles.Count}.");
+                mesh.SetNormals(context.normals);
                 mesh.SetTriangles(context.triangles, /* Submesh */ 0);
-                if (!hasCompleteNormals)
-                {
-                    // A stale cache entry or an interrupted component build can have no authored-normal channel.
-                    // Unity requires exactly one normal per vertex, so derive a complete fallback from triangles.
-                    mesh.RecalculateNormals();
-                }
                 mesh.RecalculateBounds();
 
                 // Add vertex colors.

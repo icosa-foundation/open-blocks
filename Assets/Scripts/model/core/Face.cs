@@ -62,6 +62,7 @@ namespace com.google.apps.peltzer.client.model.core
         private List<Vector3> cachedMeshSpacePositions = null;
         private List<Color32> cachedColors = null;
         private List<Vector3> cachedRenderNormals = null;
+        private readonly object cacheLock = new object();
 
         /// <summary>
         /// Constructs a face with no normal.  This constructor should only be used when it is certain that the normal will
@@ -234,11 +235,14 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         public void RecalculateNormal(Dictionary<int, Vertex> verticesById)
         {
-            _normal = MeshMath.CalculateNormal(vertexIds, verticesById);
-            cachedRenderNormals.Clear();
-            for (int i = 0; i < vertexIds.Count; i++)
+            lock (cacheLock)
             {
-                cachedRenderNormals.Add(_normal);
+                _normal = MeshMath.CalculateNormal(vertexIds, verticesById);
+                cachedRenderNormals.Clear();
+                for (int i = 0; i < vertexIds.Count; i++)
+                {
+                    cachedRenderNormals.Add(_normal);
+                }
             }
         }
 
@@ -248,7 +252,10 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         public void InvalidateVertexCache()
         {
-            cachedMeshSpacePositions.Clear();
+            lock (cacheLock)
+            {
+                cachedMeshSpacePositions.Clear();
+            }
         }
 
         /// <summary>
@@ -257,8 +264,14 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         public List<Vector3> GetMeshSpaceVertices(MMesh mesh)
         {
-            if (cachedMeshSpacePositions.Count == 0) RecalcMeshSpacePositions(mesh);
-            return cachedMeshSpacePositions;
+            lock (cacheLock)
+            {
+                if (cachedMeshSpacePositions.Count != vertexIds.Count)
+                {
+                    RecalcMeshSpacePositions(mesh);
+                }
+                return cachedMeshSpacePositions;
+            }
         }
 
         /// <summary>
@@ -268,11 +281,14 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         public List<Color32> GetColors()
         {
-            if (cachedColors.Count != _vertexIds.Count)
+            lock (cacheLock)
             {
-                RecalcColorCache();
+                if (cachedColors.Count != _vertexIds.Count)
+                {
+                    RecalcColorCache();
+                }
+                return cachedColors;
             }
-            return cachedColors;
         }
 
         private void RecalcMeshSpacePositions(MMesh mesh)
@@ -306,22 +322,29 @@ namespace com.google.apps.peltzer.client.model.core
 
         internal List<Vector3> GetFlatRenderNormals(MMesh mesh)
         {
-            if (cachedRenderNormals.Count == 0)
+            lock (cacheLock)
             {
-                _normal = MeshMath.CalculateMeshSpaceNormal(this, mesh);
-                int count = vertexIds.Count;
-                for (int i = 0; i < count; i++)
+                if (cachedRenderNormals.Count != vertexIds.Count)
                 {
-                    cachedRenderNormals.Add(_normal);
+                    _normal = MeshMath.CalculateMeshSpaceNormal(this, mesh);
+                    cachedRenderNormals.Clear();
+                    int count = vertexIds.Count;
+                    for (int i = 0; i < count; i++)
+                    {
+                        cachedRenderNormals.Add(_normal);
+                    }
                 }
+                return cachedRenderNormals;
             }
-            return cachedRenderNormals;
         }
 
         public void SetProperties(FaceProperties properties)
         {
-            _properties = properties;
-            RecalcColorCache();
+            lock (cacheLock)
+            {
+                _properties = properties;
+                RecalcColorCache();
+            }
         }
 
         public Face Clone()

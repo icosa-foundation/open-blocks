@@ -118,29 +118,6 @@ namespace com.google.apps.peltzer.client.model.render
         }
 
         [Test]
-        public void ToMeshesRecalculatesIncompleteAuthoredNormals()
-        {
-            MeshGenContext context = new MeshGenContext();
-            context.verts.AddRange(new[] { Vector3.zero, Vector3.right, Vector3.up });
-            context.triangles.AddRange(new[] { 0, 1, 2 });
-            Dictionary<int, MeshGenContext> contexts = new Dictionary<int, MeshGenContext>
-            {
-                { 2, context }
-            };
-
-            List<MeshWithMaterial> meshes = MeshHelper.ToMeshes(contexts);
-            try
-            {
-                Assert.AreEqual(1, meshes.Count);
-                Assert.AreEqual(meshes[0].mesh.vertexCount, meshes[0].mesh.normals.Length);
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(meshes[0].mesh);
-            }
-        }
-
-        [Test]
         public void TestCoalescing()
         {
             ReMesher remesher = new ReMesher();

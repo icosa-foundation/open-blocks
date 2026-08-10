@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using NUnit.Framework;
 using TiltBrush;
@@ -95,6 +96,19 @@ namespace com.google.apps.peltzer.client.model.core
                     AssertClose(normal, face.normal);
                 }
             }
+        }
+
+        [Test]
+        public void FlatRenderNormalCacheSupportsConcurrentReaders()
+        {
+            MMesh mesh = CreateRightAngleWedge();
+            Face face = mesh.GetFace(0);
+            int expectedCount = face.vertexIds.Count;
+
+            Parallel.For(0, 1000, iteration =>
+            {
+                Assert.AreEqual(expectedCount, face.GetRenderNormals(mesh).Count);
+            });
         }
 
         [Test]
