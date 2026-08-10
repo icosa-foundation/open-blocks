@@ -195,7 +195,17 @@ namespace com.google.apps.peltzer.client.model.render
                     return;
                 }
                 uMesh.mesh.SetVertices(newPos);
-                uMesh.mesh.SetNormals(newNormalsPerMaterial[uMesh.materialAndColor]);
+                List<Vector3> newNormals = newNormalsPerMaterial[uMesh.materialAndColor];
+                if (newNormals.Count == newPos.Count)
+                {
+                    uMesh.mesh.SetNormals(newNormals);
+                }
+                else
+                {
+                    // Cached or concurrently generated components may predate authored normals. Keep the mesh
+                    // renderable rather than passing an invalid channel size to Unity.
+                    uMesh.mesh.RecalculateNormals();
+                }
                 uMesh.mesh.RecalculateBounds();
             }
         }
@@ -583,8 +593,18 @@ namespace com.google.apps.peltzer.client.model.render
                 {
                     mesh.SetVertices(context.verts);
                 }
-                mesh.SetNormals(context.normals);
+                bool hasCompleteNormals = context.normals.Count == context.verts.Count;
+                if (hasCompleteNormals)
+                {
+                    mesh.SetNormals(context.normals);
+                }
                 mesh.SetTriangles(context.triangles, /* Submesh */ 0);
+                if (!hasCompleteNormals)
+                {
+                    // A stale cache entry or an interrupted component build can have no authored-normal channel.
+                    // Unity requires exactly one normal per vertex, so derive a complete fallback from triangles.
+                    mesh.RecalculateNormals();
+                }
                 mesh.RecalculateBounds();
 
                 // Add vertex colors.
