@@ -242,10 +242,15 @@ namespace com.google.apps.peltzer.client.model.core
                 undoStack.Push(undoCommand);
                 currentCommand = command;
             }
+
+            // Enforce the memory budget now that the new entry is on the stack.
+            EnforceHistoryByteBudget(UNDO_STACK_MAX_BYTES);
         }
 
-        // Checks if the undo stack is about to exceed the maximum size (in entries or estimated bytes), and
-        // discards the oldest entries if it is.
+        // Checks if the undo stack is about to exceed the maximum number of entries, and discards the older
+        // half if it is. Note that this runs BEFORE the incoming command is pushed, hence the -1.
+        // The memory (byte) budget is enforced separately, by EnforceHistoryByteBudget, after entries are
+        // pushed - unlike an entry count, the size of an incoming entry can't be anticipated here.
         private void LimitUndoStack()
         {
             if (undoStack.Count > undoStackMaxSize - 1)
@@ -262,39 +267,62 @@ namespace com.google.apps.peltzer.client.model.core
                     undoStack.Push(reducedCommandList[i]);
                 }
             }
-
-            EnforceUndoStackByteBudget(UNDO_STACK_MAX_BYTES);
         }
 
         /// <summary>
-        /// Discards the oldest undo entries until the stack's estimated memory use fits within the given
-        /// budget (always keeping at least UNDO_STACK_MIN_ENTRIES entries).
+        /// Discards the oldest history entries until the estimated memory retained by the undo and redo
+        /// stacks *combined* fits within the given budget. Must be called after entries are pushed, so that
+        /// a single large operation can't leave the history over budget until the next edit happens.
         /// </summary>
-        private void EnforceUndoStackByteBudget(long maxBytes)
+        private void EnforceHistoryByteBudget(long maxBytes)
         {
-            if (undoStack.Count <= UNDO_STACK_MIN_ENTRIES) return;
-            if (EstimateStackSizeBytes(undoStack) <= maxBytes) return;
+            long undoBytes = EstimateStackSizeBytes(undoStack);
+            long redoBytes = EstimateStackSizeBytes(redoStack);
+            if (undoBytes + redoBytes <= maxBytes) return;
+
+            // Redo history is the more expendable of the two: it is only reachable if the user hasn't made a
+            // new edit since undoing, and the next edit discards it wholesale. So trim it first, and only eat
+            // into undo history if that alone doesn't free enough.
+            redoBytes = TrimStackToByteBudget(redoStack, Math.Max(0, maxBytes - undoBytes), /* minEntries */ 0);
+            if (undoBytes + redoBytes > maxBytes)
+            {
+                TrimStackToByteBudget(undoStack, Math.Max(0, maxBytes - redoBytes), UNDO_STACK_MIN_ENTRIES);
+            }
+        }
+
+        /// <summary>
+        /// Discards the oldest entries of a command stack until its estimated memory use fits within the
+        /// given budget, always keeping at least minEntries entries (so that a handful of very large
+        /// operations remain undoable).
+        /// </summary>
+        /// <returns>The estimated size in bytes of the resulting stack.</returns>
+        private static long TrimStackToByteBudget(Stack<Command> stack, long maxBytes, int minEntries)
+        {
+            long currentBytes = EstimateStackSizeBytes(stack);
+            if (currentBytes <= maxBytes || stack.Count <= minEntries) return currentBytes;
 
             // Pop everything into a list (newest first), then re-push the newest entries that fit.
-            List<Command> commands = new List<Command>(undoStack.Count);
-            while (undoStack.Count > 0)
+            List<Command> commands = new List<Command>(stack.Count);
+            while (stack.Count > 0)
             {
-                commands.Add(undoStack.Pop());
+                commands.Add(stack.Pop());
             }
 
-            long total = 0;
+            long keptBytes = 0;
             int keepCount = 0;
             while (keepCount < commands.Count)
             {
-                total += EstimateCommandSizeBytes(commands[keepCount]);
-                if (total > maxBytes && keepCount >= UNDO_STACK_MIN_ENTRIES) break;
+                long commandBytes = EstimateCommandSizeBytes(commands[keepCount]);
+                if (keptBytes + commandBytes > maxBytes && keepCount >= minEntries) break;
+                keptBytes += commandBytes;
                 keepCount++;
             }
 
             for (int i = keepCount - 1; i >= 0; i--)
             {
-                undoStack.Push(commands[i]);
+                stack.Push(commands[i]);
             }
+            return keptBytes;
         }
 
         /// <summary>
@@ -343,14 +371,14 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         /// <summary>
-        /// Frees memory in response to OS memory pressure: trims the undo stack to a quarter of its normal
-        /// byte budget (keeping the most recent entries) and drops all redo entries. Losing some history is
+        /// Frees memory in response to OS memory pressure: drops all redo entries and trims the undo stack to
+        /// a quarter of its normal byte budget (keeping the most recent entries). Losing some history is
         /// strictly better than the app being killed by the OS.
         /// </summary>
         public void TrimStacksForLowMemory()
         {
-            EnforceUndoStackByteBudget(UNDO_STACK_MAX_BYTES / 4);
             redoStack.Clear();
+            EnforceHistoryByteBudget(UNDO_STACK_MAX_BYTES / 4);
         }
 
         /// <summary>
@@ -410,6 +438,10 @@ namespace com.google.apps.peltzer.client.model.core
                 command.ApplyToModel(this);
                 currentCommand = command;
 
+                // Undoing moves a snapshot from the undo stack to the redo stack (re-serialized from the
+                // current model state), so the combined history can grow here too.
+                EnforceHistoryByteBudget(UNDO_STACK_MAX_BYTES);
+
                 if (OnUndo != null)
                 {
                     OnUndo(command);
@@ -435,6 +467,8 @@ namespace com.google.apps.peltzer.client.model.core
                 undoStack.Push(command.GetUndoCommand(this));
                 command.ApplyToModel(this);
                 currentCommand = command;
+
+                EnforceHistoryByteBudget(UNDO_STACK_MAX_BYTES);
 
                 if (OnRedo != null)
                 {
