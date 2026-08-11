@@ -90,11 +90,27 @@ Per face today: a `ReadOnlyCollection<int>` wrapper around a `List<int>` around 
 
 ## 3. Budget the undo stack in bytes, not entries — DONE
 
-Implemented: `Model.LimitUndoStack` now also enforces a byte budget (32MB on Android/iOS, 128MB
-elsewhere) estimated from `AddMeshCommand.SnapshotSizeBytes`, dropping the oldest entries while
-always keeping at least 8. Remaining follow-up (only if device profiling shows rapid repeated
-undo hitching): keep the top 1-2 entries' meshes pre-deserialized, or deserialize the next entry
-on the background thread after each undo.
+Implemented as `Model.EnforceHistoryByteBudget`: a 32MB budget on Android/iOS (128MB elsewhere)
+covering the undo and redo stacks *combined*, enforced after every push site (command application,
+undo, redo) rather than from `LimitUndoStack` — the size of an incoming entry can't be anticipated,
+so unlike the entry-count trim it can't run beforehand. `LimitUndoStack` keeps only the count trim.
+
+Commands report their payload through the `ICommandWithRetainedMemory` interface, so the budget
+sees more than mesh snapshots: `ChangeFacePropertiesCommand` (a dictionary entry per face, up to
+`MMesh.MAX_FACES`) and `SetMeshGroupsCommand` (one assignment per selected mesh) would otherwise
+have been estimated at a flat 64 bytes each and escaped the cap entirely. Anything holding a
+collection that scales with model or selection size should implement it. The contract deliberately
+excludes memory owned elsewhere (e.g. reference-image `Texture2D`s belong to the manager, so
+discarding the command wouldn't reclaim them).
+
+Two floors take precedence over the budget so it can't make the feature unusable:
+`UNDO_STACK_MIN_ENTRIES` (8) keeps a handful of very large operations undoable, and
+`REDO_STACK_MIN_ENTRIES` (1) guarantees a just-performed undo stays redoable — without it, an undo
+whose snapshot exceeded the remaining headroom was discarded the instant it was created.
+
+Remaining follow-up (only if device profiling shows rapid repeated undo hitching): keep the top 1-2
+entries' meshes pre-deserialized, or deserialize the next entry on the background thread after each
+undo.
 
 ## 4. ReMesher GPU-side: leaner vertex streams
 
