@@ -25,7 +25,7 @@ namespace com.google.apps.peltzer.client.model.core
     ///   costs an order of magnitude more memory than the serialized bytes. Storing bytes keeps long editing
     ///   sessions from accumulating hundreds of megabytes of undo state, which was crashing mobile devices.
     /// </summary>
-    public class AddMeshCommand : Command
+    public class AddMeshCommand : Command, ICommandWithRetainedMemory
     {
         public const string COMMAND_NAME = "add";
 
@@ -79,12 +79,11 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         /// <summary>
-        /// Size in bytes of the serialized mesh snapshot this command retains. Used to budget the memory
-        /// consumed by the undo/redo stacks.
+        /// The serialized mesh snapshot is this command's entire payload, so its length is the retained size.
         /// </summary>
-        public int SnapshotSizeBytes
+        public long GetRetainedMemoryBytes()
         {
-            get { return serializedMesh.Length; }
+            return serializedMesh.Length;
         }
     }
 }

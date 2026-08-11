@@ -339,29 +339,18 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         /// <summary>
-        /// Estimates the memory retained by a command. Mesh snapshots (AddMeshCommand) dominate; everything
-        /// else is accounted for with a small flat overhead.
+        /// Estimates the memory retained by a command: a small flat overhead for the command object itself,
+        /// plus whatever payload it reports via ICommandWithRetainedMemory. Commands that hold a collection or
+        /// buffer scaling with model or selection size should implement that interface, otherwise history
+        /// containing them can grow past the budget while being estimated at only the flat overhead.
         /// </summary>
         public static long EstimateCommandSizeBytes(Command command)
         {
             const long COMMAND_OVERHEAD_BYTES = 64;
-            AddMeshCommand addMeshCommand = command as AddMeshCommand;
-            if (addMeshCommand != null)
-            {
-                return COMMAND_OVERHEAD_BYTES + addMeshCommand.SnapshotSizeBytes;
-            }
-            CompositeCommand compositeCommand = command as CompositeCommand;
-            if (compositeCommand != null)
-            {
-                long total = COMMAND_OVERHEAD_BYTES;
-                List<Command> subCommands = compositeCommand.GetCommands();
-                for (int i = 0; i < subCommands.Count; i++)
-                {
-                    total += EstimateCommandSizeBytes(subCommands[i]);
-                }
-                return total;
-            }
-            return COMMAND_OVERHEAD_BYTES;
+            ICommandWithRetainedMemory commandWithRetainedMemory = command as ICommandWithRetainedMemory;
+            return commandWithRetainedMemory != null
+              ? COMMAND_OVERHEAD_BYTES + commandWithRetainedMemory.GetRetainedMemoryBytes()
+              : COMMAND_OVERHEAD_BYTES;
         }
 
         // Sets the maximum size of the undo stack.
