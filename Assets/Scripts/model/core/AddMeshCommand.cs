@@ -77,5 +77,14 @@ namespace com.google.apps.peltzer.client.model.core
         {
             return meshId;
         }
+
+        /// <summary>
+        /// Size in bytes of the serialized mesh snapshot this command retains. Used to budget the memory
+        /// consumed by the undo/redo stacks.
+        /// </summary>
+        public int SnapshotSizeBytes
+        {
+            get { return serializedMesh.Length; }
+        }
     }
 }

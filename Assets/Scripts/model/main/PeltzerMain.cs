@@ -712,6 +712,10 @@ namespace com.google.apps.peltzer.client.model.main
             model = new Model(worldSpace.bounds);
             spatialIndex = new SpatialIndex(model, worldSpace.bounds);
             SetupSpatialIndex();
+
+            // Register a low-memory pressure valve: when the OS reports memory pressure (Android/iOS fire this
+            // shortly before killing the app), shed reclaimable memory instead of crashing.
+            Application.lowMemory += OnLowMemory;
             generalBackgroundThread = new Thread(ProcessGeneralBackgroundWork);
             generalBackgroundThread.IsBackground = true;
             generalBackgroundThread.Priority = System.Threading.ThreadPriority.Lowest;
@@ -1758,6 +1762,24 @@ namespace com.google.apps.peltzer.client.model.main
                 spatialIndex.CondemnMesh(mesh.id);
                 DoBackgroundWork(new DeleteFromIndex(spatialIndex, mesh.Clone()));
             };
+        }
+
+        /// <summary>
+        ///   Sheds reclaimable memory when the OS signals memory pressure (Application.lowMemory fires on
+        ///   Android/iOS shortly before the OS would kill the app). Everything released here is either derived
+        ///   data that will be lazily rebuilt on demand, or history the user can live without; losing it is
+        ///   strictly better than the app being killed.
+        /// </summary>
+        private void OnLowMemory()
+        {
+            Debug.LogWarning("Low memory warning received: trimming undo history and derived-data caches.");
+            if (model != null)
+            {
+                model.TrimStacksForLowMemory();
+                model.meshRepresentationCache.ClearComponentCachesForLowMemory();
+            }
+            Resources.UnloadUnusedAssets();
+            System.GC.Collect();
         }
 
         /// <summary>

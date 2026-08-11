@@ -48,6 +48,20 @@ namespace com.google.apps.peltzer.client.model.core
         // Maximum size of the undo stack - when we hit this size we discard the older half of the stack.
         private static int undoStackMaxSize = 80;
 
+        // Maximum estimated memory the undo stack may retain. One stack entry can be a composite command
+        // holding mesh snapshots for a whole multi-selection, so an entry count alone does not bound memory;
+        // this byte budget does. When the budget is exceeded, the oldest entries are discarded (the user keeps
+        // a shorter history rather than running out of memory). Mobile devices get a tighter budget.
+#if UNITY_ANDROID || UNITY_IOS
+        private const long UNDO_STACK_MAX_BYTES = 32 * 1024 * 1024;
+#else
+        private const long UNDO_STACK_MAX_BYTES = 128 * 1024 * 1024;
+#endif
+
+        // Never trim the undo stack below this many entries, regardless of the byte budget, so that a handful
+        // of very large operations remain undoable.
+        private const int UNDO_STACK_MIN_ENTRIES = 8;
+
         // Model change events.
         public event Action<MMesh> OnMeshAdded;
         public event Action<MMesh, bool, bool, bool> OnMeshChanged;
@@ -230,7 +244,8 @@ namespace com.google.apps.peltzer.client.model.core
             }
         }
 
-        // Checks if the undo stack is about to exceed the maximum size, and discard the older half if it is.
+        // Checks if the undo stack is about to exceed the maximum size (in entries or estimated bytes), and
+        // discards the oldest entries if it is.
         private void LimitUndoStack()
         {
             if (undoStack.Count > undoStackMaxSize - 1)
@@ -247,12 +262,95 @@ namespace com.google.apps.peltzer.client.model.core
                     undoStack.Push(reducedCommandList[i]);
                 }
             }
+
+            EnforceUndoStackByteBudget(UNDO_STACK_MAX_BYTES);
+        }
+
+        /// <summary>
+        /// Discards the oldest undo entries until the stack's estimated memory use fits within the given
+        /// budget (always keeping at least UNDO_STACK_MIN_ENTRIES entries).
+        /// </summary>
+        private void EnforceUndoStackByteBudget(long maxBytes)
+        {
+            if (undoStack.Count <= UNDO_STACK_MIN_ENTRIES) return;
+            if (EstimateStackSizeBytes(undoStack) <= maxBytes) return;
+
+            // Pop everything into a list (newest first), then re-push the newest entries that fit.
+            List<Command> commands = new List<Command>(undoStack.Count);
+            while (undoStack.Count > 0)
+            {
+                commands.Add(undoStack.Pop());
+            }
+
+            long total = 0;
+            int keepCount = 0;
+            while (keepCount < commands.Count)
+            {
+                total += EstimateCommandSizeBytes(commands[keepCount]);
+                if (total > maxBytes && keepCount >= UNDO_STACK_MIN_ENTRIES) break;
+                keepCount++;
+            }
+
+            for (int i = keepCount - 1; i >= 0; i--)
+            {
+                undoStack.Push(commands[i]);
+            }
+        }
+
+        /// <summary>
+        /// Estimates the memory retained by all commands on a stack.
+        /// </summary>
+        public static long EstimateStackSizeBytes(Stack<Command> stack)
+        {
+            long total = 0;
+            foreach (Command command in stack)
+            {
+                total += EstimateCommandSizeBytes(command);
+            }
+            return total;
+        }
+
+        /// <summary>
+        /// Estimates the memory retained by a command. Mesh snapshots (AddMeshCommand) dominate; everything
+        /// else is accounted for with a small flat overhead.
+        /// </summary>
+        public static long EstimateCommandSizeBytes(Command command)
+        {
+            const long COMMAND_OVERHEAD_BYTES = 64;
+            AddMeshCommand addMeshCommand = command as AddMeshCommand;
+            if (addMeshCommand != null)
+            {
+                return COMMAND_OVERHEAD_BYTES + addMeshCommand.SnapshotSizeBytes;
+            }
+            CompositeCommand compositeCommand = command as CompositeCommand;
+            if (compositeCommand != null)
+            {
+                long total = COMMAND_OVERHEAD_BYTES;
+                List<Command> subCommands = compositeCommand.GetCommands();
+                for (int i = 0; i < subCommands.Count; i++)
+                {
+                    total += EstimateCommandSizeBytes(subCommands[i]);
+                }
+                return total;
+            }
+            return COMMAND_OVERHEAD_BYTES;
         }
 
         // Sets the maximum size of the undo stack.
         public static void SetMaxUndoStackSize(int maxSize)
         {
             undoStackMaxSize = maxSize;
+        }
+
+        /// <summary>
+        /// Frees memory in response to OS memory pressure: trims the undo stack to a quarter of its normal
+        /// byte budget (keeping the most recent entries) and drops all redo entries. Losing some history is
+        /// strictly better than the app being killed by the OS.
+        /// </summary>
+        public void TrimStacksForLowMemory()
+        {
+            EnforceUndoStackByteBudget(UNDO_STACK_MAX_BYTES / 4);
+            redoStack.Clear();
         }
 
         /// <summary>
