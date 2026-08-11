@@ -62,6 +62,12 @@ namespace com.google.apps.peltzer.client.model.core
         // of very large operations remain undoable.
         private const int UNDO_STACK_MIN_ENTRIES = 8;
 
+        // Never let the byte budget discard the newest redo entry: an undo that has just been performed must
+        // stay reversible, even if the snapshot it produced is large enough to push the history over budget
+        // on its own. Older redo entries have no such protection. (This floor doesn't apply to the deliberate
+        // redoStack.Clear() in TrimStacksForLowMemory - under real memory pressure, losing redo is the point.)
+        private const int REDO_STACK_MIN_ENTRIES = 1;
+
         // Model change events.
         public event Action<MMesh> OnMeshAdded;
         public event Action<MMesh, bool, bool, bool> OnMeshChanged;
@@ -282,8 +288,9 @@ namespace com.google.apps.peltzer.client.model.core
 
             // Redo history is the more expendable of the two: it is only reachable if the user hasn't made a
             // new edit since undoing, and the next edit discards it wholesale. So trim it first, and only eat
-            // into undo history if that alone doesn't free enough.
-            redoBytes = TrimStackToByteBudget(redoStack, Math.Max(0, maxBytes - undoBytes), /* minEntries */ 0);
+            // into undo history if that alone doesn't free enough - except for the newest redo entry, which is
+            // preserved so that a just-performed undo can always be redone (older undo history yields first).
+            redoBytes = TrimStackToByteBudget(redoStack, Math.Max(0, maxBytes - undoBytes), REDO_STACK_MIN_ENTRIES);
             if (undoBytes + redoBytes > maxBytes)
             {
                 TrimStackToByteBudget(undoStack, Math.Max(0, maxBytes - redoBytes), UNDO_STACK_MIN_ENTRIES);

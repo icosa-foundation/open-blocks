@@ -1775,8 +1775,19 @@ namespace com.google.apps.peltzer.client.model.main
             Debug.LogWarning("Low memory warning received: trimming undo history and derived-data caches.");
             if (model != null)
             {
+                // Always safe: serialization doesn't touch the undo/redo stacks.
                 model.TrimStacksForLowMemory();
-                model.meshRepresentationCache.ClearComponentCachesForLowMemory();
+
+                // The component caches are not just read but also populated by ObjFileExporter on the
+                // background thread while a save is serializing, so clearing them here would be a concurrent
+                // Dictionary mutation. Besides being unsafe in itself, an exception thrown inside background
+                // work is only logged - PostWork never runs - which for a save means model.writeable is never
+                // restored and editing stays locked for the rest of the session. model.writeable is the
+                // existing "serialization in progress" guard, so honour it and skip this eviction instead.
+                if (model.writeable)
+                {
+                    model.meshRepresentationCache.ClearComponentCachesForLowMemory();
+                }
             }
             Resources.UnloadUnusedAssets();
             System.GC.Collect();
