@@ -880,7 +880,7 @@ namespace com.google.apps.peltzer.client.entitlement
 
         private IEnumerator _ManualDeviceCodeEntry(Action onSuccess, Action onFailure, bool promptUserIfNoToken)
         {
-            if (!HasAccessToken && promptUserIfNoToken)
+            if (String.IsNullOrEmpty(m_RefreshToken) && promptUserIfNoToken)
             {
                 if (m_WaitingOnAuthorization)
                 {
