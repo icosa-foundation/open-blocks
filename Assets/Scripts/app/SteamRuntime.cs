@@ -20,6 +20,14 @@ using UnityEngine;
 
 namespace com.google.apps.peltzer.client.app
 {
+    public static class PlatformCapabilities
+    {
+        public static bool OsCanReachLocalhost(RuntimePlatform platform, bool runningUnderSteam)
+        {
+            return platform != RuntimePlatform.Android || !runningUnderSteam;
+        }
+    }
+
     /// <summary>
     /// Detects whether an Android build is running inside Steam's Lepton environment.
     /// </summary>

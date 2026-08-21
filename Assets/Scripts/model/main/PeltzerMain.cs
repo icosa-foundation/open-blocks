@@ -307,7 +307,8 @@ namespace com.google.apps.peltzer.client.model.main
                         return false;
                 }
 #endif
-                return !(Application.platform == RuntimePlatform.Android && SteamRuntime.RunningUnderSteam);
+                return PlatformCapabilities.OsCanReachLocalhost(
+                  Application.platform, SteamRuntime.RunningUnderSteam);
             }
         }
 

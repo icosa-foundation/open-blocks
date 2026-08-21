@@ -50,6 +50,17 @@ namespace com.google.apps.peltzer.client.entitlement
         }
     }
 
+    public static class DeviceLoginRouting
+    {
+        public static string BuildAuthorizationUrl(
+          string deviceCodeUrl, bool useAutomaticCallback, string secret)
+        {
+            return useAutomaticCallback
+              ? $"{deviceCodeUrl}?appId=openblocks&secret={Uri.EscapeDataString(secret)}"
+              : deviceCodeUrl;
+        }
+    }
+
     /// Handle accessing OAuth2 based web services. There are known issues with non-square avatars.
 
 #if USE_OAUTH2
@@ -886,7 +897,8 @@ namespace com.google.apps.peltzer.client.entitlement
                     var secret = Guid.NewGuid().ToString();
                     m_DeviceLoginSecret = secret;
                     m_DeviceLoginSecretCreationTime = DateTime.UtcNow;
-                    string url = $"{m_DeviceCodeUrl}?appId=openblocks&secret={secret}";
+                    string url = DeviceLoginRouting.BuildAuthorizationUrl(
+                      m_DeviceCodeUrl, useAutomaticCallback: true, secret: secret);
                     Debug.Log($"{kDeviceLoginLogPrefix} Starting automatic browser sign-in");
                     PeltzerMain.OpenURLInExternalBrowser(url);
                 }
