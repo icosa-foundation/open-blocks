@@ -163,6 +163,9 @@ namespace com.google.apps.peltzer.client.model.core
             undoStack.Clear();
             redoStack.Clear();
             undoBatchStartTime = 0.0f;
+            // Release the retained forward command along with the rest of the history; keeping it would pin
+            // a payload belonging to the model we just discarded.
+            currentCommand = null;
             hiddenMeshes.Clear();
             meshRepresentationCache.Clear();
 
@@ -282,6 +285,8 @@ namespace com.google.apps.peltzer.client.model.core
         /// </summary>
         private void EnforceHistoryByteBudget(long maxBytes)
         {
+            ReleaseExpiredCurrentCommand();
+
             long undoBytes = EstimateStackSizeBytes(undoStack);
             long redoBytes = EstimateStackSizeBytes(redoStack);
             if (undoBytes + redoBytes <= maxBytes) return;
@@ -374,7 +379,31 @@ namespace com.google.apps.peltzer.client.model.core
         public void TrimStacksForLowMemory()
         {
             redoStack.Clear();
+            // End any open batch so the retained forward command can be released too (see
+            // ReleaseExpiredCurrentCommand). Under real memory pressure, splitting one batch into two undo
+            // entries costs far less than pinning a whole serialized mesh.
+            undoBatchStartTime = 0.0f;
             EnforceHistoryByteBudget(UNDO_STACK_MAX_BYTES / 4);
+        }
+
+        /// <summary>
+        /// Releases the retained forward command once its batching window has closed.
+        ///
+        /// currentCommand exists solely so that commands arriving within BATCH_FREQUENCY_SECONDS of each
+        /// other can be bundled into a single undo entry. Once that window passes it is never read again, but
+        /// it still pins that command's payload - for an AddMeshCommand, an entire serialized mesh - which the
+        /// history budget can neither see nor reclaim, because the field is not on either stack. Note this
+        /// frees the memory outright rather than merely accounting for it: counting it would only cause the
+        /// budget to discard other history to compensate for something it has no way to release.
+        ///
+        /// Only ever released once the window has expired, because inside the window
+        /// AddAndMaybeBatchCommands still reads (and casts) currentCommand to extend the batch.
+        /// </summary>
+        private void ReleaseExpiredCurrentCommand()
+        {
+            if (currentCommand == null) return;
+            if (Time.time - undoBatchStartTime <= BATCH_FREQUENCY_SECONDS) return;
+            currentCommand = null;
         }
 
         /// <summary>
