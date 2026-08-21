@@ -959,6 +959,7 @@ namespace com.google.apps.peltzer.client.entitlement
                 Debug.LogError("Account verification failed");
                 Debug.LogFormat("Verification error {0}", m_VerificationCode);
                 m_WaitingOnAuthorization = false;
+                onFailure();
                 yield break;
             }
 
