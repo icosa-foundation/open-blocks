@@ -38,6 +38,13 @@ namespace com.google.apps.peltzer.client.app
         Desktop = 3
     }
 
+    public enum LocalhostCallbackOverride
+    {
+        Default,
+        ForceAllowed,
+        ForceBlocked,
+    }
+
     public class Config : MonoBehaviour
     {
         private static Config instance;
@@ -61,6 +68,12 @@ namespace com.google.apps.peltzer.client.app
         public SdkMode sdkMode;
         // The current version ID -- 'debug' or something more meaningful. Set from the Editor.
         public string version = "debug";
+
+#if UNITY_EDITOR
+        [Header("Editor testing")]
+        [Tooltip("Overrides whether browser-based sign-in can call back to this app over localhost.")]
+        public LocalhostCallbackOverride localhostCallbackOverride;
+#endif
 
         [SerializeField] private GameObject cameraRigGameObject;
         [SerializeField] private GameObject controllerLeftGameObject;

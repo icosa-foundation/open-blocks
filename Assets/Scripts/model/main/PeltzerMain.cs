@@ -291,6 +291,27 @@ namespace com.google.apps.peltzer.client.model.main
         private const int SERIALIZER_BUFFER_INITIAL_SIZE = 64 * 1024 * 1024;  // 128 MB
 
         /// <summary>
+        /// Whether the browser opened by this OS can call the app's localhost HTTP endpoint.
+        /// Steam Frame can open normal URLs, but its browser cannot reach the Android guest's localhost.
+        /// </summary>
+        public bool OsCanReachLocalhost
+        {
+            get
+            {
+#if UNITY_EDITOR
+                switch (Config.Instance.localhostCallbackOverride)
+                {
+                    case LocalhostCallbackOverride.ForceAllowed:
+                        return true;
+                    case LocalhostCallbackOverride.ForceBlocked:
+                        return false;
+                }
+#endif
+                return !(Application.platform == RuntimePlatform.Android && SteamRuntime.RunningUnderSteam);
+            }
+        }
+
+        /// <summary>
         /// The (singleton) instance. Lazily cached when the Instance property is read for the first time.
         /// </summary>
         private static PeltzerMain instance;
