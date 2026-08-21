@@ -15,6 +15,7 @@
 using com.google.apps.peltzer.client.app;
 using com.google.apps.peltzer.client.entitlement;
 using NUnit.Framework;
+using TiltBrush;
 using UnityEngine;
 
 [TestFixture]
@@ -47,5 +48,25 @@ public class SteamFrameLoginTest
           "https://icosa.gallery/device",
           DeviceLoginRouting.BuildAuthorizationUrl(
             "https://icosa.gallery/device", useAutomaticCallback: false, secret: null));
+    }
+
+    [Test]
+    public void KeyboardHide_NotifiesPendingLoginOfDismissal()
+    {
+        var gameObject = new GameObject("Keyboard dismissal test");
+        try
+        {
+            var keyboard = gameObject.AddComponent<KeyboardUI>();
+            var dismissed = false;
+            keyboard.Dismissed += (sender, args) => dismissed = true;
+
+            keyboard.Hide();
+
+            Assert.True(dismissed);
+        }
+        finally
+        {
+            Object.DestroyImmediate(gameObject);
+        }
     }
 }

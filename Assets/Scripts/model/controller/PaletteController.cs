@@ -1400,22 +1400,36 @@ namespace com.google.apps.peltzer.client.model.controller
             }
         }
 
-        public void EnableKeyboard(EventHandler<string> onSubmit, string initialText = "")
+        public void EnableKeyboard(
+          EventHandler<string> onSubmit, string initialText = "", EventHandler onDismiss = null)
         {
             var keyboardUI = keyboardGameobject.GetComponent<KeyboardUI>();
             void OnKeyPressed(object sender, KeyboardKeyEventArgs args)
             {
                 if (args.Key.KeyType == KeyboardKeyType.Enter)
                 {
-                    // unregister when closing otherwise it keeps adding handlers
-                    keyboardUI.KeyPressed -= OnKeyPressed;
+                    UnregisterHandlers();
                     onSubmit(sender, keyboardUI.ConsoleContent);
                     keyboardGameobject.SetActive(false);
                 }
             }
+
+            void OnDismissed(object sender, EventArgs args)
+            {
+                UnregisterHandlers();
+                onDismiss?.Invoke(sender, args);
+            }
+
+            void UnregisterHandlers()
+            {
+                keyboardUI.KeyPressed -= OnKeyPressed;
+                keyboardUI.Dismissed -= OnDismissed;
+            }
+
             keyboardUI.SetInitialText(initialText);
             keyboardGameobject.SetActive(true);
             keyboardUI.KeyPressed += OnKeyPressed;
+            keyboardUI.Dismissed += OnDismissed;
         }
     }
 }

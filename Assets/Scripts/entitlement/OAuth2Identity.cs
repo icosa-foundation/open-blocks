@@ -906,7 +906,8 @@ namespace com.google.apps.peltzer.client.entitlement
                 {
                     Debug.Log($"{kDeviceLoginLogPrefix} Starting manual Steam Frame sign-in");
                     PeltzerMain.OpenURLInExternalBrowser(m_DeviceCodeUrl);
-                    PeltzerMain.Instance.paletteController.EnableKeyboard(OnSubmit);
+                    PeltzerMain.Instance.paletteController.EnableKeyboard(
+                      OnSubmit, onDismiss: OnDismiss);
                 }
 
                 PeltzerMain.Instance.paletteController.publishedTakeOffHeadsetPrompt.SetActive(false);
@@ -923,6 +924,12 @@ namespace com.google.apps.peltzer.client.entitlement
             void OnSubmit(object sender, string deviceCode)
             {
                 m_VerificationCode = deviceCode;
+            }
+
+            void OnDismiss(object sender, EventArgs args)
+            {
+                Debug.Log($"{kDeviceLoginLogPrefix} Manual sign-in cancelled");
+                m_VerificationError = true;
             }
         }
 
