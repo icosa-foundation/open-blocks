@@ -156,6 +156,16 @@ audit:
   `capturedGifFrames` (`List<Color32[]>`, ~1MB per 512x512 frame, unbounded while recording) is
   either disabled on mobile or frame-capped.
 - Check for leaked `RenderTexture`s / preview cameras after save-thumbnail generation.
+- **Reference-image textures are owned by undo history.** `MoveableReferenceImage.Destroy()` only
+  destroys the MeshRenderer, never the `Texture2D`, so once an image is deleted the only remaining
+  owner is the `Delete`/`AddReferenceImageCommand` pair holding it via `SetupParams.texture`. Those
+  commands do not implement `ICommandWithRetainedMemory`, so the history byte budget charges a
+  multi-megabyte texture 64 bytes and cannot trim it. Deliberately not fixed by simply reporting the
+  size: while an image is still live in the scene the manager owns the texture, so charging it there
+  would let a few reference images exceed the whole mobile budget and repeatedly gut undo history to
+  reclaim nothing. The real fix is on the ownership side — destroy the texture when the image is
+  deleted and reload it on undo — so that history never owns native texture memory. Until then,
+  heavy use of reference images can retain memory the budget can't see.
 
 ## 7. `MeshRepresentationCache` lifetime discipline
 
