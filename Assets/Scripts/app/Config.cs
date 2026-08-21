@@ -69,15 +69,15 @@ namespace com.google.apps.peltzer.client.app
         // The current version ID -- 'debug' or something more meaningful. Set from the Editor.
         public string version = "debug";
 
+        [SerializeField] private GameObject cameraRigGameObject;
+        [SerializeField] private GameObject controllerLeftGameObject;
+        [SerializeField] private GameObject controllerRightGameObject;
+
 #if UNITY_EDITOR
         [Header("Editor testing")]
         [Tooltip("Overrides whether browser-based sign-in can call back to this app over localhost.")]
         public LocalhostCallbackOverride localhostCallbackOverride;
 #endif
-
-        [SerializeField] private GameObject cameraRigGameObject;
-        [SerializeField] private GameObject controllerLeftGameObject;
-        [SerializeField] private GameObject controllerRightGameObject;
 
         // The hardware being used -- Vive or Rift. Detected at runtime.
         private VrHardware vrHardware;
