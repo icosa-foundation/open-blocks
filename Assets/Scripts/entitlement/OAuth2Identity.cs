@@ -869,41 +869,49 @@ namespace com.google.apps.peltzer.client.entitlement
 
         private IEnumerator _ManualDeviceCodeEntry(Action onSuccess, Action onFailure, bool promptUserIfNoToken)
         {
-            if (String.IsNullOrEmpty(m_RefreshToken) && promptUserIfNoToken)
+            if (!HasAccessToken && promptUserIfNoToken)
             {
-                var secret = Guid.NewGuid().ToString();
-                m_DeviceLoginSecret = secret;
-                m_DeviceLoginSecretCreationTime = DateTime.UtcNow;
-                string url = $"{m_DeviceCodeUrl}?appId=openblocks&secret={secret}";
-                PeltzerMain.OpenURLInExternalBrowser(url);
-
-                void onSubmit(object sender, string deviceCode)
-                {
-                    m_VerificationCode = deviceCode;
-                }
-
-                // We are now automatically entering the device code, so we don't need to show the keyboard
-                // TODO Allow optional use of keyboard if people want to enter the code manually
-                //PeltzerMain.Instance.paletteController.EnableKeyboard(onSubmit);
-                PeltzerMain.Instance.paletteController.publishedTakeOffHeadsetPrompt.SetActive(false);
-
                 if (m_WaitingOnAuthorization)
                 {
                     // A previous attempt is already waiting
                     yield break;
                 }
+
                 m_WaitingOnAuthorization = true;
                 m_VerificationCode = null;
                 m_VerificationError = false;
 
+                if (PeltzerMain.Instance.OsCanReachLocalhost)
+                {
+                    var secret = Guid.NewGuid().ToString();
+                    m_DeviceLoginSecret = secret;
+                    m_DeviceLoginSecretCreationTime = DateTime.UtcNow;
+                    string url = $"{m_DeviceCodeUrl}?appId=openblocks&secret={secret}";
+                    Debug.Log($"{kDeviceLoginLogPrefix} Starting automatic browser sign-in");
+                    PeltzerMain.OpenURLInExternalBrowser(url);
+                }
+                else
+                {
+                    Debug.Log($"{kDeviceLoginLogPrefix} Starting manual Steam Frame sign-in");
+                    PeltzerMain.OpenURLInExternalBrowser(m_DeviceCodeUrl);
+                    PeltzerMain.Instance.paletteController.EnableKeyboard(OnSubmit);
+                }
+
+                PeltzerMain.Instance.paletteController.publishedTakeOffHeadsetPrompt.SetActive(false);
+
                 // Wait for verification
-                while (m_VerificationCode == null || m_VerificationError)
+                while (m_VerificationCode == null && !m_VerificationError)
                 {
                     yield return null;
                 }
             }
 
             yield return StartCoroutine(FinalizeDeviceLogin(onSuccess, onFailure));
+
+            void OnSubmit(object sender, string deviceCode)
+            {
+                m_VerificationCode = deviceCode;
+            }
         }
 
         private IEnumerator _AutoDeviceCodeEntry(Action onSuccess, Action onFailure, string deviceCode)
