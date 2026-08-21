@@ -1781,10 +1781,13 @@ namespace com.google.apps.peltzer.client.model.main
                 // The component caches are not just read but also populated by ObjFileExporter on the
                 // background thread while a save is serializing, so clearing them here would be a concurrent
                 // Dictionary mutation. Besides being unsafe in itself, an exception thrown inside background
-                // work is only logged - PostWork never runs - which for a save means model.writeable is never
-                // restored and editing stays locked for the rest of the session. model.writeable is the
-                // existing "serialization in progress" guard, so honour it and skip this eviction instead.
-                if (model.writeable)
+                // work is only logged - PostWork never runs - which for a manual save means model.writeable
+                // is never restored and editing stays locked for the rest of the session.
+                // Two different serialization paths have to be excluded, because they signal differently:
+                // manual saves clear model.writeable, while autosaves leave it alone and instead flag
+                // autoSave.IsCurrentlySaving.
+                bool serializationInProgress = !model.writeable || (autoSave != null && autoSave.IsCurrentlySaving);
+                if (!serializationInProgress)
                 {
                     model.meshRepresentationCache.ClearComponentCachesForLowMemory();
                 }
