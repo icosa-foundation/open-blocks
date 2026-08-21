@@ -353,6 +353,15 @@ namespace com.google.apps.peltzer.client.model.main
         private GameObject controllerGeometryRightRiftPrefab;
         [SerializeField]
         private GameObject controllerGeometryVivePrefab;
+        [SerializeField]
+        private GameObject controllerGeometryLeftSteamFramePrefab;
+        [SerializeField]
+        private GameObject controllerGeometryRightSteamFramePrefab;
+#if UNITY_EDITOR
+        [Header("Editor testing")]
+        [SerializeField]
+        private bool forceSteamFrameControllerGeometry;
+#endif
 
         private bool running = true;
         private SpatialIndex spatialIndex;
@@ -643,8 +652,28 @@ namespace com.google.apps.peltzer.client.model.main
                 // TODO
             }
 
-            // Add Vive hardware stuff.
-            if (Config.Instance.VrHardware == VrHardware.Rift)
+            bool useSteamFrameControllerGeometry =
+              Application.platform == RuntimePlatform.Android && SteamRuntime.RunningUnderSteam;
+#if UNITY_EDITOR
+            useSteamFrameControllerGeometry |= forceSteamFrameControllerGeometry;
+#endif
+
+            if (useSteamFrameControllerGeometry)
+            {
+                var controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftSteamFramePrefab,
+                  paletteController.openXRHolder.transform, false);
+                paletteController.controllerGeometry = controllerGeometryLeft.GetComponent<ControllerGeometry>();
+
+                var controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightSteamFramePrefab,
+                  peltzerController.openXRHolder.transform, false);
+                peltzerController.controllerGeometry = controllerGeometryRight.GetComponent<ControllerGeometry>();
+
+                // Steam Frame uses distinct left/right geometry and supports the same handedness swap path as Rift.
+                ObjectFinder.ObjectById("ID_toggle_left_handed").SetActive(true);
+                ObjectFinder.ObjectById("ID_small_menu_div").SetActive(true);
+                ObjectFinder.ObjectById("ID_large_menu_div").SetActive(false);
+            }
+            else if (Config.Instance.VrHardware == VrHardware.Rift)
             {
                 // Create the left controller geometry for the palette controller.
                 GameObject controllerGeometryLeft = null;
