@@ -50,6 +50,22 @@ public class SteamFrameLoginTest
             "https://icosa.gallery/device", useAutomaticCallback: false, secret: null));
     }
 
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void TryNormalizeManualCode_RejectsBlankInput(string deviceCode)
+    {
+        Assert.False(DeviceLoginRouting.TryNormalizeManualCode(deviceCode, out var normalizedCode));
+        Assert.True(string.IsNullOrEmpty(normalizedCode));
+    }
+
+    [Test]
+    public void TryNormalizeManualCode_TrimsValidInput()
+    {
+        Assert.True(DeviceLoginRouting.TryNormalizeManualCode("  test code  ", out var normalizedCode));
+        Assert.AreEqual("test code", normalizedCode);
+    }
+
     [Test]
     public void KeyboardHide_NotifiesPendingLoginOfDismissal()
     {

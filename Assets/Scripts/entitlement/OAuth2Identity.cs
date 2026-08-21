@@ -52,6 +52,12 @@ namespace com.google.apps.peltzer.client.entitlement
 
     public static class DeviceLoginRouting
     {
+        public static bool TryNormalizeManualCode(string deviceCode, out string normalizedCode)
+        {
+            normalizedCode = deviceCode?.Trim();
+            return !String.IsNullOrEmpty(normalizedCode);
+        }
+
         public static string BuildAuthorizationUrl(
           string deviceCodeUrl, bool useAutomaticCallback, string secret)
         {
@@ -923,7 +929,14 @@ namespace com.google.apps.peltzer.client.entitlement
 
             void OnSubmit(object sender, string deviceCode)
             {
-                m_VerificationCode = deviceCode;
+                if (!DeviceLoginRouting.TryNormalizeManualCode(deviceCode, out var normalizedCode))
+                {
+                    Debug.Log($"{kDeviceLoginLogPrefix} Manual sign-in cancelled: no code entered");
+                    m_VerificationError = true;
+                    return;
+                }
+
+                m_VerificationCode = normalizedCode;
             }
 
             void OnDismiss(object sender, EventArgs args)
