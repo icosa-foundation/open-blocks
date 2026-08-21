@@ -77,7 +77,7 @@ namespace com.google.apps.peltzer.client.menu
 
         private const string USE_BROWSER_FOR_SIGN_IN_PROMPT = "Continue sign-in using your web browser";
         private const string ENTER_DEVICE_CODE_PROMPT =
-          "Visit icosa.gallery/device, then enter the displayed code here";
+          "Visit icosa.gallery/device to get a login code";
 
         private static StringBuilder BASE_CREATOR = new StringBuilder("by ");
 
