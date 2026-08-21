@@ -1212,7 +1212,7 @@ namespace com.google.apps.peltzer.client.model.main
                     else
                     {
                         SignIn(promptUserIfNoToken: true);
-                        paletteController.publishSignInPrompt.SetActive(true);
+                        paletteController.publishSignInPrompt.SetActive(OsCanReachLocalhost);
                     }
                     break;
                 case MenuAction.PUBLISH:
@@ -1220,7 +1220,7 @@ namespace com.google.apps.peltzer.client.model.main
                     if (!OAuth2Identity.Instance.LoggedIn)
                     {
                         SignIn(/* promptUserIfNoToken */ true);
-                        paletteController.publishSignInPrompt.SetActive(true);
+                        paletteController.publishSignInPrompt.SetActive(OsCanReachLocalhost);
                     }
                     else
                     {

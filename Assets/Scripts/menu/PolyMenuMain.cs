@@ -75,7 +75,9 @@ namespace com.google.apps.peltzer.client.menu
 
         private static float DETAIL_TILE_SIZE = 0.15f;
 
-        private static string USE_BROWSER_FOR_SIGN_IN_PROMPT = "Continue sign-in using your web browser";
+        private const string USE_BROWSER_FOR_SIGN_IN_PROMPT = "Continue sign-in using your web browser";
+        private const string ENTER_DEVICE_CODE_PROMPT =
+          "Visit icosa.gallery/device, then enter the displayed code here";
 
         private static StringBuilder BASE_CREATOR = new StringBuilder("by ");
 
@@ -1276,7 +1278,9 @@ namespace com.google.apps.peltzer.client.menu
         /// </summary>
         public void PromptUserToSignIn()
         {
-            signInText.text = USE_BROWSER_FOR_SIGN_IN_PROMPT;
+            signInText.text = PeltzerMain.Instance.OsCanReachLocalhost
+              ? USE_BROWSER_FOR_SIGN_IN_PROMPT
+              : ENTER_DEVICE_CODE_PROMPT;
         }
 
         /// <summary>
