@@ -428,6 +428,9 @@ namespace com.google.apps.peltzer.client.model.main
         // Saving
         public AutoSave autoSave { get; private set; }
         public bool ModelChangedSinceLastSave;
+        // Set when a low-memory cache eviction had to be skipped because a save was serializing at the time;
+        // the eviction is retried from Update() once serialization finishes. See OnLowMemory.
+        private bool cacheEvictionPending;
         // Whether the last auto-save request was denied.
         public bool LastAutoSaveDenied;
         // A path to the user's Poly data folder.
@@ -1043,6 +1046,8 @@ namespace com.google.apps.peltzer.client.model.main
                 // Couldn't do set up yet, so wait.
                 return;
             }
+
+            ProcessPendingCacheEviction();
 
             if (LastAutoSaveDenied)
             {
@@ -1783,17 +1788,41 @@ namespace com.google.apps.peltzer.client.model.main
                 // Dictionary mutation. Besides being unsafe in itself, an exception thrown inside background
                 // work is only logged - PostWork never runs - which for a manual save means model.writeable
                 // is never restored and editing stays locked for the rest of the session.
-                // Two different serialization paths have to be excluded, because they signal differently:
-                // manual saves clear model.writeable, while autosaves leave it alone and instead flag
-                // autoSave.IsCurrentlySaving.
-                bool serializationInProgress = !model.writeable || (autoSave != null && autoSave.IsCurrentlySaving);
-                if (!serializationInProgress)
+                if (IsSerializationInProgress())
+                {
+                    // Defer rather than drop: a low-memory warning may be the only notice we get before the
+                    // OS kills the process, so the eviction is retried from Update() once the save finishes.
+                    cacheEvictionPending = true;
+                }
+                else
                 {
                     model.meshRepresentationCache.ClearComponentCachesForLowMemory();
                 }
             }
             Resources.UnloadUnusedAssets();
             System.GC.Collect();
+        }
+
+        /// <summary>
+        ///   Whether a background thread is currently serializing the model, in which case the main thread
+        ///   must not touch anything serialization reads. The two save paths signal this differently: manual
+        ///   saves clear model.writeable, while autosaves leave it alone and set autoSave.IsCurrentlySaving.
+        /// </summary>
+        private bool IsSerializationInProgress()
+        {
+            return (model != null && !model.writeable) || (autoSave != null && autoSave.IsCurrentlySaving);
+        }
+
+        /// <summary>
+        ///   Performs a low-memory cache eviction that had to be deferred because a save was serializing when
+        ///   the warning arrived. Called every frame; cheap when nothing is pending.
+        /// </summary>
+        private void ProcessPendingCacheEviction()
+        {
+            if (!cacheEvictionPending || model == null || IsSerializationInProgress()) return;
+            cacheEvictionPending = false;
+            Debug.LogWarning("Running deferred low-memory cache eviction now that serialization has finished.");
+            model.meshRepresentationCache.ClearComponentCachesForLowMemory();
         }
 
         /// <summary>
