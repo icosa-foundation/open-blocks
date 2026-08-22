@@ -1412,8 +1412,15 @@ namespace com.google.apps.peltzer.client.model.main
         {
             // Make the switch.
             HasDisabledTooltips = !HasDisabledTooltips;
-            peltzerController.HideTooltips();
-            paletteController.HideTooltips();
+            if (HasDisabledTooltips)
+            {
+                peltzerController.HideTooltips();
+                paletteController.HideTooltips();
+            }
+            else
+            {
+                peltzerController.ShowTooltips();
+            }
 
             // Update player preferences.
             PlayerPrefs.SetString(DISABLE_TOOLTIPS_KEY, HasDisabledTooltips ? "true" : "false");
