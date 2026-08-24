@@ -1417,6 +1417,7 @@ namespace com.google.apps.peltzer.client.model.main
             // stale hover state and reappear as soon as the roots are enabled again.
             peltzerController.controllerGeometry.ResetTooltipActivationState();
             paletteController.controllerGeometry.ResetTooltipActivationState();
+            applicationButtonToolTips.TurnOff();
             peltzerController.SetTouchpadHoverTexture(TouchpadHoverState.NONE);
             paletteController.SetTouchpadHoverTexture(TouchpadHoverState.NONE);
 

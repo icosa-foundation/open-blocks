@@ -38,11 +38,16 @@ namespace com.google.apps.peltzer.client.model.controller
 
             foreach (Transform tooltip in tooltipsRoot.GetComponentsInChildren<Transform>(includeInactive: true))
             {
-                if (IsTooltipCard(tooltip))
+                if (IsTooltipCard(tooltip) && !IsApplicationButtonTooltipCard(tooltip.gameObject))
                 {
                     tooltip.gameObject.SetActive(false);
                 }
             }
+        }
+
+        private bool IsApplicationButtonTooltipCard(GameObject tooltip)
+        {
+            return tooltip == applicationButtonTooltipLeft || tooltip == applicationButtonTooltipRight;
         }
 
         private static bool IsTooltipCard(Transform transform)

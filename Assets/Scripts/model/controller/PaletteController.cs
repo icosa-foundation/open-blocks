@@ -1245,8 +1245,6 @@ namespace com.google.apps.peltzer.client.model.controller
             controllerGeometry.zoomRightTooltip.SetActive(false);
             controllerGeometry.moveLeftTooltip.SetActive(false);
             controllerGeometry.moveRightTooltip.SetActive(false);
-            controllerGeometry.applicationButtonTooltipLeft.SetActive(false);
-            controllerGeometry.applicationButtonTooltipRight.SetActive(false);
 
             controllerGeometry.snapGrabAssistLeftTooltip.SetActive(false);
             controllerGeometry.snapGrabAssistRightTooltip.SetActive(false);
