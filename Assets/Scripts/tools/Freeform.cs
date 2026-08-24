@@ -1171,7 +1171,7 @@ namespace com.google.apps.peltzer.client.tools
             {
                 SetHoverTooltip(peltzerController.controllerGeometry.freeformTooltipRight, TouchpadHoverState.RIGHT);
             }
-            else if (IsSetCenterHoverTooltipEvent(args) && insertionInProgress)
+            else if (IsSetCenterHoverTooltipEvent(args) && insertionInProgress && isManualCheckpointing)
             {
                 SetHoverTooltip(peltzerController.controllerGeometry.freeformTooltipCenter, TouchpadHoverState.NONE);
             }
