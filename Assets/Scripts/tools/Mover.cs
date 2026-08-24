@@ -84,7 +84,6 @@ namespace com.google.apps.peltzer.client.tools
         /// <summary>
         /// Number of times to show the group tooltip.
         /// </summary>
-        private const int SHOW_GROUP_TOOLTIP_COUNT = 2;
         public ControllerMain controllerMain;
         /// <summary>
         ///   A reference to a controller capable of issuing move commands.
@@ -143,15 +142,6 @@ namespace com.google.apps.peltzer.client.tools
         ///   The Particle System object used to imitate a shatter effect.
         /// </summary>
         private ParticleSystem shatterPrefab;
-        /// <summary>
-        /// Number of times the group tooltip has been shown.
-        /// </summary>
-        private int groupTooltipShownCount = 0;
-        /// <summary>
-        /// Number of times the ungroup tooltip has been shown.
-        /// </summary>
-        private int ungroupTooltipShownCount = 0;
-
         // Detection for trigger down & straight back up, vs trigger down and hold -- either of which
         // begins a move or a copy.
         private bool triggerUpToRelease;
@@ -631,44 +621,18 @@ namespace com.google.apps.peltzer.client.tools
             overlay.onIcon.gameObject.SetActive(groupButtonAction != GroupButtonAction.UNGROUP);
             overlay.offIcon.gameObject.SetActive(groupButtonAction == GroupButtonAction.UNGROUP);
 
-            GameObject groupTooltip = peltzerController.handedness == Handedness.RIGHT ?
-              peltzerController.controllerGeometry.groupLeftTooltip : peltzerController.controllerGeometry.groupRightTooltip;
-            GameObject ungroupTooltip = peltzerController.handedness == Handedness.RIGHT ?
-              peltzerController.controllerGeometry.ungroupLeftTooltip : peltzerController.controllerGeometry.ungroupRightTooltip;
-
-            if (groupButtonAction == GroupButtonAction.GROUP
-              && groupTooltipShownCount < SHOW_GROUP_TOOLTIP_COUNT
+            if (peltzerController.IsApplicationButtonTooltipInputActive()
               && !PeltzerMain.Instance.tutorialManager.TutorialOccurring()
               && !PeltzerMain.Instance.HasDisabledTooltips)
             {
-                peltzerController.controllerGeometry.groupTooltipRoot.SetActive(true);
-                groupTooltip.SetActive(true);
-                ungroupTooltip.SetActive(false);
-            }
-            else if (groupButtonAction == GroupButtonAction.UNGROUP
-              && ungroupTooltipShownCount < SHOW_GROUP_TOOLTIP_COUNT
-              && !PeltzerMain.Instance.tutorialManager.TutorialOccurring()
-              && !PeltzerMain.Instance.HasDisabledTooltips)
-            {
-                peltzerController.controllerGeometry.groupTooltipRoot.SetActive(true);
-                ungroupTooltip.SetActive(true);
-                groupTooltip.SetActive(false);
+                bool willUngroup = groupButtonAction == GroupButtonAction.UNGROUP;
+                peltzerController.ShowToolActionButtonTooltip(
+                  willUngroup ? "Ungroup selection" : "Group selection",
+                  useUngroupCard: willUngroup);
             }
             else
             {
-                peltzerController.controllerGeometry.groupTooltipRoot.SetActive(false);
-                // Only increment the 'times shown' count when deselected, or else may count as separate times if the tooltip
-                // that was still active was "set" again.
-                if (groupTooltip.activeSelf)
-                {
-                    groupTooltip.SetActive(false);
-                    groupTooltipShownCount++;
-                }
-                else if (ungroupTooltip.activeSelf)
-                {
-                    ungroupTooltip.SetActive(false);
-                    ungroupTooltipShownCount++;
-                }
+                peltzerController.HideToolActionButtonTooltip();
             }
 
             // Set the state of the Grab Toolhead tooltip which happens to be the first child - index 0.

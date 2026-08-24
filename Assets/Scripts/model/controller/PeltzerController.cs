@@ -511,6 +511,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 {
                     SetGripTooltip();
                     ProcessButtonEvents();
+                    UpdateToolActionButtonTooltip();
                 }
             }
         }
@@ -1379,6 +1380,7 @@ namespace com.google.apps.peltzer.client.model.controller
             // set it itself.
             SetApplicationButtonOverlay(ButtonMode.INACTIVE);
             SetSecondaryButtonOverlay(/*active*/ false);
+            UpdateToolActionButtonTooltip();
 
             if (ModeChangedHandler != null)
             {
@@ -1569,6 +1571,83 @@ namespace com.google.apps.peltzer.client.model.controller
             controllerGeometry.moverTooltips.SetActive(false);
             controllerGeometry.grabTooltips.SetActive(false);
             controllerGeometry.groupTooltipRoot.SetActive(false);
+        }
+
+        public void ShowToolActionButtonTooltip(string text, bool useUngroupCard = false)
+        {
+            if (!PeltzerMain.Instance.restrictionManager.tooltipsAllowed
+              || PeltzerMain.Instance.HasDisabledTooltips)
+            {
+                HideToolActionButtonTooltip();
+                return;
+            }
+
+            GameObject groupTooltip = handedness == Handedness.RIGHT
+              ? controllerGeometry.groupLeftTooltip
+              : controllerGeometry.groupRightTooltip;
+            GameObject ungroupTooltip = handedness == Handedness.RIGHT
+              ? controllerGeometry.ungroupLeftTooltip
+              : controllerGeometry.ungroupRightTooltip;
+            GameObject tooltip = useUngroupCard ? ungroupTooltip : groupTooltip;
+
+            controllerGeometry.groupLeftTooltip.SetActive(false);
+            controllerGeometry.groupRightTooltip.SetActive(false);
+            controllerGeometry.ungroupLeftTooltip.SetActive(false);
+            controllerGeometry.ungroupRightTooltip.SetActive(false);
+            if (controllerGeometry.modifyCoplanarTooltip != null)
+            {
+                controllerGeometry.modifyCoplanarTooltip.SetActive(false);
+            }
+            ControllerGeometry.SetTooltipText(tooltip, text);
+            tooltip.SetActive(true);
+            controllerGeometry.groupTooltipRoot.SetActive(true);
+        }
+
+        public void HideToolActionButtonTooltip()
+        {
+            controllerGeometry.groupTooltipRoot.SetActive(false);
+            if (controllerGeometry.modifyCoplanarTooltip != null)
+            {
+                controllerGeometry.modifyCoplanarTooltip.SetActive(false);
+            }
+        }
+
+        public bool IsApplicationButtonTooltipInputActive()
+        {
+            return controller != null
+              && (controller.IsTouched(ButtonId.ApplicationMenu)
+                || controller.IsPressed(ButtonId.ApplicationMenu));
+        }
+
+        private void UpdateToolActionButtonTooltip()
+        {
+            if (!IsApplicationButtonTooltipInputActive())
+            {
+                HideToolActionButtonTooltip();
+            }
+            else if (mode == ControllerMode.reshape || mode == ControllerMode.extrude)
+            {
+                ShowModifyApplicationButtonTooltip();
+            }
+            else if (mode != ControllerMode.move)
+            {
+                HideToolActionButtonTooltip();
+            }
+        }
+
+        private void ShowModifyApplicationButtonTooltip()
+        {
+            if (!PeltzerMain.Instance.restrictionManager.tooltipsAllowed
+              || PeltzerMain.Instance.HasDisabledTooltips
+              || controllerGeometry.modifyCoplanarTooltip == null)
+            {
+                HideToolActionButtonTooltip();
+                return;
+            }
+
+            controllerGeometry.groupTooltipRoot.SetActive(false);
+            controllerGeometry.modifyTooltips.SetActive(true);
+            controllerGeometry.modifyCoplanarTooltip.SetActive(true);
         }
 
         /// <summary>
