@@ -621,7 +621,8 @@ namespace com.google.apps.peltzer.client.tools
             overlay.onIcon.gameObject.SetActive(groupButtonAction != GroupButtonAction.UNGROUP);
             overlay.offIcon.gameObject.SetActive(groupButtonAction == GroupButtonAction.UNGROUP);
 
-            if (peltzerController.IsApplicationButtonTooltipInputActive()
+            if (groupButtonAction != GroupButtonAction.NONE
+              && peltzerController.IsApplicationButtonTooltipInputActive()
               && !PeltzerMain.Instance.tutorialManager.TutorialOccurring()
               && !PeltzerMain.Instance.HasDisabledTooltips)
             {
