@@ -450,8 +450,9 @@ namespace com.google.apps.peltzer.client.model.controller
             tooltips.Add(ControllerMode.subdividePlane, controllerGeometry.modifyTooltips);
             tooltips.Add(ControllerMode.paintFace, controllerGeometry.paintTooltips);
             tooltips.Add(ControllerMode.paintMesh, controllerGeometry.paintTooltips);
+            tooltips.Add(ControllerMode.delete, controllerGeometry.deleteTooltips);
+            tooltips.Add(ControllerMode.deletePart, controllerGeometry.deleteTooltips);
             tooltips.Add(ControllerMode.move, controllerGeometry.grabTooltips);
-            // Currently no tooltips for delete mode.
         }
 
         public void SetDefaultMode()
@@ -1568,6 +1569,7 @@ namespace com.google.apps.peltzer.client.model.controller
             controllerGeometry.freeformTooltips.SetActive(false);
             controllerGeometry.modifyTooltips.SetActive(false);
             controllerGeometry.paintTooltips.SetActive(false);
+            controllerGeometry.deleteTooltips.SetActive(false);
             controllerGeometry.moverTooltips.SetActive(false);
             controllerGeometry.grabTooltips.SetActive(false);
             controllerGeometry.groupTooltipRoot.SetActive(false);
@@ -1661,6 +1663,7 @@ namespace com.google.apps.peltzer.client.model.controller
             controllerGeometry.freeformTooltips.SetActive(true);
             controllerGeometry.modifyTooltips.SetActive(true);
             controllerGeometry.paintTooltips.SetActive(true);
+            controllerGeometry.deleteTooltips.SetActive(true);
             controllerGeometry.moverTooltips.SetActive(true);
             controllerGeometry.grabTooltips.SetActive(true);
             controllerGeometry.groupTooltipRoot.SetActive(true);

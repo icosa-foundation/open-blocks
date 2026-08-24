@@ -126,6 +126,7 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject modifyTooltipLeft;
         public GameObject modifyTooltipRight;
         public GameObject modifyTooltipUp;
+        public GameObject modifyTooltipDown;
         [FormerlySerializedAs("modifyTooltipApplicationButton")]
         public GameObject modifyCoplanarTooltip;
 
@@ -151,6 +152,10 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject paintTooltips;
         public GameObject paintTooltipLeft;
         public GameObject paintTooltipRight;
+
+        public GameObject deleteTooltips;
+        public GameObject deleteTooltipLeft;
+        public GameObject deleteTooltipRight;
 
         public GameObject resizeUpTooltip;
         public GameObject resizeDownTooltip;
