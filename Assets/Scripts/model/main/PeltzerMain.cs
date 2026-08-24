@@ -1412,6 +1412,14 @@ namespace com.google.apps.peltzer.client.model.main
         {
             // Make the switch.
             HasDisabledTooltips = !HasDisabledTooltips;
+
+            // Tooltip roots are hidden when tooltips are disabled, so their active children would otherwise retain
+            // stale hover state and reappear as soon as the roots are enabled again.
+            peltzerController.controllerGeometry.ResetTooltipActivationState();
+            paletteController.controllerGeometry.ResetTooltipActivationState();
+            peltzerController.SetTouchpadHoverTexture(TouchpadHoverState.NONE);
+            paletteController.SetTouchpadHoverTexture(TouchpadHoverState.NONE);
+
             if (HasDisabledTooltips)
             {
                 peltzerController.HideTooltips();
