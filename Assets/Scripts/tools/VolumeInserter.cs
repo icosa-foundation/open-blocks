@@ -760,10 +760,11 @@ namespace com.google.apps.peltzer.client.tools
                 return;
             }
 
-            peltzerController.controllerGeometry.shapeTooltips.SetActive(true);
-            bool showTooltip = peltzerController.IsApplicationButtonTooltipInputActive()
-              && PeltzerMain.Instance.restrictionManager.tooltipsAllowed
+            bool tooltipsAllowed = PeltzerMain.Instance.restrictionManager.tooltipsAllowed
               && !PeltzerMain.Instance.HasDisabledTooltips;
+            peltzerController.controllerGeometry.shapeTooltips.SetActive(tooltipsAllowed);
+            bool showTooltip = tooltipsAllowed
+              && peltzerController.IsApplicationButtonTooltipInputActive();
             peltzerController.controllerGeometry.csgTooltips.SetActive(showTooltip);
             if (!showTooltip || csgTooltipText == null)
             {
