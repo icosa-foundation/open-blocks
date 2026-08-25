@@ -98,6 +98,7 @@ namespace com.google.apps.peltzer.client.tools
         public CsgOperations.CsgOperation csgOperation;
         private TextMesh csgTooltipText;
         private string defaultCsgTooltipText;
+        private bool isSetup;
         private const int SNAP_KNOW_HOW_COUNT = 3;
 
         /// <summary>
@@ -131,6 +132,9 @@ namespace com.google.apps.peltzer.client.tools
 
             // Attach the preview mesh to the preview GameObject.
             CreateNewVolumeMesh();
+
+            isSetup = true;
+            UpdateTooltip();
         }
 
         /// <summary>
@@ -743,6 +747,11 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         public void UpdateTooltip()
         {
+            if (!isSetup)
+            {
+                return;
+            }
+
             bool isVolumeInsertOrCsgMode = peltzerController.mode is ControllerMode.insertVolume or ControllerMode.csg;
             if (!isVolumeInsertOrCsgMode)
             {
