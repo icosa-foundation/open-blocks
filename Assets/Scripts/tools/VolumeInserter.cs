@@ -96,6 +96,7 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private int completedSnaps = 0;
         public CsgOperations.CsgOperation csgOperation;
+        private GameObject csgTooltipRoot;
         private TextMesh csgTooltipText;
         private string defaultCsgTooltipText;
         private bool isSetup;
@@ -124,8 +125,7 @@ namespace com.google.apps.peltzer.client.tools
             peltzerController.ModeChangedHandler += ModeChangeEventHandler;
             peltzerController.BlockModeChangedHandler += BlockModeChangedHandler;
 
-            csgTooltipText = peltzerController.controllerGeometry.csgTooltips
-              .GetComponentInChildren<TextMesh>(includeInactive: true);
+            RefreshCsgTooltipCache();
             defaultCsgTooltipText = csgTooltipText?.text;
 
             scaleDelta = DEFAULT_SCALE_DELTA;
@@ -135,6 +135,20 @@ namespace com.google.apps.peltzer.client.tools
 
             isSetup = true;
             UpdateTooltip();
+        }
+
+        private void RefreshCsgTooltipCache()
+        {
+            GameObject currentCsgTooltipRoot = peltzerController.controllerGeometry.csgTooltips;
+            if (currentCsgTooltipRoot == csgTooltipRoot)
+            {
+                return;
+            }
+
+            csgTooltipRoot = currentCsgTooltipRoot;
+            csgTooltipText = csgTooltipRoot != null
+              ? csgTooltipRoot.GetComponentInChildren<TextMesh>(includeInactive: true)
+              : null;
         }
 
         /// <summary>
@@ -760,6 +774,7 @@ namespace com.google.apps.peltzer.client.tools
                 return;
             }
 
+            RefreshCsgTooltipCache();
             bool tooltipsAllowed = PeltzerMain.Instance.restrictionManager.tooltipsAllowed
               && !PeltzerMain.Instance.HasDisabledTooltips;
             peltzerController.controllerGeometry.shapeTooltips.SetActive(tooltipsAllowed);
