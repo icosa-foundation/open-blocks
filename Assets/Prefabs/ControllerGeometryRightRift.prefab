@@ -4753,10 +4753,6 @@ MonoBehaviour:
   zoomRightTooltip: {fileID: 1792773558145846}
   moveLeftTooltip: {fileID: 1506153877865924}
   moveRightTooltip: {fileID: 1953563087040176}
-  snapLeftTooltip: {fileID: 0}
-  snapRightTooltip: {fileID: 0}
-  straightenLeftTooltip: {fileID: 0}
-  straightenRightTooltip: {fileID: 0}
   snapGrabAssistLeftTooltip: {fileID: 1688962701199020}
   snapGrabAssistRightTooltip: {fileID: 1272369140110914}
   snapGrabHoldLeftTooltip: {fileID: 1398113520297616}
@@ -16180,7 +16176,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4428893236431118
 Transform:
   m_ObjectHideFlags: 0
