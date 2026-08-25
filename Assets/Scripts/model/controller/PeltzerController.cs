@@ -1631,7 +1631,8 @@ namespace com.google.apps.peltzer.client.model.controller
             {
                 HideToolActionButtonTooltip();
             }
-            else if (mode == ControllerMode.reshape || mode == ControllerMode.extrude)
+            else if (mode == ControllerMode.reshape
+              || (mode == ControllerMode.extrude && !PeltzerMain.Instance.GetExtruder().IsExtrudingFace()))
             {
                 ShowModifyApplicationButtonTooltip();
             }
