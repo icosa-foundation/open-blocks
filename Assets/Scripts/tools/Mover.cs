@@ -663,23 +663,16 @@ namespace com.google.apps.peltzer.client.tools
         /// <param name="state">The hover state.</param>
         private void SetHoverTooltip(GameObject tooltip, TouchpadHoverState state)
         {
-            if (IsMoving() || selector.selectedMeshes.Count > 0 || selector.hoverMeshes.Count > 0)
-            {
-                if (!tooltip.activeSelf)
-                {
-                    UnsetAllHoverTooltips();
-                    tooltip.SetActive(true);
-                    peltzerController.SetTouchpadHoverTexture(state);
-                    peltzerController.TriggerHapticFeedback(
-                      HapticFeedback.HapticFeedbackType.FEEDBACK_1,
-                      0.003f,
-                      0.15f
-                    );
-                }
-            }
-            else
+            if (!tooltip.activeSelf)
             {
                 UnsetAllHoverTooltips();
+                tooltip.SetActive(true);
+                peltzerController.SetTouchpadHoverTexture(state);
+                peltzerController.TriggerHapticFeedback(
+                  HapticFeedback.HapticFeedbackType.FEEDBACK_1,
+                  0.003f,
+                  0.15f
+                );
             }
         }
 
