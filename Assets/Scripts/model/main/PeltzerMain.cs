@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 using com.google.apps.peltzer.client.desktop_app;
@@ -51,6 +52,13 @@ namespace com.google.apps.peltzer.client.model.main
     }
 
     public enum Handedness { NONE, LEFT, RIGHT }
+
+    public enum ControllerModel
+    {
+        Vive,
+        Rift,
+        Steam,
+    }
 
     /// <summary>
     ///   BackgroundWork for serializing a model into bytes (for saving).
@@ -357,10 +365,20 @@ namespace com.google.apps.peltzer.client.model.main
         private GameObject controllerGeometryLeftSteamFramePrefab;
         [SerializeField]
         private GameObject controllerGeometryRightSteamFramePrefab;
+        public ControllerModel ActiveControllerModel { get; private set; }
 #if UNITY_EDITOR
+        private enum ControllerModelOverride
+        {
+            Automatic = 0,
+            Vive = 2,
+            Rift = 3,
+            Steam = 1,
+        }
+
         [Header("Editor testing")]
+        [FormerlySerializedAs("forceSteamFrameControllerGeometry")]
         [SerializeField]
-        private bool forceSteamFrameControllerGeometry;
+        private ControllerModelOverride overrideControllerModel;
 #endif
 
         private bool running = true;
@@ -652,13 +670,27 @@ namespace com.google.apps.peltzer.client.model.main
                 // TODO
             }
 
-            bool useSteamFrameControllerGeometry =
-              Application.platform == RuntimePlatform.Android && SteamRuntime.RunningUnderSteam;
+            ActiveControllerModel = Application.platform == RuntimePlatform.Android && SteamRuntime.RunningUnderSteam
+              ? ControllerModel.Steam
+              : Config.Instance.VrHardware == VrHardware.Rift
+                ? ControllerModel.Rift
+                : ControllerModel.Vive;
 #if UNITY_EDITOR
-            useSteamFrameControllerGeometry |= forceSteamFrameControllerGeometry;
+            switch (overrideControllerModel)
+            {
+                case ControllerModelOverride.Vive:
+                    ActiveControllerModel = ControllerModel.Vive;
+                    break;
+                case ControllerModelOverride.Rift:
+                    ActiveControllerModel = ControllerModel.Rift;
+                    break;
+                case ControllerModelOverride.Steam:
+                    ActiveControllerModel = ControllerModel.Steam;
+                    break;
+            }
 #endif
 
-            if (useSteamFrameControllerGeometry)
+            if (ActiveControllerModel == ControllerModel.Steam)
             {
                 var controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftSteamFramePrefab,
                   paletteController.openXRHolder.transform, false);
@@ -673,7 +705,7 @@ namespace com.google.apps.peltzer.client.model.main
                 ObjectFinder.ObjectById("ID_small_menu_div").SetActive(true);
                 ObjectFinder.ObjectById("ID_large_menu_div").SetActive(false);
             }
-            else if (Config.Instance.VrHardware == VrHardware.Rift)
+            else if (ActiveControllerModel == ControllerModel.Rift)
             {
                 // Create the left controller geometry for the palette controller.
                 GameObject controllerGeometryLeft = null;
@@ -1412,6 +1444,15 @@ namespace com.google.apps.peltzer.client.model.main
         {
             // Make the switch.
             HasDisabledTooltips = !HasDisabledTooltips;
+
+            // Tooltip roots are hidden when tooltips are disabled, so their active children would otherwise retain
+            // stale hover state and reappear as soon as the roots are enabled again.
+            peltzerController.controllerGeometry.ResetTooltipActivationState();
+            paletteController.controllerGeometry.ResetTooltipActivationState();
+            applicationButtonToolTips.TurnOff();
+            peltzerController.SetTouchpadHoverTexture(TouchpadHoverState.NONE);
+            paletteController.SetTouchpadHoverTexture(TouchpadHoverState.NONE);
+
             if (HasDisabledTooltips)
             {
                 peltzerController.HideTooltips();

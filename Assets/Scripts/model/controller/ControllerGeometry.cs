@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -22,6 +23,54 @@ namespace com.google.apps.peltzer.client.model.controller
     /// </summary>
     public class ControllerGeometry : MonoBehaviour
     {
+        private void Awake()
+        {
+            ResetTooltipActivationState();
+        }
+
+        public void ResetTooltipActivationState()
+        {
+            Transform tooltipsRoot = transform.Find("ControllerUI/Tooltips");
+            if (tooltipsRoot == null)
+            {
+                return;
+            }
+
+            foreach (Transform tooltip in tooltipsRoot.GetComponentsInChildren<Transform>(includeInactive: true))
+            {
+                if (IsTooltipCard(tooltip) && !IsApplicationButtonTooltipCard(tooltip.gameObject))
+                {
+                    tooltip.gameObject.SetActive(false);
+                }
+            }
+        }
+
+        private bool IsApplicationButtonTooltipCard(GameObject tooltip)
+        {
+            return tooltip == applicationButtonTooltipLeft || tooltip == applicationButtonTooltipRight;
+        }
+
+        private static bool IsTooltipCard(Transform transform)
+        {
+            bool hasBackground = false;
+            bool hasTip = false;
+            foreach (Transform child in transform)
+            {
+                hasBackground |= child.name == "bg";
+                hasTip |= child.name.StartsWith("tip", System.StringComparison.OrdinalIgnoreCase);
+            }
+            return hasBackground && hasTip;
+        }
+
+        public static void SetTooltipText(GameObject tooltip, string text)
+        {
+            TextMesh textMesh = tooltip.GetComponentInChildren<TextMesh>(includeInactive: true);
+            if (textMesh != null)
+            {
+                textMesh.text = text;
+            }
+        }
+
         public BaseControllerAnimation baseControllerAnimation;
 
         [Header("Geometry")]
@@ -82,6 +131,9 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject modifyTooltipLeft;
         public GameObject modifyTooltipRight;
         public GameObject modifyTooltipUp;
+        public GameObject modifyTooltipDown;
+        [FormerlySerializedAs("modifyTooltipApplicationButton")]
+        public GameObject modifyCoplanarTooltip;
 
         public GameObject moverTooltips;
         public GameObject moverTooltipLeft;
@@ -106,6 +158,10 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject paintTooltipLeft;
         public GameObject paintTooltipRight;
 
+        public GameObject deleteTooltips;
+        public GameObject deleteTooltipLeft;
+        public GameObject deleteTooltipRight;
+
         public GameObject resizeUpTooltip;
         public GameObject resizeDownTooltip;
 
@@ -117,10 +173,6 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject zoomRightTooltip;
         public GameObject moveLeftTooltip;
         public GameObject moveRightTooltip;
-        public GameObject snapLeftTooltip;
-        public GameObject snapRightTooltip;
-        public GameObject straightenLeftTooltip;
-        public GameObject straightenRightTooltip;
 
         public GameObject snapGrabAssistLeftTooltip;
         public GameObject snapGrabAssistRightTooltip;
