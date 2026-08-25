@@ -757,8 +757,6 @@ namespace com.google.apps.peltzer.client.model.controller
 
                 controllerGeometry.zoomRightTooltip.SetActive(false);
                 controllerGeometry.moveRightTooltip.SetActive(false);
-                controllerGeometry.snapRightTooltip.SetActive(false);
-                controllerGeometry.straightenRightTooltip.SetActive(false);
                 controllerGeometry.menuRightTooltip.SetActive(false);
 
                 controllerGeometry.snapGrabAssistRightTooltip.SetActive(false);
@@ -795,8 +793,6 @@ namespace com.google.apps.peltzer.client.model.controller
 
                 controllerGeometry.zoomLeftTooltip.SetActive(false);
                 controllerGeometry.moveLeftTooltip.SetActive(false);
-                controllerGeometry.snapLeftTooltip.SetActive(false);
-                controllerGeometry.straightenLeftTooltip.SetActive(false);
                 controllerGeometry.menuLeftTooltip.SetActive(false);
 
                 controllerGeometry.snapGrabAssistLeftTooltip.SetActive(false);
@@ -937,16 +933,6 @@ namespace com.google.apps.peltzer.client.model.controller
             return PeltzerMain.Instance.restrictionManager.tooltipsAllowed
               && !PeltzerMain.Instance.tutorialManager.TutorialOccurring()
               && !PeltzerMain.Instance.HasDisabledTooltips;
-        }
-
-        public void DisableSnapTooltips()
-        {
-            GameObject snapTooltip = handedness == Handedness.LEFT ?
-              controllerGeometry.snapLeftTooltip : controllerGeometry.snapRightTooltip;
-            snapTooltip.SetActive(false);
-            GameObject straightenTooltip = handedness == Handedness.LEFT ?
-              controllerGeometry.straightenLeftTooltip : controllerGeometry.straightenRightTooltip;
-            straightenTooltip.SetActive(false);
         }
 
         public void HideSnapAssistanceTooltips()
@@ -1237,10 +1223,6 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void HideTooltips()
         {
-            controllerGeometry.snapLeftTooltip.SetActive(false);
-            controllerGeometry.snapRightTooltip.SetActive(false);
-            controllerGeometry.straightenLeftTooltip.SetActive(false);
-            controllerGeometry.straightenRightTooltip.SetActive(false);
             controllerGeometry.zoomLeftTooltip.SetActive(false);
             controllerGeometry.zoomRightTooltip.SetActive(false);
             controllerGeometry.moveLeftTooltip.SetActive(false);

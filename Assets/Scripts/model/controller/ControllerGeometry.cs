@@ -173,10 +173,6 @@ namespace com.google.apps.peltzer.client.model.controller
         public GameObject zoomRightTooltip;
         public GameObject moveLeftTooltip;
         public GameObject moveRightTooltip;
-        public GameObject snapLeftTooltip;
-        public GameObject snapRightTooltip;
-        public GameObject straightenLeftTooltip;
-        public GameObject straightenRightTooltip;
 
         public GameObject snapGrabAssistLeftTooltip;
         public GameObject snapGrabAssistRightTooltip;
