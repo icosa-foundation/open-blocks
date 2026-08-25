@@ -96,6 +96,8 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private int completedSnaps = 0;
         public CsgOperations.CsgOperation csgOperation;
+        private TextMesh csgTooltipText;
+        private string defaultCsgTooltipText;
         private const int SNAP_KNOW_HOW_COUNT = 3;
 
         /// <summary>
@@ -120,6 +122,10 @@ namespace com.google.apps.peltzer.client.tools
             peltzerController.shapesMenu.ShapeMenuItemChangedHandler += ShapeChangedHandler;
             peltzerController.ModeChangedHandler += ModeChangeEventHandler;
             peltzerController.BlockModeChangedHandler += BlockModeChangedHandler;
+
+            csgTooltipText = peltzerController.controllerGeometry.csgTooltips
+              .GetComponentInChildren<TextMesh>(includeInactive: true);
+            defaultCsgTooltipText = csgTooltipText?.text;
 
             scaleDelta = DEFAULT_SCALE_DELTA;
 
@@ -738,41 +744,43 @@ namespace com.google.apps.peltzer.client.tools
         public void UpdateTooltip()
         {
             bool isVolumeInsertOrCsgMode = peltzerController.mode is ControllerMode.insertVolume or ControllerMode.csg;
-            if (isVolumeInsertOrCsgMode)
-            {
-                peltzerController.controllerGeometry.shapeTooltips.SetActive(true);
-                var textMesh = peltzerController.controllerGeometry.csgTooltips.GetComponentInChildren<TextMesh>();
-                switch (PeltzerMain.Instance.GetVolumeInserter().csgOperation)
-                {
-                    case CsgOperations.CsgOperation.INACTIVE:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(false);
-                        break;
-                    case CsgOperations.CsgOperation.SUBTRACT:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Subtract Shape";
-                        break;
-                    case CsgOperations.CsgOperation.INTERSECT:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Intersect Shape";
-                        break;
-                    case CsgOperations.CsgOperation.SPLIT:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Split Shape";
-                        break;
-                    case CsgOperations.CsgOperation.UNION:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Merge Shape";
-                        break;
-                    case CsgOperations.CsgOperation.PAINT_INTERSECT:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Paint Shape";
-                        break;
-                }
-            }
-            else
+            if (!isVolumeInsertOrCsgMode)
             {
                 peltzerController.controllerGeometry.shapeTooltips.SetActive(false);
                 peltzerController.controllerGeometry.csgTooltips.SetActive(false);
+                return;
+            }
+
+            peltzerController.controllerGeometry.shapeTooltips.SetActive(true);
+            bool showTooltip = peltzerController.IsApplicationButtonTooltipInputActive()
+              && PeltzerMain.Instance.restrictionManager.tooltipsAllowed
+              && !PeltzerMain.Instance.HasDisabledTooltips;
+            peltzerController.controllerGeometry.csgTooltips.SetActive(showTooltip);
+            if (!showTooltip || csgTooltipText == null)
+            {
+                return;
+            }
+
+            switch (csgOperation)
+            {
+                case CsgOperations.CsgOperation.INACTIVE:
+                    csgTooltipText.text = defaultCsgTooltipText;
+                    break;
+                case CsgOperations.CsgOperation.SUBTRACT:
+                    csgTooltipText.text = "Subtract Shape";
+                    break;
+                case CsgOperations.CsgOperation.INTERSECT:
+                    csgTooltipText.text = "Intersect Shape";
+                    break;
+                case CsgOperations.CsgOperation.SPLIT:
+                    csgTooltipText.text = "Split Shape";
+                    break;
+                case CsgOperations.CsgOperation.UNION:
+                    csgTooltipText.text = "Merge Shape";
+                    break;
+                case CsgOperations.CsgOperation.PAINT_INTERSECT:
+                    csgTooltipText.text = "Paint Shape";
+                    break;
             }
         }
 

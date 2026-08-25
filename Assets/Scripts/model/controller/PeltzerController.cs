@@ -1623,7 +1623,11 @@ namespace com.google.apps.peltzer.client.model.controller
 
         private void UpdateToolActionButtonTooltip()
         {
-            if (!IsApplicationButtonTooltipInputActive())
+            if (mode == ControllerMode.insertVolume || mode == ControllerMode.csg)
+            {
+                volumeInserterInstance.UpdateTooltip();
+            }
+            else if (!IsApplicationButtonTooltipInputActive())
             {
                 HideToolActionButtonTooltip();
             }

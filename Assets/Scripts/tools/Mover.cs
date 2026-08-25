@@ -621,14 +621,19 @@ namespace com.google.apps.peltzer.client.tools
             overlay.onIcon.gameObject.SetActive(groupButtonAction != GroupButtonAction.UNGROUP);
             overlay.offIcon.gameObject.SetActive(groupButtonAction == GroupButtonAction.UNGROUP);
 
-            if (groupButtonAction != GroupButtonAction.NONE
-              && peltzerController.IsApplicationButtonTooltipInputActive()
+            if (peltzerController.IsApplicationButtonTooltipInputActive()
               && !PeltzerMain.Instance.tutorialManager.TutorialOccurring()
               && !PeltzerMain.Instance.HasDisabledTooltips)
             {
                 bool willUngroup = groupButtonAction == GroupButtonAction.UNGROUP;
+                string tooltipText = groupButtonAction switch
+                {
+                    GroupButtonAction.NONE => "Group/Ungroup",
+                    GroupButtonAction.UNGROUP => "Ungroup selection",
+                    _ => "Group selection"
+                };
                 peltzerController.ShowToolActionButtonTooltip(
-                  willUngroup ? "Ungroup selection" : "Group selection",
+                  tooltipText,
                   useUngroupCard: willUngroup);
             }
             else
