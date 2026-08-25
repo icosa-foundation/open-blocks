@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 using com.google.apps.peltzer.client.desktop_app;
@@ -358,9 +359,18 @@ namespace com.google.apps.peltzer.client.model.main
         [SerializeField]
         private GameObject controllerGeometryRightSteamFramePrefab;
 #if UNITY_EDITOR
+        private enum ControllerModelOverride
+        {
+            Automatic = 0,
+            Vive = 2,
+            Rift = 3,
+            Steam = 1,
+        }
+
         [Header("Editor testing")]
+        [FormerlySerializedAs("forceSteamFrameControllerGeometry")]
         [SerializeField]
-        private bool forceSteamFrameControllerGeometry;
+        private ControllerModelOverride overrideControllerModel;
 #endif
 
         private bool running = true;
@@ -654,8 +664,23 @@ namespace com.google.apps.peltzer.client.model.main
 
             bool useSteamFrameControllerGeometry =
               Application.platform == RuntimePlatform.Android && SteamRuntime.RunningUnderSteam;
+            bool useRiftControllerGeometry = Config.Instance.VrHardware == VrHardware.Rift;
 #if UNITY_EDITOR
-            useSteamFrameControllerGeometry |= forceSteamFrameControllerGeometry;
+            switch (overrideControllerModel)
+            {
+                case ControllerModelOverride.Vive:
+                    useSteamFrameControllerGeometry = false;
+                    useRiftControllerGeometry = false;
+                    break;
+                case ControllerModelOverride.Rift:
+                    useSteamFrameControllerGeometry = false;
+                    useRiftControllerGeometry = true;
+                    break;
+                case ControllerModelOverride.Steam:
+                    useSteamFrameControllerGeometry = true;
+                    useRiftControllerGeometry = false;
+                    break;
+            }
 #endif
 
             if (useSteamFrameControllerGeometry)
@@ -673,7 +698,7 @@ namespace com.google.apps.peltzer.client.model.main
                 ObjectFinder.ObjectById("ID_small_menu_div").SetActive(true);
                 ObjectFinder.ObjectById("ID_large_menu_div").SetActive(false);
             }
-            else if (Config.Instance.VrHardware == VrHardware.Rift)
+            else if (useRiftControllerGeometry)
             {
                 // Create the left controller geometry for the palette controller.
                 GameObject controllerGeometryLeft = null;
