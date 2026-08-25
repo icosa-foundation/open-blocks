@@ -53,6 +53,13 @@ namespace com.google.apps.peltzer.client.model.main
 
     public enum Handedness { NONE, LEFT, RIGHT }
 
+    public enum ControllerModel
+    {
+        Vive,
+        Rift,
+        Steam,
+    }
+
     /// <summary>
     ///   BackgroundWork for serializing a model into bytes (for saving).
     ///   This does not handle the actual saving, it just serializes in preparation for saving.
@@ -358,6 +365,7 @@ namespace com.google.apps.peltzer.client.model.main
         private GameObject controllerGeometryLeftSteamFramePrefab;
         [SerializeField]
         private GameObject controllerGeometryRightSteamFramePrefab;
+        public ControllerModel ActiveControllerModel { get; private set; }
 #if UNITY_EDITOR
         private enum ControllerModelOverride
         {
@@ -662,28 +670,27 @@ namespace com.google.apps.peltzer.client.model.main
                 // TODO
             }
 
-            bool useSteamFrameControllerGeometry =
-              Application.platform == RuntimePlatform.Android && SteamRuntime.RunningUnderSteam;
-            bool useRiftControllerGeometry = Config.Instance.VrHardware == VrHardware.Rift;
+            ActiveControllerModel = Application.platform == RuntimePlatform.Android && SteamRuntime.RunningUnderSteam
+              ? ControllerModel.Steam
+              : Config.Instance.VrHardware == VrHardware.Rift
+                ? ControllerModel.Rift
+                : ControllerModel.Vive;
 #if UNITY_EDITOR
             switch (overrideControllerModel)
             {
                 case ControllerModelOverride.Vive:
-                    useSteamFrameControllerGeometry = false;
-                    useRiftControllerGeometry = false;
+                    ActiveControllerModel = ControllerModel.Vive;
                     break;
                 case ControllerModelOverride.Rift:
-                    useSteamFrameControllerGeometry = false;
-                    useRiftControllerGeometry = true;
+                    ActiveControllerModel = ControllerModel.Rift;
                     break;
                 case ControllerModelOverride.Steam:
-                    useSteamFrameControllerGeometry = true;
-                    useRiftControllerGeometry = false;
+                    ActiveControllerModel = ControllerModel.Steam;
                     break;
             }
 #endif
 
-            if (useSteamFrameControllerGeometry)
+            if (ActiveControllerModel == ControllerModel.Steam)
             {
                 var controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftSteamFramePrefab,
                   paletteController.openXRHolder.transform, false);
@@ -698,7 +705,7 @@ namespace com.google.apps.peltzer.client.model.main
                 ObjectFinder.ObjectById("ID_small_menu_div").SetActive(true);
                 ObjectFinder.ObjectById("ID_large_menu_div").SetActive(false);
             }
-            else if (useRiftControllerGeometry)
+            else if (ActiveControllerModel == ControllerModel.Rift)
             {
                 // Create the left controller geometry for the palette controller.
                 GameObject controllerGeometryLeft = null;
