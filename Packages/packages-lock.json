@@ -35,6 +35,13 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.rlabrecque.steamworks.net": {
+      "version": "https://github.com/icosa-mirror/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c791803ec16191a1f771b591438151d5f46e865e",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "c791803ec16191a1f771b591438151d5f46e865e"
+    },
     "com.unity.burst": {
       "version": "1.8.29",
       "depth": 1,
