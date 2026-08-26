@@ -357,6 +357,7 @@ namespace com.google.apps.peltzer.client.tools
         private void UnsetAllHoverTooltips()
         {
             peltzerController.controllerGeometry.modifyTooltipUp.SetActive(false);
+            peltzerController.controllerGeometry.modifyTooltipDown.SetActive(false);
             peltzerController.controllerGeometry.modifyTooltipLeft.SetActive(false);
             peltzerController.controllerGeometry.modifyTooltipRight.SetActive(false);
             peltzerController.controllerGeometry.resizeUpTooltip.SetActive(false);
@@ -941,6 +942,14 @@ namespace com.google.apps.peltzer.client.tools
             {
                 SetHoverTooltip(
                   peltzerController.controllerGeometry.modifyTooltipUp, TouchpadHoverState.UP, args.TouchpadOverlay);
+            }
+            else if (IsSetDownHoverTooltipEvent(args)
+              && PeltzerMain.Instance.restrictionManager.touchpadDownAllowed)
+            {
+                SetHoverTooltip(
+                  peltzerController.controllerGeometry.modifyTooltipDown,
+                  TouchpadHoverState.DOWN,
+                  args.TouchpadOverlay);
             }
             else if (
               IsSetLeftHoverTooltipEvent(args) && PeltzerMain.Instance.restrictionManager.touchpadLeftAllowed)
