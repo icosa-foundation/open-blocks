@@ -1152,6 +1152,10 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     AddCheckpoint();
                     AddSpine();
+                    if (Config.Instance.VrHardware == VrHardware.Rift)
+                    {
+                        UnsetAllHoverTooltips();
+                    }
                 }
             }
             else if (IsStopScalingEvent(args))
@@ -1178,7 +1182,7 @@ namespace com.google.apps.peltzer.client.tools
             {
                 SetHoverTooltip(peltzerController.controllerGeometry.freeformTooltipRight, TouchpadHoverState.RIGHT);
             }
-            else if (IsSetCenterHoverTooltipEvent(args) && insertionInProgress)
+            else if (IsSetCheckpointHoverTooltipEvent(args))
             {
                 SetHoverTooltip(peltzerController.controllerGeometry.freeformTooltipCenter, TouchpadHoverState.NONE);
             }
@@ -1381,11 +1385,23 @@ namespace com.google.apps.peltzer.client.tools
               && args.Action == ButtonAction.TOUCHPAD && args.TouchpadLocation == TouchpadLocation.RIGHT;
         }
 
-        private static bool IsSetCenterHoverTooltipEvent(ControllerEventArgs args)
+        private bool IsSetCheckpointHoverTooltipEvent(ControllerEventArgs args)
         {
-            return args.ControllerType == ControllerType.PELTZER
-              && args.ButtonId == ButtonId.Touchpad
-              && args.Action == ButtonAction.TOUCHPAD && args.TouchpadLocation == TouchpadLocation.CENTER;
+            if (!insertionInProgress || !isManualCheckpointing
+              || args.ControllerType != ControllerType.PELTZER)
+            {
+                return false;
+            }
+
+            if (Config.Instance.VrHardware == VrHardware.Rift)
+            {
+                return args.ButtonId == ButtonId.SecondaryButton
+                  && args.Action == ButtonAction.DOWN;
+            }
+
+            return args.ButtonId == ButtonId.Touchpad
+              && args.Action == ButtonAction.TOUCHPAD
+              && args.TouchpadLocation == TouchpadLocation.CENTER;
         }
 
         private static bool IsUnsetAllHoverTooltipsEvent(ControllerEventArgs args)

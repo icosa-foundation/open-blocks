@@ -1091,6 +1091,16 @@ jobs:
         run: |
           mkdir releases
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBlocks_Rift_$VERSION/
+          # The Windows OpenXR artifact is also used for Steam, but Meta rejects
+          # Rift uploads containing the Steamworks runtime. Remove it only from
+          # the Rift-specific copy, matching Open Brush's Rift packaging.
+          STEAM_DLL="releases/OpenBlocks_Rift_$VERSION/OpenBlocks_Data/Plugins/x86_64/steam_api64.dll"
+          rm -f "$STEAM_DLL"
+          if [ -e "$STEAM_DLL" ]
+          then
+            echo "Failed to remove Rift-incompatible DLL: $STEAM_DLL" >&2
+            exit 1
+          fi
           cd releases
           curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util

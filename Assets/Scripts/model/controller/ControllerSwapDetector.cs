@@ -237,6 +237,7 @@ namespace com.google.apps.peltzer.client.model.controller
             }
 
             // Disable any active tooltips so they will not get stuck on the wrong controller.
+            PeltzerMain.Instance.applicationButtonToolTips?.TurnOff();
             PeltzerMain.Instance.peltzerController.HideTooltips();
             PeltzerMain.Instance.paletteController.HideTooltips();
 
