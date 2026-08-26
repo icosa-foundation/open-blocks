@@ -187,6 +187,177 @@ namespace com.google.apps.peltzer.client.model.csg
 
             return edges;
         }
+
+        /// <summary>
+        /// Comprehensive validation to detect degenerate polygons that could cause CSG failures.
+        /// </summary>
+        public static bool IsValidPolygon(CsgPolygon polygon, float epsilon)
+        {
+            if (polygon == null || polygon.vertices == null || polygon.vertices.Count < 3)
+            {
+                return false;
+            }
+
+            return IsValidPolygon(polygon.vertices, epsilon);
+        }
+
+        /// <summary>
+        /// Comprehensive validation to detect degenerate vertex lists.
+        /// </summary>
+        public static bool IsValidPolygon(List<CsgVertex> vertices, float epsilon)
+        {
+            if (vertices == null || vertices.Count < 3)
+            {
+                return false;
+            }
+
+            // Check 1: Verify sufficient polygon area using Newell's method for robustness
+            Vector3 normal = Vector3.zero;
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                Vector3 v1 = vertices[i].loc;
+                Vector3 v2 = vertices[(i + 1) % vertices.Count].loc;
+                normal.x += (v1.y - v2.y) * (v1.z + v2.z);
+                normal.y += (v1.z - v2.z) * (v1.x + v2.x);
+                normal.z += (v1.x - v2.x) * (v1.y + v2.y);
+            }
+
+            float area = normal.magnitude * 0.5f;
+            if (area < epsilon * epsilon)
+            {
+                // Zero or near-zero area polygon
+                return false;
+            }
+
+            // Check 2: Detect near-colinear vertices
+            // For each vertex, check if it forms a degenerate triangle with its neighbors
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                Vector3 v0 = vertices[i].loc;
+                Vector3 v1 = vertices[(i + 1) % vertices.Count].loc;
+                Vector3 v2 = vertices[(i + 2) % vertices.Count].loc;
+
+                Vector3 edge1 = v1 - v0;
+                Vector3 edge2 = v2 - v1;
+
+                float edge1Len = edge1.magnitude;
+                float edge2Len = edge2.magnitude;
+
+                // Check for zero-length edges
+                if (edge1Len < epsilon || edge2Len < epsilon)
+                {
+                    return false;
+                }
+
+                // Check for colinearity using cross product
+                Vector3 cross = Vector3.Cross(edge1, edge2);
+                if (cross.magnitude < epsilon * edge1Len * edge2Len)
+                {
+                    // Vertices are colinear
+                    return false;
+                }
+            }
+
+            // Check 3: Verify no duplicate vertices
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                for (int j = i + 1; j < vertices.Count; j++)
+                {
+                    if (Vector3.Distance(vertices[i].loc, vertices[j].loc) < epsilon)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Validate a polygon and log detailed diagnostics about why it's invalid.
+        /// Useful for debugging CSG failures.
+        /// </summary>
+        public static bool ValidatePolygonWithDiagnostics(CsgPolygon polygon, float epsilon, string context = "")
+        {
+            if (polygon == null)
+            {
+                Debug.LogWarning($"CSG Validation [{context}]: Polygon is null");
+                return false;
+            }
+
+            if (polygon.vertices == null)
+            {
+                Debug.LogWarning($"CSG Validation [{context}]: Polygon vertices list is null");
+                return false;
+            }
+
+            if (polygon.vertices.Count < 3)
+            {
+                Debug.LogWarning($"CSG Validation [{context}]: Polygon has {polygon.vertices.Count} vertices (need at least 3)");
+                return false;
+            }
+
+            // Check area
+            Vector3 normal = Vector3.zero;
+            for (int i = 0; i < polygon.vertices.Count; i++)
+            {
+                Vector3 v1 = polygon.vertices[i].loc;
+                Vector3 v2 = polygon.vertices[(i + 1) % polygon.vertices.Count].loc;
+                normal.x += (v1.y - v2.y) * (v1.z + v2.z);
+                normal.y += (v1.z - v2.z) * (v1.x + v2.x);
+                normal.z += (v1.x - v2.x) * (v1.y + v2.y);
+            }
+
+            float area = normal.magnitude * 0.5f;
+            if (area < epsilon * epsilon)
+            {
+                Debug.LogWarning($"CSG Validation [{context}]: Polygon has near-zero area ({area:F8}, threshold {epsilon * epsilon:F8})");
+                return false;
+            }
+
+            // Check for colinear vertices
+            for (int i = 0; i < polygon.vertices.Count; i++)
+            {
+                Vector3 v0 = polygon.vertices[i].loc;
+                Vector3 v1 = polygon.vertices[(i + 1) % polygon.vertices.Count].loc;
+                Vector3 v2 = polygon.vertices[(i + 2) % polygon.vertices.Count].loc;
+
+                Vector3 edge1 = v1 - v0;
+                Vector3 edge2 = v2 - v1;
+
+                float edge1Len = edge1.magnitude;
+                float edge2Len = edge2.magnitude;
+
+                if (edge1Len < epsilon)
+                {
+                    Debug.LogWarning($"CSG Validation [{context}]: Zero-length edge at vertex {i} (length {edge1Len:F8})");
+                    return false;
+                }
+
+                Vector3 cross = Vector3.Cross(edge1, edge2);
+                if (cross.magnitude < epsilon * edge1Len * edge2Len)
+                {
+                    Debug.LogWarning($"CSG Validation [{context}]: Colinear vertices at indices {i}, {(i + 1) % polygon.vertices.Count}, {(i + 2) % polygon.vertices.Count}");
+                    return false;
+                }
+            }
+
+            // Check for duplicate vertices
+            for (int i = 0; i < polygon.vertices.Count; i++)
+            {
+                for (int j = i + 1; j < polygon.vertices.Count; j++)
+                {
+                    float dist = Vector3.Distance(polygon.vertices[i].loc, polygon.vertices[j].loc);
+                    if (dist < epsilon)
+                    {
+                        Debug.LogWarning($"CSG Validation [{context}]: Duplicate vertices at indices {i} and {j} (distance {dist:F8})");
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
     }
 }
 

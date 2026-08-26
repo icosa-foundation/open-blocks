@@ -23,7 +23,7 @@ using com.google.apps.peltzer.client.model.util;
 namespace com.google.apps.peltzer.client.model.csg
 {
     /// <summary>
-    ///   Context for CSG operations.  Unifies vertices.
+    ///   Context for CSG operations.  Unifies vertices and manages adaptive tolerances.
     /// </summary>
     public class CsgContext
     {
@@ -31,23 +31,42 @@ namespace com.google.apps.peltzer.client.model.csg
         private readonly int WIGGLE_ROOM = 3;
         private CollisionSystem<CsgVertex> tree;
 
+        // Adaptive epsilon based on geometry scale
+        private float baseEpsilon;
+        private float geometryScale;
+
+        public float Epsilon { get { return baseEpsilon; } }
+        public float CoplanarEpsilon { get { return baseEpsilon * 10f; } }
+        public float VertexMergeEpsilon { get { return baseEpsilon * WIGGLE_ROOM; } }
+
         public CsgContext(Bounds bounds)
         {
             tree = new NativeSpatial<CsgVertex>();
+
+            // Calculate adaptive epsilon based on geometry size
+            // Use the magnitude of the bounds extents as a scale reference
+            geometryScale = bounds.extents.magnitude;
+
+            // Base epsilon: use fixed minimum or scale-relative, whichever is larger
+            // This ensures small geometries get reasonable tolerance while large ones scale appropriately
+            const float MIN_EPSILON = 0.0001f;
+            const float EPSILON_SCALE_FACTOR = 1e-6f;
+            baseEpsilon = Mathf.Max(MIN_EPSILON, geometryScale * EPSILON_SCALE_FACTOR);
+
         }
 
         public CsgVertex CreateOrGetVertexAt(Vector3 loc)
         {
-            Bounds bb = new Bounds(loc, Vector3.one * CsgMath.EPSILON * WIGGLE_ROOM);
+            Bounds bb = new Bounds(loc, Vector3.one * VertexMergeEpsilon);
             CsgVertex closest = null;
             HashSet<CsgVertex> vertices;
             if (tree.IntersectedBy(bb, out vertices))
             {
-                float closestDist = 1000;
+                float closestDist = float.MaxValue;
                 foreach (CsgVertex potential in vertices)
                 {
                     float d = Vector3.Distance(loc, potential.loc);
-                    if (d < CsgMath.EPSILON && d < closestDist)
+                    if (d < Epsilon && d < closestDist)
                     {
                         closest = potential;
                         closestDist = d;
