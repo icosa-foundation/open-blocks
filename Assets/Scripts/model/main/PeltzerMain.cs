@@ -428,6 +428,9 @@ namespace com.google.apps.peltzer.client.model.main
         // Saving
         public AutoSave autoSave { get; private set; }
         public bool ModelChangedSinceLastSave;
+        // Set when a low-memory cache eviction had to be skipped because a save was serializing at the time;
+        // the eviction is retried from Update() once serialization finishes. See OnLowMemory.
+        private bool cacheEvictionPending;
         // Whether the last auto-save request was denied.
         public bool LastAutoSaveDenied;
         // A path to the user's Poly data folder.
@@ -712,6 +715,10 @@ namespace com.google.apps.peltzer.client.model.main
             model = new Model(worldSpace.bounds);
             spatialIndex = new SpatialIndex(model, worldSpace.bounds);
             SetupSpatialIndex();
+
+            // Register a low-memory pressure valve: when the OS reports memory pressure (Android/iOS fire this
+            // shortly before killing the app), shed reclaimable memory instead of crashing.
+            Application.lowMemory += OnLowMemory;
             generalBackgroundThread = new Thread(ProcessGeneralBackgroundWork);
             generalBackgroundThread.IsBackground = true;
             generalBackgroundThread.Priority = System.Threading.ThreadPriority.Lowest;
@@ -1039,6 +1046,8 @@ namespace com.google.apps.peltzer.client.model.main
                 // Couldn't do set up yet, so wait.
                 return;
             }
+
+            ProcessPendingCacheEviction();
 
             if (LastAutoSaveDenied)
             {
@@ -1758,6 +1767,62 @@ namespace com.google.apps.peltzer.client.model.main
                 spatialIndex.CondemnMesh(mesh.id);
                 DoBackgroundWork(new DeleteFromIndex(spatialIndex, mesh.Clone()));
             };
+        }
+
+        /// <summary>
+        ///   Sheds reclaimable memory when the OS signals memory pressure (Application.lowMemory fires on
+        ///   Android/iOS shortly before the OS would kill the app). Everything released here is either derived
+        ///   data that will be lazily rebuilt on demand, or history the user can live without; losing it is
+        ///   strictly better than the app being killed.
+        /// </summary>
+        private void OnLowMemory()
+        {
+            Debug.LogWarning("Low memory warning received: trimming undo history and derived-data caches.");
+            if (model != null)
+            {
+                // Always safe: serialization doesn't touch the undo/redo stacks.
+                model.TrimStacksForLowMemory();
+
+                // The component caches are not just read but also populated by ObjFileExporter on the
+                // background thread while a save is serializing, so clearing them here would be a concurrent
+                // Dictionary mutation. Besides being unsafe in itself, an exception thrown inside background
+                // work is only logged - PostWork never runs - which for a manual save means model.writeable
+                // is never restored and editing stays locked for the rest of the session.
+                if (IsSerializationInProgress())
+                {
+                    // Defer rather than drop: a low-memory warning may be the only notice we get before the
+                    // OS kills the process, so the eviction is retried from Update() once the save finishes.
+                    cacheEvictionPending = true;
+                }
+                else
+                {
+                    model.meshRepresentationCache.ClearComponentCachesForLowMemory();
+                }
+            }
+            Resources.UnloadUnusedAssets();
+            System.GC.Collect();
+        }
+
+        /// <summary>
+        ///   Whether a background thread is currently serializing the model, in which case the main thread
+        ///   must not touch anything serialization reads. The two save paths signal this differently: manual
+        ///   saves clear model.writeable, while autosaves leave it alone and set autoSave.IsCurrentlySaving.
+        /// </summary>
+        private bool IsSerializationInProgress()
+        {
+            return (model != null && !model.writeable) || (autoSave != null && autoSave.IsCurrentlySaving);
+        }
+
+        /// <summary>
+        ///   Performs a low-memory cache eviction that had to be deferred because a save was serializing when
+        ///   the warning arrived. Called every frame; cheap when nothing is pending.
+        /// </summary>
+        private void ProcessPendingCacheEviction()
+        {
+            if (!cacheEvictionPending || model == null || IsSerializationInProgress()) return;
+            cacheEvictionPending = false;
+            Debug.LogWarning("Running deferred low-memory cache eviction now that serialization has finished.");
+            model.meshRepresentationCache.ClearComponentCachesForLowMemory();
         }
 
         /// <summary>

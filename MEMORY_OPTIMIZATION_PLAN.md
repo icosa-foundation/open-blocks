@@ -88,26 +88,36 @@ Per face today: a `ReadOnlyCollection<int>` wrapper around a `List<int>` around 
   the assembled `MeshGenContext` per mesh in `MeshRepresentationCache`, so the per-face caches are
   a third copy of the same data. Needs profiling to confirm the re-render path doesn't regress.
 
-## 3. Budget the undo stack in bytes, not entries
+## 3. Budget the undo stack in bytes, not entries — DONE
 
-`Model.undoStackMaxSize` is 80 *entries*, but one entry can be a composite holding snapshots of a
-whole multi-selection. Now that `AddMeshCommand` snapshots are `byte[]`, sizing is trivial:
+Implemented as `Model.EnforceHistoryByteBudget`: a 32MB budget on Android/iOS (128MB elsewhere)
+covering the undo and redo stacks *combined*, enforced after every push site (command application,
+undo, redo) rather than from `LimitUndoStack` — the size of an incoming entry can't be anticipated,
+so unlike the entry-count trim it can't run beforehand. `LimitUndoStack` keeps only the count trim.
 
-- Track a running total of serialized bytes on the undo stack; when it exceeds a budget (e.g.
-  32MB on mobile, 128MB desktop), drop the oldest entries regardless of count. This converts the
-  worst remaining unbounded consumer into a hard cap with graceful degradation (shorter history
-  for huge scenes instead of a crash).
-- Optional latency insurance: keep the top 1-2 entries' meshes pre-deserialized (or deserialize
-  the next entry on the background thread after each undo) if device profiling shows rapid
-  repeated undo hitching. Don't build this until measured.
+Commands report their payload through the `ICommandWithRetainedMemory` interface, so the budget
+sees more than mesh snapshots: `ChangeFacePropertiesCommand` (a dictionary entry per face, up to
+`MMesh.MAX_FACES`) and `SetMeshGroupsCommand` (one assignment per selected mesh) would otherwise
+have been estimated at a flat 64 bytes each and escaped the cap entirely. Anything holding a
+collection that scales with model or selection size should implement it. The contract deliberately
+excludes memory owned elsewhere (e.g. reference-image `Texture2D`s belong to the manager, so
+discarding the command wouldn't reclaim them).
 
-## 4. ReMesher GPU-side: 16-bit indices and leaner vertex streams
+Two floors take precedence over the budget so it can't make the feature unusable:
+`UNDO_STACK_MIN_ENTRIES` (8) keeps a handful of very large operations undoable, and
+`REDO_STACK_MIN_ENTRIES` (1) guarantees a just-performed undo stays redoable — without it, an undo
+whose snapshot exceeded the remaining headroom was discarded the instant it was created.
 
-`MAX_VERTS_PER_MESH` is 32768, which fits `UInt16` exactly:
+Remaining follow-up (only if device profiling shows rapid repeated undo hitching): keep the top 1-2
+entries' meshes pre-deserialized, or deserialize the next entry on the background thread after each
+undo.
 
-- Set `mesh.indexFormat = IndexFormat.UInt16` on MeshInfo meshes — halves index-buffer memory and
-  upload bandwidth for every batched mesh. (Verify the two sentinel verts keep total count ≤ 65535
-  — they do.)
+## 4. ReMesher GPU-side: leaner vertex streams
+
+Correction to an earlier revision of this document: Unity `Mesh` index buffers already default to
+`IndexFormat.UInt16`, and `MAX_VERTS_PER_MESH` (32768) fits within it, so there is no 16-bit-index
+win to collect — the ReMesher's index buffers are 16-bit today.
+
 - The per-vertex transform index is uploaded as a `Vector2` UV channel (8 bytes/vertex) to carry a
   small integer. Moving it into, e.g., the unused alpha of `colors32` or a single-component UV
   (`SetUVs` with `Vector2` is the current API; a custom `VertexAttributeDescriptor` layout via
@@ -138,15 +148,24 @@ but:
 Managed-heap fixes don't help if native memory is the killer on device. Cheap, low-risk wins to
 audit:
 
-- **Poly menu thumbnails**: `ProcessGetThumbnailTexture` creates 512x384 RGBA32 textures with a
-  full mip chain and keeps them CPU-readable (`new Texture2D(512, 384)`, `ReadPixels`, `Apply()`).
-  `Apply(false, true)` (no mips, non-readable) cuts each thumbnail roughly 4x (~2MB → ~0.75MB);
-  across a few hundred menu tiles this is hundreds of MB of headroom. Same for the local-file path
-  (`LoadImage(bytes, markNonReadable: true)`, no-mip constructor).
+- **Poly menu thumbnails — DONE**: thumbnail textures are now created without mip chains and
+  marked non-readable after upload (sprites use `SpriteMeshType.FullRect`, which doesn't need CPU
+  access), roughly quartering per-thumbnail memory (~2MB → ~0.75MB across potentially hundreds of
+  menu tiles).
 - Verify Android texture import settings use ASTC and that `GifRecorder`'s
   `capturedGifFrames` (`List<Color32[]>`, ~1MB per 512x512 frame, unbounded while recording) is
   either disabled on mobile or frame-capped.
 - Check for leaked `RenderTexture`s / preview cameras after save-thumbnail generation.
+- **Reference-image textures are owned by undo history.** `MoveableReferenceImage.Destroy()` only
+  destroys the MeshRenderer, never the `Texture2D`, so once an image is deleted the only remaining
+  owner is the `Delete`/`AddReferenceImageCommand` pair holding it via `SetupParams.texture`. Those
+  commands do not implement `ICommandWithRetainedMemory`, so the history byte budget charges a
+  multi-megabyte texture 64 bytes and cannot trim it. Deliberately not fixed by simply reporting the
+  size: while an image is still live in the scene the manager owns the texture, so charging it there
+  would let a few reference images exceed the whole mobile budget and repeatedly gut undo history to
+  reclaim nothing. The real fix is on the ownership side — destroy the texture when the image is
+  deleted and reload it on undo — so that history never owns native texture memory. Until then,
+  heavy use of reference images can retain memory the budget can't see.
 
 ## 7. `MeshRepresentationCache` lifetime discipline
 
@@ -161,13 +180,15 @@ deleted.
 - Cheaper first step: clear the model-space cache and preview templates on scene clear/load and on
   `Application.lowMemory` (see item 8), where no previews can be live.
 
-## 8. `Application.lowMemory` pressure valve
+## 8. `Application.lowMemory` pressure valve — DONE (first version)
 
-Android delivers a low-memory callback before killing the app. Wire it to: trim the oldest half of
-the undo stack, `MeshRepresentationCache.Clear()` (safe when no grab in progress), drop
-non-visible Poly menu pages' preview GameObjects, and `Resources.UnloadUnusedAssets()`. This is a
-day of work and converts many would-be OOM kills into a logged, recoverable event. Log each firing
-to analytics so the remaining pressure sources are visible in the field.
+Implemented: `PeltzerMain` subscribes to `Application.lowMemory` and responds by trimming the undo
+stack to a quarter of its byte budget, clearing the redo stack, clearing
+`MeshRepresentationCache`'s component dictionaries (preview template GameObjects are deliberately
+left alone — their Unity meshes are shared with any live previews), and calling
+`Resources.UnloadUnusedAssets()` + `GC.Collect()`. Possible extensions: also drop non-visible Poly
+menu pages' preview GameObjects, and report firings to analytics so remaining pressure sources are
+visible in the field.
 
 ## 9. Load-time transient spikes
 
@@ -203,10 +224,10 @@ is what kills the app even if steady-state fits.
 | Order | Item | Impact | Risk | Effort |
 |-------|------|--------|------|--------|
 | 1 | §0 device profiling + debug memory dump | enables everything | none | S |
-| 2 | §8 lowMemory pressure valve | crash → degrade | low | S |
-| 3 | §3 byte-budgeted undo stack | caps last unbounded consumer | low | S |
-| 4 | §6 thumbnail/native audit | large on device | low | S |
-| 5 | §4 16-bit indices (+ transform channel) | GPU+CPU per scene | low-med | M |
+| 2 | §8 lowMemory pressure valve | DONE | - | - |
+| 3 | §3 byte-budgeted undo stack | DONE | - | - |
+| 4 | §6 native audit (thumbnails DONE; ASTC/GIF checks remain) | large on device | low | S |
+| 5 | §4 transform-index vertex channel | GPU+CPU per scene | low-med | M |
 | 6 | §1 Vertex struct | halves per-vertex managed memory | med (mechanical) | M |
 | 7 | §2 Face compaction | large object-count cut | med | M |
 | 8 | §5 SpatialIndex snapshotting | second geometry copy | med | M-L |

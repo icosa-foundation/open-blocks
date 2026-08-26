@@ -20,7 +20,7 @@ namespace com.google.apps.peltzer.client.model.core
     /// <summary>
     ///   A Command that is a composite of several other Commands.
     /// </summary>
-    public class CompositeCommand : Command
+    public class CompositeCommand : Command, ICommandWithRetainedMemory
     {
         public const string COMMAND_NAME = "composite";
 
@@ -55,6 +55,19 @@ namespace com.google.apps.peltzer.client.model.core
         public List<Command> GetCommands()
         {
             return commands;
+        }
+
+        /// <summary>
+        /// A composite retains everything its children retain (each child charged its own flat overhead too).
+        /// </summary>
+        public long GetRetainedMemoryBytes()
+        {
+            long total = 0;
+            for (int i = 0; i < commands.Count; i++)
+            {
+                total += Model.EstimateCommandSizeBytes(commands[i]);
+            }
+            return total;
         }
     }
 }

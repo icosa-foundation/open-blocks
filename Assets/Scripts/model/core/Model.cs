@@ -48,6 +48,26 @@ namespace com.google.apps.peltzer.client.model.core
         // Maximum size of the undo stack - when we hit this size we discard the older half of the stack.
         private static int undoStackMaxSize = 80;
 
+        // Maximum estimated memory the undo stack may retain. One stack entry can be a composite command
+        // holding mesh snapshots for a whole multi-selection, so an entry count alone does not bound memory;
+        // this byte budget does. When the budget is exceeded, the oldest entries are discarded (the user keeps
+        // a shorter history rather than running out of memory). Mobile devices get a tighter budget.
+#if UNITY_ANDROID || UNITY_IOS
+        private const long UNDO_STACK_MAX_BYTES = 32 * 1024 * 1024;
+#else
+        private const long UNDO_STACK_MAX_BYTES = 128 * 1024 * 1024;
+#endif
+
+        // Never trim the undo stack below this many entries, regardless of the byte budget, so that a handful
+        // of very large operations remain undoable.
+        private const int UNDO_STACK_MIN_ENTRIES = 8;
+
+        // Never let the byte budget discard the newest redo entry: an undo that has just been performed must
+        // stay reversible, even if the snapshot it produced is large enough to push the history over budget
+        // on its own. Older redo entries have no such protection. (This floor doesn't apply to the deliberate
+        // redoStack.Clear() in TrimStacksForLowMemory - under real memory pressure, losing redo is the point.)
+        private const int REDO_STACK_MIN_ENTRIES = 1;
+
         // Model change events.
         public event Action<MMesh> OnMeshAdded;
         public event Action<MMesh, bool, bool, bool> OnMeshChanged;
@@ -143,6 +163,9 @@ namespace com.google.apps.peltzer.client.model.core
             undoStack.Clear();
             redoStack.Clear();
             undoBatchStartTime = 0.0f;
+            // Release the retained forward command along with the rest of the history; keeping it would pin
+            // a payload belonging to the model we just discarded.
+            currentCommand = null;
             hiddenMeshes.Clear();
             meshRepresentationCache.Clear();
 
@@ -228,9 +251,15 @@ namespace com.google.apps.peltzer.client.model.core
                 undoStack.Push(undoCommand);
                 currentCommand = command;
             }
+
+            // Enforce the memory budget now that the new entry is on the stack.
+            EnforceHistoryByteBudget(UNDO_STACK_MAX_BYTES);
         }
 
-        // Checks if the undo stack is about to exceed the maximum size, and discard the older half if it is.
+        // Checks if the undo stack is about to exceed the maximum number of entries, and discards the older
+        // half if it is. Note that this runs BEFORE the incoming command is pushed, hence the -1.
+        // The memory (byte) budget is enforced separately, by EnforceHistoryByteBudget, after entries are
+        // pushed - unlike an entry count, the size of an incoming entry can't be anticipated here.
         private void LimitUndoStack()
         {
             if (undoStack.Count > undoStackMaxSize - 1)
@@ -249,10 +278,132 @@ namespace com.google.apps.peltzer.client.model.core
             }
         }
 
+        /// <summary>
+        /// Discards the oldest history entries until the estimated memory retained by the undo and redo
+        /// stacks *combined* fits within the given budget. Must be called after entries are pushed, so that
+        /// a single large operation can't leave the history over budget until the next edit happens.
+        /// </summary>
+        private void EnforceHistoryByteBudget(long maxBytes)
+        {
+            ReleaseExpiredCurrentCommand();
+
+            long undoBytes = EstimateStackSizeBytes(undoStack);
+            long redoBytes = EstimateStackSizeBytes(redoStack);
+            if (undoBytes + redoBytes <= maxBytes) return;
+
+            // Redo history is the more expendable of the two: it is only reachable if the user hasn't made a
+            // new edit since undoing, and the next edit discards it wholesale. So trim it first, and only eat
+            // into undo history if that alone doesn't free enough - except for the newest redo entry, which is
+            // preserved so that a just-performed undo can always be redone (older undo history yields first).
+            redoBytes = TrimStackToByteBudget(redoStack, Math.Max(0, maxBytes - undoBytes), REDO_STACK_MIN_ENTRIES);
+            if (undoBytes + redoBytes > maxBytes)
+            {
+                TrimStackToByteBudget(undoStack, Math.Max(0, maxBytes - redoBytes), UNDO_STACK_MIN_ENTRIES);
+            }
+        }
+
+        /// <summary>
+        /// Discards the oldest entries of a command stack until its estimated memory use fits within the
+        /// given budget, always keeping at least minEntries entries (so that a handful of very large
+        /// operations remain undoable).
+        /// </summary>
+        /// <returns>The estimated size in bytes of the resulting stack.</returns>
+        private static long TrimStackToByteBudget(Stack<Command> stack, long maxBytes, int minEntries)
+        {
+            long currentBytes = EstimateStackSizeBytes(stack);
+            if (currentBytes <= maxBytes || stack.Count <= minEntries) return currentBytes;
+
+            // Pop everything into a list (newest first), then re-push the newest entries that fit.
+            List<Command> commands = new List<Command>(stack.Count);
+            while (stack.Count > 0)
+            {
+                commands.Add(stack.Pop());
+            }
+
+            long keptBytes = 0;
+            int keepCount = 0;
+            while (keepCount < commands.Count)
+            {
+                long commandBytes = EstimateCommandSizeBytes(commands[keepCount]);
+                if (keptBytes + commandBytes > maxBytes && keepCount >= minEntries) break;
+                keptBytes += commandBytes;
+                keepCount++;
+            }
+
+            for (int i = keepCount - 1; i >= 0; i--)
+            {
+                stack.Push(commands[i]);
+            }
+            return keptBytes;
+        }
+
+        /// <summary>
+        /// Estimates the memory retained by all commands on a stack.
+        /// </summary>
+        public static long EstimateStackSizeBytes(Stack<Command> stack)
+        {
+            long total = 0;
+            foreach (Command command in stack)
+            {
+                total += EstimateCommandSizeBytes(command);
+            }
+            return total;
+        }
+
+        /// <summary>
+        /// Estimates the memory retained by a command: a small flat overhead for the command object itself,
+        /// plus whatever payload it reports via ICommandWithRetainedMemory. Commands that hold a collection or
+        /// buffer scaling with model or selection size should implement that interface, otherwise history
+        /// containing them can grow past the budget while being estimated at only the flat overhead.
+        /// </summary>
+        public static long EstimateCommandSizeBytes(Command command)
+        {
+            const long COMMAND_OVERHEAD_BYTES = 64;
+            ICommandWithRetainedMemory commandWithRetainedMemory = command as ICommandWithRetainedMemory;
+            return commandWithRetainedMemory != null
+              ? COMMAND_OVERHEAD_BYTES + commandWithRetainedMemory.GetRetainedMemoryBytes()
+              : COMMAND_OVERHEAD_BYTES;
+        }
+
         // Sets the maximum size of the undo stack.
         public static void SetMaxUndoStackSize(int maxSize)
         {
             undoStackMaxSize = maxSize;
+        }
+
+        /// <summary>
+        /// Frees memory in response to OS memory pressure: drops all redo entries and trims the undo stack to
+        /// a quarter of its normal byte budget (keeping the most recent entries). Losing some history is
+        /// strictly better than the app being killed by the OS.
+        /// </summary>
+        public void TrimStacksForLowMemory()
+        {
+            redoStack.Clear();
+            // End any open batch so the retained forward command can be released too (see
+            // ReleaseExpiredCurrentCommand). Under real memory pressure, splitting one batch into two undo
+            // entries costs far less than pinning a whole serialized mesh.
+            undoBatchStartTime = 0.0f;
+            EnforceHistoryByteBudget(UNDO_STACK_MAX_BYTES / 4);
+        }
+
+        /// <summary>
+        /// Releases the retained forward command once its batching window has closed.
+        ///
+        /// currentCommand exists solely so that commands arriving within BATCH_FREQUENCY_SECONDS of each
+        /// other can be bundled into a single undo entry. Once that window passes it is never read again, but
+        /// it still pins that command's payload - for an AddMeshCommand, an entire serialized mesh - which the
+        /// history budget can neither see nor reclaim, because the field is not on either stack. Note this
+        /// frees the memory outright rather than merely accounting for it: counting it would only cause the
+        /// budget to discard other history to compensate for something it has no way to release.
+        ///
+        /// Only ever released once the window has expired, because inside the window
+        /// AddAndMaybeBatchCommands still reads (and casts) currentCommand to extend the batch.
+        /// </summary>
+        private void ReleaseExpiredCurrentCommand()
+        {
+            if (currentCommand == null) return;
+            if (Time.time - undoBatchStartTime <= BATCH_FREQUENCY_SECONDS) return;
+            currentCommand = null;
         }
 
         /// <summary>
@@ -312,6 +463,10 @@ namespace com.google.apps.peltzer.client.model.core
                 command.ApplyToModel(this);
                 currentCommand = command;
 
+                // Undoing moves a snapshot from the undo stack to the redo stack (re-serialized from the
+                // current model state), so the combined history can grow here too.
+                EnforceHistoryByteBudget(UNDO_STACK_MAX_BYTES);
+
                 if (OnUndo != null)
                 {
                     OnUndo(command);
@@ -337,6 +492,8 @@ namespace com.google.apps.peltzer.client.model.core
                 undoStack.Push(command.GetUndoCommand(this));
                 command.ApplyToModel(this);
                 currentCommand = command;
+
+                EnforceHistoryByteBudget(UNDO_STACK_MAX_BYTES);
 
                 if (OnRedo != null)
                 {
