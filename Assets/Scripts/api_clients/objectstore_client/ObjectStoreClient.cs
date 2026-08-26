@@ -25,6 +25,7 @@ using com.google.apps.peltzer.client.model.export;
 using com.google.apps.peltzer.client.model.import;
 using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.render;
+using com.google.apps.peltzer.client.model.storage;
 using System.Text;
 using com.google.apps.peltzer.client.entitlement;
 using ICSharpCode.SharpZipLib.Zip;
@@ -32,6 +33,38 @@ using System.Linq;
 
 namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 {
+    internal sealed class ReadStoredModelFileWork : BackgroundWork
+    {
+        private readonly string modelId;
+        private readonly string fileName;
+        private readonly Action<byte[]> callback;
+        private byte[] bytes;
+
+        public ReadStoredModelFileWork(string modelId, string fileName, Action<byte[]> callback)
+        {
+            this.modelId = modelId;
+            this.fileName = fileName;
+            this.callback = callback;
+        }
+
+        public void BackgroundWork()
+        {
+            try
+            {
+                bytes = UserModelStorage.Instance.ReadModelFile(modelId, fileName);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[OB_MODEL_READ] Failed to read {fileName}: {exception.Message}");
+                bytes = null;
+            }
+        }
+
+        public void PostWork()
+        {
+            callback(bytes);
+        }
+    }
 
     public class ObjectStoreClient
     {
@@ -99,6 +132,15 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
         /// <param name="callback">The callback to call when loading is complete.</param>
         public static void GetRawFileData(ObjectStoreEntry entry, System.Action<byte[]> callback)
         {
+            if (entry != null && entry.isLocalStorage)
+            {
+                entry.loadAttemptFormats = new[] { "blocks" };
+                entry.resolvedLoadFormat = "blocks";
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                  new ReadStoredModelFileWork(entry.localId, ExportUtils.BLOCKS_FILENAME, callback));
+                return;
+            }
+
             if (entry.localPeltzerFile != null)
             {
                 entry.loadAttemptFormats = new[] { "blocks" };
@@ -116,6 +158,15 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             if (entry == null)
             {
                 callback(null);
+                return;
+            }
+
+            if (entry.isLocalStorage)
+            {
+                entry.loadAttemptFormats = new[] { "blocks" };
+                entry.resolvedLoadFormat = "blocks";
+                PeltzerMain.Instance.DoPolyMenuBackgroundWork(
+                  new ReadStoredModelFileWork(entry.localId, ExportUtils.BLOCKS_FILENAME, callback));
                 return;
             }
 

@@ -152,7 +152,7 @@ namespace com.google.apps.peltzer.client.model.export
                 peltzerFile = null;
                 return false;
             }
-            FileInfo[] autoSaveFile = autoSaveDirectories.First().GetFiles("*.poly");
+            FileInfo[] autoSaveFile = autoSaveDirectories.First().GetFiles("*.blocks");
             if (autoSaveFile.Count() == 0)
             {
                 Debug.Log("No .poly file found in autosave directory");
