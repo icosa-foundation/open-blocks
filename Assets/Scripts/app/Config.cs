@@ -38,6 +38,13 @@ namespace com.google.apps.peltzer.client.app
         Desktop = 3
     }
 
+    public enum LocalhostCallbackOverride
+    {
+        Default,
+        ForceAllowed,
+        ForceBlocked,
+    }
+
     public class Config : MonoBehaviour
     {
         private static Config instance;
@@ -65,6 +72,12 @@ namespace com.google.apps.peltzer.client.app
         [SerializeField] private GameObject cameraRigGameObject;
         [SerializeField] private GameObject controllerLeftGameObject;
         [SerializeField] private GameObject controllerRightGameObject;
+
+#if UNITY_EDITOR
+        [Header("Editor testing")]
+        [Tooltip("Overrides whether browser-based sign-in can call back to this app over localhost.")]
+        public LocalhostCallbackOverride localhostCallbackOverride;
+#endif
 
         // The hardware being used -- Vive or Rift. Detected at runtime.
         private VrHardware vrHardware;
