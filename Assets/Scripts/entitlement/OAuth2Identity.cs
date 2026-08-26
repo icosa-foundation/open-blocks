@@ -28,6 +28,44 @@ using com.google.apps.peltzer.client.api_clients.assets_service_client;
 
 namespace com.google.apps.peltzer.client.entitlement
 {
+    public static class OAuthRequestSecurity
+    {
+        public static bool IsSameOrigin(string requestUrl, string trustedBaseUrl)
+        {
+            if (!Uri.TryCreate(requestUrl, UriKind.Absolute, out var requestUri) ||
+                !Uri.TryCreate(trustedBaseUrl, UriKind.Absolute, out var trustedUri))
+            {
+                return false;
+            }
+
+            if ((requestUri.Scheme != Uri.UriSchemeHttp && requestUri.Scheme != Uri.UriSchemeHttps) ||
+                (trustedUri.Scheme != Uri.UriSchemeHttp && trustedUri.Scheme != Uri.UriSchemeHttps))
+            {
+                return false;
+            }
+
+            return string.Equals(requestUri.Scheme, trustedUri.Scheme, StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(requestUri.IdnHost, trustedUri.IdnHost, StringComparison.OrdinalIgnoreCase) &&
+                   requestUri.Port == trustedUri.Port;
+        }
+    }
+
+    public static class DeviceLoginRouting
+    {
+        public static bool TryNormalizeManualCode(string deviceCode, out string normalizedCode)
+        {
+            normalizedCode = deviceCode?.Trim();
+            return !String.IsNullOrEmpty(normalizedCode);
+        }
+
+        public static string BuildAuthorizationUrl(
+          string deviceCodeUrl, bool useAutomaticCallback, string secret)
+        {
+            return useAutomaticCallback
+              ? $"{deviceCodeUrl}?appId=openblocks&secret={Uri.EscapeDataString(secret)}"
+              : deviceCodeUrl;
+        }
+    }
 
     /// Handle accessing OAuth2 based web services. There are known issues with non-square avatars.
 
@@ -168,7 +206,10 @@ namespace com.google.apps.peltzer.client.entitlement
         /// Sign an outgoing request.
         public void Authenticate(UnityWebRequest www)
         {
-            www.SetRequestHeader("Authorization", String.Format("Bearer {0}", m_AccessToken));
+            if (OAuthRequestSecurity.IsSameOrigin(www.url, AssetsServiceClient.ApiBaseUrl))
+            {
+                www.SetRequestHeader("Authorization", $"Bearer {m_AccessToken}");
+            }
         }
 
         private static string UserInfoRequestUri()
@@ -736,9 +777,7 @@ namespace com.google.apps.peltzer.client.entitlement
         /// Sign an outgoing request.
         public void Authenticate(UnityWebRequest www)
         {
-            // NEVER add the access token to a URL that isn't our API base url
-            // It will leak the token.
-            if (www.url.StartsWith(AssetsServiceClient.ApiBaseUrl))
+            if (OAuthRequestSecurity.IsSameOrigin(www.url, AssetsServiceClient.ApiBaseUrl))
             {
                 www.SetRequestHeader("Authorization", $"Bearer {m_AccessToken}");
             }
@@ -849,39 +888,62 @@ namespace com.google.apps.peltzer.client.entitlement
         {
             if (String.IsNullOrEmpty(m_RefreshToken) && promptUserIfNoToken)
             {
-                var secret = Guid.NewGuid().ToString();
-                m_DeviceLoginSecret = secret;
-                m_DeviceLoginSecretCreationTime = DateTime.UtcNow;
-                string url = $"{m_DeviceCodeUrl}?appId=openblocks&secret={secret}";
-                PeltzerMain.OpenURLInExternalBrowser(url);
-
-                void onSubmit(object sender, string deviceCode)
-                {
-                    m_VerificationCode = deviceCode;
-                }
-
-                // We are now automatically entering the device code, so we don't need to show the keyboard
-                // TODO Allow optional use of keyboard if people want to enter the code manually
-                //PeltzerMain.Instance.paletteController.EnableKeyboard(onSubmit);
-                PeltzerMain.Instance.paletteController.publishedTakeOffHeadsetPrompt.SetActive(false);
-
                 if (m_WaitingOnAuthorization)
                 {
                     // A previous attempt is already waiting
                     yield break;
                 }
+
                 m_WaitingOnAuthorization = true;
                 m_VerificationCode = null;
                 m_VerificationError = false;
 
+                if (PeltzerMain.Instance.OsCanReachLocalhost)
+                {
+                    var secret = Guid.NewGuid().ToString();
+                    m_DeviceLoginSecret = secret;
+                    m_DeviceLoginSecretCreationTime = DateTime.UtcNow;
+                    string url = DeviceLoginRouting.BuildAuthorizationUrl(
+                      m_DeviceCodeUrl, useAutomaticCallback: true, secret: secret);
+                    Debug.Log($"{kDeviceLoginLogPrefix} Starting automatic browser sign-in");
+                    PeltzerMain.OpenURLInExternalBrowser(url);
+                }
+                else
+                {
+                    Debug.Log($"{kDeviceLoginLogPrefix} Starting manual Steam Frame sign-in");
+                    PeltzerMain.OpenURLInExternalBrowser(m_DeviceCodeUrl);
+                    PeltzerMain.Instance.paletteController.EnableKeyboard(
+                      OnSubmit, onDismiss: OnDismiss);
+                }
+
+                PeltzerMain.Instance.paletteController.publishedTakeOffHeadsetPrompt.SetActive(false);
+
                 // Wait for verification
-                while (m_VerificationCode == null || m_VerificationError)
+                while (m_VerificationCode == null && !m_VerificationError)
                 {
                     yield return null;
                 }
             }
 
             yield return StartCoroutine(FinalizeDeviceLogin(onSuccess, onFailure));
+
+            void OnSubmit(object sender, string deviceCode)
+            {
+                if (!DeviceLoginRouting.TryNormalizeManualCode(deviceCode, out var normalizedCode))
+                {
+                    Debug.Log($"{kDeviceLoginLogPrefix} Manual sign-in cancelled: no code entered");
+                    m_VerificationError = true;
+                    return;
+                }
+
+                m_VerificationCode = normalizedCode;
+            }
+
+            void OnDismiss(object sender, EventArgs args)
+            {
+                Debug.Log($"{kDeviceLoginLogPrefix} Manual sign-in cancelled");
+                m_VerificationError = true;
+            }
         }
 
         private IEnumerator _AutoDeviceCodeEntry(Action onSuccess, Action onFailure, string deviceCode)
@@ -897,6 +959,7 @@ namespace com.google.apps.peltzer.client.entitlement
                 Debug.LogError("Account verification failed");
                 Debug.LogFormat("Verification error {0}", m_VerificationCode);
                 m_WaitingOnAuthorization = false;
+                onFailure();
                 yield break;
             }
 

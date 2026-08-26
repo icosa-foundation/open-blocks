@@ -16,6 +16,7 @@ using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.render;
 using com.google.apps.peltzer.client.model.util;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 
 using System.Text;
@@ -28,6 +29,8 @@ namespace com.google.apps.peltzer.client.model.export
     /// </summary>
     public class ObjFileExporter
     {
+        private static readonly CultureInfo ObjCulture = CultureInfo.InvariantCulture;
+
         public static string RandomOpaqueId()
         {
             StringBuilder sb = new StringBuilder("");
@@ -82,7 +85,8 @@ namespace com.google.apps.peltzer.client.model.export
                 else
                 {
                     Color c = MaterialRegistry.GetMaterialColorById(matId);
-                    sw.WriteLine("  Kd " + c.r.ToString("0.00") + " " + c.g.ToString("0.00") + " " + c.b.ToString("0.00"));
+                    sw.WriteLine(
+                      $"  Kd {c.r.ToString("0.00", ObjCulture)} {c.g.ToString("0.00", ObjCulture)} {c.b.ToString("0.00", ObjCulture)}");
                 }
                 sw.WriteLine("");
             }
@@ -186,26 +190,22 @@ namespace com.google.apps.peltzer.client.model.export
                 Vector3 vert = vertices[i] - centroid;
 
                 // Swap X for OBJ file(?)
-                sb = new StringBuilder("v ");
-                sb.Append(-vert.x).Append(" ").Append(vert.y).Append(" ").Append(vert.z);
-                sw.WriteLine(sb.ToString());
+                sw.WriteLine(
+                  $"v {(-vert.x).ToString(ObjCulture)} {vert.y.ToString(ObjCulture)} {vert.z.ToString(ObjCulture)}");
             }
             for (int i = 0; i < polyNormals.Count; i++)
             {
                 Vector3 polyNormal = polyNormals[i];
 
                 // Swap X for OBJ file(?)
-                sb = new StringBuilder("vn ");
-                sb.Append(-polyNormal.x).Append(" ").Append(polyNormal.y).Append(" ").Append(polyNormal.z);
-                sw.WriteLine(sb.ToString());
+                sw.WriteLine(
+                  $"vn {(-polyNormal.x).ToString(ObjCulture)} {polyNormal.y.ToString(ObjCulture)} {polyNormal.z.ToString(ObjCulture)}");
             }
             for (int i = 0; i < uvs.Count; i++)
             {
                 Vector2 uv = uvs[i];
 
-                sb = new StringBuilder("vt ");
-                sb.Append(uv.x).Append(" ").Append(uv.y);
-                sw.WriteLine(sb.ToString());
+                sw.WriteLine($"vt {uv.x.ToString(ObjCulture)} {uv.y.ToString(ObjCulture)}");
             }
 
 

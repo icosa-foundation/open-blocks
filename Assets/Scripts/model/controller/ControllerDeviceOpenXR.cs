@@ -188,7 +188,7 @@ namespace com.google.apps.peltzer.client.model.controller
                 case ButtonId.SecondaryButton:
                     return FindAction("SecondaryButton").WasPressedThisFrame();
                 case ButtonId.ApplicationMenu:
-                    return FindAction("PrimaryButton").WasPressedThisFrame();
+                    return FindAction("PrimaryTouch").IsPressed();
                 default:
                     return false;
             }
