@@ -99,6 +99,10 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         private int completedSnaps = 0;
         public CsgOperations.CsgOperation csgOperation;
+        private GameObject csgTooltipRoot;
+        private TextMesh csgTooltipText;
+        private string defaultCsgTooltipText;
+        private bool isSetup;
         private const int SNAP_KNOW_HOW_COUNT = 3;
 
         /// <summary>
@@ -124,10 +128,30 @@ namespace com.google.apps.peltzer.client.tools
             peltzerController.ModeChangedHandler += ModeChangeEventHandler;
             peltzerController.BlockModeChangedHandler += BlockModeChangedHandler;
 
+            RefreshCsgTooltipCache();
+            defaultCsgTooltipText = csgTooltipText?.text;
+
             scaleDelta = DEFAULT_SCALE_DELTA;
 
             // Attach the preview mesh to the preview GameObject.
             CreateNewVolumeMesh();
+
+            isSetup = true;
+            UpdateTooltip();
+        }
+
+        private void RefreshCsgTooltipCache()
+        {
+            GameObject currentCsgTooltipRoot = peltzerController.controllerGeometry.csgTooltips;
+            if (currentCsgTooltipRoot == csgTooltipRoot)
+            {
+                return;
+            }
+
+            csgTooltipRoot = currentCsgTooltipRoot;
+            csgTooltipText = csgTooltipRoot != null
+              ? csgTooltipRoot.GetComponentInChildren<TextMesh>(includeInactive: true)
+              : null;
         }
 
         /// <summary>
@@ -812,42 +836,51 @@ namespace com.google.apps.peltzer.client.tools
         /// </summary>
         public void UpdateTooltip()
         {
-            bool isVolumeInsertOrCsgMode = peltzerController.mode is ControllerMode.insertVolume or ControllerMode.csg;
-            if (isVolumeInsertOrCsgMode)
+            if (!isSetup)
             {
-                peltzerController.controllerGeometry.shapeTooltips.SetActive(true);
-                var textMesh = peltzerController.controllerGeometry.csgTooltips.GetComponentInChildren<TextMesh>();
-                switch (PeltzerMain.Instance.GetVolumeInserter().csgOperation)
-                {
-                    case CsgOperations.CsgOperation.INACTIVE:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(false);
-                        break;
-                    case CsgOperations.CsgOperation.SUBTRACT:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Subtract Shape";
-                        break;
-                    case CsgOperations.CsgOperation.INTERSECT:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Intersect Shape";
-                        break;
-                    case CsgOperations.CsgOperation.SPLIT:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Split Shape";
-                        break;
-                    case CsgOperations.CsgOperation.UNION:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Merge Shape";
-                        break;
-                    case CsgOperations.CsgOperation.PAINT_INTERSECT:
-                        peltzerController.controllerGeometry.csgTooltips.SetActive(true);
-                        textMesh.text = "Paint Shape";
-                        break;
-                }
+                return;
             }
-            else
+
+            bool isVolumeInsertOrCsgMode = peltzerController.mode is ControllerMode.insertVolume or ControllerMode.csg;
+            if (!isVolumeInsertOrCsgMode)
             {
                 peltzerController.controllerGeometry.shapeTooltips.SetActive(false);
                 peltzerController.controllerGeometry.csgTooltips.SetActive(false);
+                return;
+            }
+
+            RefreshCsgTooltipCache();
+            bool tooltipsAllowed = PeltzerMain.Instance.restrictionManager.tooltipsAllowed
+              && !PeltzerMain.Instance.HasDisabledTooltips;
+            peltzerController.controllerGeometry.shapeTooltips.SetActive(tooltipsAllowed);
+            bool showTooltip = tooltipsAllowed
+              && peltzerController.IsApplicationButtonTooltipInputActive();
+            peltzerController.controllerGeometry.csgTooltips.SetActive(showTooltip);
+            if (!showTooltip || csgTooltipText == null)
+            {
+                return;
+            }
+
+            switch (csgOperation)
+            {
+                case CsgOperations.CsgOperation.INACTIVE:
+                    csgTooltipText.text = defaultCsgTooltipText;
+                    break;
+                case CsgOperations.CsgOperation.SUBTRACT:
+                    csgTooltipText.text = "Subtract Shape";
+                    break;
+                case CsgOperations.CsgOperation.INTERSECT:
+                    csgTooltipText.text = "Intersect Shape";
+                    break;
+                case CsgOperations.CsgOperation.SPLIT:
+                    csgTooltipText.text = "Split Shape";
+                    break;
+                case CsgOperations.CsgOperation.UNION:
+                    csgTooltipText.text = "Merge Shape";
+                    break;
+                case CsgOperations.CsgOperation.PAINT_INTERSECT:
+                    csgTooltipText.text = "Paint Shape";
+                    break;
             }
         }
 

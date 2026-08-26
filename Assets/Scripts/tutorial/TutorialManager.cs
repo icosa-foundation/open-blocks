@@ -193,7 +193,6 @@ namespace com.google.apps.peltzer.client.tutorial
             PeltzerMain.Instance.restrictionManager.tooltipsAllowed = false;
             PeltzerMain.Instance.paletteController.DisableGripTooltips();
             PeltzerMain.Instance.peltzerController.DisableGripTooltips();
-            PeltzerMain.Instance.paletteController.DisableSnapTooltips();
 
             // Play a start tutorial sound effect.
             AudioLibrary audioLibrary = PeltzerMain.Instance.audioLibrary;

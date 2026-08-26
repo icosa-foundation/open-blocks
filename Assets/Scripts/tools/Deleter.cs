@@ -67,6 +67,7 @@ namespace com.google.apps.peltzer.client.tools
             this.selector = selector;
             this.audioLibrary = audioLibrary;
             controllerMain.ControllerActionHandler += ControllerEventHandler;
+            peltzerController.ModeChangedHandler += ModeChangeEventHandler;
         }
 
         /// <summary>
@@ -175,6 +176,95 @@ namespace com.google.apps.peltzer.client.tools
                 {
                     DeleteAPart();
                 }
+            }
+
+            if (peltzerController.mode != ControllerMode.delete
+              && peltzerController.mode != ControllerMode.deletePart)
+            {
+                return;
+            }
+
+            if (IsSetLeftHoverTooltipEvent(args)
+              && PeltzerMain.Instance.restrictionManager.touchpadLeftAllowed)
+            {
+                SetHoverTooltip(
+                  peltzerController.controllerGeometry.deleteTooltipLeft,
+                  TouchpadHoverState.LEFT,
+                  args.TouchpadOverlay);
+            }
+            else if (IsSetRightHoverTooltipEvent(args)
+              && PeltzerMain.Instance.restrictionManager.touchpadRightAllowed)
+            {
+                SetHoverTooltip(
+                  peltzerController.controllerGeometry.deleteTooltipRight,
+                  TouchpadHoverState.RIGHT,
+                  args.TouchpadOverlay);
+            }
+            else if (IsUnsetAllHoverTooltipsEvent(args))
+            {
+                UnsetAllHoverTooltips();
+            }
+        }
+
+        private static bool IsSetLeftHoverTooltipEvent(ControllerEventArgs args)
+        {
+            return args.ControllerType == ControllerType.PELTZER
+              && args.ButtonId == ButtonId.Touchpad
+              && args.Action == ButtonAction.TOUCHPAD
+              && args.TouchpadLocation == TouchpadLocation.LEFT;
+        }
+
+        private static bool IsSetRightHoverTooltipEvent(ControllerEventArgs args)
+        {
+            return args.ControllerType == ControllerType.PELTZER
+              && args.ButtonId == ButtonId.Touchpad
+              && args.Action == ButtonAction.TOUCHPAD
+              && args.TouchpadLocation == TouchpadLocation.RIGHT;
+        }
+
+        private static bool IsUnsetAllHoverTooltipsEvent(ControllerEventArgs args)
+        {
+            return args.ControllerType == ControllerType.PELTZER
+              && args.ButtonId == ButtonId.Touchpad
+              && args.Action == ButtonAction.NONE;
+        }
+
+        private void SetHoverTooltip(
+          GameObject tooltip,
+          TouchpadHoverState state,
+          TouchpadOverlay currentOverlay)
+        {
+            if (!tooltip.activeSelf)
+            {
+                UnsetAllHoverTooltips();
+                if (currentOverlay != TouchpadOverlay.DELETE)
+                {
+                    return;
+                }
+
+                tooltip.SetActive(true);
+                peltzerController.SetTouchpadHoverTexture(state);
+                peltzerController.TriggerHapticFeedback(
+                  HapticFeedback.HapticFeedbackType.FEEDBACK_1,
+                  0.003f,
+                  0.15f);
+            }
+        }
+
+        private void UnsetAllHoverTooltips()
+        {
+            peltzerController.controllerGeometry.deleteTooltipLeft.SetActive(false);
+            peltzerController.controllerGeometry.deleteTooltipRight.SetActive(false);
+            peltzerController.SetTouchpadHoverTexture(TouchpadHoverState.NONE);
+        }
+
+        private void ModeChangeEventHandler(ControllerMode oldMode, ControllerMode newMode)
+        {
+            bool leftDeleteMode = oldMode == ControllerMode.delete || oldMode == ControllerMode.deletePart;
+            bool enteredDeleteMode = newMode == ControllerMode.delete || newMode == ControllerMode.deletePart;
+            if (leftDeleteMode && !enteredDeleteMode)
+            {
+                UnsetAllHoverTooltips();
             }
         }
 
