@@ -22,9 +22,13 @@ namespace com.google.apps.peltzer.client.model.core
     ///   can do and undo grouping and ungrouping operations. It expresses the operation as a
     ///   set of "assignments", each of which given by a mesh ID, a "from" group and a "to" group.
     /// </summary>
-    public class SetMeshGroupsCommand : Command
+    public class SetMeshGroupsCommand : Command, ICommandWithRetainedMemory
     {
         public const string COMMAND_NAME = "setMeshGroups";
+
+        // Approximate heap cost of one assignment: a GroupAssignment object (header plus three ints) and its
+        // slot in the backing array. Rounded up - this only needs to be the right order of magnitude.
+        private const long BYTES_PER_ASSIGNMENT = 48;
 
         // The list of assignments that comprise this command.
         public readonly List<GroupAssignment> assignments;
@@ -78,6 +82,14 @@ namespace com.google.apps.peltzer.client.model.core
             {
                 model.SetMeshGroup(assignment.meshId, assignment.toGroupId);
             }
+        }
+
+        /// <summary>
+        /// Grouping a large selection produces one assignment per mesh, so this scales with selection size.
+        /// </summary>
+        public long GetRetainedMemoryBytes()
+        {
+            return assignments.Count * BYTES_PER_ASSIGNMENT;
         }
 
         public Command GetUndoCommand(Model model)
