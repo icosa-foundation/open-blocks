@@ -10,6 +10,7 @@
     "com.unity.inputsystem": "1.20.0",
     "com.unity.meshopt.decompress": "0.1.0-preview.7",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.unity.pipeline": "0.6.0-exp.1",
     "com.unity.render-pipelines.universal": "17.6.0",
     "com.unity.timeline": "6.6.0",
     "com.unity.ugui": "2.6.0",
