@@ -66,7 +66,7 @@ public class GlTF_Writer
 
         if (useId)
         {
-            ret += "_" + o.GetInstanceID();
+            ret = $"{ret}_{o.GetEntityId().GetHashCode()}";
         }
         return ret;
     }
