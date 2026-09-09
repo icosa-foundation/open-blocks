@@ -47,7 +47,6 @@ jobs:
       googleplaystatus: ${{ steps.version.outputs.googleplaystatus }}
       uid: ${{ steps.github.outputs.uid }}
       gid: ${{ steps.github.outputs.gid }}
-      flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -180,61 +179,91 @@ jobs:
           echo "uid=$(id -u)" >> $GITHUB_OUTPUT
           echo "gid=$(id -g)" >> $GITHUB_OUTPUT
 
-      - name: Determine whether to build Development builds or not
-        id: flavors
-        run: |
-          # Development builds require the Open Blocks build method introduced
-          # before the expanded XR matrix is enabled.
-          echo 'flavors=[{"development": false}]' >> $GITHUB_OUTPUT
-
   build:
-    name: ${{ matrix.name }} ${{ matrix.flavors.title }}
+    name: ${{ matrix.artifactName }} (${{ matrix.development && 'Development' || 'Release' }})
     needs: configuration
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android OpenXR Google Play, Android 2D]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
-          - name: Windows OpenXR
+          - runtime: OpenXR
             targetPlatform: StandaloneWindows64
-            cache: Windows
+            cache: Windows_OpenXR
+            androidTargetSdkVersion: ""
+            androidExportType: androidPackage
+            development: false
+            artifactName: Windows OpenXR
+            publishTarget: desktop-distribution
+            versionSuffix: 0
 
-          - name: Linux
+          - runtime: Monoscopic
             targetPlatform: StandaloneLinux64
-            cache: Linux
+            cache: Linux_Monoscopic
+            androidTargetSdkVersion: ""
+            androidExportType: androidPackage
+            development: false
+            artifactName: Linux
+            publishTarget: desktop-distribution
+            versionSuffix: 0
             extra_defines: XR_DISABLED
             packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr com.unity.xr.androidxr-openxr
 
-          - name: MacOS
+          - runtime: Monoscopic
             targetPlatform: StandaloneOSX
-            cache: MacOS
+            cache: MacOS_Monoscopic
+            androidTargetSdkVersion: ""
+            androidExportType: androidPackage
+            development: false
+            artifactName: MacOS
+            publishTarget: desktop-distribution
+            versionSuffix: 0
             extra_defines: XR_DISABLED
             packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr com.unity.xr.androidxr-openxr
 
-          - name: Android OpenXR
+          - runtime: OpenXR
             targetPlatform: Android
-            cache: Android
+            cache: Android_OpenXR
             androidTargetSdkVersion: AndroidApiLevel34
+            androidExportType: androidPackage
+            development: false
+            artifactName: Android OpenXR
+            publishTarget: generic-android-distribution
             versionSuffix: 0
             packages_to_remove: com.meta.xr.sdk.core
 
-          - name: Android OpenXR Google Play
+          - runtime: Monoscopic
             targetPlatform: Android
-            cache: Android
-            androidTargetSdkVersion: AndroidApiLevel35
-            versionSuffix: 0
-            androidExportType: androidAppBundle
-            packages_to_remove: com.meta.xr.sdk.core
-
-          - name: Android 2D
-            targetPlatform: Android
-            cache: Android_2D
+            cache: Android_Monoscopic
             androidTargetSdkVersion: AndroidApiLevel34
+            androidExportType: androidPackage
+            development: false
+            artifactName: Android 2D
+            publishTarget: mobile-2d-distribution
             versionSuffix: 1
             extra_defines: XR_DISABLED
             packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr com.unity.xr.androidxr-openxr
+
+          - runtime: AndroidXR
+            targetPlatform: Android
+            cache: Android_AndroidXR
+            androidTargetSdkVersion: AndroidApiLevel35
+            androidExportType: androidAppBundle
+            development: false
+            artifactName: Android XR
+            publishTarget: google-play
+            versionSuffix: 0
+            packages_to_remove: com.meta.xr.sdk.core
+
+          - runtime: MetaQuest
+            targetPlatform: Android
+            cache: Android_MetaQuest
+            androidTargetSdkVersion: AndroidApiLevel34
+            androidExportType: androidPackage
+            development: false
+            artifactName: Meta Quest
+            publishTarget: meta-quest
+            versionSuffix: 0
 
     steps:
       - name: Set masking
@@ -404,8 +433,10 @@ jobs:
             androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
             version: ${{ needs.configuration.outputs.version }}
             buildName: ${{ needs.configuration.outputs.basename }}
+            buildMethod: BuildOpenBlocks.CommandLine
+            customParameters: -ob-runtime ${{ matrix.runtime }} -ob-development ${{ matrix.development }}
             chownFilesTo: ${{ needs.configuration.outputs.uid }}:${{ needs.configuration.outputs.gid }}
-            androidExportType: ${{ matrix.androidExportType || 'androidPackage' }}
+            androidExportType: ${{ matrix.androidExportType }}
             androidTargetSdkVersion: ${{ matrix.androidTargetSdkVersion }}
             androidSymbolType: debugging
             androidKeystoreName: openblocks.keystore
@@ -428,10 +459,12 @@ jobs:
       - name: Upload build/
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.name }} ${{ matrix.flavors.title }}
+          name: ${{ matrix.artifactName }} (${{ matrix.development && 'Development' || 'Release' }})
           path: |
             build/
             !build/*_BackUpThisFolder_ButDontShipItWithYourGame
+          if-no-files-found: error
+          overwrite: false
 
       - name: Check if packages-lock.json has changed or if it's cacheable
         id: check_packagecache
@@ -454,7 +487,7 @@ jobs:
           key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
 
       - name: Clean Library before caching
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && matrix.flavors.development != true
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && matrix.development != true
         env:
           UNITY_LIBRARY_CACHE_PATHS: "DataStore ArtifactDB SourceAssetDB PlayerDataCache ShaderCache ShaderCache.db"
         run: |
@@ -480,7 +513,7 @@ jobs:
 
       - name: Save Library/ cache
         uses: actions/cache/save@v6
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && matrix.flavors.development != true
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && matrix.development != true
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -508,7 +541,7 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v8
         with:
-          name: MacOS
+          name: MacOS (Release)
           path: build_macos
 
       # See https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
@@ -678,25 +711,25 @@ jobs:
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Windows OpenXR
+          name: Windows OpenXR (Release)
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android OpenXR (Release)
           path: build_android_openxr
 
       - name: Download Build Artifacts (Android 2D)
         uses: actions/download-artifact@v8
         with:
-          name: Android 2D
+          name: Android 2D (Release)
           path: build_android_2D
 
       - name: Download Build Artifacts (Linux)
         uses: actions/download-artifact@v8
         with:
-          name: Linux
+          name: Linux (Release)
           path: build_linux
 
       - name: Download Build Artifacts (Mac)
@@ -833,7 +866,7 @@ jobs:
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Windows OpenXR
+          name: Windows OpenXR (Release)
           path: build_windows_openxr
       - name: Download Build Artifacts (MacOS Signed)
         uses: actions/download-artifact@v8
@@ -843,12 +876,12 @@ jobs:
       - name: Download Build Artifacts (Linux)
         uses: actions/download-artifact@v8
         with:
-          name: Linux
+          name: Linux (Release)
           path: build_linux
       - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android OpenXR (Release)
           path: build_android_openxr
       - name: Upload Build
         run: |
@@ -897,11 +930,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android OpenXR Google Play)
+      - name: Download Build Artifacts (Android XR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR Google Play
-          path: build_android_openxr_google_play
+          name: Android XR (Release)
+          path: build_android_xr
 
       - name: Prepare Google Play release
         id: google_play_release
@@ -909,18 +942,18 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          AAB="$(find build_android_openxr_google_play -name 'OpenBlocks*.aab' -print -quit)"
-          SYMBOLS="$(find build_android_openxr_google_play -name 'OpenBlocks*.symbols.zip' -print -quit)"
+          AAB="$(find build_android_xr -name 'OpenBlocks*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_xr -name 'OpenBlocks*.symbols.zip' -print -quit)"
           if [ -z "$AAB" ]; then
-            echo "No Android App Bundle found in build_android_openxr_google_play" >&2
-            find build_android_openxr_google_play -maxdepth 4 -type f >&2
+            echo "No Android App Bundle found in build_android_xr" >&2
+            find build_android_xr -maxdepth 4 -type f >&2
             exit 1
           fi
 
-          cp "$AAB" "releases/OpenBlocks_OpenXR_$VERSION.aab"
+          cp "$AAB" "releases/OpenBlocks_AndroidXR_$VERSION.aab"
           if [ -n "$SYMBOLS" ]; then
-            cp "$SYMBOLS" "releases/OpenBlocks_OpenXR_$VERSION.symbols.zip"
-            echo "debugSymbols=releases/OpenBlocks_OpenXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+            cp "$SYMBOLS" "releases/OpenBlocks_AndroidXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBlocks_AndroidXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish Google Play Build
@@ -928,7 +961,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openblocks
-          releaseFiles: releases/OpenBlocks_OpenXR_${{ needs.configuration.outputs.version }}.aab
+          releaseFiles: releases/OpenBlocks_AndroidXR_${{ needs.configuration.outputs.version }}.aab
           tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
@@ -944,11 +977,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android OpenXR)
+      - name: Download Build Artifacts (Meta Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
-          path: build_android_openxr
+          name: Meta Quest (Release)
+          path: build_meta_quest
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -958,8 +991,8 @@ jobs:
           OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
         run: |
           mkdir releases
-          mv build_android_openxr/*/OpenBlocks*apk releases/OpenBlocks_OpenXR_$VERSION.apk
-          mv build_android_openxr/*/OpenBlocks*.symbols.zip releases/symbols.zip
+          mv build_meta_quest/*/OpenBlocks*apk releases/OpenBlocks_MetaQuest_$VERSION.apk
+          mv build_meta_quest/*/OpenBlocks*.symbols.zip releases/symbols.zip
 
           cd releases
           unzip symbols.zip
@@ -968,10 +1001,10 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_OpenXR_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_MetaQuest_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_OpenXR_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_MetaQuest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
           fi
 
   publish_arborxr:
@@ -997,7 +1030,7 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android OpenXR (Release)
           path: build_android_openxr
 
       - name: Publish Builds
@@ -1043,7 +1076,7 @@ jobs:
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Windows OpenXR
+          name: Windows OpenXR (Release)
           path: build_windows_openxr
       - name: Publish Oculus Builds
         env:
@@ -1090,7 +1123,7 @@ jobs:
       - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android OpenXR (Release)
           path: build_android_openxr
       - name: Publish Pico Builds
         env:
