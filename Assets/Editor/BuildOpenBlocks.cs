@@ -201,6 +201,7 @@ public static class BuildOpenBlocks
         Debug.Log($"{LogPrefix} Target={arguments.Target}, Runtime={arguments.Runtime}, Output={outputPath}, Development={arguments.Development}, AndroidTargetSdk={arguments.AndroidTargetSdkVersion?.ToString() ?? "unchanged"}, AndroidExport={arguments.AndroidExport}.");
 
         using (new TemporaryCoreSettings(arguments))
+        using (new OpenBlocksRuntimeSettings(arguments))
         {
             AssetDatabase.SaveAssets();
             var buildPlayerOptions = new BuildPlayerOptions
