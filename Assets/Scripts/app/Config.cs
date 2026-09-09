@@ -133,13 +133,6 @@ namespace com.google.apps.peltzer.client.app
 
 #if UNITY_EDITOR
     public void OnValidate() {
-      bool useVrSdk = sdkMode == SdkMode.Oculus || sdkMode == SdkMode.OpenXR;
-
-      // Writing to this sets the scene-dirty flag, so don't do it unless necessary
-      if (UnityEditor.PlayerSettings.virtualRealitySupported != useVrSdk) {
-        UnityEditor.PlayerSettings.virtualRealitySupported = useVrSdk;
-      }
-
       // This hotswaps vr sdks based on selection.
       string[] newDevices;
       switch (sdkMode) {
