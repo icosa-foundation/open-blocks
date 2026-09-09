@@ -183,14 +183,9 @@ jobs:
       - name: Determine whether to build Development builds or not
         id: flavors
         run: |
-          set -x
-          if [[ $(git log --format=%B ${{ github.event.pull_request.head.sha }} -1) == *'[CI BUILD DEV]'* ]]
-          then
-            echo 'flavors=[{"development": true, "title": "Development"}, {"development": false}]' >> $GITHUB_OUTPUT
-
-          else
-            echo 'flavors=[{"development": false}]' >> $GITHUB_OUTPUT
-          fi
+          # Development builds require the Open Blocks build method introduced
+          # before the expanded XR matrix is enabled.
+          echo 'flavors=[{"development": false}]' >> $GITHUB_OUTPUT
 
   build:
     name: ${{ matrix.name }} ${{ matrix.flavors.title }}
@@ -221,7 +216,6 @@ jobs:
           - name: Android OpenXR
             targetPlatform: Android
             cache: Android
-            extraoptions: -btb-il2cpp
             androidTargetSdkVersion: AndroidApiLevel34
             versionSuffix: 0
             packages_to_remove: com.meta.xr.sdk.core
@@ -229,7 +223,6 @@ jobs:
           - name: Android OpenXR Google Play
             targetPlatform: Android
             cache: Android
-            extraoptions: -btb-il2cpp
             androidTargetSdkVersion: AndroidApiLevel35
             versionSuffix: 0
             androidExportType: androidAppBundle
@@ -238,7 +231,6 @@ jobs:
           - name: Android 2D
             targetPlatform: Android
             cache: Android_2D
-            extraoptions: -btb-il2cpp
             androidTargetSdkVersion: AndroidApiLevel34
             versionSuffix: 1
             extra_defines: XR_DISABLED
@@ -365,11 +357,6 @@ jobs:
             echo "filename=foundation.Icosa.$BASENAME.apk" >> $GITHUB_ENV
           fi
 
-      - name: Enable Development Mode
-        if: ${{ matrix.flavors.development == true }}
-        run: |
-          echo "btbbopts=-btb-bopt Development" >> $GITHUB_ENV
-
       - name: Update version
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
@@ -418,7 +405,6 @@ jobs:
             version: ${{ needs.configuration.outputs.version }}
             buildName: ${{ needs.configuration.outputs.basename }}
             chownFilesTo: ${{ needs.configuration.outputs.uid }}:${{ needs.configuration.outputs.gid }}
-            #buildMethod: BuildTiltBrush.CommandLine
             androidExportType: ${{ matrix.androidExportType || 'androidPackage' }}
             androidTargetSdkVersion: ${{ matrix.androidTargetSdkVersion }}
             androidSymbolType: debugging
