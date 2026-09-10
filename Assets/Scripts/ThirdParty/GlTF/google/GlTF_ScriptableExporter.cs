@@ -192,7 +192,7 @@ public class GlTFScriptableExporter
                 dl.name = lightName;
                 GlTF_Writer.lights.Add(dl);
                 break;
-            case LightType.Area:
+            case LightType.Rectangle:
                 GlTF_AmbientLight al = new GlTF_AmbientLight();
                 al.color = new GlTF_ColorRGB(lightColor);
                 al.name = lightName;
