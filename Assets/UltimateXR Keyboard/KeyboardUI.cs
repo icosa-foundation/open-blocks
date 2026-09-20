@@ -48,6 +48,11 @@ namespace TiltBrush
         public event EventHandler<KeyboardKeyEventArgs> KeyPressed;
 
         /// <summary>
+        ///     Event called when the keyboard is dismissed without submitting its contents.
+        /// </summary>
+        public event EventHandler Dismissed;
+
+        /// <summary>
         ///     Event called on key presses/releases when the input is disabled using <see cref="AllowInput" />.
         /// </summary>
         public event EventHandler<KeyboardKeyEventArgs> DisallowedKeyPressed;
@@ -197,6 +202,7 @@ namespace TiltBrush
 
         public void Hide()
         {
+            Dismissed?.Invoke(this, EventArgs.Empty);
             // when the keyboard is opened, an event handler is added for when enter is pressed (and removed when enter is pressed and closed)
             // when the keyboard is closed using the "x" button, this handler is not removed, so we need to remove it here
             KeyPressed = null;

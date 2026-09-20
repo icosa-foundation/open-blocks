@@ -55,6 +55,10 @@ MonoBehaviour:
     type: 3}
   controllerGeometryVivePrefab: {fileID: 1882265769105076, guid: 4268cf5c2c7d14d4e8f0b8a83b7a53c1,
     type: 3}
+  controllerGeometryLeftSteamFramePrefab: {fileID: 1098572469174534, guid: a71e47ffb0ce44c683f1b59d3bfe5db4,
+    type: 3}
+  controllerGeometryRightSteamFramePrefab: {fileID: 1223808143096240, guid: b82f58aac1df45d79402c6ae4c0f6ec5,
+    type: 3}
   autoThumbnailCamera: {fileID: 0}
   eyeCamera: {fileID: 0}
   eyeCameraPosition: {x: 0, y: 0, z: 0}

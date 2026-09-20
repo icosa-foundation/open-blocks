@@ -757,8 +757,6 @@ namespace com.google.apps.peltzer.client.model.controller
 
                 controllerGeometry.zoomRightTooltip.SetActive(false);
                 controllerGeometry.moveRightTooltip.SetActive(false);
-                controllerGeometry.snapRightTooltip.SetActive(false);
-                controllerGeometry.straightenRightTooltip.SetActive(false);
                 controllerGeometry.menuRightTooltip.SetActive(false);
 
                 controllerGeometry.snapGrabAssistRightTooltip.SetActive(false);
@@ -795,8 +793,6 @@ namespace com.google.apps.peltzer.client.model.controller
 
                 controllerGeometry.zoomLeftTooltip.SetActive(false);
                 controllerGeometry.moveLeftTooltip.SetActive(false);
-                controllerGeometry.snapLeftTooltip.SetActive(false);
-                controllerGeometry.straightenLeftTooltip.SetActive(false);
                 controllerGeometry.menuLeftTooltip.SetActive(false);
 
                 controllerGeometry.snapGrabAssistLeftTooltip.SetActive(false);
@@ -937,16 +933,6 @@ namespace com.google.apps.peltzer.client.model.controller
             return PeltzerMain.Instance.restrictionManager.tooltipsAllowed
               && !PeltzerMain.Instance.tutorialManager.TutorialOccurring()
               && !PeltzerMain.Instance.HasDisabledTooltips;
-        }
-
-        public void DisableSnapTooltips()
-        {
-            GameObject snapTooltip = handedness == Handedness.LEFT ?
-              controllerGeometry.snapLeftTooltip : controllerGeometry.snapRightTooltip;
-            snapTooltip.SetActive(false);
-            GameObject straightenTooltip = handedness == Handedness.LEFT ?
-              controllerGeometry.straightenLeftTooltip : controllerGeometry.straightenRightTooltip;
-            straightenTooltip.SetActive(false);
         }
 
         public void HideSnapAssistanceTooltips()
@@ -1237,16 +1223,10 @@ namespace com.google.apps.peltzer.client.model.controller
 
         public void HideTooltips()
         {
-            controllerGeometry.snapLeftTooltip.SetActive(false);
-            controllerGeometry.snapRightTooltip.SetActive(false);
-            controllerGeometry.straightenLeftTooltip.SetActive(false);
-            controllerGeometry.straightenRightTooltip.SetActive(false);
             controllerGeometry.zoomLeftTooltip.SetActive(false);
             controllerGeometry.zoomRightTooltip.SetActive(false);
             controllerGeometry.moveLeftTooltip.SetActive(false);
             controllerGeometry.moveRightTooltip.SetActive(false);
-            controllerGeometry.applicationButtonTooltipLeft.SetActive(false);
-            controllerGeometry.applicationButtonTooltipRight.SetActive(false);
 
             controllerGeometry.snapGrabAssistLeftTooltip.SetActive(false);
             controllerGeometry.snapGrabAssistRightTooltip.SetActive(false);
@@ -1400,22 +1380,36 @@ namespace com.google.apps.peltzer.client.model.controller
             }
         }
 
-        public void EnableKeyboard(EventHandler<string> onSubmit, string initialText = "")
+        public void EnableKeyboard(
+          EventHandler<string> onSubmit, string initialText = "", EventHandler onDismiss = null)
         {
             var keyboardUI = keyboardGameobject.GetComponent<KeyboardUI>();
             void OnKeyPressed(object sender, KeyboardKeyEventArgs args)
             {
                 if (args.Key.KeyType == KeyboardKeyType.Enter)
                 {
-                    // unregister when closing otherwise it keeps adding handlers
-                    keyboardUI.KeyPressed -= OnKeyPressed;
+                    UnregisterHandlers();
                     onSubmit(sender, keyboardUI.ConsoleContent);
                     keyboardGameobject.SetActive(false);
                 }
             }
+
+            void OnDismissed(object sender, EventArgs args)
+            {
+                UnregisterHandlers();
+                onDismiss?.Invoke(sender, args);
+            }
+
+            void UnregisterHandlers()
+            {
+                keyboardUI.KeyPressed -= OnKeyPressed;
+                keyboardUI.Dismissed -= OnDismissed;
+            }
+
             keyboardUI.SetInitialText(initialText);
             keyboardGameobject.SetActive(true);
             keyboardUI.KeyPressed += OnKeyPressed;
+            keyboardUI.Dismissed += OnDismissed;
         }
     }
 }

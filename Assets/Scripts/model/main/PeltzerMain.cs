@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 using com.google.apps.peltzer.client.desktop_app;
@@ -51,6 +52,13 @@ namespace com.google.apps.peltzer.client.model.main
     }
 
     public enum Handedness { NONE, LEFT, RIGHT }
+
+    public enum ControllerModel
+    {
+        Vive,
+        Rift,
+        Steam,
+    }
 
     /// <summary>
     ///   BackgroundWork for serializing a model into bytes (for saving).
@@ -291,40 +299,24 @@ namespace com.google.apps.peltzer.client.model.main
         private const int SERIALIZER_BUFFER_INITIAL_SIZE = 64 * 1024 * 1024;  // 128 MB
 
         /// <summary>
-        /// Whether the current device has an application that can handle web URLs.
+        /// Whether the browser opened by this OS can call the app's localhost HTTP endpoint.
+        /// Steam Frame can open normal URLs, but its browser cannot reach the Android guest's localhost.
         /// </summary>
-        public bool DeviceCanOpenSystemBrowser
+        public bool OsCanReachLocalhost
         {
             get
             {
-#if UNITY_ANDROID && !UNITY_EDITOR
-                try
+#if UNITY_EDITOR
+                switch (Config.Instance.localhostCallbackOverride)
                 {
-                    using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-                    using (AndroidJavaObject activity =
-                      unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-                    using (AndroidJavaObject packageManager =
-                      activity.Call<AndroidJavaObject>("getPackageManager"))
-                    using (AndroidJavaClass uriClass = new AndroidJavaClass("android.net.Uri"))
-                    using (AndroidJavaObject uri =
-                      uriClass.CallStatic<AndroidJavaObject>("parse", "https://example.com"))
-                    using (AndroidJavaObject intent =
-                      new AndroidJavaObject("android.content.Intent", "android.intent.action.VIEW", uri))
-                    using (AndroidJavaObject browserComponent =
-                      intent.Call<AndroidJavaObject>("resolveActivity", packageManager))
-                    {
-                        return browserComponent != null;
-                    }
+                    case LocalhostCallbackOverride.ForceAllowed:
+                        return true;
+                    case LocalhostCallbackOverride.ForceBlocked:
+                        return false;
                 }
-                catch (Exception exception)
-                {
-                    Debug.LogWarning(
-                      $"[SystemBrowserCapability] Unable to detect a system browser: {exception.Message}");
-                    return false;
-                }
-#else
-                return true;
 #endif
+                return PlatformCapabilities.OsCanReachLocalhost(
+                  Application.platform, SteamRuntime.RunningUnderSteam);
             }
         }
 
@@ -369,6 +361,25 @@ namespace com.google.apps.peltzer.client.model.main
         private GameObject controllerGeometryRightRiftPrefab;
         [SerializeField]
         private GameObject controllerGeometryVivePrefab;
+        [SerializeField]
+        private GameObject controllerGeometryLeftSteamFramePrefab;
+        [SerializeField]
+        private GameObject controllerGeometryRightSteamFramePrefab;
+        public ControllerModel ActiveControllerModel { get; private set; }
+#if UNITY_EDITOR
+        private enum ControllerModelOverride
+        {
+            Automatic = 0,
+            Vive = 2,
+            Rift = 3,
+            Steam = 1,
+        }
+
+        [Header("Editor testing")]
+        [FormerlySerializedAs("forceSteamFrameControllerGeometry")]
+        [SerializeField]
+        private ControllerModelOverride overrideControllerModel;
+#endif
 
         private bool running = true;
         private SpatialIndex spatialIndex;
@@ -659,8 +670,42 @@ namespace com.google.apps.peltzer.client.model.main
                 // TODO
             }
 
-            // Add Vive hardware stuff.
-            if (Config.Instance.VrHardware == VrHardware.Rift)
+            ActiveControllerModel = Application.platform == RuntimePlatform.Android && SteamRuntime.RunningUnderSteam
+              ? ControllerModel.Steam
+              : Config.Instance.VrHardware == VrHardware.Rift
+                ? ControllerModel.Rift
+                : ControllerModel.Vive;
+#if UNITY_EDITOR
+            switch (overrideControllerModel)
+            {
+                case ControllerModelOverride.Vive:
+                    ActiveControllerModel = ControllerModel.Vive;
+                    break;
+                case ControllerModelOverride.Rift:
+                    ActiveControllerModel = ControllerModel.Rift;
+                    break;
+                case ControllerModelOverride.Steam:
+                    ActiveControllerModel = ControllerModel.Steam;
+                    break;
+            }
+#endif
+
+            if (ActiveControllerModel == ControllerModel.Steam)
+            {
+                var controllerGeometryLeft = Instantiate<GameObject>(controllerGeometryLeftSteamFramePrefab,
+                  paletteController.openXRHolder.transform, false);
+                paletteController.controllerGeometry = controllerGeometryLeft.GetComponent<ControllerGeometry>();
+
+                var controllerGeometryRight = Instantiate<GameObject>(controllerGeometryRightSteamFramePrefab,
+                  peltzerController.openXRHolder.transform, false);
+                peltzerController.controllerGeometry = controllerGeometryRight.GetComponent<ControllerGeometry>();
+
+                // Steam Frame uses distinct left/right geometry and supports the same handedness swap path as Rift.
+                ObjectFinder.ObjectById("ID_toggle_left_handed").SetActive(true);
+                ObjectFinder.ObjectById("ID_small_menu_div").SetActive(true);
+                ObjectFinder.ObjectById("ID_large_menu_div").SetActive(false);
+            }
+            else if (ActiveControllerModel == ControllerModel.Rift)
             {
                 // Create the left controller geometry for the palette controller.
                 GameObject controllerGeometryLeft = null;
@@ -1229,7 +1274,7 @@ namespace com.google.apps.peltzer.client.model.main
                     else
                     {
                         SignIn(promptUserIfNoToken: true);
-                        paletteController.publishSignInPrompt.SetActive(true);
+                        paletteController.publishSignInPrompt.SetActive(OsCanReachLocalhost);
                     }
                     break;
                 case MenuAction.PUBLISH:
@@ -1237,7 +1282,7 @@ namespace com.google.apps.peltzer.client.model.main
                     if (!OAuth2Identity.Instance.LoggedIn)
                     {
                         SignIn(/* promptUserIfNoToken */ true);
-                        paletteController.publishSignInPrompt.SetActive(true);
+                        paletteController.publishSignInPrompt.SetActive(OsCanReachLocalhost);
                     }
                     else
                     {
@@ -1399,8 +1444,24 @@ namespace com.google.apps.peltzer.client.model.main
         {
             // Make the switch.
             HasDisabledTooltips = !HasDisabledTooltips;
-            peltzerController.HideTooltips();
-            paletteController.HideTooltips();
+
+            // Tooltip roots are hidden when tooltips are disabled, so their active children would otherwise retain
+            // stale hover state and reappear as soon as the roots are enabled again.
+            peltzerController.controllerGeometry.ResetTooltipActivationState();
+            paletteController.controllerGeometry.ResetTooltipActivationState();
+            applicationButtonToolTips.TurnOff();
+            peltzerController.SetTouchpadHoverTexture(TouchpadHoverState.NONE);
+            paletteController.SetTouchpadHoverTexture(TouchpadHoverState.NONE);
+
+            if (HasDisabledTooltips)
+            {
+                peltzerController.HideTooltips();
+                paletteController.HideTooltips();
+            }
+            else
+            {
+                peltzerController.ShowTooltips();
+            }
 
             // Update player preferences.
             PlayerPrefs.SetString(DISABLE_TOOLTIPS_KEY, HasDisabledTooltips ? "true" : "false");

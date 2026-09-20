@@ -3,6 +3,7 @@
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
     "com.iam1337.extapi": "https://github.com/icosa-mirror/extApi.git#upm",
     "com.meta.xr.sdk.platform": "74.0.0",
+    "com.rlabrecque.steamworks.net": "https://github.com/icosa-mirror/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c791803ec16191a1f771b591438151d5f46e865e",
     "com.unity.cloud.draco": "5.4.0",
     "com.unity.ide.rider": "3.0.40",
     "com.unity.ide.visualstudio": "2.0.27",
