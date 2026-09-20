@@ -24,7 +24,7 @@ namespace com.google.apps.peltzer.client.app
     {
         public static bool OsCanReachLocalhost(RuntimePlatform platform, bool runningUnderSteam)
         {
-            return platform != RuntimePlatform.Android || !runningUnderSteam;
+            return true;
         }
     }
 

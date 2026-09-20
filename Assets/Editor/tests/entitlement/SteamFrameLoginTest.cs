@@ -21,11 +21,11 @@ using UnityEngine;
 [TestFixture]
 public class SteamFrameLoginTest
 {
-    [TestCase(RuntimePlatform.Android, true, false)]
+    [TestCase(RuntimePlatform.Android, true, true)]
     [TestCase(RuntimePlatform.Android, false, true)]
     [TestCase(RuntimePlatform.WindowsPlayer, true, true)]
     [TestCase(RuntimePlatform.OSXPlayer, false, true)]
-    public void OsCanReachLocalhost_OnlyBlocksAndroidUnderSteam(
+    public void OsCanReachLocalhost_IsSupportedOnAllPlatforms(
       RuntimePlatform platform, bool runningUnderSteam, bool expected)
     {
         Assert.AreEqual(

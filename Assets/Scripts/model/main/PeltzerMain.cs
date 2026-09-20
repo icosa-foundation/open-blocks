@@ -300,7 +300,6 @@ namespace com.google.apps.peltzer.client.model.main
 
         /// <summary>
         /// Whether the browser opened by this OS can call the app's localhost HTTP endpoint.
-        /// Steam Frame can open normal URLs, but its browser cannot reach the Android guest's localhost.
         /// </summary>
         public bool OsCanReachLocalhost
         {
