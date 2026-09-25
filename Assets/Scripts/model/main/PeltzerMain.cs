@@ -868,8 +868,10 @@ namespace com.google.apps.peltzer.client.model.main
         private string GetUserPath()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            return "/sdcard/"; // We can't use persistentDataPath as it doesn't survive app uninstall
-
+            // We can't use persistentDataPath as it doesn't survive app uninstall
+            return SteamRuntime.RunningUnderSteam
+                        ? "/sdcard/Documents"
+                        : "/sdcard/";
 #else
             userPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal);
 
