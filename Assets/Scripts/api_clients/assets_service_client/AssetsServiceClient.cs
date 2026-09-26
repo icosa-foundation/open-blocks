@@ -1021,8 +1021,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 if (responseCode != 401 || isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get featured models"));
-                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                     failureCallback();
+                    // Load cleanup also handles empty results; preserve the request failure afterward.
+                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
@@ -1049,8 +1050,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 if (responseCode != 401 || isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get all models"));
-                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                     failureCallback();
+                    // Load cleanup also handles empty results; preserve the request failure afterward.
+                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
@@ -1094,8 +1096,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 if (responseCode != 401 || isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get your models"));
-                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                     failureCallback();
+                    // Load cleanup also handles empty results; preserve the request failure afterward.
+                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
@@ -1140,8 +1143,9 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 if (responseCode != 401 || isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get liked models"));
-                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                     failureCallback();
+                    // Load cleanup also handles empty results; preserve the request failure afterward.
+                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
