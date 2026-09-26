@@ -79,8 +79,7 @@ namespace com.google.apps.peltzer.client.testing
                 mesh = Primitives.AxisAlignedIcosphere(/* id */ 0,
                   /* Just in front of user*/ new Vector3(0f, 1f, 0.5f),
                   /* Big */ Vector3.one * (GridUtils.GRID_SIZE / 2.0f) * 15,
-                  /* materialID */ 1,
-                  /* recursionLevel */ 4);
+                  /* materialID */ 1);
                 Debug.Log("Adding one complex mesh with " + mesh.vertexCount + " verts and " + mesh.faceCount + " faces");
             }
             else
