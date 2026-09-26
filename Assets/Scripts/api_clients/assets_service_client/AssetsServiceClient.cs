@@ -986,7 +986,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             () => { return request; },
             (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
               ProcessGetFeaturedModelsResponse(
-                success, responseCode, responseBytes, request, successCallback, failureCallback)),
+                success, responseCode, responseBytes, request, successCallback, failureCallback, isRecursion)),
                 maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
@@ -1006,7 +1006,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
                 () => { return request; },
                 (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
                     ProcessGetAllModelsResponse(
-                        success, responseCode, responseBytes, request, successCallback, failureCallback)),
+                        success, responseCode, responseBytes, request, successCallback, failureCallback, isRecursion)),
                 maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
@@ -1017,9 +1017,12 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             if (!success || responseCode == 401)
             {
-                if (isRecursion)
+                // Only an expired auth token warrants reauthorization, and retry at most once.
+                if (responseCode != 401 || isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get featured models"));
+                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                    failureCallback();
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
@@ -1042,9 +1045,12 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             if (!success || responseCode == 401)
             {
-                if (isRecursion)
+                // Only an expired auth token warrants reauthorization, and retry at most once.
+                if (responseCode != 401 || isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get all models"));
+                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                    failureCallback();
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
@@ -1073,7 +1079,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
                 ProcessGetYourModelsResponse(
-                  success, responseCode, responseBytes, request, successCallback, failureCallback)),
+                  success, responseCode, responseBytes, request, successCallback, failureCallback, isRecursion)),
               maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
@@ -1084,14 +1090,17 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             if (!success || responseCode == 401)
             {
-                if (isRecursion)
+                // Only an expired auth token warrants reauthorization, and retry at most once.
+                if (responseCode != 401 || isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get your models"));
+                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                    failureCallback();
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
-                GetYourModels(successCallback, failureCallback);
+                GetYourModels(successCallback, failureCallback, /* isRecursion */ true);
             }
             else
             {
@@ -1108,14 +1117,15 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         ///   Requests a create-time-descending ordering.
         /// </summary>
         /// <param name="callback">A callback to which to pass the results.</param>
-        public void GetLikedModels(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback)
+        public void GetLikedModels(System.Action<ObjectStoreSearchResult> successCallback, System.Action failureCallback,
+          bool isRecursion = false)
         {
             UnityWebRequest request = GetRequest(LikedModelsSearchUrl(), "text/text", true);
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
                 ProcessGetLikedModelsResponse(
-                  success, responseCode, responseBytes, request, successCallback, failureCallback)),
+                  success, responseCode, responseBytes, request, successCallback, failureCallback, isRecursion)),
               maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
@@ -1126,14 +1136,17 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             if (!success || responseCode == 401)
             {
-                if (isRecursion)
+                // Only an expired auth token warrants reauthorization, and retry at most once.
+                if (responseCode != 401 || isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, "Failed to get liked models"));
+                    PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                    failureCallback();
                     yield break;
                 }
                 PeltzerMain.Instance.polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
                 yield return OAuth2Identity.Instance.Reauthorize();
-                GetLikedModels(successCallback, failureCallback);
+                GetLikedModels(successCallback, failureCallback, /* isRecursion */ true);
             }
             else
             {
@@ -1147,7 +1160,8 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         ///   Fetch a specific asset.
         /// </summary>
         /// <param name="callback">A callback to which to pass the results.</param>
-        public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback, bool isSave)
+        public void GetAsset(string assetId, System.Action<ObjectStoreEntry> callback, bool isSave,
+          bool isRecursion = false)
         {
             string url;
             url = String.Format(isSave ? "{0}/users/me/assets/{1}" : "{0}/assets/{1}", ApiBaseUrl, assetId);
@@ -1156,7 +1170,7 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
             PeltzerMain.Instance.webRequestManager.EnqueueRequest(
               () => { return request; },
               (bool success, int responseCode, byte[] responseBytes) => StartCoroutine(
-                ProcessGetAssetResponse(success, responseCode, responseBytes, request, assetId, callback, false, isSave)),
+                ProcessGetAssetResponse(success, responseCode, responseBytes, request, assetId, callback, isRecursion, isSave)),
               maxAgeMillis: WebRequestManager.CACHE_NONE);
         }
 
@@ -1166,13 +1180,14 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             if (!success || responseCode == 401)
             {
-                if (isRecursion)
+                // The callback reports successful assets only; log terminal failures without retrying.
+                if (responseCode != 401 || isRecursion)
                 {
-                    Debug.LogError(GetDebugString(request, "Failed to fetch an asset with id " + assetId));
+                    Debug.LogError(GetDebugString(request, $"Failed to fetch an asset with id {assetId}"));
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();
-                GetAsset(assetId, callback, isSave);
+                GetAsset(assetId, callback, isSave, /* isRecursion */ true);
             }
             else
             {
