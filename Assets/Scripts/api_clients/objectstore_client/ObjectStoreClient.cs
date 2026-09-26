@@ -27,6 +27,7 @@ using com.google.apps.peltzer.client.model.core;
 using com.google.apps.peltzer.client.model.render;
 using System.Text;
 using com.google.apps.peltzer.client.entitlement;
+using com.google.apps.peltzer.client.serialization;
 using ICSharpCode.SharpZipLib.Zip;
 using System.Linq;
 
@@ -296,6 +297,17 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
 
         private static void AttemptPeltzerPackage(ObjectStorePeltzerPackageAssets peltzerPackage, string assetId, System.Action<byte[]> callback, System.Action<string> onFailure)
         {
+            void OnPackageExtracted(byte[] blocksBytes)
+            {
+                if (!HasPeltzerHeader(blocksBytes))
+                {
+                    onFailure("Blocks package did not contain a valid model file");
+                    return;
+                }
+
+                callback(blocksBytes);
+            }
+
             // Check cache first
             string cacheDir = Path.Combine(Application.temporaryCachePath, $"peltzer_package_{assetId}");
             string cachedFilePath = Path.Combine(cacheDir, "package.zip");
@@ -303,8 +315,13 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             if (File.Exists(cachedFilePath))
             {
                 byte[] cachedBytes = File.ReadAllBytes(cachedFilePath);
-                PeltzerMain.Instance.DoPolyMenuBackgroundWork(new CopyStreamWork(cachedBytes, callback));
-                return;
+                if (IsZipArchive(cachedBytes))
+                {
+                    PeltzerMain.Instance.DoPolyMenuBackgroundWork(new CopyStreamWork(cachedBytes, OnPackageExtracted));
+                    return;
+                }
+
+                Debug.LogWarning($"Ignoring invalid cached Blocks package for asset {assetId}");
             }
 
             // Cache miss - download
@@ -328,6 +345,12 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                   }
                   else
                   {
+                      if (!IsZipArchive(responseBytes))
+                      {
+                          onFailure("Downloaded Blocks package was not a ZIP archive");
+                          return;
+                      }
+
                       // Cache the downloaded package
                       try
                       {
@@ -342,7 +365,7 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                           Debug.LogWarning($"Failed to cache Peltzer package: {e.Message}");
                       }
 
-                      PeltzerMain.Instance.DoPolyMenuBackgroundWork(new CopyStreamWork(responseBytes, callback));
+                      PeltzerMain.Instance.DoPolyMenuBackgroundWork(new CopyStreamWork(responseBytes, OnPackageExtracted));
                   }
               });
         }
@@ -356,8 +379,13 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             if (File.Exists(cachedFilePath))
             {
                 byte[] cachedBytes = File.ReadAllBytes(cachedFilePath);
-                callback(cachedBytes);
-                return;
+                if (HasPeltzerHeader(cachedBytes))
+                {
+                    callback(cachedBytes);
+                    return;
+                }
+
+                Debug.LogWarning($"Ignoring invalid cached Blocks file for asset {assetId}");
             }
 
             // Cache miss - download
@@ -381,6 +409,12 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
                   }
                   else
                   {
+                      if (!HasPeltzerHeader(responseBytes))
+                      {
+                          onFailure("Downloaded Blocks file had an invalid header");
+                          return;
+                      }
+
                       // Cache the downloaded file
                       try
                       {
@@ -1025,6 +1059,11 @@ namespace com.google.apps.peltzer.client.api_clients.objectstore_client
             return (signatureByte2 == 0x03 && signatureByte3 == 0x04)
               || (signatureByte2 == 0x05 && signatureByte3 == 0x06)
               || (signatureByte2 == 0x07 && signatureByte3 == 0x08);
+        }
+
+        private static bool HasPeltzerHeader(byte[] data)
+        {
+            return data != null && PolySerializer.HasValidHeader(data, 0, data.Length);
         }
 
         private static string DescribeMagicBytes(byte[] data)

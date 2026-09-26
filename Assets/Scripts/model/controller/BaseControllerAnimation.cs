@@ -14,7 +14,7 @@
 
 using UnityEngine;
 using System.Collections;
-using com.google.apps.peltzer.client.app;
+using com.google.apps.peltzer.client.model.main;
 
 namespace com.google.apps.peltzer.client.model.controller
 {
@@ -156,13 +156,13 @@ namespace com.google.apps.peltzer.client.model.controller
 
             //UpdateRiftTouchPad(false);
 
-            if (Config.Instance.VrHardware == VrHardware.Vive)
+            if (PeltzerMain.Instance.ActiveControllerModel == ControllerModel.Vive)
             {
                 userThumbLocation = Instantiate(Resources.Load<GameObject>("Prefabs/userThumb"));
                 userThumbLocation.transform.SetParent(touchpads.transform, /* worldPositionStays */ true);
                 triggerPivotPoint = TRIGGER_PIVOT_POINT_VIVE;
             }
-            else if (Config.Instance.VrHardware == VrHardware.Rift)
+            else
             {
                 triggerPivotPoint = TRIGGER_PIVOT_POINT_RIFT;
             }
@@ -172,7 +172,9 @@ namespace com.google.apps.peltzer.client.model.controller
             triggerDefaultRot = trigger.transform.localEulerAngles;
 
             // Get grip defaults.
-            float gripPressOffset = Config.Instance.VrHardware == VrHardware.Vive ? GRIP_PRESS_OFFSET_VIVE : GRIP_PRESS_OFFSET_RIFT;
+            float gripPressOffset = PeltzerMain.Instance.ActiveControllerModel == ControllerModel.Vive
+              ? GRIP_PRESS_OFFSET_VIVE
+              : GRIP_PRESS_OFFSET_RIFT;
             if (LGrip != null)
             {
                 LGripDefaultLoc = LGrip.transform.localPosition;
@@ -222,7 +224,7 @@ namespace com.google.apps.peltzer.client.model.controller
         {
             // Highlight
             Vector2 loc = Vector2.zero;
-            if (Config.Instance.VrHardware == VrHardware.Vive)
+            if (PeltzerMain.Instance.ActiveControllerModel == ControllerModel.Vive)
             {
                 if (controller.IsTouched(ButtonId.Touchpad))
                 {
@@ -282,7 +284,7 @@ namespace com.google.apps.peltzer.client.model.controller
         /// <param name="controller">ControllerDevice for referencing input.</param>
         private void DetectGrip(ControllerDevice controller)
         {
-            if (Config.Instance.VrHardware == VrHardware.Vive)
+            if (PeltzerMain.Instance.ActiveControllerModel == ControllerModel.Vive)
             {
 
                 if (controller.WasJustPressed(ButtonId.Grip))
