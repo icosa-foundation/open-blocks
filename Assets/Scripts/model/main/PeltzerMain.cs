@@ -1132,6 +1132,14 @@ namespace com.google.apps.peltzer.client.model.main
             }
 
             ProcessPendingCacheEviction();
+            if (model != null)
+            {
+                // Releasing this needs a per-frame nudge: the history budget only runs when a command is
+                // pushed, which is exactly when the batching window has just been reset, so it can never
+                // release anything by itself. Without this, going idle right after a large edit would keep
+                // that command's payload pinned outside both budgeted stacks.
+                model.ReleaseExpiredCurrentCommand();
+            }
 
             if (LastAutoSaveDenied)
             {

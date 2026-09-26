@@ -397,9 +397,16 @@ namespace com.google.apps.peltzer.client.model.core
         /// budget to discard other history to compensate for something it has no way to release.
         ///
         /// Only ever released once the window has expired, because inside the window
-        /// AddAndMaybeBatchCommands still reads (and casts) currentCommand to extend the batch.
+        /// AddAndMaybeBatchCommands still reads (and casts) currentCommand to extend the batch. That makes the
+        /// condition below the exact complement of the one guarding those reads, and undoBatchStartTime never
+        /// moves forward in between, so the batching path can never observe null.
+        ///
+        /// Called once per frame (from PeltzerMain.Update) as well as from EnforceHistoryByteBudget: the
+        /// budget only runs at push sites, where the window has just been reset, so on its own it would never
+        /// actually release anything - a session going idle right after a large edit would keep the payload
+        /// pinned until the next edit. Costs a float compare per frame when there is nothing to release.
         /// </summary>
-        private void ReleaseExpiredCurrentCommand()
+        public void ReleaseExpiredCurrentCommand()
         {
             if (currentCommand == null) return;
             if (Time.time - undoBatchStartTime <= BATCH_FREQUENCY_SECONDS) return;
