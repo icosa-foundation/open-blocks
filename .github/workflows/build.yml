@@ -14,7 +14,7 @@ on:  # yamllint disable-line rule:truthy
     - cron: "31 18 * * sat"  # Weekly, Saturday at 18:31 UTC
 
 env:
-  UNITY_VERSION: "2022.3.62f2"
+  UNITY_VERSION: "6000.6.0f1"
 jobs:
   configuration:
     if: |
@@ -47,7 +47,6 @@ jobs:
       googleplaystatus: ${{ steps.version.outputs.googleplaystatus }}
       uid: ${{ steps.github.outputs.uid }}
       gid: ${{ steps.github.outputs.gid }}
-      flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -180,69 +179,91 @@ jobs:
           echo "uid=$(id -u)" >> $GITHUB_OUTPUT
           echo "gid=$(id -g)" >> $GITHUB_OUTPUT
 
-      - name: Determine whether to build Development builds or not
-        id: flavors
-        run: |
-          set -x
-          if [[ $(git log --format=%B ${{ github.event.pull_request.head.sha }} -1) == *'[CI BUILD DEV]'* ]]
-          then
-            echo 'flavors=[{"development": true, "title": "Development"}, {"development": false}]' >> $GITHUB_OUTPUT
-
-          else
-            echo 'flavors=[{"development": false}]' >> $GITHUB_OUTPUT
-          fi
-
   build:
-    name: ${{ matrix.name }} ${{ matrix.flavors.title }}
+    name: ${{ matrix.artifactName }} (${{ matrix.development && 'Development' || 'Release' }})
     needs: configuration
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android OpenXR Google Play, Android 2D]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
-          - name: Windows OpenXR
+          - runtime: OpenXR
             targetPlatform: StandaloneWindows64
-            cache: Windows
+            cache: Windows_OpenXR
+            androidTargetSdkVersion: ""
+            androidExportType: androidPackage
+            development: false
+            artifactName: Windows OpenXR
+            publishTarget: desktop-distribution
+            versionSuffix: 0
 
-          - name: Linux
+          - runtime: Monoscopic
             targetPlatform: StandaloneLinux64
-            cache: Linux
+            cache: Linux_Monoscopic
+            androidTargetSdkVersion: ""
+            androidExportType: androidPackage
+            development: false
+            artifactName: Linux
+            publishTarget: desktop-distribution
+            versionSuffix: 0
             extra_defines: XR_DISABLED
-            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
+            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr com.unity.xr.androidxr-openxr
 
-          - name: MacOS
+          - runtime: Monoscopic
             targetPlatform: StandaloneOSX
-            cache: MacOS
+            cache: MacOS_Monoscopic
+            androidTargetSdkVersion: ""
+            androidExportType: androidPackage
+            development: false
+            artifactName: MacOS
+            publishTarget: desktop-distribution
+            versionSuffix: 0
             extra_defines: XR_DISABLED
-            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
+            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr com.unity.xr.androidxr-openxr
 
-          - name: Android OpenXR
+          - runtime: OpenXR
             targetPlatform: Android
-            cache: Android
-            extraoptions: -btb-il2cpp
-            androidTargetSdkVersion: 34
+            cache: Android_OpenXR
+            androidTargetSdkVersion: AndroidApiLevel34
+            androidExportType: androidPackage
+            development: false
+            artifactName: Android OpenXR
+            publishTarget: generic-android-distribution
             versionSuffix: 0
             packages_to_remove: com.meta.xr.sdk.core
 
-          - name: Android OpenXR Google Play
+          - runtime: Monoscopic
             targetPlatform: Android
-            cache: Android
-            extraoptions: -btb-il2cpp
-            androidTargetSdkVersion: 35
-            versionSuffix: 0
-            androidExportType: androidAppBundle
-            packages_to_remove: com.meta.xr.sdk.core
-
-          - name: Android 2D
-            targetPlatform: Android
-            cache: Android_2D
-            extraoptions: -btb-il2cpp
-            androidTargetSdkVersion: 34
+            cache: Android_Monoscopic
+            androidTargetSdkVersion: AndroidApiLevel34
+            androidExportType: androidPackage
+            development: false
+            artifactName: Android 2D
+            publishTarget: mobile-2d-distribution
             versionSuffix: 1
             extra_defines: XR_DISABLED
-            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr
+            packages_to_remove: com.meta.xr.sdk.core com.unity.xr.openxr com.unity.xr.androidxr-openxr
+
+          - runtime: AndroidXR
+            targetPlatform: Android
+            cache: Android_AndroidXR
+            androidTargetSdkVersion: AndroidApiLevel35
+            androidExportType: androidAppBundle
+            development: false
+            artifactName: Android XR
+            publishTarget: google-play
+            versionSuffix: 0
+            packages_to_remove: com.meta.xr.sdk.core
+
+          - runtime: MetaQuest
+            targetPlatform: Android
+            cache: Android_MetaQuest
+            androidTargetSdkVersion: AndroidApiLevel34
+            androidExportType: androidPackage
+            development: false
+            artifactName: Meta Quest
+            publishTarget: meta-quest
+            versionSuffix: 0
 
     steps:
       - name: Set masking
@@ -312,28 +333,6 @@ jobs:
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
-      - name: Install TextMesh Pro package
-        run: |
-          # version 3.0.6; must be updated if the version changes
-          # This replaces the GUI's "Window -> TextMesh Pro -> Import TMP Essential Resources". I don't know why Unity makes this sort of thing so hard!
-          mkdir tmp.plugin
-          wget -q https://download.packages.unity.com/com.unity.textmeshpro/-/com.unity.textmeshpro-3.0.6.tgz -O tmp.plugin/plugin.tgz
-          tar -C tmp.plugin -xzf tmp.plugin/plugin.tgz
-          mkdir tmp.package
-          tar -C tmp.package -xzf 'tmp.plugin/package/Package Resources/TMP Essential Resources.unitypackage'
-          for pn in tmp.package/*/pathname; do
-            id=${pn%/*}
-            id=${id#*/}
-            p=$(head -1 $pn)
-            d=${p%/*}
-            mkdir -p "tmp.package/$d"
-            [ -f "tmp.package/$id/asset" ] && cp -v "tmp.package/$id/asset" "tmp.package/$p"
-            cp "tmp.package/$id/asset.meta" "tmp.package/${p}.meta"
-          done
-          mkdir -p 'Assets/TextMesh Pro'
-          cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
-          rm -rf tmp.plugin tmp.package
-
       - name: Restore Library/
         id: cache_library
         uses: actions/cache/restore@v6
@@ -346,6 +345,7 @@ jobs:
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
+        if: false
         uses: actions/cache/restore@v6
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -386,26 +386,12 @@ jobs:
             echo "filename=foundation.Icosa.$BASENAME.apk" >> $GITHUB_ENV
           fi
 
-      - name: Enable Development Mode
-        if: ${{ matrix.flavors.development == true }}
-        run: |
-          echo "btbbopts=-btb-bopt Development" >> $GITHUB_ENV
-
       - name: Update version
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         run: |
           sed -e "s/m_VersionNumber:.*$/m_VersionNumber: $VERSION/" -i Assets/Scenes/MainScene.unity
           sed -e "s/bundleVersion:.*$/bundleVersion: $VERSION/" -i ProjectSettings/ProjectSettings.asset
-
-      - name: Set Android target SDK
-        if: matrix.targetPlatform == 'Android'
-        env:
-          TARGET_SDK_VERSION: ${{ matrix.androidTargetSdkVersion }}
-        run: |
-          grep -q '^  AndroidTargetSdkVersion:' ProjectSettings/ProjectSettings.asset
-          sed -e "s/^  AndroidTargetSdkVersion:.*$/  AndroidTargetSdkVersion: $TARGET_SDK_VERSION/" -i ProjectSettings/ProjectSettings.asset
-          grep -q "^  AndroidTargetSdkVersion: $TARGET_SDK_VERSION$" ProjectSettings/ProjectSettings.asset
 
       - name: Add secure secrets file
         env:
@@ -438,7 +424,7 @@ jobs:
           UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><TimeStamp Value=\"chxldhvc0zh5Vw==\"/>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"C372866C-B44C-5E48-806F-7583B55F04FB\"/>\n            <Binding Key=\"2\" Value=\"C02F32Y5ML85\"/>\n        </MachineBindings>\n        <MachineID Value=\"LcL/yxIaeUG12OSX31mKDtxcVx8=\"/>\n        <SerialHash Value=\"e25c63636985259e763d40cc9253cdfe6a862ceb\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LUtFWUItMzYyOC0zWEI3LVBZVVEtTUI5VQ==\"/>\n        <SerialMasked Value=\"F4-KEYB-3628-3XB7-PYUQ-XXXX\"/>\n        <StartDate Value=\"2023-11-21T00:00:00\"/>\n        <UpdateDate Value=\"2023-11-22T06:03:23\"/>\n        <InitialActivationDate Value=\"2023-11-21T06:03:21\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2017.2.0\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>9DZF11miRAzx7TIuCxih78B6CXU=</DigestValue></Reference></SignedInfo><SignatureValue>weRQubqMNN61lSZtm/e7S+UDzTPNQjM5aQl/c4aKLH/b2khefpgLfdWneoxdnNopA6+rW6kBqxWt\nhMLdHY+oAOfDsfmMQRTnmQG0Y3G3xh6gjGP1RAIHoLDfFHf+0LQ3FakA2WehcFWPSYeVDrdxm3HW\nqMmdKWooD9i+J4s4rQFTDx9+/G6yjc5KGTyGxIz3c5kxTEkV2qsFPXsauomY9Z8YPKy+cZK7g+Ol\npO+LhtzetgTIlIN/qG8eByjlp6nOuVGdDOIrhNJW+vllNyx0qNWPREadVrhFViI4UXegMFRl5gJc\nrgcrlr/fD+NorDVLfcu7D863QXkkuriILUIq2Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
         with:
           retry_condition: steps._this.outputs.engineExitCode == 1
-          action: game-ci/unity-builder@v4
+          action: game-ci/unity-builder@v5
           with: |
             #allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
             unityVersion: ${{ env.UNITY_VERSION }}
@@ -447,9 +433,11 @@ jobs:
             androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
             version: ${{ needs.configuration.outputs.version }}
             buildName: ${{ needs.configuration.outputs.basename }}
+            buildMethod: BuildOpenBlocks.CommandLine
+            customParameters: -ob-runtime ${{ matrix.runtime }} -ob-development ${{ matrix.development }}
             chownFilesTo: ${{ needs.configuration.outputs.uid }}:${{ needs.configuration.outputs.gid }}
-            #buildMethod: BuildTiltBrush.CommandLine
-            androidExportType: ${{ matrix.androidExportType || 'androidPackage' }}
+            androidExportType: ${{ matrix.androidExportType }}
+            androidTargetSdkVersion: ${{ matrix.androidTargetSdkVersion }}
             androidSymbolType: debugging
             androidKeystoreName: openblocks.keystore
             androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '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' }}
@@ -471,10 +459,12 @@ jobs:
       - name: Upload build/
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.name }} ${{ matrix.flavors.title }}
+          name: ${{ matrix.artifactName }} (${{ matrix.development && 'Development' || 'Release' }})
           path: |
             build/
             !build/*_BackUpThisFolder_ButDontShipItWithYourGame
+          if-no-files-found: error
+          overwrite: false
 
       - name: Check if packages-lock.json has changed or if it's cacheable
         id: check_packagecache
@@ -489,7 +479,7 @@ jobs:
 
       - name: Save Library/PackageCache cache
         uses: actions/cache/save@v6
-        if: steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove && false
+        if: false
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -497,26 +487,33 @@ jobs:
           key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
 
       - name: Clean Library before caching
-        if: steps.cache_library.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && matrix.development != true
+        env:
+          UNITY_LIBRARY_CACHE_PATHS: "DataStore ArtifactDB SourceAssetDB PlayerDataCache ShaderCache ShaderCache.db"
         run: |
-          # Remove the large files from the Library directory that we know we'll rebuild. As our il2cpp caches are huge and barely fit in the Github quota, it's better not to save an unneeded 1GB of space (or so). If a new Unity version is taken, this may need to be updated
           # Debugging
           echo "Library/ directories"
           du -mcsh Library/*
           find Library -size +50M -exec ls -altrh {} \;
           # chown all files, since some are owned by root after the docker run
           docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
-          # Print the files to be deleted
-          find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so*' -or -name 'launcher-release.apk' | tee todelete.txt
-          cat todelete.txt | xargs -r rm
-          # The package cache is stored in a separate, shared, cache
-          rm -rf Library/PackageCache
+          # Keep only caches that are both safe to restore and useful to subsequent builds.
+          library_cache="$RUNNER_TEMP/unity-library-cache"
+          rm -rf "$library_cache"
+          mkdir "$library_cache"
+          for cache_path in $UNITY_LIBRARY_CACHE_PATHS; do
+            if [ -e "Library/$cache_path" ]; then
+              mv "Library/$cache_path" "$library_cache/$cache_path"
+            fi
+          done
+          rm -rf Library
+          mv "$library_cache" Library
           echo "Final space used"
-          du -mcsh Library
+          du -mcsh Library/*
 
       - name: Save Library/ cache
         uses: actions/cache/save@v6
-        if: steps.cache_library.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && matrix.development != true
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -544,7 +541,7 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v8
         with:
-          name: MacOS
+          name: MacOS (Release)
           path: build_macos
 
       # See https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
@@ -714,25 +711,25 @@ jobs:
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Windows OpenXR
+          name: Windows OpenXR (Release)
           path: build_windows_openxr
 
       - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android OpenXR (Release)
           path: build_android_openxr
 
       - name: Download Build Artifacts (Android 2D)
         uses: actions/download-artifact@v8
         with:
-          name: Android 2D
+          name: Android 2D (Release)
           path: build_android_2D
 
       - name: Download Build Artifacts (Linux)
         uses: actions/download-artifact@v8
         with:
-          name: Linux
+          name: Linux (Release)
           path: build_linux
 
       - name: Download Build Artifacts (Mac)
@@ -869,7 +866,7 @@ jobs:
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Windows OpenXR
+          name: Windows OpenXR (Release)
           path: build_windows_openxr
       - name: Download Build Artifacts (MacOS Signed)
         uses: actions/download-artifact@v8
@@ -879,12 +876,12 @@ jobs:
       - name: Download Build Artifacts (Linux)
         uses: actions/download-artifact@v8
         with:
-          name: Linux
+          name: Linux (Release)
           path: build_linux
       - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android OpenXR (Release)
           path: build_android_openxr
       - name: Upload Build
         run: |
@@ -933,11 +930,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android OpenXR Google Play)
+      - name: Download Build Artifacts (Android XR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR Google Play
-          path: build_android_openxr_google_play
+          name: Android XR (Release)
+          path: build_android_xr
 
       - name: Prepare Google Play release
         id: google_play_release
@@ -945,18 +942,18 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          AAB="$(find build_android_openxr_google_play -name 'OpenBlocks*.aab' -print -quit)"
-          SYMBOLS="$(find build_android_openxr_google_play -name 'OpenBlocks*.symbols.zip' -print -quit)"
+          AAB="$(find build_android_xr -name 'OpenBlocks*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_xr -name 'OpenBlocks*.symbols.zip' -print -quit)"
           if [ -z "$AAB" ]; then
-            echo "No Android App Bundle found in build_android_openxr_google_play" >&2
-            find build_android_openxr_google_play -maxdepth 4 -type f >&2
+            echo "No Android App Bundle found in build_android_xr" >&2
+            find build_android_xr -maxdepth 4 -type f >&2
             exit 1
           fi
 
-          cp "$AAB" "releases/OpenBlocks_OpenXR_$VERSION.aab"
+          cp "$AAB" "releases/OpenBlocks_AndroidXR_$VERSION.aab"
           if [ -n "$SYMBOLS" ]; then
-            cp "$SYMBOLS" "releases/OpenBlocks_OpenXR_$VERSION.symbols.zip"
-            echo "debugSymbols=releases/OpenBlocks_OpenXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+            cp "$SYMBOLS" "releases/OpenBlocks_AndroidXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBlocks_AndroidXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish Google Play Build
@@ -964,7 +961,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openblocks
-          releaseFiles: releases/OpenBlocks_OpenXR_${{ needs.configuration.outputs.version }}.aab
+          releaseFiles: releases/OpenBlocks_AndroidXR_${{ needs.configuration.outputs.version }}.aab
           tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
@@ -980,11 +977,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android OpenXR)
+      - name: Download Build Artifacts (Meta Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
-          path: build_android_openxr
+          name: Meta Quest (Release)
+          path: build_meta_quest
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -994,8 +991,8 @@ jobs:
           OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
         run: |
           mkdir releases
-          mv build_android_openxr/*/OpenBlocks*apk releases/OpenBlocks_OpenXR_$VERSION.apk
-          mv build_android_openxr/*/OpenBlocks*.symbols.zip releases/symbols.zip
+          mv build_meta_quest/*/OpenBlocks*apk releases/OpenBlocks_MetaQuest_$VERSION.apk
+          mv build_meta_quest/*/OpenBlocks*.symbols.zip releases/symbols.zip
 
           cd releases
           unzip symbols.zip
@@ -1004,10 +1001,10 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_OpenXR_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_MetaQuest_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_OpenXR_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBlocks_MetaQuest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
           fi
 
   publish_arborxr:
@@ -1033,7 +1030,7 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android OpenXR (Release)
           path: build_android_openxr
 
       - name: Publish Builds
@@ -1079,7 +1076,7 @@ jobs:
       - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Windows OpenXR
+          name: Windows OpenXR (Release)
           path: build_windows_openxr
       - name: Publish Oculus Builds
         env:
@@ -1126,7 +1123,7 @@ jobs:
       - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android OpenXR (Release)
           path: build_android_openxr
       - name: Publish Pico Builds
         env:

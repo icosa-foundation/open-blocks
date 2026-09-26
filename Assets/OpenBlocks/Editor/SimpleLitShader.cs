@@ -8,7 +8,7 @@ namespace OpenBlocks.Editor
 {
     // THIS IS TAKEN FROM UnityEditor.Rendering.Universal.ShaderGUI.SimpleLitShader.cs
     // MIGHT NEED TO BE UPDATED IF UNITY VERSION CHANGES!!!
-    // CURRENT URP VERSION: 14.0.11
+    // CURRENT URP VERSION: 17.6.0
     public class SimpleLitShader : BaseShaderGUI
     {
         // Properties
@@ -50,7 +50,7 @@ namespace OpenBlocks.Editor
 
         public override void DrawAdvancedOptions(Material material)
         {
-            SimpleLitGUI.Advanced(shadingModelProperties);
+            SimpleLitGUI.Advanced(shadingModelProperties, materialEditor, material);
             base.DrawAdvancedOptions(material);
         }
 

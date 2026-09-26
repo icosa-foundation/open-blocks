@@ -123,7 +123,7 @@ namespace com.google.apps.peltzer.client.model.import
 
             int faceCount = triangles.Length / 3;
             List<Color> colors = new List<Color>(faceCount);
-            int meshSeed = CombineHash(mesh.GetInstanceID(), faceCount);
+            int meshSeed = CombineHash(mesh.GetEntityId().GetHashCode(), faceCount);
             int faceIndex = 0;
             for (int i = 0; i < triangles.Length; i += 3, faceIndex++)
             {
