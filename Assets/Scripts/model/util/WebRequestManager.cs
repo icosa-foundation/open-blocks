@@ -333,8 +333,11 @@ namespace com.google.apps.peltzer.client.model.util
             // Start the web request. This will suspend this coroutine until the request is done.
             yield return webRequest.Send();
 
-            // Request is finished. Call user-supplied callback.
-            request.completionCallback(!webRequest.isNetworkError, (int)webRequest.responseCode, webRequest.downloadHandler.data);
+            // Request is finished. Treat HTTP errors as failures as well as transport errors. Previously this
+            // used only isNetworkError, which marked a 404 response as successful and allowed callers to parse
+            // the server's error body as if it were the requested asset.
+            request.completionCallback(webRequest.result == UnityWebRequest.Result.Success,
+              (int)webRequest.responseCode, webRequest.downloadHandler.data);
 
             if (webRequest.responseCode != 200)
             {
