@@ -24,9 +24,17 @@ namespace com.google.apps.peltzer.client.model.core
     ///   Note that this command can be set up to apply the same properties to all indicated faces, or
     ///   apply different properties to each face.
     /// </summary>
-    public class ChangeFacePropertiesCommand : Command
+    public class ChangeFacePropertiesCommand : Command, ICommandWithRetainedMemory
     {
         public const string COMMAND_NAME = "changeFaceProperties";
+
+        /// <summary>
+        /// Approximate heap cost of one propertiesByFaceId entry: a Dictionary entry is a hash code, a next
+        /// index, an int key and a 4-byte FaceProperties value, plus a bucket slot and the slack from the
+        /// dictionary's capacity exceeding its count. Rounded up for safety - this only needs to be the right
+        /// order of magnitude.
+        /// </summary>
+        private const long BYTES_PER_FACE_PROPERTIES_ENTRY = 32;
 
         /// <summary>
         /// The mesh ID whose faces are to be affected.
@@ -60,6 +68,15 @@ namespace com.google.apps.peltzer.client.model.core
         public int GetMeshId()
         {
             return meshId;
+        }
+
+        /// <summary>
+        /// Painting every face of a mesh produces an undo command whose dictionary holds one entry per face
+        /// (up to MMesh.MAX_FACES), so a history full of these can retain a substantial amount of memory.
+        /// </summary>
+        public long GetRetainedMemoryBytes()
+        {
+            return propertiesByFaceId == null ? 0 : propertiesByFaceId.Count * BYTES_PER_FACE_PROPERTIES_ENTRY;
         }
 
         public void ApplyToModel(Model model)
