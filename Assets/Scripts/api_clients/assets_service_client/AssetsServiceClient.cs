@@ -1184,10 +1184,11 @@ namespace com.google.apps.peltzer.client.api_clients.assets_service_client
         {
             if (!success || responseCode == 401)
             {
-                // The callback reports successful assets only; log terminal failures without retrying.
+                // Complete terminal failures with no asset, without retrying.
                 if (responseCode != 401 || isRecursion)
                 {
                     Debug.LogError(GetDebugString(request, $"Failed to fetch an asset with id {assetId}"));
+                    callback(null);
                     yield break;
                 }
                 yield return OAuth2Identity.Instance.Reauthorize();

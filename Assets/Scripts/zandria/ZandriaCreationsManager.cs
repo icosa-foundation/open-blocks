@@ -802,7 +802,7 @@ namespace com.google.apps.peltzer.client.zandria
         ///   Makes a query to get creations metadata for the given asset.
         /// </summary>
         /// <param name="assetId">An assets service asset id.</param>
-        /// <param name="callback">Callback function on successful query.</param>
+        /// <param name="callback">Receives the asset, or null if the request fails.</param>
         public void GetAssetFromAssetsService(string assetId, Action<ObjectStoreEntry> callback, bool isSave)
         {
             assetsServiceClient.GetAsset(assetId, callback, isSave);
