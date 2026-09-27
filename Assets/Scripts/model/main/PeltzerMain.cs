@@ -1867,6 +1867,12 @@ namespace com.google.apps.peltzer.client.model.main
         {
             zandriaCreationsManager.GetAssetFromAssetsService(assetId, delegate (ObjectStoreEntry objectStoreResult)
             {
+                if (objectStoreResult == null)
+                {
+                    Debug.LogWarning($"[LoadSavedModel] Failed to fetch saved asset: {assetId}");
+                    polyMenuMain.UpdateUserInfoText(PolyMenuMain.CreationInfoState.FAILED_TO_LOAD);
+                    return;
+                }
                 zandriaCreationsManager.StartSingleCreationLoad(PolyMenuMain.CreationType.YOUR, objectStoreResult,
                   isLocal: false, isSave: true);
             }, true);
