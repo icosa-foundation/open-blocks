@@ -36,4 +36,29 @@ namespace com.google.apps.peltzer.client.model.core
         /// <returns>The undo command.</returns>
         Command GetUndoCommand(Model model);
     }
+
+    /// <summary>
+    ///   Implemented by Commands that retain a non-trivial amount of memory - large collections, serialized
+    ///   mesh snapshots and the like - so that the undo/redo history byte budget
+    ///   (see Model.EnforceHistoryByteBudget) can account for them and trim history that would otherwise
+    ///   grow without bound.
+    ///
+    ///   Commands that only hold a few scalar fields do not need to implement this: the budget charges every
+    ///   command a small flat overhead regardless. Implement it whenever a command holds a collection or
+    ///   buffer whose size scales with the size of the model or the user's selection.
+    /// </summary>
+    public interface ICommandWithRetainedMemory
+    {
+        /// <summary>
+        ///   Estimated heap memory retained by this command, in bytes, on top of the flat per-command
+        ///   overhead that the budget already charges.
+        ///
+        ///   This only needs to be a good order-of-magnitude estimate - it exists to keep history from
+        ///   growing unbounded, not to account for memory precisely. Only count memory that would actually
+        ///   be reclaimed by discarding this command: references to objects owned by something else (scene
+        ///   GameObjects, textures owned by a manager, meshes still in the model) should NOT be counted,
+        ///   since dropping the command would not free them.
+        /// </summary>
+        long GetRetainedMemoryBytes();
+    }
 }

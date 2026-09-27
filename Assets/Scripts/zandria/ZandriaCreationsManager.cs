@@ -880,8 +880,12 @@ namespace com.google.apps.peltzer.client.zandria
             {
                 if (tex != null)
                 {
+                    // FullRect: thumbnails are opaque rectangles, so a simple quad renders identically and,
+                    // unlike the default tight sprite mesh, doesn't require the texture to be CPU-readable
+                    // (thumbnail textures are created non-readable to reduce their memory cost).
                     Sprite thumbnailSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
-                      new Vector2(0.5f, 0.5f), THUMBNAIL_IMPORT_PIXELS_PER_UNIT);
+                      new Vector2(0.5f, 0.5f), THUMBNAIL_IMPORT_PIXELS_PER_UNIT, /* extrude */ 0,
+                      SpriteMeshType.FullRect);
                     creation.SetThumbnailSprite(thumbnailSprite);
                 }
                 load.pendingModelLoadRequestIndices.Add(indexInCreations);
@@ -893,8 +897,12 @@ namespace com.google.apps.peltzer.client.zandria
         {
             if (entry.localThumbnailFile != null)
             {
-                Texture2D tex = new Texture2D(192, 192);
-                if (tex.LoadImage(File.ReadAllBytes(entry.localThumbnailFile)))
+                // No mip chain, and mark non-readable so the CPU-side pixel copy is released after upload:
+                // together this roughly quarters the memory cost of each thumbnail, and the menu can hold
+                // hundreds of them. (LoadImage resizes the texture to the image's dimensions regardless of
+                // the constructor size.)
+                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, /* mipChain */ false);
+                if (tex.LoadImage(File.ReadAllBytes(entry.localThumbnailFile), /* markNonReadable */ true))
                 {
                     thumbnailTextureCallback(tex);
                 }
@@ -960,21 +968,25 @@ namespace com.google.apps.peltzer.client.zandria
             }
             else
             {
-                Texture2D originalTex = new Texture2D(2, 2);
-                if (!originalTex.LoadImage(responseBytes))
+                // The downloaded original is transient (blitted to the resize target then destroyed), so skip
+                // its mip chain and CPU-side copy; Graphics.Blit only needs the GPU copy.
+                Texture2D originalTex = new Texture2D(2, 2, TextureFormat.RGBA32, /* mipChain */ false);
+                if (!originalTex.LoadImage(responseBytes, /* markNonReadable */ true))
                 {
                     UnityEngine.Object.Destroy(originalTex);
                     thumbnailTextureCallback(null);
                     yield break;
                 }
 
-                Texture2D resizedTex = new Texture2D(512, 384);
+                Texture2D resizedTex = new Texture2D(512, 384, TextureFormat.RGBA32, /* mipChain */ false);
                 RenderTexture rt = RenderTexture.GetTemporary(512, 384);
                 Graphics.Blit(originalTex, rt);
                 RenderTexture previous = RenderTexture.active;
                 RenderTexture.active = rt;
                 resizedTex.ReadPixels(new Rect(0, 0, 512, 384), 0, 0);
-                resizedTex.Apply();
+                // Upload without mips and release the CPU-side pixel copy: the retained thumbnail is only
+                // ever rendered, and this roughly quarters its memory cost.
+                resizedTex.Apply(/* updateMipmaps */ false, /* makeNoLongerReadable */ true);
                 RenderTexture.active = previous;
                 RenderTexture.ReleaseTemporary(rt);
                 UnityEngine.Object.Destroy(originalTex);

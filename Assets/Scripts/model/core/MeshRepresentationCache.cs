@@ -338,6 +338,19 @@ namespace com.google.apps.peltzer.client.model.core
         }
 
         /// <summary>
+        ///   Frees the component caches in response to memory pressure. This deliberately does NOT destroy the
+        ///   cached preview template GameObjects: previews cloned from a template (isPreview = true) share the
+        ///   template's Unity meshes, so destroying templates here could break previews that are live at the
+        ///   moment the low-memory event fires (e.g. a held mesh). The component dictionaries are pure managed
+        ///   data and are lazily recomputed on demand.
+        /// </summary>
+        public void ClearComponentCachesForLowMemory()
+        {
+            componentsByMaterialForMeshId.Clear();
+            meshSpaceComponentsByMaterialForMeshId.Clear();
+        }
+
+        /// <summary>
         ///   Empties the entire cache, destroying any Preview GameObjects.
         /// </summary>
         public void Clear()
