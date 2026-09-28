@@ -66,7 +66,7 @@ public class GlTF_Writer
 
         if (useId)
         {
-            ret = $"{ret}_{o.GetEntityId().ToULong()}";
+            ret = $"{ret}_{EntityId.ToULong(o.GetEntityId())}";
         }
         return ret;
     }
