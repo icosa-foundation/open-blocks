@@ -22,17 +22,14 @@ namespace com.google.apps.peltzer.client.model.controller
 {
     public class ToolOptionsPanel : MonoBehaviour
     {
-        public ControllerMode m_Mode;
+        public ControllerMode[] m_Modes;
         public Transform m_PopupAnchor;
-        public TextMeshPro m_Title;
         public bool m_Allowed = true;
 
         private bool m_IsOpen;
 
         public virtual void Enable(ControllerMode mode)
         {
-            m_Title.text = mode.ToString();
-
             if (m_IsOpen || !m_Allowed) return; // No change or we've disabled this panel
             m_IsOpen = true;
             gameObject.SetActive(true);

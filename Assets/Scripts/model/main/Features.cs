@@ -32,7 +32,7 @@ namespace com.google.apps.peltzer.client.model.main
         public static bool saveToMogwaiObjectStore = true;
 
         // If true, stamping (also known as "custom primitives") are enabled in the Volume Inserter.
-        public static bool stampingEnabled = false;
+        public static bool stampingEnabled = true;
 
         // If true, enable the debug console.
         public static readonly bool enableDebugConsole = true;

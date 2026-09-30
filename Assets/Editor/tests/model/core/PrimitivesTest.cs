@@ -86,7 +86,7 @@ namespace com.google.apps.peltzer.client.model.core
 
             // No holes.
             MMesh mesh = Primitives.AxisAlignedCylinder(
-              1, new Vector3(1, 2, 3), Vector3.one, null, /*material id*/ 2);
+              1, new Vector3(1, 2, 3), Vector3.one, /*material id*/ 2);
 
             NUnit.Framework.Assert.IsTrue(TopologyUtil.HasValidTopology(mesh, true));
 
