@@ -187,6 +187,10 @@ namespace com.google.apps.peltzer.client.tools
                     operation.UpdateExtrudeGuide(extrusionParams);
                 }
             }
+
+            peltzerController.SetApplicationButtonOverlay(
+                IsExtrudingFace() ? ButtonMode.INACTIVE :
+                selector.CoplanarFaceSelectionModeEnabled ? ButtonMode.ACTIVE : ButtonMode.WAITING);
         }
 
         private void LateUpdate()
